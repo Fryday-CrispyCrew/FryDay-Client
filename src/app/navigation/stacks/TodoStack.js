@@ -9,7 +9,7 @@ const Stack = createNativeStackNavigator();
 export default function TodoStack() {
   return (
     <Stack.Navigator>
-      <Stack.Screen name="Home" component={HomeScreen} options={{ title: '오늘의 튀김 리스트' }} />
+      <Stack.Screen name="Home" component={HomeScreen} />
     </Stack.Navigator>
   );
 }
