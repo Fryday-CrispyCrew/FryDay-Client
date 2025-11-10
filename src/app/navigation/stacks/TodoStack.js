@@ -8,7 +8,7 @@ const Stack = createNativeStackNavigator();
 
 export default function TodoStack() {
   return (
-    <Stack.Navigator>
+    <Stack.Navigator initialRouteName='Home'>
       <Stack.Screen name="Home" component={HomeScreen} />
     </Stack.Navigator>
   );
