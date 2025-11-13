@@ -2,14 +2,16 @@
 import React from 'react';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
 import { View, Text, Button } from 'react-native';
-import MyPageScreen from '../../../features/mypage/screens/MyPage/MyPageScreen';
+import MyProfileScreen from '../../../features/mypage/screens/MyProfile/MyProfileScreen';
+import EditProfile from '../../../features/mypage/screens/EditProfile/EditProfile';
 
 const Stack = createNativeStackNavigator();
 
 export default function MyPageStack() {
   return (
     <Stack.Navigator>
-      <Stack.Screen name="MyPage" component={MyPageScreen} options={{ title: 'Fryday 로그인' }} />
+      <Stack.Screen name="MyProfile" component={MyProfileScreen} />
+      <Stack.Screen name="EditProfile" component={EditProfile} />
     </Stack.Navigator>
   );
 }

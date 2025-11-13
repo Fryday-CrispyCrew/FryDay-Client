@@ -2,14 +2,16 @@
 import React from 'react';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
 import { View, Text, Button } from 'react-native';
-import CalendarScreen from '../../../features/calendar/screens/Calendar/CalendarScreen';
+import WeekScreen from '../../../features/calendar/screens/Week/WeekScreen';
+import MonthScreen from '../../../features/calendar/screens/Month/MonthScreen';
 
 const Stack = createNativeStackNavigator();
 
 export default function CalendarStack() {
   return (
-    <Stack.Navigator>
-      <Stack.Screen name="Calendar" component={CalendarScreen} options={{ title: 'Fryday 로그인' }} />
+    <Stack.Navigator initialRouteName='Week'>
+      <Stack.Screen name="Week" component={WeekScreen}/>
+      <Stack.Screen name="Month" component={MonthScreen}/>
     </Stack.Navigator>
   );
 }

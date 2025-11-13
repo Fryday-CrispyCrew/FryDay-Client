@@ -1,14 +1,14 @@
 import { StyleSheet, Text, View } from 'react-native'
 import React from 'react'
 
-const MyPageScreen = () => {
+const MonthScreen = () => {
   return (
     <View>
-      <Text>MyPageScreen</Text>
+      <Text>MonthScreen</Text>
     </View>
   )
 }
 
-export default MyPageScreen
+export default MonthScreen
 
 const styles = StyleSheet.create({})
