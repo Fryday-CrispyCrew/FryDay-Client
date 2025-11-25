@@ -11,7 +11,7 @@ const Stack = createNativeStackNavigator();
 
 export default function TodoStack() {
   return (
-    <Stack.Navigator initialRouteName='Home'>
+    <Stack.Navigator initialRouteName='Home' screenOptions={{headerShown:false}}>
       <Stack.Screen name="Home" component={HomeScreen} />
       <Stack.Screen name="CategList" component={CategListScreen} />
       <Stack.Screen name="CategCreate" component={CategCreateScreen} />
