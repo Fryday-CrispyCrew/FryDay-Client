@@ -254,6 +254,7 @@ const styles = StyleSheet.create({
     flex: 1,
     fontSize: 16,
     color: "#333333",
+    fontFamily:'Pretendard-Bold'
   },
   checkBox: {
     width: 28,
