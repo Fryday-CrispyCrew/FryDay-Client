@@ -10,19 +10,19 @@ import {
   Dimensions,
   StatusBar,
 } from "react-native";
-import { SafeAreaView } from "react-native-safe-area-context";
+import {SafeAreaView} from "react-native-safe-area-context";
 
-const { width } = Dimensions.get("window");
+const {width} = Dimensions.get("window");
 
 const MOCK_TODOS = [
-  { id: "1", title: "연우님 기획 차력쇼 감상", done: false },
-  { id: "2", title: "연우님 기획 차력쇼 감상", done: false },
-  { id: "3", title: "연우님 기획 차력쇼 감상", done: true, isEditing: true },
-  { id: "4", title: "연우님 기획 차력쇼 감상", done: true },
+  {id: "1", title: "연우님 기획 차력쇼 감상", done: false},
+  {id: "2", title: "연우님 기획 차력쇼 감상", done: false},
+  {id: "3", title: "연우님 기획 차력쇼 감상", done: true, isEditing: true},
+  {id: "4", title: "연우님 기획 차력쇼 감상", done: true},
 ];
 
 export default function HomeScreen() {
-  const renderTodo = ({ item }) => {
+  const renderTodo = ({item}) => {
     const isEditing = item.isEditing;
 
     return (
@@ -60,8 +60,8 @@ export default function HomeScreen() {
   };
 
   return (
-    <SafeAreaView style={styles.safe} edges={['top']} mode={'margin'}>
-      <StatusBar barStyle="dark-content" /> 
+    <SafeAreaView style={styles.safe} edges={["top"]} mode={"margin"}>
+      <StatusBar barStyle="dark-content" />
       {/* 상단 날짜만 유지 */}
       <View style={styles.dateContainer}>
         <Text style={styles.yearText}>2025년</Text>
@@ -72,7 +72,7 @@ export default function HomeScreen() {
       <View style={styles.illustrationWrapper}>
         <View style={styles.sunburst} />
         <View style={styles.shrimp}>
-          <Text style={{ fontSize: 32 }}>🦐</Text>
+          <Text style={{fontSize: 32}}>🦐</Text>
         </View>
       </View>
 
@@ -102,8 +102,8 @@ export default function HomeScreen() {
           data={MOCK_TODOS}
           keyExtractor={(item) => item.id}
           renderItem={renderTodo}
-          style={{ flexGrow: 0 }}
-          ItemSeparatorComponent={() => <View style={{ height: 8 }} />}
+          style={{flexGrow: 0}}
+          ItemSeparatorComponent={() => <View style={{height: 8}} />}
         />
 
         {/* 입력창 */}
@@ -123,12 +123,12 @@ const styles = StyleSheet.create({
   safe: {
     flex: 1,
     backgroundColor: "#FFF7F2",
-    paddingHorizontal: '5%',
+    paddingHorizontal: "5%",
   },
   /* 날짜 영역 */
   dateContainer: {
-    height:'11%',
-    justifyContent: 'center',
+    height: "11%",
+    justifyContent: "center",
     // paddingHorizontal: 24,
     // borderWidth:1,
   },
@@ -145,7 +145,7 @@ const styles = StyleSheet.create({
 
   /* 일러스트 */
   illustrationWrapper: {
-    height:'42%',
+    height: "42%",
     alignItems: "center",
     justifyContent: "center",
   },
@@ -169,20 +169,20 @@ const styles = StyleSheet.create({
   /* 카드 */
   card: {
     // flex: 1,
-    borderWidth:1,
-    height: '44%',
+    borderWidth: 1,
+    height: "44%",
     // marginHorizontal: 16,
     backgroundColor: "#FFFFFF",
     borderRadius: 24,
-    paddingHorizontal: '6%',
-    paddingVertical: '4%',
+    paddingHorizontal: "6%",
+    paddingVertical: "4%",
     paddingTop: 12,
     paddingBottom: 24,
 
     shadowColor: "#000",
     shadowOpacity: 0.05,
     shadowRadius: 20,
-    shadowOffset: { width: 0, height: 4 },
+    shadowOffset: {width: 0, height: 4},
     elevation: 4,
   },
 
@@ -191,7 +191,7 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     alignItems: "center",
     marginBottom: 16,
-    overflow:'hidden',
+    overflow: "hidden",
   },
   tab: {
     paddingHorizontal: 16,
@@ -254,7 +254,7 @@ const styles = StyleSheet.create({
     flex: 1,
     fontSize: 16,
     color: "#333333",
-    fontFamily:'Pretendard-Bold'
+    fontFamily: "Pretendard-Bold",
   },
   checkBox: {
     width: 28,
