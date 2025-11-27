@@ -11,6 +11,7 @@ import {
   StatusBar,
 } from "react-native";
 import {SafeAreaView} from "react-native-safe-area-context";
+import AppText from "../../../../shared/components/AppText";
 
 const {width} = Dimensions.get("window");
 
@@ -64,8 +65,17 @@ export default function HomeScreen() {
       <StatusBar barStyle="dark-content" />
       {/* 상단 날짜만 유지 */}
       <View style={styles.dateContainer}>
-        <Text style={styles.yearText}>2025년</Text>
-        <Text style={styles.dateText}>10월 28일</Text>
+        <AppText
+          variant="L400"
+          className="text-gr500"
+          // className="font-pretendard"
+          // style={{color: "green"}}
+        >
+          2025년
+        </AppText>
+        <AppText variant="L600">10월 28일</AppText>
+        {/* <Text style={styles.yearText}>2025년</Text> */}
+        {/* <Text style={styles.dateText}>10월 28일</Text> */}
       </View>
 
       {/* 새우 일러스트 + 배경 */}

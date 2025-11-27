@@ -5,7 +5,7 @@ const {fontFamily} = require("tailwindcss/defaultTheme");
 const makeType = (size) => [
   size,
   {
-    lineHeight: size * 1.5, // 150%
+    // lineHeight: size * 1.5, // 150%
     letterSpacing: size * 0.012, // 1.2%
   },
 ];
@@ -18,7 +18,10 @@ module.exports = {
     extend: {
       fontFamily: {
         // 기본 폰트 Pretendard
-        pretendard: ["Pretendard-Regular", ...fontFamily.sans], //fallback 폰트도 추가
+        "pretendard-regular": ["Pretendard-Regular"],
+        "pretendard-medium": ["Pretendard-Medium"],
+        "pretendard-semibold": ["Pretendard-SemiBold"],
+        "pretendard-bold": ["Pretendard-Bold"],
       },
       fontSize: {
         // Head
