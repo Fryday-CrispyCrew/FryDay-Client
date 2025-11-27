@@ -36,7 +36,10 @@ export default function HomeScreen() {
         </View>
 
         {/* 텍스트 */}
-        <Text style={styles.todoText}>{item.title}</Text>
+        <AppText variant="M500" className="text-bk" style={{flex: 1}}>
+          {item.title}
+        </AppText>
+        {/* <Text style={styles.todoText}>{item.title}</Text> */}
 
         {/* 체크 or 편집 모드 */}
         {isEditing ? (
@@ -65,17 +68,12 @@ export default function HomeScreen() {
       <StatusBar barStyle="dark-content" />
       {/* 상단 날짜만 유지 */}
       <View style={styles.dateContainer}>
-        <AppText
-          variant="L400"
-          className="text-gr500"
-          // className="font-pretendard"
-          // style={{color: "green"}}
-        >
+        <AppText variant="M500" className="text-gr500">
           2025년
         </AppText>
-        <AppText variant="L600">10월 28일</AppText>
-        {/* <Text style={styles.yearText}>2025년</Text> */}
-        {/* <Text style={styles.dateText}>10월 28일</Text> */}
+        <AppText variant="H3" className="text-bk">
+          10월 28일
+        </AppText>
       </View>
 
       {/* 새우 일러스트 + 배경 */}
@@ -91,19 +89,31 @@ export default function HomeScreen() {
         {/* 카테고리 탭 */}
         <View style={styles.tabRow}>
           <TouchableOpacity style={[styles.tab, styles.tabActive]}>
-            <Text style={styles.tabActiveText}>전체보기</Text>
+            <AppText variant="M600" className="text-wt">
+              전체보기
+            </AppText>
+            {/* <Text style={styles.tabActiveText}>전체보기</Text> */}
           </TouchableOpacity>
 
           <TouchableOpacity style={styles.tab}>
-            <Text style={styles.tabText}>카테고리</Text>
+            <AppText variant="M600" className="text-gr300">
+              카테고리
+            </AppText>
+            {/* <Text style={styles.tabText}>카테고리</Text> */}
           </TouchableOpacity>
 
           <TouchableOpacity style={styles.tab}>
-            <Text style={styles.tabText}>카테고리</Text>
+            <AppText variant="M600" className="text-gr300">
+              카테고리
+            </AppText>
+            {/* <Text style={styles.tabText}>카테고리</Text> */}
           </TouchableOpacity>
 
           <TouchableOpacity style={styles.tabNew}>
-            <Text style={styles.tabNewText}>＋ 새 카테고리</Text>
+            <AppText variant="M600" className="text-gr300">
+              ＋ 새 카테고리
+            </AppText>
+            {/* <Text style={styles.tabNewText}>＋ 새 카테고리</Text> */}
           </TouchableOpacity>
         </View>
 
@@ -121,6 +131,7 @@ export default function HomeScreen() {
           <TextInput
             placeholder="두근두근, 무엇을 튀겨볼까요?"
             placeholderTextColor="#B0B0B0"
+            className="text-gr500"
             style={styles.textInput}
           />
         </View>
@@ -142,17 +153,6 @@ const styles = StyleSheet.create({
     // paddingHorizontal: 24,
     // borderWidth:1,
   },
-  yearText: {
-    fontSize: 12,
-    color: "#9B9B9B",
-    marginBottom: 4,
-  },
-  dateText: {
-    fontSize: 16,
-    fontWeight: "700",
-    color: "#111111",
-  },
-
   /* 일러스트 */
   illustrationWrapper: {
     height: "42%",
@@ -309,10 +309,11 @@ const styles = StyleSheet.create({
     marginTop: 16,
   },
   textInput: {
+    fontFamily: "Pretendard-Medium",
+    fontSize: 12,
     height: 44,
     borderRadius: 12,
     backgroundColor: "#FAFAFA",
     paddingHorizontal: 12,
-    fontSize: 15,
   },
 });
