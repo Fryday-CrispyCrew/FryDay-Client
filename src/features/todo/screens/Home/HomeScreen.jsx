@@ -10,19 +10,21 @@ import {
   Dimensions,
   StatusBar,
 } from "react-native";
-import { SafeAreaView } from "react-native-safe-area-context";
+import {SafeAreaView} from "react-native-safe-area-context";
+import AppText from "../../../../shared/components/AppText";
+import {moderateScale} from "react-native-size-matters";
 
-const { width } = Dimensions.get("window");
+const {width} = Dimensions.get("window");
 
 const MOCK_TODOS = [
-  { id: "1", title: "연우님 기획 차력쇼 감상", done: false },
-  { id: "2", title: "연우님 기획 차력쇼 감상", done: false },
-  { id: "3", title: "연우님 기획 차력쇼 감상", done: true, isEditing: true },
-  { id: "4", title: "연우님 기획 차력쇼 감상", done: true },
+  {id: "1", title: "연우님 기획 차력쇼 감상", done: false},
+  {id: "2", title: "연우님 기획 차력쇼 감상", done: false},
+  {id: "3", title: "연우님 기획 차력쇼 감상", done: true, isEditing: true},
+  {id: "4", title: "연우님 기획 차력쇼 감상", done: true},
 ];
 
 export default function HomeScreen() {
-  const renderTodo = ({ item }) => {
+  const renderTodo = ({item}) => {
     const isEditing = item.isEditing;
 
     return (
@@ -35,7 +37,10 @@ export default function HomeScreen() {
         </View>
 
         {/* 텍스트 */}
-        <Text style={styles.todoText}>{item.title}</Text>
+        <AppText variant="M500" className="text-bk" style={{flex: 1}}>
+          {item.title}
+        </AppText>
+        {/* <Text style={styles.todoText}>{item.title}</Text> */}
 
         {/* 체크 or 편집 모드 */}
         {isEditing ? (
@@ -60,11 +65,17 @@ export default function HomeScreen() {
   };
 
   return (
-    <SafeAreaView style={styles.safe} edges={['top']} mode={'margin'}>
-      <StatusBar barStyle="dark-content" /> 
+    <SafeAreaView style={styles.safe} edges={["top"]} mode={"margin"}>
+      <StatusBar barStyle="dark-content" />
       {/* 상단 날짜만 유지 */}
       <View style={styles.dateContainer}>
-        <Text style={styles.yearText}>2025년</Text>
+        <AppText variant="M500" className="text-gr500">
+          2025년
+        </AppText>
+        {/* <AppText variant="H3" className="text-bk">
+          10월 28일
+        </AppText>
+        <Text style={styles.yearText}>2025년</Text> */}
         <Text style={styles.dateText}>10월 28일</Text>
       </View>
 
@@ -72,45 +83,60 @@ export default function HomeScreen() {
       <View style={styles.illustrationWrapper}>
         <View style={styles.sunburst} />
         <View style={styles.shrimp}>
-          <Text style={{ fontSize: 32 }}>🦐</Text>
+          <Text style={{fontSize: 32}}>🦐</Text>
         </View>
       </View>
 
       {/* To-do 카드 영역 */}
       <View style={styles.card}>
-        {/* 카테고리 탭 */}
-        <View style={styles.tabRow}>
-          <TouchableOpacity style={[styles.tab, styles.tabActive]}>
-            <Text style={styles.tabActiveText}>전체보기</Text>
-          </TouchableOpacity>
+        <View style={styles.topContainer}>
+          {/* 카테고리 탭 */}
+          <View style={styles.tabRow}>
+            <TouchableOpacity style={[styles.tab, styles.tabActive]}>
+              <AppText variant="M600" className="text-wt">
+                전체보기
+              </AppText>
+              {/* <Text style={styles.tabActiveText}>전체보기</Text> */}
+            </TouchableOpacity>
 
-          <TouchableOpacity style={styles.tab}>
-            <Text style={styles.tabText}>카테고리</Text>
-          </TouchableOpacity>
+            <TouchableOpacity style={styles.tab}>
+              <AppText variant="M600" className="text-gr300">
+                카테고리
+              </AppText>
+              {/* <Text style={styles.tabText}>카테고리</Text> */}
+            </TouchableOpacity>
 
-          <TouchableOpacity style={styles.tab}>
-            <Text style={styles.tabText}>카테고리</Text>
-          </TouchableOpacity>
+            <TouchableOpacity style={styles.tab}>
+              <AppText variant="M600" className="text-gr300">
+                카테고리
+              </AppText>
+              {/* <Text style={styles.tabText}>카테고리</Text> */}
+            </TouchableOpacity>
 
-          <TouchableOpacity style={styles.tabNew}>
-            <Text style={styles.tabNewText}>＋ 새 카테고리</Text>
-          </TouchableOpacity>
+            <TouchableOpacity style={styles.tabNew}>
+              <AppText variant="M600" className="text-gr300">
+                ＋ 새 카테고리
+              </AppText>
+              {/* <Text style={styles.tabNewText}>＋ 새 카테고리</Text> */}
+            </TouchableOpacity>
+          </View>
+
+          {/* 할 일 리스트 */}
+          <FlatList
+            data={MOCK_TODOS}
+            keyExtractor={(item) => item.id}
+            renderItem={renderTodo}
+            style={{flexGrow: 1}}
+            ItemSeparatorComponent={() => <View style={{height: 6}} />}
+          />
         </View>
-
-        {/* 할 일 리스트 */}
-        <FlatList
-          data={MOCK_TODOS}
-          keyExtractor={(item) => item.id}
-          renderItem={renderTodo}
-          style={{ flexGrow: 0 }}
-          ItemSeparatorComponent={() => <View style={{ height: 8 }} />}
-        />
 
         {/* 입력창 */}
         <View style={styles.inputWrapper}>
           <TextInput
             placeholder="두근두근, 무엇을 튀겨볼까요?"
             placeholderTextColor="#B0B0B0"
+            className="text-gr500"
             style={styles.textInput}
           />
         </View>
@@ -123,29 +149,28 @@ const styles = StyleSheet.create({
   safe: {
     flex: 1,
     backgroundColor: "#FFF7F2",
-    paddingHorizontal: '5%',
+    paddingHorizontal: "5%",
   },
   /* 날짜 영역 */
   dateContainer: {
-    height:'11%',
-    justifyContent: 'center',
+    height: "11%",
+    justifyContent: "center",
     // paddingHorizontal: 24,
     // borderWidth:1,
   },
   yearText: {
-    fontSize: 12,
+    fontSize: 14,
     color: "#9B9B9B",
     marginBottom: 4,
   },
   dateText: {
+    fontFamily: "Pretendard-SemiBold",
     fontSize: 16,
-    fontWeight: "700",
-    color: "#111111",
+    // fontWeight: "700",
   },
-
   /* 일러스트 */
   illustrationWrapper: {
-    height:'42%',
+    height: "42%",
     alignItems: "center",
     justifyContent: "center",
   },
@@ -169,36 +194,48 @@ const styles = StyleSheet.create({
   /* 카드 */
   card: {
     // flex: 1,
-    borderWidth:1,
-    height: '44%',
+    justifyContent: "space-between",
+    // borderWidth: 1,
+    height: "44%",
     // marginHorizontal: 16,
     backgroundColor: "#FFFFFF",
     borderRadius: 24,
-    paddingHorizontal: '6%',
-    paddingVertical: '4%',
-    paddingTop: 12,
-    paddingBottom: 24,
-
+    // paddingHorizontal: "6%",
+    // paddingTop: "5.5%",
+    // paddingBottom: "4.1%",
+    paddingTop: 16,
+    paddingBottom: 12,
+    paddingHorizontal: 15,
     shadowColor: "#000",
     shadowOpacity: 0.05,
     shadowRadius: 20,
-    shadowOffset: { width: 0, height: 4 },
+    shadowOffset: {width: 0, height: 4},
     elevation: 4,
   },
 
+  topContainer: {
+    height: "79.5%",
+    justifyContent: "space-between",
+    gap: "5%",
+    // borderWidth: 1,
+  },
   /* 탭 */
   tabRow: {
     flexDirection: "row",
     alignItems: "center",
-    marginBottom: 16,
-    overflow:'hidden',
+    height: "18.3%",
+    // marginBottom: 16,
+    overflow: "hidden",
+    gap: 8,
+    // borderWidth: 1,
   },
   tab: {
     paddingHorizontal: 16,
-    paddingVertical: 8,
+    paddingVertical: 10,
+    // height: "100%",
     borderRadius: 999,
     backgroundColor: "#F5F5F5",
-    marginRight: 8,
+    // marginRight: 8,
   },
   tabActive: {
     backgroundColor: "#FF6A00",
@@ -230,8 +267,12 @@ const styles = StyleSheet.create({
   todoRow: {
     flexDirection: "row",
     alignItems: "center",
+    // height: "17.1%",
+    height: 36,
+    // borderWidth: 1,
     paddingHorizontal: 4,
     paddingVertical: 10,
+    // paddingVertical: "1.8%",
     borderRadius: 16,
   },
   todoRowEditing: {
@@ -254,6 +295,7 @@ const styles = StyleSheet.create({
     flex: 1,
     fontSize: 16,
     color: "#333333",
+    fontFamily: "Pretendard-Bold",
   },
   checkBox: {
     width: 28,
@@ -295,13 +337,17 @@ const styles = StyleSheet.create({
 
   /* 입력 */
   inputWrapper: {
-    marginTop: 16,
+    // marginTop: 16,
+    height: "18.9%",
   },
   textInput: {
+    fontFamily: "Pretendard-Medium",
+    fontSize: 12,
     height: 44,
+    height: "100%",
+    // borderWidth: 1,
     borderRadius: 12,
     backgroundColor: "#FAFAFA",
     paddingHorizontal: 12,
-    fontSize: 15,
   },
 });
