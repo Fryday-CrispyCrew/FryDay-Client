@@ -75,6 +75,19 @@ module.exports = {
         wt50: "rgba(250, 250, 250, 0.5)",
         wt75: "rgba(250, 250, 250, 0.75)",
       },
+      borderRadius: {
+        // Radius System
+        chip: 24, // Chip / Badge
+        card: 20, // Card / Modal
+        btn: 16, // Button
+        navTop: 24, // Nav Bar / Bottom Sheet 상단 라운드
+      },
+      spacing: {
+        // Grid System
+        "mg-screen": 20, // screen margin
+        gt: 16, // gutter
+        col: 72, // column width
+      },
     },
   },
   plugins: [],
