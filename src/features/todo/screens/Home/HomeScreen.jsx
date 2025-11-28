@@ -12,6 +12,7 @@ import {
 } from "react-native";
 import {SafeAreaView} from "react-native-safe-area-context";
 import AppText from "../../../../shared/components/AppText";
+import {moderateScale} from "react-native-size-matters";
 
 const {width} = Dimensions.get("window");
 
@@ -71,9 +72,11 @@ export default function HomeScreen() {
         <AppText variant="M500" className="text-gr500">
           2025년
         </AppText>
-        <AppText variant="H3" className="text-bk">
+        {/* <AppText variant="H3" className="text-bk">
           10월 28일
         </AppText>
+        <Text style={styles.yearText}>2025년</Text> */}
+        <Text style={styles.dateText}>10월 28일</Text>
       </View>
 
       {/* 새우 일러스트 + 배경 */}
@@ -86,45 +89,47 @@ export default function HomeScreen() {
 
       {/* To-do 카드 영역 */}
       <View style={styles.card}>
-        {/* 카테고리 탭 */}
-        <View style={styles.tabRow}>
-          <TouchableOpacity style={[styles.tab, styles.tabActive]}>
-            <AppText variant="M600" className="text-wt">
-              전체보기
-            </AppText>
-            {/* <Text style={styles.tabActiveText}>전체보기</Text> */}
-          </TouchableOpacity>
+        <View style={styles.topContainer}>
+          {/* 카테고리 탭 */}
+          <View style={styles.tabRow}>
+            <TouchableOpacity style={[styles.tab, styles.tabActive]}>
+              <AppText variant="M600" className="text-wt">
+                전체보기
+              </AppText>
+              {/* <Text style={styles.tabActiveText}>전체보기</Text> */}
+            </TouchableOpacity>
 
-          <TouchableOpacity style={styles.tab}>
-            <AppText variant="M600" className="text-gr300">
-              카테고리
-            </AppText>
-            {/* <Text style={styles.tabText}>카테고리</Text> */}
-          </TouchableOpacity>
+            <TouchableOpacity style={styles.tab}>
+              <AppText variant="M600" className="text-gr300">
+                카테고리
+              </AppText>
+              {/* <Text style={styles.tabText}>카테고리</Text> */}
+            </TouchableOpacity>
 
-          <TouchableOpacity style={styles.tab}>
-            <AppText variant="M600" className="text-gr300">
-              카테고리
-            </AppText>
-            {/* <Text style={styles.tabText}>카테고리</Text> */}
-          </TouchableOpacity>
+            <TouchableOpacity style={styles.tab}>
+              <AppText variant="M600" className="text-gr300">
+                카테고리
+              </AppText>
+              {/* <Text style={styles.tabText}>카테고리</Text> */}
+            </TouchableOpacity>
 
-          <TouchableOpacity style={styles.tabNew}>
-            <AppText variant="M600" className="text-gr300">
-              ＋ 새 카테고리
-            </AppText>
-            {/* <Text style={styles.tabNewText}>＋ 새 카테고리</Text> */}
-          </TouchableOpacity>
+            <TouchableOpacity style={styles.tabNew}>
+              <AppText variant="M600" className="text-gr300">
+                ＋ 새 카테고리
+              </AppText>
+              {/* <Text style={styles.tabNewText}>＋ 새 카테고리</Text> */}
+            </TouchableOpacity>
+          </View>
+
+          {/* 할 일 리스트 */}
+          <FlatList
+            data={MOCK_TODOS}
+            keyExtractor={(item) => item.id}
+            renderItem={renderTodo}
+            style={{flexGrow: 1}}
+            ItemSeparatorComponent={() => <View style={{height: 6}} />}
+          />
         </View>
-
-        {/* 할 일 리스트 */}
-        <FlatList
-          data={MOCK_TODOS}
-          keyExtractor={(item) => item.id}
-          renderItem={renderTodo}
-          style={{flexGrow: 0}}
-          ItemSeparatorComponent={() => <View style={{height: 8}} />}
-        />
 
         {/* 입력창 */}
         <View style={styles.inputWrapper}>
@@ -153,6 +158,16 @@ const styles = StyleSheet.create({
     // paddingHorizontal: 24,
     // borderWidth:1,
   },
+  yearText: {
+    fontSize: 14,
+    color: "#9B9B9B",
+    marginBottom: 4,
+  },
+  dateText: {
+    fontFamily: "Pretendard-SemiBold",
+    fontSize: 16,
+    // fontWeight: "700",
+  },
   /* 일러스트 */
   illustrationWrapper: {
     height: "42%",
@@ -179,16 +194,18 @@ const styles = StyleSheet.create({
   /* 카드 */
   card: {
     // flex: 1,
-    borderWidth: 1,
+    justifyContent: "space-between",
+    // borderWidth: 1,
     height: "44%",
     // marginHorizontal: 16,
     backgroundColor: "#FFFFFF",
     borderRadius: 24,
-    paddingHorizontal: "6%",
-    paddingVertical: "4%",
-    paddingTop: 12,
-    paddingBottom: 24,
-
+    // paddingHorizontal: "6%",
+    // paddingTop: "5.5%",
+    // paddingBottom: "4.1%",
+    paddingTop: 16,
+    paddingBottom: 12,
+    paddingHorizontal: 15,
     shadowColor: "#000",
     shadowOpacity: 0.05,
     shadowRadius: 20,
@@ -196,19 +213,29 @@ const styles = StyleSheet.create({
     elevation: 4,
   },
 
+  topContainer: {
+    height: "79.5%",
+    justifyContent: "space-between",
+    gap: "5%",
+    // borderWidth: 1,
+  },
   /* 탭 */
   tabRow: {
     flexDirection: "row",
     alignItems: "center",
-    marginBottom: 16,
+    height: "18.3%",
+    // marginBottom: 16,
     overflow: "hidden",
+    gap: 8,
+    // borderWidth: 1,
   },
   tab: {
     paddingHorizontal: 16,
-    paddingVertical: 8,
+    paddingVertical: 10,
+    // height: "100%",
     borderRadius: 999,
     backgroundColor: "#F5F5F5",
-    marginRight: 8,
+    // marginRight: 8,
   },
   tabActive: {
     backgroundColor: "#FF6A00",
@@ -240,8 +267,12 @@ const styles = StyleSheet.create({
   todoRow: {
     flexDirection: "row",
     alignItems: "center",
+    // height: "17.1%",
+    height: 36,
+    // borderWidth: 1,
     paddingHorizontal: 4,
     paddingVertical: 10,
+    // paddingVertical: "1.8%",
     borderRadius: 16,
   },
   todoRowEditing: {
@@ -306,12 +337,15 @@ const styles = StyleSheet.create({
 
   /* 입력 */
   inputWrapper: {
-    marginTop: 16,
+    // marginTop: 16,
+    height: "18.9%",
   },
   textInput: {
     fontFamily: "Pretendard-Medium",
     fontSize: 12,
     height: 44,
+    height: "100%",
+    // borderWidth: 1,
     borderRadius: 12,
     backgroundColor: "#FAFAFA",
     paddingHorizontal: 12,
