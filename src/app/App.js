@@ -1,9 +1,10 @@
 // src/app/App.js
 import React from "react";
 import * as SplashScreen from "expo-splash-screen";
+import "react-native-gesture-handler";
+import "../../global.css";
 import AppProviders from "./AppProviders";
 import RootNavigator from "./navigation/RootNavigator";
-import "../../global.css";
 
 // 스플래시가 자동으로 사라지지 않게 설정
 SplashScreen.preventAutoHideAsync().catch(() => {

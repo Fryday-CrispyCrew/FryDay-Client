@@ -1,5 +1,5 @@
 // src/screens/Home/HomeScreen.jsx
-import React, {useState} from "react";
+import React, {useRef, useState} from "react";
 import {
   View,
   Text,
@@ -10,6 +10,7 @@ import {
   StatusBar,
   ScrollView,
 } from "react-native";
+import {Swipeable} from "react-native-gesture-handler";
 import DraggableFlatList from "react-native-draggable-flatlist";
 import {SafeAreaView} from "react-native-safe-area-context";
 import AppText from "../../../../shared/components/AppText";
@@ -19,7 +20,7 @@ import CategoryIcon from "../../assets/svg/Category.svg";
 import TodoRadioOnIcon from "../../assets/svg/RadioOn.svg";
 import TodoRadioOffIcon from "../../assets/svg/RadioOff.svg";
 import DragHandleIcon from "../../assets/svg/DragHandle.svg";
-
+import DeleteIcon from "../../assets/svg/Delete.svg"; // 실제 경로/파일명에 맞게 수정
 
 const {width} = Dimensions.get("window");
 
@@ -69,6 +70,9 @@ export default function HomeScreen({navigation}) {
   const [todos, setTodos] = useState(MOCK_TODOS);
   // 선택된 탭의 categoryId (0 = 전체보기)
   const [selectedCategoryId, setSelectedCategoryId] = useState(0);
+  const [swipedTodoId, setSwipedTodoId] = useState(null);
+  // 🔹 현재 열린 Swipeable들의 ref를 저장하는 Map
+  const swipeableRefs = useRef(new Map());
 
   // 선택된 탭에 맞는 투두만 필터링
   const filteredTodos =
@@ -102,40 +106,89 @@ export default function HomeScreen({navigation}) {
     });
   };
 
-  const renderTodo = ({item, drag, isActive}) => {
+  const handleDeleteTodo = (id) => {
+    setTodos((prev) => prev.filter((todo) => todo.id !== id));
+  };
+
+  const renderRightActions = (itemId) => {
     return (
-      <View
-        style={[
-          styles.todoRow,
-          isActive && {backgroundColor: "#EAEAEA"}, // 드래그 중일 때만 색 변경
-        ]}
-      >
-        {/* 🔽 드래그 핸들 아이콘으로 변경 */}
+      <View style={styles.todoRightActionContainer}>
         <TouchableOpacity
-          onLongPress={drag}
-          hitSlop={8}
-          style={styles.dragHandleButton}
+          style={styles.todoDeleteButton}
+          activeOpacity={0.7}
+          onPress={() => handleDeleteTodo(itemId)}
         >
-          <DragHandleIcon width={12} />
-        </TouchableOpacity>
-        {/* 텍스트 */}
-        <AppText variant="M500" className="text-bk" style={{flex: 1}}>
-          {item.title}
-        </AppText>
-        {/* <Text style={styles.todoText}>{item.title}</Text> */}
-        {/* 라디오 버튼 (SVG 아이콘 버전) */}
-        <TouchableOpacity
-          style={styles.todoRadioHitArea}
-          activeOpacity={0.6}
-          onPress={() => toggleTodoDone(item.id)}
-        >
-          {item.done ? (
-            <TodoRadioOnIcon width={24} height={24} />
-          ) : (
-            <TodoRadioOffIcon width={24} height={24} />
-          )}
+          <DeleteIcon width={20} height={20} />
         </TouchableOpacity>
       </View>
+    );
+  };
+
+  const renderTodo = ({item, drag, isActive}) => {
+    return (
+      <Swipeable
+        ref={(ref) => {
+          if (ref) {
+            swipeableRefs.current.set(item.id, ref);
+          } else {
+            swipeableRefs.current.delete(item.id);
+          }
+        }}
+        renderRightActions={() => renderRightActions(item.id)}
+        overshootRight={false}
+        onSwipeableWillOpen={() => {
+          // 🔸 이미 열린 것이 있다면 닫기
+          if (swipedTodoId && swipedTodoId !== item.id) {
+            const prevRef = swipeableRefs.current.get(swipedTodoId);
+            if (prevRef) {
+              prevRef.close();
+            }
+          }
+          setSwipedTodoId(item.id);
+        }}
+        onSwipeableWillClose={() => {
+          if (swipedTodoId === item.id) {
+            setSwipedTodoId(null);
+          }
+        }}
+      >
+        <View
+          style={[
+            styles.todoRow,
+            isActive && {backgroundColor: "#EAEAEA"}, // 드래그 정렬 중
+            swipedTodoId === item.id && {
+              backgroundColor: "#EAEAEA",
+              borderRadius: 12,
+            }, // ← 스와이프 중
+          ]}
+        >
+          {/* 🔽 드래그 핸들 아이콘으로 변경 */}
+          <TouchableOpacity
+            onLongPress={drag}
+            hitSlop={8}
+            style={styles.dragHandleButton}
+          >
+            <DragHandleIcon width={12} />
+          </TouchableOpacity>
+          {/* 텍스트 */}
+          <AppText variant="M500" className="text-bk" style={{flex: 1}}>
+            {item.title}
+          </AppText>
+          {/* <Text style={styles.todoText}>{item.title}</Text> */}
+          {/* 라디오 버튼 (SVG 아이콘 버전) */}
+          <TouchableOpacity
+            style={styles.todoRadioHitArea}
+            activeOpacity={0.6}
+            onPress={() => toggleTodoDone(item.id)}
+          >
+            {item.done ? (
+              <TodoRadioOnIcon width={24} height={24} />
+            ) : (
+              <TodoRadioOffIcon width={24} height={24} />
+            )}
+          </TouchableOpacity>
+        </View>
+      </Swipeable>
     );
   };
 
@@ -428,11 +481,11 @@ const styles = StyleSheet.create({
     alignItems: "center",
     marginRight: 6,
   },
-  todoText: {
-    flex: 1,
-    fontSize: 16,
-    color: "#333333",
-    fontFamily: "Pretendard-Bold",
+  todoRadioHitArea: {
+    paddingVertical: 4,
+    paddingHorizontal: 4,
+    borderRadius: 8,
+    // backgroundColor: "#FF5B22",
   },
   // 투두용 라디오 버튼
   todoRadioOuter: {
@@ -454,21 +507,23 @@ const styles = StyleSheet.create({
     borderRadius: 6,
     backgroundColor: "#FF6A00",
   },
-
-  deleteButton: {
-    width: 46,
-    height: 46,
-    borderRadius: 16,
-    backgroundColor: "#FF6A00",
+  todoRightActionContainer: {
+    justifyContent: "center",
+    alignItems: "flex-end",
+    marginLeft: 8,
+  },
+  todoDeleteButton: {
+    // width: 40,
+    // height: 36,
+    paddingHorizontal: 12,
+    paddingVertical: 8,
+    // borderTopRightRadius: 16,
+    // borderBottomRightRadius: 16,
+    borderRadius: 12,
+    backgroundColor: "#FF5B22",
     alignItems: "center",
     justifyContent: "center",
-    marginLeft: 4,
   },
-  deleteIcon: {
-    fontSize: 18,
-    color: "#FFFFFF",
-  },
-
   /* 입력 */
   inputWrapper: {
     // 전체 영역은 너무 크지 않게 높이 고정
