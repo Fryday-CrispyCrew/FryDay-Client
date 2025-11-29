@@ -5,12 +5,12 @@ import {
   Text,
   StyleSheet,
   TouchableOpacity,
-  FlatList,
   TextInput,
   Dimensions,
   StatusBar,
   ScrollView,
 } from "react-native";
+import DraggableFlatList from "react-native-draggable-flatlist";
 import {SafeAreaView} from "react-native-safe-area-context";
 import AppText from "../../../../shared/components/AppText";
 import {moderateScale} from "react-native-size-matters";
@@ -18,6 +18,8 @@ import TodayIcon from "../../assets/svg/Today.svg";
 import CategoryIcon from "../../assets/svg/Category.svg";
 import TodoRadioOnIcon from "../../assets/svg/RadioOn.svg";
 import TodoRadioOffIcon from "../../assets/svg/RadioOff.svg";
+import DragHandleIcon from "../../assets/svg/DragHandle.svg";
+
 
 const {width} = Dimensions.get("window");
 
@@ -44,12 +46,18 @@ const MOCK_TODOS = [
   },
   {
     id: "3",
+    title: "필라테스하기",
+    done: false,
+    categoryId: 1,
+  },
+  {
+    id: "4",
     title: "토익 공부",
     done: true,
     categoryId: 2, // 2번 카테고리
   },
   {
-    id: "4",
+    id: "5",
     title: "알고리즘 공부",
     done: true,
     categoryId: 2,
@@ -74,22 +82,47 @@ export default function HomeScreen({navigation}) {
     );
   };
 
-  const renderTodo = ({item}) => {
-    return (
-      <View style={styles.todoRow}>
-        {/* 드래그 핸들 */}
-        <View style={styles.dragHandle}>
-          <View style={styles.dragDot} />
-          <View style={styles.dragDot} />
-          <View style={styles.dragDot} />
-        </View>
+  // ✅ 드래그 종료 후 순서 저장
+  const handleDragEnd = ({data}) => {
+    // data = 드래그 후 정렬된 "현재 화면에 보이는 리스트(filteredTodos)" 순서
 
+    // 전체보기일 때는 todos 전체 순서 변경
+    if (selectedCategoryId === 0) {
+      setTodos(data);
+      return;
+    }
+
+    // 특정 카테고리 선택 시: 그 카테고리에 속한 투두만 재정렬
+    setTodos((prev) => {
+      const others = prev.filter(
+        (todo) => todo.categoryId !== selectedCategoryId
+      );
+      // data 안의 todo들은 모두 현재 선택된 categoryId를 가진 것들
+      return [...others, ...data];
+    });
+  };
+
+  const renderTodo = ({item, drag, isActive}) => {
+    return (
+      <View
+        style={[
+          styles.todoRow,
+          isActive && {backgroundColor: "#EAEAEA"}, // 드래그 중일 때만 색 변경
+        ]}
+      >
+        {/* 🔽 드래그 핸들 아이콘으로 변경 */}
+        <TouchableOpacity
+          onLongPress={drag}
+          hitSlop={8}
+          style={styles.dragHandleButton}
+        >
+          <DragHandleIcon width={12} />
+        </TouchableOpacity>
         {/* 텍스트 */}
         <AppText variant="M500" className="text-bk" style={{flex: 1}}>
           {item.title}
         </AppText>
         {/* <Text style={styles.todoText}>{item.title}</Text> */}
-
         {/* 라디오 버튼 (SVG 아이콘 버전) */}
         <TouchableOpacity
           style={styles.todoRadioHitArea}
@@ -206,14 +239,17 @@ export default function HomeScreen({navigation}) {
             </TouchableOpacity>
           </View>
 
-          {/* 할 일 리스트 */}
-          <FlatList
-            data={filteredTodos}
-            keyExtractor={(item) => item.id}
-            renderItem={renderTodo}
-            style={{flexGrow: 1}}
-            ItemSeparatorComponent={() => <View style={{height: 6}} />}
-          />
+          <View style={styles.flatListContainer}>
+            {/* 할 일 리스트 */}
+            <DraggableFlatList
+              data={filteredTodos}
+              keyExtractor={(item) => item.id}
+              renderItem={renderTodo}
+              onDragEnd={handleDragEnd} // ✅ 드래그 끝난 후 상태 저장
+              style={{flexGrow: 1}}
+              ItemSeparatorComponent={() => <View style={{height: 6}} />}
+            />
+          </View>
         </View>
 
         {/* 입력창 */}
@@ -235,7 +271,7 @@ export default function HomeScreen({navigation}) {
 const styles = StyleSheet.create({
   safe: {
     flex: 1,
-    backgroundColor: "#FFF7F2",
+    backgroundColor: "#FAFAFA",
     paddingHorizontal: "5%",
   },
   topBar: {
@@ -303,22 +339,29 @@ const styles = StyleSheet.create({
     height: "44%",
     // marginHorizontal: 16,
     backgroundColor: "#FFFFFF",
-    borderRadius: 24,
+    borderRadius: 12,
     // paddingHorizontal: "6%",
     // paddingTop: "5.5%",
     // paddingBottom: "4.1%",
     paddingTop: 16,
     paddingBottom: 12,
     paddingHorizontal: 15,
-    shadowColor: "#000",
-    shadowOpacity: 0.05,
-    shadowRadius: 20,
-    shadowOffset: {width: 0, height: 4},
-    elevation: 4,
+    // shadowColor: "#000",
+    // shadowOffset: {width: 0, height: 4},
+    // shadowOpacity: 0.05,
+    // shadowRadius: 20,
+    // elevation: 4,
+    shadowColor: "rgba(20, 19, 18, 0.2)",
+    shadowOffset: {width: 0, height: 0},
+    shadowOpacity: 1,
+    shadowRadius: 12, // spread는 없음 (RN 미지원)
+    elevation: 4, // Android 그림자 강도 조절
   },
+  // box-shadow: 0 0 12px 0 rgba(20, 19, 18, 0.05);
 
   topContainer: {
-    height: "79.5%",
+    // height: "79.5%",
+    flex: 1,
     justifyContent: "space-between",
     gap: "5%",
     // borderWidth: 1,
@@ -350,7 +393,7 @@ const styles = StyleSheet.create({
     // marginRight: 8,
   },
   tabActive: {
-    backgroundColor: "#FF6A00",
+    backgroundColor: "#FF5B22",
   },
   tabNew: {
     // marginLeft: "auto", // 오른쪽 끝으로 밀기
@@ -361,34 +404,12 @@ const styles = StyleSheet.create({
     // borderWidth: 1,
     borderColor: "#F0F0F0",
   },
-  tabNewText: {
-    fontSize: 14,
-    color: "#D0D0D0",
-    fontWeight: "600",
+  flatListContainer: {
+    // height: "70%",
+    flex: 1,
+    overflow: "hidden",
+    // borderWidth: 1,
   },
-  tabText: {
-    fontSize: 14,
-    color: "#C4C4C4",
-    fontWeight: "600",
-  },
-  tabActiveText: {
-    fontSize: 14,
-    color: "#FFFFFF",
-    fontWeight: "700",
-  },
-  // tabNew: {
-  //   marginLeft: "auto",
-  //   paddingHorizontal: 14,
-  //   paddingVertical: 8,
-  //   borderRadius: 999,
-  //   backgroundColor: "#F7F7F7",
-  // },
-  // tabNewText: {
-  //   fontSize: 14,
-  //   color: "#D0D0D0",
-  //   fontWeight: "600",
-  // },
-
   /* To-do 리스트 */
   todoRow: {
     flexDirection: "row",
@@ -401,18 +422,11 @@ const styles = StyleSheet.create({
     // paddingVertical: "1.8%",
     borderRadius: 16,
   },
-  dragHandle: {
-    width: 20,
+  dragHandleButton: {
+    paddingHorizontal: 4,
     justifyContent: "center",
     alignItems: "center",
-    marginRight: 4,
-  },
-  dragDot: {
-    width: 2,
-    height: 2,
-    borderRadius: 1,
-    backgroundColor: "#B6B6B6",
-    marginVertical: 1,
+    marginRight: 6,
   },
   todoText: {
     flex: 1,

@@ -9,8 +9,10 @@ import {
   focusManager,
 } from "@tanstack/react-query";
 import {queryClient} from "../shared/lib/queryClient";
-import { useFonts } from "expo-font";
+import {useFonts} from "expo-font";
 import * as SplashScreen from "expo-splash-screen";
+import {GestureHandlerRootView} from "react-native-gesture-handler";
+import {SafeAreaProvider} from "react-native-safe-area-context";
 
 export default function AppProviders({children}) {
   const [fontsLoaded] = useFonts({
@@ -49,8 +51,14 @@ export default function AppProviders({children}) {
   }
 
   return (
-    <QueryClientProvider client={queryClient}>
-      <NavigationContainer>{children}</NavigationContainer>
-    </QueryClientProvider>
+    <GestureHandlerRootView style={{flex: 1}}>
+      {/* ⭐ 제일 바깥 */}
+      <SafeAreaProvider>
+        {/* ⭐ SafeArea 컨텍스트 */}
+        <QueryClientProvider client={queryClient}>
+          <NavigationContainer>{children}</NavigationContainer>
+        </QueryClientProvider>
+      </SafeAreaProvider>
+    </GestureHandlerRootView>
   );
 }
