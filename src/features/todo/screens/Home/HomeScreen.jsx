@@ -1,5 +1,5 @@
 // src/screens/Home/HomeScreen.jsx
-import React from "react";
+import React, {useState} from "react";
 import {
   View,
   Text,
@@ -9,26 +9,74 @@ import {
   TextInput,
   Dimensions,
   StatusBar,
+  ScrollView,
 } from "react-native";
 import {SafeAreaView} from "react-native-safe-area-context";
 import AppText from "../../../../shared/components/AppText";
 import {moderateScale} from "react-native-size-matters";
+import TodayIcon from "../../assets/svg/Today.svg";
+import CategoryIcon from "../../assets/svg/Category.svg";
+import TodoRadioOnIcon from "../../assets/svg/RadioOn.svg";
+import TodoRadioOffIcon from "../../assets/svg/RadioOff.svg";
 
 const {width} = Dimensions.get("window");
 
-const MOCK_TODOS = [
-  {id: "1", title: "연우님 기획 차력쇼 감상", done: false},
-  {id: "2", title: "연우님 기획 차력쇼 감상", done: false},
-  {id: "3", title: "연우님 기획 차력쇼 감상", done: true, isEditing: true},
-  {id: "4", title: "연우님 기획 차력쇼 감상", done: true},
+// 카테고리 탭 목록 (라디오 버튼용)
+const TAB_CATEGORIES = [
+  {categoryId: 0, label: "전체보기"}, // 0은 "전체" 용
+  {categoryId: 1, label: "운동하기"},
+  {categoryId: 2, label: "공부하기"},
+  {categoryId: 3, label: "완전놀기"},
 ];
 
-export default function HomeScreen() {
-  const renderTodo = ({item}) => {
-    const isEditing = item.isEditing;
+const MOCK_TODOS = [
+  {
+    id: "1",
+    title: "헬스하기",
+    done: false,
+    categoryId: 1, // 1번 카테고리
+  },
+  {
+    id: "2",
+    title: "런닝 뛰기",
+    done: false,
+    categoryId: 1,
+  },
+  {
+    id: "3",
+    title: "토익 공부",
+    done: true,
+    categoryId: 2, // 2번 카테고리
+  },
+  {
+    id: "4",
+    title: "알고리즘 공부",
+    done: true,
+    categoryId: 2,
+  },
+];
 
+export default function HomeScreen({navigation}) {
+  // 투두 목록 상태
+  const [todos, setTodos] = useState(MOCK_TODOS);
+  // 선택된 탭의 categoryId (0 = 전체보기)
+  const [selectedCategoryId, setSelectedCategoryId] = useState(0);
+
+  // 선택된 탭에 맞는 투두만 필터링
+  const filteredTodos =
+    selectedCategoryId === 0
+      ? todos
+      : todos.filter((todo) => todo.categoryId === selectedCategoryId);
+
+  const toggleTodoDone = (id) => {
+    setTodos((prev) =>
+      prev.map((todo) => (todo.id === id ? {...todo, done: !todo.done} : todo))
+    );
+  };
+
+  const renderTodo = ({item}) => {
     return (
-      <View style={[styles.todoRow, isEditing && styles.todoRowEditing]}>
+      <View style={styles.todoRow}>
         {/* 드래그 핸들 */}
         <View style={styles.dragHandle}>
           <View style={styles.dragDot} />
@@ -42,24 +90,18 @@ export default function HomeScreen() {
         </AppText>
         {/* <Text style={styles.todoText}>{item.title}</Text> */}
 
-        {/* 체크 or 편집 모드 */}
-        {isEditing ? (
-          <>
-            <TouchableOpacity style={styles.checkFilled}>
-              <Text style={styles.checkText}>✓</Text>
-            </TouchableOpacity>
-
-            <TouchableOpacity style={styles.deleteButton}>
-              <Text style={styles.deleteIcon}>🗑️</Text>
-            </TouchableOpacity>
-          </>
-        ) : (
-          <TouchableOpacity
-            style={[styles.checkBox, item.done && styles.checkFilled]}
-          >
-            {item.done && <Text style={styles.checkText}>✓</Text>}
-          </TouchableOpacity>
-        )}
+        {/* 라디오 버튼 (SVG 아이콘 버전) */}
+        <TouchableOpacity
+          style={styles.todoRadioHitArea}
+          activeOpacity={0.6}
+          onPress={() => toggleTodoDone(item.id)}
+        >
+          {item.done ? (
+            <TodoRadioOnIcon width={24} height={24} />
+          ) : (
+            <TodoRadioOffIcon width={24} height={24} />
+          )}
+        </TouchableOpacity>
       </View>
     );
   };
@@ -67,17 +109,49 @@ export default function HomeScreen() {
   return (
     <SafeAreaView style={styles.safe} edges={["top"]} mode={"margin"}>
       <StatusBar barStyle="dark-content" />
-      {/* 상단 날짜만 유지 */}
-      <View style={styles.dateContainer}>
+      {/* ✅ topBar: 날짜 + 우측 SVG 아이콘들 */}
+      <View style={styles.topBar}>
+        <View>
+          <AppText variant="M500" className="text-gr500">
+            2025년
+          </AppText>
+          <AppText variant="H3" className="text-bk">
+            10월 28일
+          </AppText>
+        </View>
+
+        <View style={styles.iconRow}>
+          <TouchableOpacity
+            activeOpacity={0.5}
+            style={styles.iconButton}
+            onPress={() => {
+              // TODO: 텍스트 필터 눌렀을 때 동작
+            }}
+          >
+            {/* SVG 아이콘 사용 */}
+            <TodayIcon width={24} height={24} />
+          </TouchableOpacity>
+
+          <TouchableOpacity
+            activeOpacity={0.5}
+            style={styles.iconButton}
+            onPress={() => {
+              // TODO: 태그 필터 눌렀을 때 동작
+            }}
+          >
+            <CategoryIcon width={24} height={24} />
+          </TouchableOpacity>
+        </View>
+      </View>
+
+      {/* <View style={styles.dateContainer}>
         <AppText variant="M500" className="text-gr500">
           2025년
         </AppText>
-        {/* <AppText variant="H3" className="text-bk">
+        <AppText variant="H3" className="text-bk">
           10월 28일
         </AppText>
-        <Text style={styles.yearText}>2025년</Text> */}
-        <Text style={styles.dateText}>10월 28일</Text>
-      </View>
+      </View> */}
 
       {/* 새우 일러스트 + 배경 */}
       <View style={styles.illustrationWrapper}>
@@ -90,40 +164,51 @@ export default function HomeScreen() {
       {/* To-do 카드 영역 */}
       <View style={styles.card}>
         <View style={styles.topContainer}>
-          {/* 카테고리 탭 */}
+          {/* 카테고리 탭 영역 */}
           <View style={styles.tabRow}>
-            <TouchableOpacity style={[styles.tab, styles.tabActive]}>
-              <AppText variant="M600" className="text-wt">
-                전체보기
-              </AppText>
-              {/* <Text style={styles.tabActiveText}>전체보기</Text> */}
-            </TouchableOpacity>
+            {/* 왼쪽 70%: 가로 스크롤 탭들 */}
+            <ScrollView
+              horizontal
+              showsHorizontalScrollIndicator={false}
+              style={styles.tabScroll}
+              contentContainerStyle={styles.tabScrollContent}
+            >
+              {TAB_CATEGORIES.map((tab) => {
+                const isActive = tab.categoryId === selectedCategoryId;
 
-            <TouchableOpacity style={styles.tab}>
-              <AppText variant="M600" className="text-gr300">
-                카테고리
-              </AppText>
-              {/* <Text style={styles.tabText}>카테고리</Text> */}
-            </TouchableOpacity>
+                return (
+                  <TouchableOpacity
+                    key={tab.categoryId}
+                    style={[styles.tab, isActive && styles.tabActive]}
+                    activeOpacity={0.7}
+                    onPress={() => setSelectedCategoryId(tab.categoryId)}
+                  >
+                    <AppText
+                      variant="M600"
+                      className={isActive ? "text-wt" : "text-gr300"}
+                    >
+                      {tab.label}
+                    </AppText>
+                  </TouchableOpacity>
+                );
+              })}
+            </ScrollView>
 
-            <TouchableOpacity style={styles.tab}>
-              <AppText variant="M600" className="text-gr300">
-                카테고리
-              </AppText>
-              {/* <Text style={styles.tabText}>카테고리</Text> */}
-            </TouchableOpacity>
-
-            <TouchableOpacity style={styles.tabNew}>
+            {/* 오른쪽: ＋ 새 카테고리 버튼 */}
+            <TouchableOpacity
+              style={styles.tabNew}
+              activeOpacity={0.7}
+              onPress={() => navigation.navigate("CategoryCreate")} // 라우트 이름은 실제 사용하는 이름으로
+            >
               <AppText variant="M600" className="text-gr300">
                 ＋ 새 카테고리
               </AppText>
-              {/* <Text style={styles.tabNewText}>＋ 새 카테고리</Text> */}
             </TouchableOpacity>
           </View>
 
           {/* 할 일 리스트 */}
           <FlatList
-            data={MOCK_TODOS}
+            data={filteredTodos}
             keyExtractor={(item) => item.id}
             renderItem={renderTodo}
             style={{flexGrow: 1}}
@@ -138,7 +223,9 @@ export default function HomeScreen() {
             placeholderTextColor="#B0B0B0"
             className="text-gr500"
             style={styles.textInput}
+            underlineColorAndroid="transparent" // ✅ 안드로이드 기본 밑줄 제거
           />
+          <View className="bg-gr200" style={styles.inputLine}></View>
         </View>
       </View>
     </SafeAreaView>
@@ -151,12 +238,11 @@ const styles = StyleSheet.create({
     backgroundColor: "#FFF7F2",
     paddingHorizontal: "5%",
   },
-  /* 날짜 영역 */
-  dateContainer: {
+  topBar: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
     height: "11%",
-    justifyContent: "center",
-    // paddingHorizontal: 24,
-    // borderWidth:1,
   },
   yearText: {
     fontSize: 14,
@@ -168,6 +254,24 @@ const styles = StyleSheet.create({
     fontSize: 16,
     // fontWeight: "700",
   },
+  iconRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 8,
+  },
+  iconButton: {
+    paddingVertical: 4,
+    paddingHorizontal: 4,
+    // width: 32,
+    // height: 32,
+    borderRadius: 10,
+    // borderWidth: 1,
+    // borderColor: "#D7D7D7",
+    // backgroundColor: "#cececeff",
+    alignItems: "center",
+    justifyContent: "center",
+  },
+
   /* 일러스트 */
   illustrationWrapper: {
     height: "42%",
@@ -225,13 +329,21 @@ const styles = StyleSheet.create({
     alignItems: "center",
     height: "18.3%",
     // marginBottom: 16,
-    overflow: "hidden",
+    // overflow: "hidden",
     gap: 8,
     // borderWidth: 1,
   },
+  tabScroll: {
+    width: "70%", // ✅ 전체 줄의 70% 차지
+  },
+  tabScrollContent: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 6, // 탭 간 간격
+  },
   tab: {
-    paddingHorizontal: 16,
-    paddingVertical: 10,
+    paddingHorizontal: 12,
+    paddingVertical: 8,
     // height: "100%",
     borderRadius: 999,
     backgroundColor: "#F5F5F5",
@@ -239,6 +351,20 @@ const styles = StyleSheet.create({
   },
   tabActive: {
     backgroundColor: "#FF6A00",
+  },
+  tabNew: {
+    // marginLeft: "auto", // 오른쪽 끝으로 밀기
+    paddingHorizontal: 3,
+    paddingVertical: 8,
+    // borderRadius: 999,
+    backgroundColor: "transparent",
+    // borderWidth: 1,
+    borderColor: "#F0F0F0",
+  },
+  tabNewText: {
+    fontSize: 14,
+    color: "#D0D0D0",
+    fontWeight: "600",
   },
   tabText: {
     fontSize: 14,
@@ -250,18 +376,18 @@ const styles = StyleSheet.create({
     color: "#FFFFFF",
     fontWeight: "700",
   },
-  tabNew: {
-    marginLeft: "auto",
-    paddingHorizontal: 14,
-    paddingVertical: 8,
-    borderRadius: 999,
-    backgroundColor: "#F7F7F7",
-  },
-  tabNewText: {
-    fontSize: 14,
-    color: "#D0D0D0",
-    fontWeight: "600",
-  },
+  // tabNew: {
+  //   marginLeft: "auto",
+  //   paddingHorizontal: 14,
+  //   paddingVertical: 8,
+  //   borderRadius: 999,
+  //   backgroundColor: "#F7F7F7",
+  // },
+  // tabNewText: {
+  //   fontSize: 14,
+  //   color: "#D0D0D0",
+  //   fontWeight: "600",
+  // },
 
   /* To-do 리스트 */
   todoRow: {
@@ -274,9 +400,6 @@ const styles = StyleSheet.create({
     paddingVertical: 10,
     // paddingVertical: "1.8%",
     borderRadius: 16,
-  },
-  todoRowEditing: {
-    backgroundColor: "#F4F4F4",
   },
   dragHandle: {
     width: 20,
@@ -297,30 +420,27 @@ const styles = StyleSheet.create({
     color: "#333333",
     fontFamily: "Pretendard-Bold",
   },
-  checkBox: {
-    width: 28,
-    height: 28,
-    borderRadius: 8,
-    borderWidth: 1,
+  // 투두용 라디오 버튼
+  todoRadioOuter: {
+    width: 24,
+    height: 24,
+    borderRadius: 12,
+    borderWidth: 2,
     borderColor: "#E0E0E0",
     alignItems: "center",
     justifyContent: "center",
+    marginLeft: 4,
   },
-  checkFilled: {
-    width: 32,
-    height: 32,
-    borderRadius: 12,
-    backgroundColor: "#FF6A00",
-    alignItems: "center",
-    justifyContent: "center",
-    marginRight: 8,
+  todoRadioOuterActive: {
     borderColor: "#FF6A00",
   },
-  checkText: {
-    color: "#FFFFFF",
-    fontWeight: "700",
-    fontSize: 16,
+  todoRadioInner: {
+    width: 12,
+    height: 12,
+    borderRadius: 6,
+    backgroundColor: "#FF6A00",
   },
+
   deleteButton: {
     width: 46,
     height: 46,
@@ -337,17 +457,35 @@ const styles = StyleSheet.create({
 
   /* 입력 */
   inputWrapper: {
-    // marginTop: 16,
+    // 전체 영역은 너무 크지 않게 높이 고정
     height: "18.9%",
+    justifyContent: "center",
+
+    // 밑줄 스타일
+    // borderBottomWidth: 1,
+    // borderBottomColor: "#E0E0E0",
+
+    // 필요하면 살짝 아래 여백
+    // paddingBottom: 4,
+    // borderWidth: 1,
   },
   textInput: {
     fontFamily: "Pretendard-Medium",
     fontSize: 12,
-    height: 44,
-    height: "100%",
+    // height: "100%",
+
+    // 박스 스타일 제거
+    backgroundColor: "transparent",
+    borderRadius: 0,
     // borderWidth: 1,
-    borderRadius: 12,
-    backgroundColor: "#FAFAFA",
-    paddingHorizontal: 12,
+    // borderBottomWidth: 1,
+    // borderBottomColor: "#E0E0E0",
+    paddingHorizontal: 0,
+  },
+  inputLine: {
+    position: "relative",
+    width: "100%",
+    height: 1,
+    // backgroundColor: "#E0E0E0",
   },
 });
