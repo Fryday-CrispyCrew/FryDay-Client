@@ -72,12 +72,6 @@ const MOCK_TODOS = [
     done: true,
     categoryId: 2,
   },
-  {
-    id: "6",
-    title: "김종혁 엉덩이 30분동안 꼬집기",
-    done: true,
-    categoryId: 1,
-  },
 ];
 
 const SWIPE_OPEN_OFFSET = -72; // 최대 왼쪽 이동 거리(px)
