@@ -1,5 +1,5 @@
 // src/screens/Home/HomeScreen.jsx
-import React, {useRef, useState} from "react";
+import React, {useState} from "react";
 import {
   View,
   Text,
@@ -10,9 +10,18 @@ import {
   StatusBar,
   ScrollView,
 } from "react-native";
-import {Swipeable} from "react-native-gesture-handler";
+// import {Swipeable} from "react-native-gesture-handler";
+import {Gesture, GestureDetector} from "react-native-gesture-handler";
+// import {PanGestureHandler} from "react-native-gesture-handler";
 import DraggableFlatList from "react-native-draggable-flatlist";
 import {SafeAreaView} from "react-native-safe-area-context";
+import Animated, {
+  useSharedValue,
+  useAnimatedStyle,
+  // useAnimatedGestureHandler,
+  withTiming,
+  runOnJS,
+} from "react-native-reanimated";
 import AppText from "../../../../shared/components/AppText";
 import {moderateScale} from "react-native-size-matters";
 import TodayIcon from "../../assets/svg/Today.svg";
@@ -63,7 +72,120 @@ const MOCK_TODOS = [
     done: true,
     categoryId: 2,
   },
+  {
+    id: "6",
+    title: "김종혁 엉덩이 30분동안 꼬집기",
+    done: true,
+    categoryId: 1,
+  },
 ];
+
+const SWIPE_OPEN_OFFSET = -72; // 최대 왼쪽 이동 거리(px)
+const SWIPE_THRESHOLD = -36; // 이 이상 밀리면 열린 상태로 고정
+
+function TodoItem({
+  item,
+  isActive,
+  isOpen, // swipedTodoId === item.id
+  onToggleDone,
+  onDelete,
+  onSwipeOpen,
+  onSwipeClose,
+  onLongPressDrag,
+}) {
+  const translateX = useSharedValue(0);
+  const startX = useSharedValue(0);
+
+  // isOpen 상태 바뀔 때, 위치 애니메이션으로 동기화
+  React.useEffect(() => {
+    if (isOpen) {
+      translateX.value = withTiming(SWIPE_OPEN_OFFSET, {duration: 180});
+    } else {
+      translateX.value = withTiming(0, {duration: 180});
+    }
+  }, [isOpen, translateX]);
+
+  // 🔥 Reanimated v3 + Gesture API
+  const panGesture = Gesture.Pan()
+    .onBegin(() => {
+      startX.value = translateX.value;
+    })
+    .onUpdate((event) => {
+      let next = startX.value + event.translationX;
+
+      if (next > 0) next = 0; // 오른쪽으로는 못 밀게
+      if (next < SWIPE_OPEN_OFFSET) next = SWIPE_OPEN_OFFSET; // 너무 많이 왼쪽 X
+
+      translateX.value = next;
+    })
+    .onEnd(() => {
+      if (translateX.value < SWIPE_THRESHOLD) {
+        translateX.value = withTiming(SWIPE_OPEN_OFFSET, {duration: 180});
+        runOnJS(onSwipeOpen)(item.id);
+      } else {
+        translateX.value = withTiming(0, {duration: 180});
+        runOnJS(onSwipeClose)(item.id);
+      }
+    });
+
+  const animatedRowStyle = useAnimatedStyle(() => ({
+    transform: [{translateX: translateX.value}],
+  }));
+
+  return (
+    <View style={styles.todoRowWrapper}>
+      {/* 뒤에 깔린 삭제 버튼 */}
+      <View style={styles.todoRightActionContainer}>
+        <TouchableOpacity
+          style={styles.todoDeleteButton}
+          activeOpacity={0.7}
+          onPress={() => onDelete(item.id)}
+        >
+          <DeleteIcon width={20} height={20} />
+        </TouchableOpacity>
+      </View>
+
+      {/* 앞에서 좌우로 움직이는 투두 카드 */}
+      <GestureDetector gesture={panGesture}>
+        <Animated.View
+          style={[
+            styles.todoRow,
+            isActive && {backgroundColor: "#EAEAEA"},
+            isOpen && {backgroundColor: "#EAEAEA", borderRadius: 12},
+            animatedRowStyle,
+          ]}
+        >
+          {/* 드래그 핸들 */}
+          <TouchableOpacity
+            onLongPress={onLongPressDrag}
+            hitSlop={8}
+            style={styles.dragHandleButton}
+          >
+            <DragHandleIcon width={12} />
+          </TouchableOpacity>
+
+          {/* 텍스트 */}
+          <AppText variant="M500" className="text-bk" style={{flex: 1}}>
+            {item.title}
+          </AppText>
+
+          {/* 완료 라디오 버튼 */}
+          <TouchableOpacity
+            style={styles.todoRadioHitArea}
+            activeOpacity={0.6}
+            onPress={() => onToggleDone(item.id)}
+          >
+            {item.done ? (
+              <TodoRadioOnIcon width={24} height={24} />
+            ) : (
+              <TodoRadioOffIcon width={24} height={24} />
+            )}
+          </TouchableOpacity>
+        </Animated.View>
+      </GestureDetector>
+    </View>
+  );
+}
 
 export default function HomeScreen({navigation}) {
   // 투두 목록 상태
@@ -72,7 +194,7 @@ export default function HomeScreen({navigation}) {
   const [selectedCategoryId, setSelectedCategoryId] = useState(0);
   const [swipedTodoId, setSwipedTodoId] = useState(null);
   // 🔹 현재 열린 Swipeable들의 ref를 저장하는 Map
-  const swipeableRefs = useRef(new Map());
+  // const swipeableRefs = useRef(new Map());
 
   // 선택된 탭에 맞는 투두만 필터링
   const filteredTodos =
@@ -110,85 +232,34 @@ export default function HomeScreen({navigation}) {
     setTodos((prev) => prev.filter((todo) => todo.id !== id));
   };
 
-  const renderRightActions = (itemId) => {
-    return (
-      <View style={styles.todoRightActionContainer}>
-        <TouchableOpacity
-          style={styles.todoDeleteButton}
-          activeOpacity={0.7}
-          onPress={() => handleDeleteTodo(itemId)}
-        >
-          <DeleteIcon width={20} height={20} />
-        </TouchableOpacity>
-      </View>
-    );
-  };
+  // const renderRightActions = (itemId) => {
+  //   return (
+  //     <View style={styles.todoRightActionContainer}>
+  //       <TouchableOpacity
+  //         style={styles.todoDeleteButton}
+  //         activeOpacity={0.7}
+  //         onPress={() => handleDeleteTodo(itemId)}
+  //       >
+  //         <DeleteIcon width={20} height={20} />
+  //       </TouchableOpacity>
+  //     </View>
+  //   );
+  // };
 
   const renderTodo = ({item, drag, isActive}) => {
     return (
-      <Swipeable
-        ref={(ref) => {
-          if (ref) {
-            swipeableRefs.current.set(item.id, ref);
-          } else {
-            swipeableRefs.current.delete(item.id);
-          }
-        }}
-        renderRightActions={() => renderRightActions(item.id)}
-        overshootRight={false}
-        onSwipeableWillOpen={() => {
-          // 🔸 이미 열린 것이 있다면 닫기
-          if (swipedTodoId && swipedTodoId !== item.id) {
-            const prevRef = swipeableRefs.current.get(swipedTodoId);
-            if (prevRef) {
-              prevRef.close();
-            }
-          }
-          setSwipedTodoId(item.id);
-        }}
-        onSwipeableWillClose={() => {
-          if (swipedTodoId === item.id) {
-            setSwipedTodoId(null);
-          }
-        }}
-      >
-        <View
-          style={[
-            styles.todoRow,
-            isActive && {backgroundColor: "#EAEAEA"}, // 드래그 정렬 중
-            swipedTodoId === item.id && {
-              backgroundColor: "#EAEAEA",
-              borderRadius: 12,
-            }, // ← 스와이프 중
-          ]}
-        >
-          {/* 🔽 드래그 핸들 아이콘으로 변경 */}
-          <TouchableOpacity
-            onLongPress={drag}
-            hitSlop={8}
-            style={styles.dragHandleButton}
-          >
-            <DragHandleIcon width={12} />
-          </TouchableOpacity>
-          {/* 텍스트 */}
-          <AppText variant="M500" className="text-bk" style={{flex: 1}}>
-            {item.title}
-          </AppText>
-          {/* <Text style={styles.todoText}>{item.title}</Text> */}
-          {/* 라디오 버튼 (SVG 아이콘 버전) */}
-          <TouchableOpacity
-            style={styles.todoRadioHitArea}
-            activeOpacity={0.6}
-            onPress={() => toggleTodoDone(item.id)}
-          >
-            {item.done ? (
-              <TodoRadioOnIcon width={24} height={24} />
-            ) : (
-              <TodoRadioOffIcon width={24} height={24} />
-            )}
-          </TouchableOpacity>
-        </View>
-      </Swipeable>
+      <TodoItem
+        item={item}
+        isActive={isActive}
+        isOpen={swipedTodoId === item.id}
+        onToggleDone={toggleTodoDone}
+        onDelete={handleDeleteTodo}
+        onSwipeOpen={(id) => setSwipedTodoId(id)} // 새 아이템 열림
+        onSwipeClose={(id) =>
+          setSwipedTodoId((prev) => (prev === id ? null : prev))
+        } // 닫힘
+        onLongPressDrag={drag}
+      />
     );
   };
 
@@ -463,6 +534,11 @@ const styles = StyleSheet.create({
     overflow: "hidden",
     // borderWidth: 1,
   },
+  todoRowWrapper: {
+    height: 36,
+    justifyContent: "center",
+  },
+
   /* To-do 리스트 */
   todoRow: {
     flexDirection: "row",
@@ -474,6 +550,8 @@ const styles = StyleSheet.create({
     paddingVertical: 10,
     // paddingVertical: "1.8%",
     borderRadius: 16,
+    // backgroundColor: "transparent",
+    backgroundColor: "#FFFFFF",
   },
   dragHandleButton: {
     paddingHorizontal: 4,
@@ -488,29 +566,38 @@ const styles = StyleSheet.create({
     // backgroundColor: "#FF5B22",
   },
   // 투두용 라디오 버튼
-  todoRadioOuter: {
-    width: 24,
-    height: 24,
-    borderRadius: 12,
-    borderWidth: 2,
-    borderColor: "#E0E0E0",
-    alignItems: "center",
-    justifyContent: "center",
-    marginLeft: 4,
-  },
-  todoRadioOuterActive: {
-    borderColor: "#FF6A00",
-  },
-  todoRadioInner: {
-    width: 12,
-    height: 12,
-    borderRadius: 6,
-    backgroundColor: "#FF6A00",
-  },
+  // todoRadioOuter: {
+  //   width: 24,
+  //   height: 24,
+  //   borderRadius: 12,
+  //   borderWidth: 2,
+  //   borderColor: "#E0E0E0",
+  //   alignItems: "center",
+  //   justifyContent: "center",
+  //   marginLeft: 4,
+  // },
+  // todoRadioOuterActive: {
+  //   borderColor: "#FF6A00",
+  // },
+  // todoRadioInner: {
+  //   width: 12,
+  //   height: 12,
+  //   borderRadius: 6,
+  //   backgroundColor: "#FF6A00",
+  // },
+  // todoRightActionContainer: {
+  //   justifyContent: "center",
+  //   alignItems: "flex-end",
+  //   marginLeft: 8,
+  // },
   todoRightActionContainer: {
+    position: "absolute",
+    right: 0,
+    top: 0,
+    bottom: 0,
     justifyContent: "center",
     alignItems: "flex-end",
-    marginLeft: 8,
+    paddingRight: 4,
   },
   todoDeleteButton: {
     // width: 40,
