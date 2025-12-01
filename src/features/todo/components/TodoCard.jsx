@@ -14,9 +14,10 @@ import Animated, {
   useSharedValue,
   useAnimatedStyle,
   withTiming,
-  runOnJS,
+  // runOnJS,
 } from "react-native-reanimated";
-
+// import {runOnJS} from "react-native-worklets";
+import {scheduleOnRN} from "react-native-worklets";
 import AppText from "../../../shared/components/AppText";
 import TodoRadioOnIcon from "../assets/svg/RadioOn.svg";
 import TodoRadioOffIcon from "../assets/svg/RadioOff.svg";
@@ -42,7 +43,7 @@ const MOCK_TODOS = [
   {id: "5", title: "알고리즘 공부", done: true, categoryId: 2},
 ];
 
-const SWIPE_OPEN_OFFSET = -72;
+const SWIPE_OPEN_OFFSET = -54;
 const SWIPE_THRESHOLD = -36;
 
 function TodoItem({
@@ -79,10 +80,12 @@ function TodoItem({
     .onEnd(() => {
       if (translateX.value < SWIPE_THRESHOLD) {
         translateX.value = withTiming(SWIPE_OPEN_OFFSET, {duration: 180});
-        runOnJS(onSwipeOpen)(item.id);
+        // runOnJS(onSwipeOpen)(item.id);
+        scheduleOnRN(onSwipeOpen, item.id);
       } else {
         translateX.value = withTiming(0, {duration: 180});
-        runOnJS(onSwipeClose)(item.id);
+        // runOnJS(onSwipeClose)(item.id);
+        scheduleOnRN(onSwipeClose, item.id);
       }
     });
 
