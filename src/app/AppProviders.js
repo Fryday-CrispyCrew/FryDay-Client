@@ -13,6 +13,7 @@ import {useFonts} from "expo-font";
 import * as SplashScreen from "expo-splash-screen";
 import {GestureHandlerRootView} from "react-native-gesture-handler";
 import {SafeAreaProvider} from "react-native-safe-area-context";
+import {BottomSheetModalProvider} from "@gorhom/bottom-sheet";
 
 export default function AppProviders({children}) {
   const [fontsLoaded] = useFonts({
@@ -54,10 +55,12 @@ export default function AppProviders({children}) {
     <GestureHandlerRootView style={{flex: 1}}>
       {/* ⭐ 제일 바깥 */}
       <SafeAreaProvider>
-        {/* ⭐ SafeArea 컨텍스트 */}
-        <QueryClientProvider client={queryClient}>
-          <NavigationContainer>{children}</NavigationContainer>
-        </QueryClientProvider>
+        <BottomSheetModalProvider>
+          {/* ⭐ SafeArea 컨텍스트 */}
+          <QueryClientProvider client={queryClient}>
+            <NavigationContainer>{children}</NavigationContainer>
+          </QueryClientProvider>
+        </BottomSheetModalProvider>
       </SafeAreaProvider>
     </GestureHandlerRootView>
   );

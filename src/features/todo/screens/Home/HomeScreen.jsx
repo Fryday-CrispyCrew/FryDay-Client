@@ -7,6 +7,7 @@ import {
   Dimensions,
   StatusBar,
   TouchableOpacity,
+  Platform,
 } from "react-native";
 import {SafeAreaView} from "react-native-safe-area-context";
 import AppText from "../../../../shared/components/AppText";
@@ -26,14 +27,15 @@ import {
 
 const {width} = Dimensions.get("window");
 
-function HomeScreenInner({navigation}) {
+export default function HomeScreen({navigation}) {
   const [editingTodo, setEditingTodo] = useState(null); // { id, title } or null
   const [editingText, setEditingText] = useState("");
 
   const bottomSheetRef = useRef(null);
+  const inputRef = useRef(null); // ✅ 시트 안 TextInput ref
 
   // 얼마나 올라올지(높이) – %로 주면 화면에 따라 적당히 반응형
-  const snapPoints = useMemo(() => ["28%", "40%"], []);
+  const snapPoints = useMemo(() => ["20%"], []);
 
   const openEditor = useCallback((todo) => {
     setEditingTodo(todo);
@@ -67,11 +69,24 @@ function HomeScreenInner({navigation}) {
         pressBehavior="close"
         appearsOnIndex={0} // 첫 스냅포인트에서 등장
         disappearsOnIndex={-1}
-        opacity={0.6}
+        opacity={0.5}
       />
     ),
     []
   );
+
+  // ✅ 시트가 열렸을 때 TextInput에 포커스 → 키보드 자동 표시
+  const handleSheetChange = useCallback((index) => {
+    if (index >= 0) {
+      // 약간의 딜레이를 주면 안드로이드에서 더 안정적
+      setTimeout(
+        () => {
+          inputRef.current?.focus();
+        },
+        Platform.OS === "android" ? 50 : 0
+      );
+    }
+  }, []);
 
   return (
     <SafeAreaView style={styles.safe} edges={["top"]} mode={"margin"}>
@@ -127,7 +142,8 @@ function HomeScreenInner({navigation}) {
         keyboardBehavior="interactive" // 키보드와 같이 올라가게
         keyboardBlurBehavior="restore"
         backgroundStyle={{backgroundColor: "#F7F7F7"}}
-        handleIndicatorStyle={{backgroundColor: "#D0D0D0"}}
+        handleIndicatorStyle={{backgroundColor: "#D0D0D0", width: "38.4%"}}
+        onChange={handleSheetChange} // ✅ 시트 상태 변경 감지
       >
         <BottomSheetView>
           {/* 안쪽 내용: 스샷처럼 상단 핸들 + 카테고리 + 인풋 */}
@@ -146,6 +162,7 @@ function HomeScreenInner({navigation}) {
               <View style={sheetStyles.inputWrapper}>
                 {/* ✅ BottomSheetTextInput을 쓰면 키보드 대응이 더 매끄러움 */}
                 <BottomSheetTextInput
+                  ref={inputRef} // ✅ ref 연결
                   value={editingText}
                   onChangeText={setEditingText}
                   placeholder="두근두근, 무엇을 튀겨볼까요?"
@@ -173,13 +190,13 @@ function HomeScreenInner({navigation}) {
 }
 
 // Provider로 감싸기 (앱 전체에서 이미 감싸고 있다면 이 컴포넌트는 필요 X)
-export default function HomeScreen(props) {
-  return (
-    <BottomSheetModalProvider>
-      <HomeScreenInner {...props} />
-    </BottomSheetModalProvider>
-  );
-}
+// export default function HomeScreen(props) {
+//   return (
+//     <BottomSheetModalProvider>
+//       <HomeScreenInner {...props} />
+//     </BottomSheetModalProvider>
+//   );
+// }
 
 const styles = StyleSheet.create({
   safe: {
@@ -238,7 +255,7 @@ const sheetStyles = StyleSheet.create({
   },
   categoryRow: {
     flexDirection: "row",
-    marginBottom: 14,
+    marginBottom: 12,
   },
   categoryChip: {
     paddingHorizontal: 16,
@@ -258,8 +275,8 @@ const sheetStyles = StyleSheet.create({
     flex: 1,
     borderRadius: 999,
     backgroundColor: "#FFFFFF",
-    paddingHorizontal: 18,
-    paddingVertical: 10,
+    paddingHorizontal: 16,
+    paddingVertical: 12,
     shadowColor: "#000",
     shadowOpacity: 0.04,
     shadowRadius: 6,
@@ -267,7 +284,9 @@ const sheetStyles = StyleSheet.create({
     elevation: 4,
   },
   input: {
-    fontSize: 15,
+    fontFamily: "Pretendard-Medium",
+    fontSize: 12,
+    // fontSize: 15,
     color: "#333333",
   },
   submitButton: {
