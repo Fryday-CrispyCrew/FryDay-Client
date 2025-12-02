@@ -14,10 +14,9 @@ import Animated, {
   useSharedValue,
   useAnimatedStyle,
   withTiming,
-  // runOnJS,
+  runOnJS,
 } from "react-native-reanimated";
-// import {runOnJS} from "react-native-worklets";
-import {scheduleOnRN} from "react-native-worklets";
+
 import AppText from "../../../shared/components/AppText";
 import TodoRadioOnIcon from "../assets/svg/RadioOn.svg";
 import TodoRadioOffIcon from "../assets/svg/RadioOff.svg";
@@ -43,7 +42,7 @@ const MOCK_TODOS = [
   {id: "5", title: "알고리즘 공부", done: true, categoryId: 2},
 ];
 
-const SWIPE_OPEN_OFFSET = -54;
+const SWIPE_OPEN_OFFSET = -72;
 const SWIPE_THRESHOLD = -36;
 
 function TodoItem({
@@ -80,12 +79,10 @@ function TodoItem({
     .onEnd(() => {
       if (translateX.value < SWIPE_THRESHOLD) {
         translateX.value = withTiming(SWIPE_OPEN_OFFSET, {duration: 180});
-        // runOnJS(onSwipeOpen)(item.id);
-        scheduleOnRN(onSwipeOpen, item.id);
+        runOnJS(onSwipeOpen)(item.id);
       } else {
         translateX.value = withTiming(0, {duration: 180});
-        // runOnJS(onSwipeClose)(item.id);
-        scheduleOnRN(onSwipeClose, item.id);
+        runOnJS(onSwipeClose)(item.id);
       }
     });
 
@@ -148,7 +145,8 @@ function TodoItem({
   );
 }
 
-export default function TodoCard({navigation}) {
+// ✅ onPressInput 추가
+export default function TodoCard({navigation, onPressInput}) {
   const [todos, setTodos] = useState(MOCK_TODOS);
   const [selectedCategoryId, setSelectedCategoryId] = useState(0);
   const [swipedTodoId, setSwipedTodoId] = useState(null);
@@ -254,16 +252,27 @@ export default function TodoCard({navigation}) {
         </View>
       </View>
 
-      {/* 인풋 */}
+      {/* ✅ 인풋: 지금은 눌렀을 때 편집 시트만 열도록 변경 */}
       <View style={styles.inputWrapper}>
-        <TextInput
-          placeholder="두근두근, 무엇을 튀겨볼까요?"
-          placeholderTextColor="#B0B0B0"
-          className="text-gr500"
-          style={styles.textInput}
-          underlineColorAndroid="transparent"
-        />
-        <View className="bg-gr200" style={styles.inputLine} />
+        <TouchableOpacity
+          activeOpacity={1}
+          onPress={() => {
+            if (onPressInput) {
+              // 새 투두 추가용이라면 id는 null로 넘겨도 됨
+              onPressInput({id: null, title: ""});
+            }
+          }}
+        >
+          <TextInput
+            placeholder="두근두근, 무엇을 튀겨볼까요?"
+            placeholderTextColor="#B0B0B0"
+            className="text-gr500"
+            style={styles.textInput}
+            underlineColorAndroid="transparent"
+            editable={false} // ✅ 카드 안에서는 직접 입력 못 하게
+          />
+          <View className="bg-gr200" style={styles.inputLine} />
+        </TouchableOpacity>
       </View>
     </View>
   );

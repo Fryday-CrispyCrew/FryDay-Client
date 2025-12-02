@@ -1,5 +1,5 @@
 // src/screens/Home/HomeScreen.jsx
-import React from "react";
+import React, {useCallback, useMemo, useRef, useState} from "react";
 import {
   View,
   Text,
@@ -13,11 +13,66 @@ import AppText from "../../../../shared/components/AppText";
 import TodayIcon from "../../assets/svg/Today.svg";
 import CategoryIcon from "../../assets/svg/Category.svg";
 
-import TodoCard from "../../components/TodoCard"; // ✅ 새로 추가
+import TodoCard from "../../components/TodoCard";
+
+// ✅ bottom sheet 관련 import
+import {
+  BottomSheetModalProvider,
+  BottomSheetModal,
+  BottomSheetBackdrop,
+  BottomSheetTextInput,
+  BottomSheetView,
+} from "@gorhom/bottom-sheet";
 
 const {width} = Dimensions.get("window");
 
-export default function HomeScreen({navigation}) {
+function HomeScreenInner({navigation}) {
+  const [editingTodo, setEditingTodo] = useState(null); // { id, title } or null
+  const [editingText, setEditingText] = useState("");
+
+  const bottomSheetRef = useRef(null);
+
+  // 얼마나 올라올지(높이) – %로 주면 화면에 따라 적당히 반응형
+  const snapPoints = useMemo(() => ["28%", "40%"], []);
+
+  const openEditor = useCallback((todo) => {
+    setEditingTodo(todo);
+    setEditingText(todo?.title ?? "");
+    bottomSheetRef.current?.present();
+  }, []);
+
+  const closeEditor = useCallback(() => {
+    bottomSheetRef.current?.dismiss();
+    setEditingTodo(null);
+    setEditingText("");
+  }, []);
+
+  const handleSubmit = useCallback(() => {
+    if (!editingTodo && editingText.trim().length === 0) {
+      closeEditor();
+      return;
+    }
+
+    // TODO: 여기서 실제 todos 상태 업데이트 / 추가
+    // ex) addTodo(editingText) or updateTodo(editingTodo.id, editingText);
+
+    closeEditor();
+  }, [editingTodo, editingText, closeEditor]);
+
+  // 회색 배경 오버레이
+  const renderBackdrop = useCallback(
+    (props) => (
+      <BottomSheetBackdrop
+        {...props}
+        pressBehavior="close"
+        appearsOnIndex={0} // 첫 스냅포인트에서 등장
+        disappearsOnIndex={-1}
+        opacity={0.6}
+      />
+    ),
+    []
+  );
+
   return (
     <SafeAreaView style={styles.safe} edges={["top"]} mode={"margin"}>
       <StatusBar barStyle="dark-content" />
@@ -60,9 +115,69 @@ export default function HomeScreen({navigation}) {
         </View>
       </View>
 
-      {/* 분리된 카드 컴포넌트 */}
-      <TodoCard navigation={navigation} />
+      {/* ✅ TodoCard에서 인풋 누르면 openEditor 호출 */}
+      <TodoCard navigation={navigation} onPressInput={openEditor} />
+
+      {/* ✅ @gorhom/bottom-sheet 기반 입력 시트 */}
+      <BottomSheetModal
+        ref={bottomSheetRef}
+        index={0}
+        snapPoints={snapPoints}
+        backdropComponent={renderBackdrop}
+        keyboardBehavior="interactive" // 키보드와 같이 올라가게
+        keyboardBlurBehavior="restore"
+        backgroundStyle={{backgroundColor: "#F7F7F7"}}
+        handleIndicatorStyle={{backgroundColor: "#D0D0D0"}}
+      >
+        <BottomSheetView>
+          {/* 안쪽 내용: 스샷처럼 상단 핸들 + 카테고리 + 인풋 */}
+          <View style={sheetStyles.container}>
+            {/* 상단 핸들은 라이브러리가 자동으로 만들어줘서 추가 UI는 생략 가능 */}
+
+            {/* 카테고리 칩 */}
+            <View style={sheetStyles.categoryRow}>
+              <View style={sheetStyles.categoryChip}>
+                <Text style={sheetStyles.categoryText}>카테고리</Text>
+              </View>
+            </View>
+
+            {/* 인풋 + 전송 버튼 */}
+            <View style={sheetStyles.inputRow}>
+              <View style={sheetStyles.inputWrapper}>
+                {/* ✅ BottomSheetTextInput을 쓰면 키보드 대응이 더 매끄러움 */}
+                <BottomSheetTextInput
+                  value={editingText}
+                  onChangeText={setEditingText}
+                  placeholder="두근두근, 무엇을 튀겨볼까요?"
+                  placeholderTextColor="#C6C6C6"
+                  returnKeyType="done"
+                  onSubmitEditing={handleSubmit}
+                  style={sheetStyles.input}
+                />
+              </View>
+
+              <TouchableOpacity
+                activeOpacity={0.7}
+                onPress={handleSubmit}
+                style={sheetStyles.submitButton}
+              >
+                {/* 오른쪽 동그라미 버튼 – 나중에 아이콘 교체 가능 */}
+                <Text style={sheetStyles.submitIcon}>➔</Text>
+              </TouchableOpacity>
+            </View>
+          </View>
+        </BottomSheetView>
+      </BottomSheetModal>
     </SafeAreaView>
+  );
+}
+
+// Provider로 감싸기 (앱 전체에서 이미 감싸고 있다면 이 컴포넌트는 필요 X)
+export default function HomeScreen(props) {
+  return (
+    <BottomSheetModalProvider>
+      <HomeScreenInner {...props} />
+    </BottomSheetModalProvider>
   );
 }
 
@@ -110,5 +225,62 @@ const styles = StyleSheet.create({
     backgroundColor: "#FF7A1A",
     alignItems: "center",
     justifyContent: "center",
+  },
+});
+
+// ✅ 바텀 시트 내부 스타일
+const sheetStyles = StyleSheet.create({
+  container: {
+    flex: 1,
+    paddingHorizontal: 20,
+    paddingTop: 8,
+    paddingBottom: 16,
+  },
+  categoryRow: {
+    flexDirection: "row",
+    marginBottom: 14,
+  },
+  categoryChip: {
+    paddingHorizontal: 16,
+    paddingVertical: 7,
+    borderRadius: 999,
+    backgroundColor: "#F0F0F0",
+  },
+  categoryText: {
+    fontSize: 13,
+    color: "#B0B0B0",
+  },
+  inputRow: {
+    flexDirection: "row",
+    alignItems: "center",
+  },
+  inputWrapper: {
+    flex: 1,
+    borderRadius: 999,
+    backgroundColor: "#FFFFFF",
+    paddingHorizontal: 18,
+    paddingVertical: 10,
+    shadowColor: "#000",
+    shadowOpacity: 0.04,
+    shadowRadius: 6,
+    shadowOffset: {width: 0, height: 2},
+    elevation: 4,
+  },
+  input: {
+    fontSize: 15,
+    color: "#333333",
+  },
+  submitButton: {
+    marginLeft: 8,
+    width: 44,
+    height: 44,
+    borderRadius: 22,
+    backgroundColor: "#E4E4E4",
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  submitIcon: {
+    fontSize: 18,
+    color: "#888888",
   },
 });
