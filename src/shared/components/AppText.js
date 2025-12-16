@@ -12,6 +12,7 @@ const TYPO = {
   // Body XL
   XL400: "font-pretendard-regular text-body-xl",
   XL500: "font-pretendard-medium text-body-xl",
+  pointM : "font-pretendard-bold text-body-xl",
 
   // Body L
   L400: "font-pretendard-regular text-body-l",
