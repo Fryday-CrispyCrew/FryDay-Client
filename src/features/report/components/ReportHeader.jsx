@@ -10,8 +10,19 @@ export default function ReportHeader({ currentDate, onChangeMonth }) {
     const yearText = date.format('YYYY년');
     const monthText = date.format('M월 리포트');
 
-    const handlePrev = () => onChangeMonth(date.subtract(1, 'month'));
-    const handleNext = () => onChangeMonth(date.add(1, 'month'));
+    const todayMonth = dayjs().startOf('month');
+
+    const handlePrev = () => {
+        onChangeMonth(date.subtract(1, 'month').startOf('month'));
+    };
+
+    const handleNext = () => {
+        const nextMonth = date.add(1, 'month').startOf('month');
+
+        if (nextMonth.isAfter(todayMonth)) return;
+
+        onChangeMonth(nextMonth);
+    };
 
     return (
         <View className="px-5 py-4 flex-row justify-between items-center">

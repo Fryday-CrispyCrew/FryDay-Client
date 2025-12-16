@@ -1,13 +1,29 @@
-import { StyleSheet, View } from 'react-native'
-import React, { useState } from 'react'
-import ReportHeader from "../components/ReportHeader";
-import dayjs from 'dayjs';
+import React, { useEffect, useState } from 'react';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import ReportHeroCard from "../components/ReportHeroCard";
+import dayjs from 'dayjs';
 
-export default function ReportScreen(){
+import ReportHeader from '../components/ReportHeader';
+import ReportHeroCard from '../components/ReportHeroCard';
 
+export default function ReportScreen() {
     const [currentDate, setCurrentDate] = useState(dayjs());
+    const [caseType, setCaseType] = useState('A');
+
+
+    // 임시 더미
+    useEffect(() => {
+        const year = currentDate.year();
+        const month = currentDate.month() + 1;
+
+        if (year === 2025 && month === 11) {
+            setCaseType('A');
+        } else if (year === 2025 && month === 12) {
+            setCaseType('B');
+        } else {
+            setCaseType('C');
+        }
+    }, [currentDate]);
+
 
     return (
         <SafeAreaView className="flex-1 bg-wt">
@@ -15,10 +31,11 @@ export default function ReportScreen(){
                 currentDate={currentDate}
                 onChangeMonth={setCurrentDate}
             />
+
             <ReportHeroCard
-                caseType="A" // A | B | C
+                caseType={caseType}
                 nickname="연우"
             />
         </SafeAreaView>
-  )
+    );
 }
