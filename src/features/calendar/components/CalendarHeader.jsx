@@ -12,7 +12,7 @@ export default function CalendarHeader({ date, onPressButton, onPressToday }) {
                 <AppText variant="S500" className="text-gr500">
                     {date.year()}년
                 </AppText>
-                <AppText variant="H3" className="mt-0.5 text-bk">
+                <AppText variant="H3" className="mt-1 text-bk">
                     {date.month() + 1}월
                 </AppText>
             </View>

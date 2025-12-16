@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { SafeAreaView, View } from 'react-native';
 import dayjs from 'dayjs';
 
@@ -8,6 +8,8 @@ import MonthView from './Month/MonthView';
 import WeekSlider from './Week/WeekSlider';
 import AppText from '../../../shared/components/AppText';
 import Dotted from '../assets/svg/Dotted.svg';
+import AsyncStorage from '@react-native-async-storage/async-storage';
+
 
 export default function CalendarScreen() {
     const [mode, setMode] = useState('month'); // 'week' | 'month'
@@ -24,14 +26,28 @@ export default function CalendarScreen() {
             setCurrentDate(today.startOf('month'));
         }
     };
+    useEffect(() => {
+        (async () => {
+            const saved = await AsyncStorage.getItem('calendarMode');
+            if (saved === 'week' || saved === 'month') {
+                setMode(saved);
+            }
+        })();
+    }, []);
+
+
 
     return (
         <SafeAreaView className="flex-1 bg-wt">
             <CalendarHeader
                 date={currentDate}
-                onPressButton={() =>
-                    setMode(m => (m === 'week' ? 'month' : 'week'))
-                }
+                onPressButton={async () => {
+                    setMode(m => {
+                        const next = m === 'week' ? 'month' : 'week';
+                        AsyncStorage.setItem('calendarMode', next);
+                        return next;
+                    });
+                }}
                 onPressToday={handlePressToday}
             />
 
