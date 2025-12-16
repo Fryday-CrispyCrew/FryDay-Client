@@ -2,7 +2,7 @@
 import React from 'react';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
 import { View, Text, Button } from 'react-native';
-import CalendarScreen from "../../../features/calendar/screens/CalerdarScreen";
+import CalendarScreen from "../../../features/calendar/screens/CalendarScreen";
 
 const Stack = createNativeStackNavigator();
 
