@@ -30,7 +30,7 @@ export default function ReportHeader({ currentDate, onChangeMonth, joinedAt }) {
     return (
         <View className="px-5 py-4 flex-row justify-between items-center">
             <View>
-                <AppText variant="S500" className="text-gr500">
+                <AppText variant="M500" className="text-gr500">
                     {yearText}
                 </AppText>
                 <AppText variant="H3" className="mt-1 text-bk">
