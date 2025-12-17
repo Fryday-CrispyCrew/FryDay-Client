@@ -4,23 +4,26 @@ import AppText from '../../../shared/components/AppText';
 import ArrowLeft from '../assets/svg/ArrowLeft.svg';
 import ArrowRight from '../assets/svg/ArrowRight.svg';
 
-export default function ReportHeader({ currentDate, onChangeMonth }) {
-    const date = dayjs(currentDate);
+export default function ReportHeader({ currentDate, onChangeMonth, joinedAt }) {
+    const date = dayjs(currentDate).startOf('month');
 
     const yearText = date.format('YYYY년');
     const monthText = date.format('M월 리포트');
 
     const todayMonth = dayjs().startOf('month');
+    const joinedMonth = dayjs(joinedAt).startOf('month');
+
+    const isPrevHidden = date.isSame(joinedMonth);
+    const isNextHidden = date.isSame(todayMonth);
 
     const handlePrev = () => {
-        onChangeMonth(date.subtract(1, 'month').startOf('month'));
+        if (isPrevHidden) return;
+        onChangeMonth(date.subtract(1, 'month'));
     };
 
     const handleNext = () => {
-        const nextMonth = date.add(1, 'month').startOf('month');
-
+        const nextMonth = date.add(1, 'month')
         if (nextMonth.isAfter(todayMonth)) return;
-
         onChangeMonth(nextMonth);
     };
 
@@ -37,16 +40,22 @@ export default function ReportHeader({ currentDate, onChangeMonth }) {
 
             <View className="flex-row items-center gap-3">
                 <TouchableOpacity onPress={handlePrev} activeOpacity={0.5}>
-                    <View className="w-8 h-8 rounded-full items-center justify-center">
-                        <ArrowLeft width={18} height={18} />
+                    <View className="w-8 h-8 rounded-full items-center justify-center ${isPrevDisabled ? 'opacity-30' :''}">
+                        {!isPrevHidden &&(
+                            <ArrowLeft width={18} height={18} />
+                        )}
                     </View>
                 </TouchableOpacity>
 
                 <TouchableOpacity onPress={handleNext} activeOpacity={0.5}>
                     <View className="w-8 h-8 rounded-full items-center justify-center">
-                        <ArrowRight width={18} height={18} />
+                        {!isNextHidden &&(
+                            <ArrowRight width={18} height={18} />
+                        )}
                     </View>
                 </TouchableOpacity>
+
+
             </View>
         </View>
     );

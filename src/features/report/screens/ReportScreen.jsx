@@ -30,6 +30,7 @@ export default function ReportScreen() {
             <ReportHeader
                 currentDate={currentDate}
                 onChangeMonth={setCurrentDate}
+                joinedAt="2025-10-03"
             />
 
             <ReportHeroCard
