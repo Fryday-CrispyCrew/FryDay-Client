@@ -1,11 +1,11 @@
 import React, { useMemo } from 'react';
-import { View } from 'react-native';
+import { View, Image } from 'react-native';
 import Svg, { Path, Circle } from 'react-native-svg';
 import { Dimensions } from 'react-native';
 
 import AppText from '../../../shared/components/AppText';
 import CategoryBg from '../assets/svg/Category_bg.svg';
-import Tung from '../assets/svg/Tung.svg';
+import Tung from '../assets/png/Tung.png';
 import CategoryLine from '../assets/svg/Category_line.svg';
 
 const TICKS = [100, 80, 60, 40, 20];
@@ -117,7 +117,12 @@ function EmptyState() {
         <View
             className="h-60 items-center justify-center"
             style={{ maxHeight: DEVICE_HEIGHT * 0.45 }}>
-            <Tung width={110} height={110} />
+            <Image
+                source={Tung}
+                style={{ width: 110, height: 110 }}
+                resizeMode="contain"
+            />
+
             <AppText variant="S500" className="text-gr500 text-center mt-2">
                 아직 추가된 투두 튀김이 없어요{'\n'}먼저 할 일을 튀겨 주세요!
             </AppText>
