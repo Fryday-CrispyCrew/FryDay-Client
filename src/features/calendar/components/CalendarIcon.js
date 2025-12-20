@@ -17,6 +17,8 @@ export const TEMP_TODO_MAP = {
     '2025-12-14': { total: 4, completed: 2 },
     '2025-12-15': { total: 2, completed: 2 },
     '2025-12-16': { total: 3, completed: 0 },
+    '2025-12-17': { total: 4, completed: 2 },
+    '2025-12-19': { total: 3, completed: 0 },
 };
 
 export function getCalendarIconType(date, todo) {

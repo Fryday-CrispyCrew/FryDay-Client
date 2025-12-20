@@ -41,6 +41,7 @@ export default function CalendarScreen() {
         <SafeAreaView className="flex-1 bg-wt">
             <CalendarHeader
                 date={currentDate}
+                mode={mode}
                 onPressButton={async () => {
                     setMode(m => {
                         const next = m === 'week' ? 'month' : 'week';

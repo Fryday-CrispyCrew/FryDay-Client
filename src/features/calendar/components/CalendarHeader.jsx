@@ -1,14 +1,20 @@
 import { View, TouchableOpacity } from 'react-native';
 import AppText from '../../../shared/components/AppText';
 
-import CalendarButton from '../assets/svg/CalendarButton.svg';
+import MonthButton from '../assets/svg/Month.svg';
+import WeeklyButton from '../assets/svg/Weekly.svg';
 import CategoryIcon from '../../todo/assets/svg/Category.svg';
 import TodayIcon from '../../todo/assets/svg/Today.svg';
 
-export default function CalendarHeader({ date, onPressButton, onPressToday }) {
+export default function CalendarHeader({
+                                           date,
+                                           mode,
+                                           onPressButton,
+                                           onPressToday,
+                                       }) {
     return (
         <View className="w-full px-5 py-4 flex-row justify-between items-center">
-            <View className="flex-col items-start">
+            <View>
                 <AppText variant="M500" className="text-gr500">
                     {date.year()}년
                 </AppText>
@@ -17,19 +23,22 @@ export default function CalendarHeader({ date, onPressButton, onPressToday }) {
                 </AppText>
             </View>
 
-            {/* 오른쪽: 버튼들 */}
             <View className="flex-row items-center gap-3">
                 <TouchableOpacity
                     onPress={onPressButton}
-                    activeOpacity={0.5}
-                    className="w-8 h-8 items-center justify-center">
-                    <CalendarButton width={32} height={32} />
+                    className="w-8 h-8 items-center justify-center"
+                >
+                    {mode === 'week' ? (
+                        <MonthButton width={32} height={32} />   // Month 버튼
+                    ) : (
+                        <WeeklyButton width={24} height={24} />    // Weekly 버튼
+                    )}
                 </TouchableOpacity>
 
                 <TouchableOpacity
                     onPress={onPressToday}
-                    activeOpacity={0.5}
-                    className="w-8 h-8 items-center justify-center">
+                    className="w-8 h-8 items-center justify-center"
+                >
                     <TodayIcon width={24} height={24} />
                 </TouchableOpacity>
 
@@ -40,3 +49,4 @@ export default function CalendarHeader({ date, onPressButton, onPressToday }) {
         </View>
     );
 }
+
