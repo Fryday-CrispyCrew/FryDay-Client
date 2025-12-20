@@ -309,16 +309,16 @@ function LineChart({ data }) {
                     render={(w) => (
                         <Svg width={w} height={plotHeight}>
                             <Path
-                                d={makePath(successVals, w)}
-                                stroke="#FF5B22" // primary-or
+                                d={makePath(failVals, w)}
+                                stroke="#4F4E4D" // gr900
                                 strokeWidth={10}
                                 fill="none"
                                 strokeLinecap="round"
                                 strokeLinejoin="round"
                             />
                             <Path
-                                d={makePath(failVals, w)}
-                                stroke="#4F4E4D" // gr900
+                                d={makePath(successVals, w)}
+                                stroke="#FF5B22" // primary-or
                                 strokeWidth={10}
                                 fill="none"
                                 strokeLinecap="round"

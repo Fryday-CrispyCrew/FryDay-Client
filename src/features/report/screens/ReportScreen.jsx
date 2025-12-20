@@ -12,6 +12,7 @@ const REPORT_DUMMY = {
     '2025-11': {
         caseType: 'A',
         categories: [
+            { name: '카테고리', success: 90, total: 100, fail: 10 },
             { name: '운동', success: 40, total: 100, fail: 60 },
             { name: '공부', success: 50, total: 100, fail: 50 },
             { name: '카테고리0000', success: 90, total: 100, fail: 10 },
