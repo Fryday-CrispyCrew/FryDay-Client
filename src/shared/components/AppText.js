@@ -28,6 +28,7 @@ const TYPO = {
   S400: "font-pretendard-regular text-body-s",
   S500: "font-pretendard-medium text-body-s",
   S600: "font-pretendard-semibold text-body-s",
+  S700: "font-pretendard-bold text-body-s",
 };
 
 export default function AppText({

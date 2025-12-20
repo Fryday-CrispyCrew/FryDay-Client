@@ -54,7 +54,7 @@ export default function ReportTotalCard({ type, count }) {
             className={`w-44 h-40 rounded-2xl overflow-hidden ${bg}`}
                 style={{
                 borderWidth: type === 'total' ? 0 : 1,
-                borderColor: '#E5E5E5'}}
+                borderColor: '#F2F2F2'}}
         >
             <View className="px-5 pt-4 z-10">
                 <AppText variant="M500" className={`${titleColor} leading-4`}>
