@@ -1,6 +1,6 @@
 import React, { useMemo } from 'react';
 import { View } from 'react-native';
-import Svg, { Path } from 'react-native-svg';
+import Svg, { Path, Circle } from 'react-native-svg';
 import { Dimensions } from 'react-native';
 
 import AppText from '../../../shared/components/AppText';
@@ -306,27 +306,54 @@ function LineChart({ data }) {
                 </View>
 
                 <MeasureWidth
-                    render={(w) => (
-                        <Svg width={w} height={plotHeight}>
-                            <Path
-                                d={makePath(failVals, w)}
-                                stroke="#4F4E4D" // gr900
-                                strokeWidth={10}
-                                fill="none"
-                                strokeLinecap="round"
-                                strokeLinejoin="round"
-                            />
-                            <Path
-                                d={makePath(successVals, w)}
-                                stroke="#FF5B22" // primary-or
-                                strokeWidth={10}
-                                fill="none"
-                                strokeLinecap="round"
-                                strokeLinejoin="round"
-                            />
-                        </Svg>
-                    )}
+                    render={(w) => {
+                        const isSingle = n === 1;
+                        const successY =
+                            topPadding + (usableHeight - (successVals[0] / 100) * usableHeight);
+                        const failY =
+                            topPadding + (usableHeight - (failVals[0] / 100) * usableHeight);
+                        const centerX = w / 2;
+
+                        return (
+                            <Svg width={w} height={plotHeight}>
+                                <Path
+                                    d={makePath(failVals, w)}
+                                    stroke="#4F4E4D"
+                                    strokeWidth={12}
+                                    fill="none"
+                                    strokeLinecap="round"
+                                    strokeLinejoin="round"
+                                />
+                                <Path
+                                    d={makePath(successVals, w)}
+                                    stroke="#FF5B22"
+                                    strokeWidth={12}
+                                    fill="none"
+                                    strokeLinecap="round"
+                                    strokeLinejoin="round"
+                                />
+
+                                {isSingle && (
+                                    <>
+                                        <Circle
+                                            cx={centerX}
+                                            cy={failY}
+                                            r={6}
+                                            fill="#4F4E4D"
+                                        />
+                                        <Circle
+                                            cx={centerX}
+                                            cy={successY}
+                                            r={6}
+                                            fill="#FF5B22"
+                                        />
+                                    </>
+                                )}
+                            </Svg>
+                        );
+                    }}
                 />
+
             </View>
 
 
@@ -340,13 +367,29 @@ function LineChart({ data }) {
                 }}
             >
                 {data.map((d, i) => {
-                    const isBold = d.isBestSuccessCount || d.isMostFailCount;
+                    const isSingle = data.length === 1;
 
-                    const labelClass = d.isBestSuccessCount
-                        ? 'text-or'
-                        : d.isMostFailCount
-                            ? 'text-gr900'
-                            : 'text-gr500';
+                    let labelClass = 'text-gr500';
+                    let isBold = false;
+
+                    if (isSingle) {
+                        if (d.success > d.fail) {
+                            labelClass = 'text-or';
+                            isBold = true;
+                        } else if (d.fail > d.success) {
+                            labelClass = 'text-gr900';
+                            isBold = true;
+                        }
+                    } else {
+                        if (d.isBestSuccessCount) {
+                            labelClass = 'text-or';
+                            isBold = true;
+                        } else if (d.isMostFailCount) {
+                            labelClass = 'text-gr900';
+                            isBold = true;
+                        }
+                    }
+
 
                     return (
                         <View key={`${d.name}-label2-${i}`} style={{ flex: 1, alignItems: 'center' }}>

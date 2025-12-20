@@ -24,7 +24,7 @@ const REPORT_DUMMY = {
         caseType: 'B',
         categories: [
             { name: '운동', success: 20, total: 50, fail: 30 },
-            { name: '불닭', success: 10, total: 100, fail: 90 },
+            { name: '불닭', success: 90, total: 100, fail: 10 },
             { name: '졸려', success: 50, total: 100, fail: 50 },
         ],
     },
