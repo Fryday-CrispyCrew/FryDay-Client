@@ -27,6 +27,7 @@ export default function TodoEditorSheet({
   // ✅ 모달이 열릴 때 TextInput에 포커스 -> 키보드 자동 오픈
   useEffect(() => {
     if (visible) {
+      console.log("모달 열림, 입력창에 포커스!");
       const id = setTimeout(() => {
         inputRef.current?.focus();
       }, 50); // 살짝 딜레이를 줘야 iOS에서 안정적으로 동작
