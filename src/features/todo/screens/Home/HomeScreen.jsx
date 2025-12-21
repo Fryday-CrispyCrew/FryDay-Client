@@ -19,14 +19,6 @@ import CategoryIcon from "../../assets/svg/Category.svg";
 
 import TodoCard from "../../components/TodoCard";
 
-// ✅ bottom sheet 관련 import
-import {
-  BottomSheetModalProvider,
-  BottomSheetModal,
-  BottomSheetBackdrop,
-  BottomSheetTextInput,
-  BottomSheetView,
-} from "@gorhom/bottom-sheet";
 import TodoEditorSheet from "../../components/TodoEditorSheet";
 
 const {width} = Dimensions.get("window");
@@ -73,16 +65,19 @@ export default function HomeScreen({navigation}) {
     // 3) 상태 정리는 onDismiss에서 처리하는 게 깔끔
   }, []);
 
-  const handleSubmit = useCallback(() => {
-    if (!editingTodo && editingText.trim().length === 0) {
+  const handleSubmit = useCallback(
+    (draftCategoryId) => {
+      if (!editingTodo && editingText.trim().length === 0) {
+        closeEditorTogether();
+        return;
+      }
+      // TODO: add/update 처리
+      // ✅ 여기서 새 투두 생성 시 effectiveCategory.categoryId를 사용하면 “시트의 카테고리”와 저장값이 일치함
+      // addTodo({ title: editingText, categoryId: effectiveCategory.categoryId })
       closeEditorTogether();
-      return;
-    }
-    // TODO: add/update 처리
-    // ✅ 여기서 새 투두 생성 시 effectiveCategory.categoryId를 사용하면 “시트의 카테고리”와 저장값이 일치함
-    // addTodo({ title: editingText, categoryId: effectiveCategory.categoryId })
-    closeEditorTogether();
-  }, [editingTodo, editingText, closeEditorTogether]);
+    },
+    [editingTodo, editingText, closeEditorTogether]
+  );
 
   return (
     <SafeAreaView style={styles.safe} edges={["top"]} mode={"margin"}>
@@ -140,14 +135,18 @@ export default function HomeScreen({navigation}) {
         ref={bottomSheetRef}
         value={editingText}
         onChangeText={setEditingText}
-        onSubmit={handleSubmit}
         onCloseTogether={closeEditorTogether}
         onDismiss={() => {
           setEditingTodo(null);
           setEditingText("");
         }}
-        // ✅ "현재 선택된 카테고리" or "전체보기면 첫 카테고리"
         categoryLabel={effectiveCategory.label}
+        categories={TAB_CATEGORIES}
+        initialCategoryId={effectiveCategory.categoryId} // ✅ 초기값만 전달
+        onSubmit={(draftCategoryId) => {
+          // ✅ 여기서만 draftCategoryId 사용해서 투두 생성/수정
+          handleSubmit(draftCategoryId);
+        }}
       />
     </SafeAreaView>
   );

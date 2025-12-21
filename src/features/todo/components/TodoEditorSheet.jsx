@@ -1,6 +1,13 @@
 // src/screens/Home/components/TodoEditorSheet.jsx
-import React, {useCallback, useMemo, useRef} from "react";
-import {View, Text, StyleSheet, Pressable, Keyboard} from "react-native";
+import React, {useCallback, useEffect, useMemo, useRef, useState} from "react";
+import {
+  View,
+  Text,
+  StyleSheet,
+  Pressable,
+  ScrollView,
+  TouchableOpacity,
+} from "react-native";
 import {
   BottomSheetModal,
   BottomSheetBackdrop,
@@ -8,21 +15,29 @@ import {
   BottomSheetView,
 } from "@gorhom/bottom-sheet";
 import {InteractionManager} from "react-native";
-import {TouchableOpacity} from "react-native";
 
 const TodoEditorSheet = React.forwardRef(function TodoEditorSheet(
   {
     value,
     onChangeText,
     onSubmit,
-    onCloseTogether, // dim 눌렀을 때 "키보드+시트 같이" 닫기
-    onDismiss, // dismiss 이후 상태 초기화는 HomeScreen에서 처리
+    onCloseTogether,
+    onDismiss,
     categoryLabel = "카테고리",
+
+    categories = [], // [{ categoryId, label }]
+    initialCategoryId = 0, // ✅ Home에서 전달받는 초기값
   },
   ref
 ) {
   const inputRef = useRef(null);
   const snapPoints = useMemo(() => ["20%"], []);
+
+  // ✅ chevron 눌렀을 때 펼침 상태
+  const [isCategoryOpen, setIsCategoryOpen] = useState(false);
+
+  // ✅ 바텀시트 내부 임시 선택
+  const [draftCategoryId, setDraftCategoryId] = useState(initialCategoryId);
 
   const focusInput = useCallback(() => {
     InteractionManager.runAfterInteractions(() => {
@@ -34,7 +49,6 @@ const TodoEditorSheet = React.forwardRef(function TodoEditorSheet(
 
   const handleSheetAnimate = useCallback(
     (fromIndex, toIndex) => {
-      // 닫힘(-1) -> 열림(0 이상)으로 전환되는 순간
       if (fromIndex === -1 && toIndex >= 0) focusInput();
     },
     [focusInput]
@@ -55,9 +69,35 @@ const TodoEditorSheet = React.forwardRef(function TodoEditorSheet(
     [onCloseTogether]
   );
 
+  // ✅ initialCategoryId가 바뀌거나(홈 필터 변경) 시트가 다시 열릴 때 초기화하고 싶음
+  useEffect(() => {
+    setDraftCategoryId(initialCategoryId);
+  }, [initialCategoryId]);
+
+  const handlePickCategory = useCallback((categoryId) => {
+    setDraftCategoryId(categoryId); // ✅ Home에 영향 없음
+    setIsCategoryOpen(false);
+
+    // (선택) 키보드 유지하고 싶으면
+    requestAnimationFrame(() => inputRef.current?.focus?.());
+  }, []);
+
   const handleSubmitInternal = useCallback(() => {
-    onSubmit?.();
-  }, [onSubmit]);
+    onSubmit?.(draftCategoryId); // ✅ 제출할 때만 Home으로 전달
+  }, [onSubmit, draftCategoryId]);
+
+  const handleDismiss = useCallback(() => {
+    setIsCategoryOpen(false);
+    setDraftCategoryId(initialCategoryId); // ✅ 닫을 때도 초기화(원하면)
+    onDismiss?.();
+  }, [onDismiss, initialCategoryId]);
+
+  // ✅ 리스트는 "현재 draft 선택" 제외하고 보여주기 (네가 원한 UX)
+  const otherCategories = useMemo(() => {
+    return categories
+      .filter((c) => c.categoryId !== 0)
+      .filter((c) => c.categoryId !== draftCategoryId);
+  }, [categories, draftCategoryId]);
 
   return (
     <BottomSheetModal
@@ -65,7 +105,7 @@ const TodoEditorSheet = React.forwardRef(function TodoEditorSheet(
       index={0}
       snapPoints={snapPoints}
       backdropComponent={renderBackdrop}
-      onDismiss={onDismiss}
+      onDismiss={handleDismiss}
       onAnimate={handleSheetAnimate}
       keyboardBehavior="interactive"
       keyboardBlurBehavior="restore"
@@ -74,12 +114,50 @@ const TodoEditorSheet = React.forwardRef(function TodoEditorSheet(
     >
       <BottomSheetView>
         <View style={styles.container}>
-          <View style={styles.categoryRow}>
-            <View style={styles.categoryChip}>
-              <Text style={styles.categoryText}>{categoryLabel}</Text>
+          {/* ✅ 카테고리 한 줄: [선택칩] [chevron] [나머지 카테고리들(열렸을 때만)] */}
+          <View style={styles.categoryInlineRow}>
+            <View style={styles.categoryChipSelected}>
+              <Text style={styles.categorySelectedText}>
+                {categories.find((c) => c.categoryId === draftCategoryId)
+                  ?.label ?? categoryLabel}
+              </Text>
             </View>
+
+            {/* ✅ 리스트가 닫혀 있을 때만 '>' 보이게 */}
+            {!isCategoryOpen && (
+              <TouchableOpacity
+                activeOpacity={0.7}
+                onPress={() => setIsCategoryOpen(true)}
+                style={styles.chevronButton}
+                hitSlop={8}
+              >
+                <Text style={styles.chevronText}>›</Text>
+              </TouchableOpacity>
+            )}
+
+            {isCategoryOpen && (
+              <ScrollView
+                horizontal
+                keyboardShouldPersistTaps="always"
+                showsHorizontalScrollIndicator={false}
+                contentContainerStyle={styles.categoryInlineList}
+                style={styles.categoryInlineScroll}
+              >
+                {otherCategories.map((c) => (
+                  <TouchableOpacity
+                    key={c.categoryId}
+                    activeOpacity={0.7}
+                    onPress={() => handlePickCategory(c.categoryId)}
+                    style={styles.categoryChip}
+                  >
+                    <Text style={styles.categoryText}>{c.label}</Text>
+                  </TouchableOpacity>
+                ))}
+              </ScrollView>
+            )}
           </View>
 
+          {/* 입력창 + 전송 버튼 */}
           <View style={styles.inputRow}>
             <View style={styles.inputWrapper}>
               <BottomSheetTextInput
@@ -117,14 +195,70 @@ const styles = StyleSheet.create({
     paddingTop: 8,
     paddingBottom: 16,
   },
-  categoryRow: {flexDirection: "row", marginBottom: 12},
-  categoryChip: {
+
+  // ✅ 한 줄 배치
+  categoryInlineRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 6,
+    marginBottom: 12,
+  },
+
+  categoryChipSelected: {
     paddingHorizontal: 16,
+    paddingVertical: 7,
+    borderRadius: 999,
+    backgroundColor: "#FF5B22",
+  },
+  categorySelectedText: {
+    fontSize: 13,
+    color: "#FFFFFF",
+  },
+
+  // ✅ chevron 버튼
+  chevronButton: {
+    width: 26,
+    height: 26,
+    alignItems: "center",
+    justifyContent: "center",
+    // borderWidth: 1,
+  },
+  chevronText: {
+    fontSize: 28,
+    lineHeight: 22,
+    // borderWidth: 1,
+    color: "#B0B0B0",
+    // 스샷처럼 '>' 느낌이면 회전 없이 그대로 두는 게 자연스러움
+  },
+
+  // ✅ 오른쪽에 붙는 리스트 영역
+  categoryInlineScroll: {
+    flex: 1, // ✅ 오른쪽 공간을 차지하게
+  },
+  categoryInlineList: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 8,
+    paddingRight: 6,
+  },
+
+  // ✅ 나머지 카테고리 칩(회색)
+  categoryChip: {
+    paddingHorizontal: 14,
     paddingVertical: 7,
     borderRadius: 999,
     backgroundColor: "#F0F0F0",
   },
-  categoryText: {fontSize: 13, color: "#B0B0B0"},
+  categoryText: {
+    fontSize: 13,
+    color: "#B0B0B0",
+  },
+  categoryChipActive: {
+    backgroundColor: "#FF5B22",
+  },
+  categoryTextActive: {color: "#FFFFFF"},
+
+  // 입력
   inputRow: {flexDirection: "row", alignItems: "center"},
   inputWrapper: {
     flex: 1,
