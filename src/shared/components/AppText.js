@@ -12,6 +12,7 @@ const TYPO = {
   // Body XL
   XL400: "font-pretendard-regular text-body-xl",
   XL500: "font-pretendard-medium text-body-xl",
+  pointM : "font-pretendard-bold text-body-xl",
 
   // Body L
   L400: "font-pretendard-regular text-body-l",
@@ -27,6 +28,7 @@ const TYPO = {
   S400: "font-pretendard-regular text-body-s",
   S500: "font-pretendard-medium text-body-s",
   S600: "font-pretendard-semibold text-body-s",
+  S700: "font-pretendard-bold text-body-s",
 };
 
 export default function AppText({
