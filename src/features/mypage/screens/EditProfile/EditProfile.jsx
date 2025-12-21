@@ -4,7 +4,7 @@ import {
     TouchableOpacity,
     View,
     Pressable,
-    Keyboard,
+    Keyboard, Modal,
 } from 'react-native';
 import React, { useRef, useState } from 'react';
 import MyPageHeader from '../../components/MypageHeader';
@@ -36,6 +36,7 @@ export default function EditProfile() {
         setIsEditing(false);
         Keyboard.dismiss();
     };
+    const [modalType, setModalType] = useState(null);
 
 
     return (
@@ -70,7 +71,7 @@ export default function EditProfile() {
                                         onBlur={() => {finishEdit()}}
                                         className="text-[16px] text-bk flex-1"
                                         style={{
-                                            height: 24,
+                                            height: 20,
                                             paddingVertical: 0,
                                             paddingHorizontal: 0,
                                             textAlignVertical: 'center',
@@ -103,7 +104,7 @@ export default function EditProfile() {
                                             setIsEditing(true);
                                         }}
                                     >
-                                        <EditIcon width={24} height={24} />
+                                        <EditIcon width={20} height={20} />
                                     </TouchableOpacity>
                                 </View>
                             )}
@@ -134,19 +135,44 @@ export default function EditProfile() {
 
                     <View className="px-5">
                         <View className="bg-wt rounded-xl px-5">
-                            {/*<MyPageMenu*/}
-                            {/*    menuTitle="로그아웃"*/}
-                            {/*    onPress={() => setModalType('logout')}*/}
-                            {/*/>*/}
+                            <MyPageMenu
+                                menuTitle="로그아웃"
+                                onPress={() => setModalType('logout')}
+                            />
                             <View className="h-[1px] bg-gr100" />
-                            {/*<MyPageMenu*/}
-                            {/*    menuTitle="계정 삭제"*/}
-                            {/*    onPress={() => setModalType('delete')}*/}
-                            {/*/>*/}
+                            <MyPageMenu
+                                menuTitle="계정 삭제"
+                                onPress={() => setModalType('delete')}
+                            />
                         </View>
                     </View>
                 </View>
             </Pressable>
+            <Modal transparent visible={modalType !== null} animationType="fade">
+                <View className="flex-1 justify-center items-center bg-black/40">
+                    <View className="bg-wt rounded-xl px-6 py-5 w-[80%] gap-4">
+                        <AppText variant="L500" className="text-bk">
+                            {modalType === 'logout'
+                                ? '로그아웃 하시겠어요?'
+                                : '계정을 삭제하시겠어요?'}
+                        </AppText>
+
+                        <View className="flex-row justify-end gap-4">
+                            <TouchableOpacity onPress={() => setModalType(null)}>
+                                <AppText variant="M500" className="text-gr500">
+                                    취소
+                                </AppText>
+                            </TouchableOpacity>
+
+                            <TouchableOpacity onPress={() => setModalType(null)}>
+                                <AppText variant="M500" className="text-bk">
+                                    확인
+                                </AppText>
+                            </TouchableOpacity>
+                        </View>
+                    </View>
+                </View>
+            </Modal>
         </SafeAreaView>
     );
 }
