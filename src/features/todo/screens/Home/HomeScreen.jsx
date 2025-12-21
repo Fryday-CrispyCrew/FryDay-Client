@@ -27,6 +27,7 @@ import {
   BottomSheetTextInput,
   BottomSheetView,
 } from "@gorhom/bottom-sheet";
+import TodoEditorSheet from "../../components/TodoEditorSheet";
 
 const {width} = Dimensions.get("window");
 
@@ -172,63 +173,17 @@ export default function HomeScreen({navigation}) {
       <TodoCard navigation={navigation} onPressInput={openEditor} />
 
       {/* ✅ @gorhom/bottom-sheet 기반 입력 시트 */}
-      <BottomSheetModal
+      <TodoEditorSheet
         ref={bottomSheetRef}
-        index={0}
-        snapPoints={snapPoints}
-        backdropComponent={renderBackdrop}
+        value={editingText}
+        onChangeText={setEditingText}
+        onSubmit={handleSubmit}
+        onCloseTogether={closeEditorTogether}
         onDismiss={() => {
           setEditingTodo(null);
           setEditingText("");
         }}
-        onAnimate={handleSheetAnimate}
-        keyboardBehavior="interactive" // 키보드와 같이 올라가게
-        keyboardBlurBehavior="restore"
-        // android_keyboardInputMode="adjustResize"
-        backgroundStyle={{backgroundColor: "#F7F7F7"}}
-        handleIndicatorStyle={{backgroundColor: "#D0D0D0", width: "38.4%"}}
-        // onChange={handleSheetChange} // ✅ 시트 상태 변경 감지
-      >
-        <BottomSheetView>
-          {/* 안쪽 내용: 스샷처럼 상단 핸들 + 카테고리 + 인풋 */}
-          <View style={sheetStyles.container}>
-            {/* 상단 핸들은 라이브러리가 자동으로 만들어줘서 추가 UI는 생략 가능 */}
-
-            {/* 카테고리 칩 */}
-            <View style={sheetStyles.categoryRow}>
-              <View style={sheetStyles.categoryChip}>
-                <Text style={sheetStyles.categoryText}>카테고리</Text>
-              </View>
-            </View>
-
-            {/* 인풋 + 전송 버튼 */}
-            <View style={sheetStyles.inputRow}>
-              <View style={sheetStyles.inputWrapper}>
-                {/* ✅ BottomSheetTextInput을 쓰면 키보드 대응이 더 매끄러움 */}
-                <BottomSheetTextInput
-                  ref={inputRef} // ✅ ref 연결
-                  value={editingText}
-                  onChangeText={setEditingText}
-                  placeholder="두근두근, 무엇을 튀겨볼까요?"
-                  placeholderTextColor="#C6C6C6"
-                  returnKeyType="done"
-                  onSubmitEditing={handleSubmit}
-                  style={sheetStyles.input}
-                />
-              </View>
-
-              <TouchableOpacity
-                activeOpacity={0.7}
-                onPress={handleSubmit}
-                style={sheetStyles.submitButton}
-              >
-                {/* 오른쪽 동그라미 버튼 – 나중에 아이콘 교체 가능 */}
-                <Text style={sheetStyles.submitIcon}>➔</Text>
-              </TouchableOpacity>
-            </View>
-          </View>
-        </BottomSheetView>
-      </BottomSheetModal>
+      />
     </SafeAreaView>
   );
 }
@@ -317,15 +272,16 @@ const sheetStyles = StyleSheet.create({
   },
   inputWrapper: {
     flex: 1,
-    borderRadius: 999,
+    borderRadius: 16,
     backgroundColor: "#FFFFFF",
     paddingHorizontal: 16,
-    paddingVertical: 12,
-    shadowColor: "#000",
-    shadowOpacity: 0.04,
-    shadowRadius: 6,
-    shadowOffset: {width: 0, height: 2},
-    elevation: 4,
+    paddingVertical: 6,
+    // height: 44,
+    // shadowColor: "#000",
+    // shadowOpacity: 0.04,
+    // shadowRadius: 6,
+    // shadowOffset: {width: 0, height: 2},
+    // elevation: 4,
   },
   input: {
     fontFamily: "Pretendard-Medium",

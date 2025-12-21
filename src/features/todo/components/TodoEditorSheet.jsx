@@ -1,186 +1,151 @@
-// src/components/TodoEditorSheet.jsx
-// (HomeScreen에서 import 경로에 맞게 위치시켜줘)
-
-import React, {useEffect, useRef} from "react";
+// src/screens/Home/components/TodoEditorSheet.jsx
+import React, {useCallback, useMemo, useRef} from "react";
+import {View, Text, StyleSheet, Pressable, Keyboard} from "react-native";
 import {
-  Modal,
-  View,
-  TextInput,
-  KeyboardAvoidingView,
-  Platform,
-  TouchableWithoutFeedback,
-  TouchableOpacity,
-  Keyboard,
-  StyleSheet,
-  Text,
-} from "react-native";
+  BottomSheetModal,
+  BottomSheetBackdrop,
+  BottomSheetTextInput,
+  BottomSheetView,
+} from "@gorhom/bottom-sheet";
+import {InteractionManager} from "react-native";
+import {TouchableOpacity} from "react-native";
 
-export default function TodoEditorSheet({
-  visible,
-  value,
-  onChangeText,
-  onClose,
-  onSubmit,
-}) {
+const TodoEditorSheet = React.forwardRef(function TodoEditorSheet(
+  {
+    value,
+    onChangeText,
+    onSubmit,
+    onCloseTogether, // dim 눌렀을 때 "키보드+시트 같이" 닫기
+    onDismiss, // dismiss 이후 상태 초기화는 HomeScreen에서 처리
+    categoryLabel = "카테고리",
+  },
+  ref
+) {
   const inputRef = useRef(null);
+  const snapPoints = useMemo(() => ["20%"], []);
 
-  // ✅ 모달이 열릴 때 TextInput에 포커스 -> 키보드 자동 오픈
-  useEffect(() => {
-    if (visible) {
-      console.log("모달 열림, 입력창에 포커스!");
-      const id = setTimeout(() => {
-        inputRef.current?.focus();
-      }, 50); // 살짝 딜레이를 줘야 iOS에서 안정적으로 동작
-      return () => clearTimeout(id);
-    }
-  }, [visible]);
+  const focusInput = useCallback(() => {
+    InteractionManager.runAfterInteractions(() => {
+      requestAnimationFrame(() => {
+        inputRef.current?.focus?.();
+      });
+    });
+  }, []);
+
+  const handleSheetAnimate = useCallback(
+    (fromIndex, toIndex) => {
+      // 닫힘(-1) -> 열림(0 이상)으로 전환되는 순간
+      if (fromIndex === -1 && toIndex >= 0) focusInput();
+    },
+    [focusInput]
+  );
+
+  const renderBackdrop = useCallback(
+    (props) => (
+      <Pressable style={[StyleSheet.absoluteFill]} onPress={onCloseTogether}>
+        <BottomSheetBackdrop
+          {...props}
+          pressBehavior="none"
+          appearsOnIndex={0}
+          disappearsOnIndex={-1}
+          opacity={0.5}
+        />
+      </Pressable>
+    ),
+    [onCloseTogether]
+  );
+
+  const handleSubmitInternal = useCallback(() => {
+    onSubmit?.();
+  }, [onSubmit]);
 
   return (
-    <Modal
-      visible={visible}
-      transparent
-      animationType="fade"
-      statusBarTranslucent
-      onRequestClose={onClose}
+    <BottomSheetModal
+      ref={ref}
+      index={0}
+      snapPoints={snapPoints}
+      backdropComponent={renderBackdrop}
+      onDismiss={onDismiss}
+      onAnimate={handleSheetAnimate}
+      keyboardBehavior="interactive"
+      keyboardBlurBehavior="restore"
+      backgroundStyle={{backgroundColor: "#F7F7F7"}}
+      handleIndicatorStyle={{backgroundColor: "#D0D0D0", width: "38.4%"}}
     >
-      {/* 회색 배경 전체 영역 */}
-      <TouchableWithoutFeedback
-        onPress={() => {
-          Keyboard.dismiss();
-          onClose();
-        }}
-        style={{borderWidth: 1, borderColor: "red"}}
-      >
-        <View style={styles.overlay}>
-          {/* 하단 시트 부분은 닫히지 않게 한 번 더 감싸줌 */}
-          <TouchableWithoutFeedback>
-            <KeyboardAvoidingView
-              behavior={Platform.OS === "ios" ? "padding" : "height"}
-              style={styles.keyboardContainer}
+      <BottomSheetView>
+        <View style={styles.container}>
+          <View style={styles.categoryRow}>
+            <View style={styles.categoryChip}>
+              <Text style={styles.categoryText}>{categoryLabel}</Text>
+            </View>
+          </View>
+
+          <View style={styles.inputRow}>
+            <View style={styles.inputWrapper}>
+              <BottomSheetTextInput
+                ref={inputRef}
+                value={value}
+                onChangeText={onChangeText}
+                placeholder="두근두근, 무엇을 튀겨볼까요?"
+                placeholderTextColor="#C6C6C6"
+                returnKeyType="done"
+                onSubmitEditing={handleSubmitInternal}
+                style={styles.input}
+              />
+            </View>
+
+            <TouchableOpacity
+              activeOpacity={0.7}
+              onPress={handleSubmitInternal}
+              style={styles.submitButton}
             >
-              <View style={styles.sheet}>
-                {/* 상단 핸들바 */}
-                <View style={styles.handleBar} />
-
-                {/* 카테고리 칩 (왼쪽) */}
-                <View style={styles.categoryRow}>
-                  <View style={styles.categoryChip}>
-                    <Text style={styles.categoryText}>카테고리</Text>
-                  </View>
-                </View>
-
-                {/* 입력창 + 전송 버튼 */}
-                <View style={styles.inputRow}>
-                  <View style={styles.inputWrapper}>
-                    <TextInput
-                      ref={inputRef} // ✅ ref 연결
-                      //   autoFocus
-                      value={value}
-                      onChangeText={onChangeText}
-                      placeholder="두근두근, 무엇을 튀겨볼까요?"
-                      placeholderTextColor="#C6C6C6"
-                      returnKeyType="done"
-                      onSubmitEditing={onSubmit}
-                      style={styles.input}
-                    />
-                  </View>
-
-                  <TouchableOpacity
-                    activeOpacity={0.7}
-                    onPress={onSubmit}
-                    style={styles.submitButton}
-                  >
-                    {/* 아이콘 있으면 여기로 교체하면 됨 */}
-                    <Text style={styles.submitIcon}>➔</Text>
-                  </TouchableOpacity>
-                </View>
-              </View>
-            </KeyboardAvoidingView>
-          </TouchableWithoutFeedback>
+              <Text style={styles.submitIcon}>➔</Text>
+            </TouchableOpacity>
+          </View>
         </View>
-      </TouchableWithoutFeedback>
-    </Modal>
+      </BottomSheetView>
+    </BottomSheetModal>
   );
-}
+});
 
-const SHEET_BG = "#F7F7F7";
-const OVERLAY_BG = "#0000004d";
+export default TodoEditorSheet;
 
 const styles = StyleSheet.create({
-  overlay: {
+  container: {
     flex: 1,
-    backgroundColor: OVERLAY_BG, // 스샷처럼 전체 회색
-  },
-  keyboardContainer: {
-    flex: 1,
-    justifyContent: "flex-end", // 항상 아래쪽에 붙게
-  },
-  sheet: {
-    paddingTop: 12,
-    paddingBottom: 20,
     paddingHorizontal: 20,
-    backgroundColor: SHEET_BG,
-    borderTopLeftRadius: 28,
-    borderTopRightRadius: 28,
-    shadowColor: "#000",
-    shadowOpacity: 0.08,
-    shadowRadius: 10,
-    shadowOffset: {width: 0, height: -4},
-    elevation: 10,
+    paddingTop: 8,
+    paddingBottom: 16,
   },
-  handleBar: {
-    alignSelf: "center",
-    width: 80,
-    height: 4,
-    borderRadius: 999,
-    backgroundColor: "#D0D0D0",
-    marginBottom: 14,
-  },
-  categoryRow: {
-    flexDirection: "row",
-    marginBottom: 12,
-  },
+  categoryRow: {flexDirection: "row", marginBottom: 12},
   categoryChip: {
-    paddingHorizontal: 14,
-    paddingVertical: 6,
+    paddingHorizontal: 16,
+    paddingVertical: 7,
     borderRadius: 999,
     backgroundColor: "#F0F0F0",
   },
-  categoryText: {
-    fontSize: 13,
-    color: "#B0B0B0",
-  },
-  inputRow: {
-    flexDirection: "row",
-    alignItems: "center",
-  },
+  categoryText: {fontSize: 13, color: "#B0B0B0"},
+  inputRow: {flexDirection: "row", alignItems: "center"},
   inputWrapper: {
     flex: 1,
-    borderRadius: 999,
+    borderRadius: 16,
     backgroundColor: "#FFFFFF",
-    paddingHorizontal: 18,
-    paddingVertical: 10,
-    shadowColor: "#000",
-    shadowOpacity: 0.04,
-    shadowRadius: 6,
-    shadowOffset: {width: 0, height: 2},
-    elevation: 4,
+    paddingHorizontal: 16,
+    paddingVertical: 6,
   },
   input: {
-    fontSize: 15,
+    fontFamily: "Pretendard-Medium",
+    fontSize: 12,
     color: "#333333",
   },
   submitButton: {
     marginLeft: 8,
-    width: 40,
-    height: 40,
-    borderRadius: 20,
+    width: 44,
+    height: 44,
+    borderRadius: 22,
     backgroundColor: "#E4E4E4",
     alignItems: "center",
     justifyContent: "center",
   },
-  submitIcon: {
-    fontSize: 18,
-    color: "#888888",
-  },
+  submitIcon: {fontSize: 18, color: "#888888"},
 });
