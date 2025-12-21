@@ -25,13 +25,13 @@ import DeleteIcon from "../assets/svg/Delete.svg";
 
 const {width} = Dimensions.get("window");
 
-// 카테고리 탭 목록
-const TAB_CATEGORIES = [
-  {categoryId: 0, label: "전체보기"}, // 0은 "전체" 용
-  {categoryId: 1, label: "운동하기"},
-  {categoryId: 2, label: "공부하기"},
-  {categoryId: 3, label: "완전놀기"},
-];
+// // 카테고리 탭 목록
+// const TAB_CATEGORIES = [
+//   {categoryId: 0, label: "전체보기"}, // 0은 "전체" 용
+//   {categoryId: 1, label: "운동하기"},
+//   {categoryId: 2, label: "공부하기"},
+//   {categoryId: 3, label: "완전놀기"},
+// ];
 
 // 목업 투두
 const MOCK_TODOS = [
@@ -146,15 +146,23 @@ function TodoItem({
 }
 
 // ✅ onPressInput 추가
-export default function TodoCard({navigation, onPressInput}) {
+export default function TodoCard({
+  navigation,
+  onPressInput,
+  selectedCategoryId,
+  onChangeCategoryId,
+  categories = TAB_CATEGORIES,
+}) {
   const [todos, setTodos] = useState(MOCK_TODOS);
-  const [selectedCategoryId, setSelectedCategoryId] = useState(0);
   const [swipedTodoId, setSwipedTodoId] = useState(null);
 
+  const currentSelectedId = selectedCategoryId ?? 0; // ✅ fallback
+  const setSelectedId = onChangeCategoryId ?? (() => {}); // ✅ fallback
+
   const filteredTodos =
-    selectedCategoryId === 0
+    currentSelectedId === 0
       ? todos
-      : todos.filter((todo) => todo.categoryId === selectedCategoryId);
+      : todos.filter((todo) => todo.categoryId === currentSelectedId);
 
   const toggleTodoDone = (id) => {
     setTodos((prev) =>
@@ -199,7 +207,6 @@ export default function TodoCard({navigation, onPressInput}) {
   return (
     <View style={styles.card}>
       <View style={styles.topContainer}>
-        {/* 탭 영역 */}
         <View style={styles.tabRow}>
           <ScrollView
             horizontal
@@ -207,14 +214,14 @@ export default function TodoCard({navigation, onPressInput}) {
             style={styles.tabScroll}
             contentContainerStyle={styles.tabScrollContent}
           >
-            {TAB_CATEGORIES.map((tab) => {
-              const isActive = tab.categoryId === selectedCategoryId;
+            {categories.map((tab) => {
+              const isActive = tab.categoryId === currentSelectedId;
               return (
                 <TouchableOpacity
                   key={tab.categoryId}
                   style={[styles.tab, isActive && styles.tabActive]}
                   activeOpacity={0.7}
-                  onPress={() => setSelectedCategoryId(tab.categoryId)}
+                  onPress={() => setSelectedId(tab.categoryId)} // ✅ HomeScreen state 변경
                 >
                   <AppText
                     variant="M600"
@@ -227,11 +234,10 @@ export default function TodoCard({navigation, onPressInput}) {
             })}
           </ScrollView>
 
-          {/* 오른쪽: ＋ 새 카테고리 버튼 */}
           <TouchableOpacity
             style={styles.tabNew}
             activeOpacity={0.7}
-            onPress={() => navigation.navigate("CategoryCreate")}
+            onPress={() => navigation.navigate("CategCreate")}
           >
             <AppText variant="M600" className="text-gr300">
               ＋ 새 카테고리

@@ -31,15 +31,34 @@ import TodoEditorSheet from "../../components/TodoEditorSheet";
 
 const {width} = Dimensions.get("window");
 
+// 카테고리 탭 목록
+const TAB_CATEGORIES = [
+  {categoryId: 0, label: "전체보기"}, // 0은 "전체" 용
+  {categoryId: 1, label: "운동하기"},
+  {categoryId: 2, label: "공부하기"},
+  {categoryId: 3, label: "완전놀기"},
+];
+
 export default function HomeScreen({navigation}) {
   const [editingTodo, setEditingTodo] = useState(null); // { id, title } or null
   const [editingText, setEditingText] = useState("");
 
-  const bottomSheetRef = useRef(null);
-  const inputRef = useRef(null); // ✅ 시트 안 TextInput ref
+  // ✅ HomeScreen이 “현재 선택된 카테고리”를 소유
+  const [selectedCategoryId, setSelectedCategoryId] = useState(0);
 
-  // 얼마나 올라올지(높이) – %로 주면 화면에 따라 적당히 반응형
-  const snapPoints = useMemo(() => ["20%"], []);
+  const bottomSheetRef = useRef(null);
+
+  // ✅ 전체보기(0)이면 첫 번째 카테고리(0 아닌 첫 항목)로 fallback
+  const effectiveCategory = useMemo(() => {
+    const firstCategory =
+      TAB_CATEGORIES.find((c) => c.categoryId !== 0) ?? TAB_CATEGORIES[0];
+    const resolved =
+      selectedCategoryId === 0
+        ? firstCategory
+        : TAB_CATEGORIES.find((c) => c.categoryId === selectedCategoryId);
+
+    return resolved ?? firstCategory;
+  }, [selectedCategoryId]);
 
   const openEditor = useCallback((todo) => {
     setEditingTodo(todo);
@@ -47,85 +66,23 @@ export default function HomeScreen({navigation}) {
     bottomSheetRef.current?.present();
   }, []);
 
-  // const closeEditor = useCallback(() => {
-  //   bottomSheetRef.current?.dismiss();
-  //   setEditingTodo(null);
-  //   setEditingText("");
-  // }, []);
+  const closeEditorTogether = useCallback(() => {
+    Keyboard.dismiss();
+    // 2) 바텀시트 dismiss
+    bottomSheetRef.current?.dismiss();
+    // 3) 상태 정리는 onDismiss에서 처리하는 게 깔끔
+  }, []);
 
   const handleSubmit = useCallback(() => {
     if (!editingTodo && editingText.trim().length === 0) {
       closeEditorTogether();
       return;
     }
-
-    // TODO: 여기서 실제 todos 상태 업데이트 / 추가
-    // ex) addTodo(editingText) or updateTodo(editingTodo.id, editingText);
-
+    // TODO: add/update 처리
+    // ✅ 여기서 새 투두 생성 시 effectiveCategory.categoryId를 사용하면 “시트의 카테고리”와 저장값이 일치함
+    // addTodo({ title: editingText, categoryId: effectiveCategory.categoryId })
     closeEditorTogether();
   }, [editingTodo, editingText, closeEditorTogether]);
-
-  const closeEditorTogether = useCallback(() => {
-    // 1) 인풋 blur + 키보드 dismiss
-    inputRef.current?.blur?.();
-    Keyboard.dismiss();
-
-    // 2) 바텀시트 dismiss
-    bottomSheetRef.current?.dismiss();
-
-    // 3) 상태 정리는 onDismiss에서 처리하는 게 깔끔
-  }, []);
-
-  // 회색 배경 오버레이
-  const renderBackdrop = useCallback(
-    (props) => (
-      <Pressable
-        style={[StyleSheet.absoluteFill]}
-        onPress={closeEditorTogether}
-      >
-        <BottomSheetBackdrop
-          {...props}
-          pressBehavior="none" // ✅ 기본 close 막고
-          appearsOnIndex={0}
-          disappearsOnIndex={-1}
-          opacity={0.5}
-        />
-      </Pressable>
-    ),
-    [closeEditorTogether]
-  );
-
-  // ✅ 시트가 열렸을 때 TextInput에 포커스 → 키보드 자동 표시
-  // const handleSheetChange = useCallback((index) => {
-  //   if (index >= 0) {
-  //     // 약간의 딜레이를 주면 안드로이드에서 더 안정적
-  //     setTimeout(
-  //       () => {
-  //         inputRef.current?.focus();
-  //       },
-  //       Platform.OS === "android" ? 50 : 0
-  //     );
-  //   }
-  // }, []);
-
-  const focusInput = useCallback(() => {
-    // 안드에서 ref 타이밍이 가끔 늦어서, "애니메이션/렌더" 끝에 붙여주면 안정적
-    InteractionManager.runAfterInteractions(() => {
-      requestAnimationFrame(() => {
-        inputRef.current?.focus?.();
-      });
-    });
-  }, []);
-
-  const handleSheetAnimate = useCallback(
-    (fromIndex, toIndex) => {
-      // 닫힘(-1) -> 열림(0 이상)으로 전환되는 순간
-      if (fromIndex === -1 && toIndex >= 0) {
-        focusInput();
-      }
-    },
-    [focusInput]
-  );
 
   return (
     <SafeAreaView style={styles.safe} edges={["top"]} mode={"margin"}>
@@ -170,7 +127,13 @@ export default function HomeScreen({navigation}) {
       </View>
 
       {/* ✅ TodoCard에서 인풋 누르면 openEditor 호출 */}
-      <TodoCard navigation={navigation} onPressInput={openEditor} />
+      <TodoCard
+        navigation={navigation}
+        onPressInput={openEditor}
+        categories={TAB_CATEGORIES}
+        selectedCategoryId={selectedCategoryId}
+        onChangeCategoryId={setSelectedCategoryId}
+      />
 
       {/* ✅ @gorhom/bottom-sheet 기반 입력 시트 */}
       <TodoEditorSheet
@@ -183,19 +146,12 @@ export default function HomeScreen({navigation}) {
           setEditingTodo(null);
           setEditingText("");
         }}
+        // ✅ "현재 선택된 카테고리" or "전체보기면 첫 카테고리"
+        categoryLabel={effectiveCategory.label}
       />
     </SafeAreaView>
   );
 }
-
-// Provider로 감싸기 (앱 전체에서 이미 감싸고 있다면 이 컴포넌트는 필요 X)
-// export default function HomeScreen(props) {
-//   return (
-//     <BottomSheetModalProvider>
-//       <HomeScreenInner {...props} />
-//     </BottomSheetModalProvider>
-//   );
-// }
 
 const styles = StyleSheet.create({
   safe: {
