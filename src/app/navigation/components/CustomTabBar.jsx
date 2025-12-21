@@ -16,8 +16,19 @@ export default function CustomTabBar({ state, navigation }) {
     return null;
   }
 
+  const isMyPage =
+      activeTabRoute.name === 'MyPage' ||
+      activeNestedRouteName === 'MyPage';
+
+
   return (
-    <View style={[styles.tabBar, { paddingBottom: insets.bottom }]}>
+      <View
+          style={[
+            styles.tabBar,
+            { paddingBottom: insets.bottom },
+            isMyPage && { backgroundColor: '#F4F4F4' }
+          ]}
+      >
       {state.routes.map((route, index) => {
         const focused = state.index === index;
         const { label, active, inactive } = TAB_CONFIG[route.name];
@@ -55,7 +66,7 @@ const styles = StyleSheet.create({
   tabBar: {
     flexDirection: 'row',
     justifyContent: 'space-around',
-    backgroundColor: '#fff',
+    backgroundColor: '#FAFAFA',
     borderTopWidth: 0,
     height: '12%',
     elevation: 10,
