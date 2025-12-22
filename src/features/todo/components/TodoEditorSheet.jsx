@@ -7,6 +7,7 @@ import {
   Pressable,
   ScrollView,
   TouchableOpacity,
+  TextInput,
 } from "react-native";
 import {
   BottomSheetModal,
@@ -99,6 +100,21 @@ const TodoEditorSheet = React.forwardRef(function TodoEditorSheet(
       .filter((c) => c.categoryId !== draftCategoryId);
   }, [categories, draftCategoryId]);
 
+  const handleClearText = useCallback(() => {
+    onChangeText?.("");
+    // ✅ 키보드 유지 / 커서 유지
+    requestAnimationFrame(() => inputRef.current?.focus?.());
+  }, [onChangeText]);
+
+  const handleChangeText = useCallback(
+    (text) => {
+      // ✅ 최대 20자 보장
+      // const next = text.slice(0, 20);
+      onChangeText?.(text);
+    },
+    [onChangeText]
+  );
+
   return (
     <BottomSheetModal
       ref={ref}
@@ -163,13 +179,25 @@ const TodoEditorSheet = React.forwardRef(function TodoEditorSheet(
               <BottomSheetTextInput
                 ref={inputRef}
                 value={value}
-                onChangeText={onChangeText}
+                onChangeText={handleChangeText}
                 placeholder="두근두근, 무엇을 튀겨볼까요?"
                 placeholderTextColor="#C6C6C6"
                 returnKeyType="done"
                 onSubmitEditing={handleSubmitInternal}
+                maxLength={20} // ✅ 최대 20자
                 style={styles.input}
               />
+              {/* ✅ 입력값 있을 때만 X 버튼 노출 */}
+              {!!value?.length && (
+                <TouchableOpacity
+                  activeOpacity={0.7}
+                  onPress={handleClearText}
+                  style={styles.clearButton}
+                  hitSlop={8}
+                >
+                  <Text style={styles.clearIcon}>×</Text>
+                </TouchableOpacity>
+              )}
             </View>
 
             <TouchableOpacity
@@ -266,11 +294,29 @@ const styles = StyleSheet.create({
     backgroundColor: "#FFFFFF",
     paddingHorizontal: 16,
     paddingVertical: 6,
+    position: "relative", // ✅ X 버튼 absolute 배치용
   },
   input: {
     fontFamily: "Pretendard-Medium",
     fontSize: 12,
     color: "#333333",
+    paddingRight: 26, // ✅ X 버튼 공간 확보
+  },
+
+  // ✅ X(클리어) 버튼
+  clearButton: {
+    position: "absolute",
+    right: 12,
+    top: 0,
+    bottom: 0,
+    justifyContent: "center",
+    alignItems: "center",
+    width: 24,
+  },
+  clearIcon: {
+    fontSize: 16,
+    lineHeight: 16,
+    color: "#B0B0B0",
   },
   submitButton: {
     marginLeft: 8,
