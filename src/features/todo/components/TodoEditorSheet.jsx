@@ -35,6 +35,8 @@ function TodoEditorSheetContent({
   onClearText,
   inputRef,
 }) {
+  const isSubmitEnabled = (value?.trim?.() ?? "").length > 0;
+
   const [localText, setLocalText] = useState(value);
   useEffect(() => {
     if (localText !== value) setLocalText(value);
@@ -129,9 +131,20 @@ function TodoEditorSheetContent({
           <TouchableOpacity
             activeOpacity={0.7}
             onPress={onSubmitInternal}
-            style={styles.submitButton}
+            disabled={!isSubmitEnabled}
+            style={[
+              styles.submitButton,
+              !isSubmitEnabled && styles.submitButtonDisabled,
+            ]}
           >
-            <Text style={styles.submitIcon}>➔</Text>
+            <Text
+              style={[
+                styles.submitIcon,
+                !isSubmitEnabled && styles.submitIconDisabled,
+              ]}
+            >
+              ➔
+            </Text>
           </TouchableOpacity>
         </View>
       </View>
@@ -366,9 +379,18 @@ const styles = StyleSheet.create({
     width: 44,
     height: 44,
     borderRadius: 22,
-    backgroundColor: "#E4E4E4",
+    backgroundColor: "#FF5B22", // ✅ 활성화(주황)
     alignItems: "center",
     justifyContent: "center",
   },
-  submitIcon: {fontSize: 18, color: "#888888"},
+  submitButtonDisabled: {
+    backgroundColor: "#E4E4E4", // ✅ 비활성화(회색)
+  },
+  submitIcon: {
+    fontSize: 18,
+    color: "#FFFFFF", // ✅ 활성화 아이콘 색
+  },
+  submitIconDisabled: {
+    color: "#888888", // ✅ 비활성화 아이콘 색
+  },
 });
