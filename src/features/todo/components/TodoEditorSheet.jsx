@@ -17,138 +17,51 @@ import {
 import {InteractionManager} from "react-native";
 
 /**
- * ✅ BottomSheetModal 내부 UI만 분리한 컴포넌트
- * - 같은 파일 안에서만 사용 (외부 export X)
- * - state/handler는 TodoEditorSheet에서 내려줌 (presentational + small callbacks)
+ * ✅ BottomSheetTextInput만 분리 (IME-safe 로직 포함)
+ * - value 기반으로 localText 동기화
+ * - value trim 기준 submit 가능 여부 계산
  */
-function TodoEditorSheetContent({
+function TodoBottomSheetTextInput({
+  inputRef,
   value,
   onChangeText,
-  onSubmitInternal,
-  categories,
-  categoryLabel,
-  isCategoryOpen,
-  setIsCategoryOpen,
-  draftCategoryId,
-  otherCategories,
-  onPickCategory,
-  onClearText,
-  inputRef,
+  onSubmitEditing,
+  onEnabledChange,
+  placeholder = "두근두근, 무엇을 튀겨볼까요?",
+  maxLength = 20,
+  style,
 }) {
+  // ✅ 기존 TodoEditorSheetContent에 있던 코드 이동
   const isSubmitEnabled = (value?.trim?.() ?? "").length > 0;
 
   const [localText, setLocalText] = useState(value);
+
   useEffect(() => {
     if (localText !== value) setLocalText(value);
   }, [value]);
 
   const onChangeLocalText = (text) => {
     setLocalText(text);
-    onChangeText(text);
+    onChangeText?.(text);
   };
 
-  // useEffect(() => {
-  //   console.log("localText changed in editor sheet:", localText);
-  // }, [localText]);
-  // useEffect(() => {
-  //   console.log("value changed in editor sheet:", value);
-  // }, [value]);
+  // 부모(Submit 버튼)에서 disabled 처리를 할 수 있도록 enable 상태 전달
+  useEffect(() => {
+    onEnabledChange?.(isSubmitEnabled);
+  }, [isSubmitEnabled, onEnabledChange]);
 
   return (
-    <BottomSheetView>
-      <View style={styles.container}>
-        {/* ✅ 카테고리 한 줄: [선택칩] [chevron] [나머지 카테고리들(열렸을 때만)] */}
-        <View style={styles.categoryInlineRow}>
-          <View style={styles.categoryChipSelected}>
-            <Text style={styles.categorySelectedText}>
-              {categories.find((c) => c.categoryId === draftCategoryId)
-                ?.label ?? categoryLabel}
-            </Text>
-          </View>
-
-          {/* ✅ 리스트가 닫혀 있을 때만 '>' 보이게 */}
-          {!isCategoryOpen && (
-            <TouchableOpacity
-              activeOpacity={0.7}
-              onPress={() => setIsCategoryOpen(true)}
-              style={styles.chevronButton}
-              hitSlop={8}
-            >
-              <Text style={styles.chevronText}>›</Text>
-            </TouchableOpacity>
-          )}
-
-          {isCategoryOpen && (
-            <ScrollView
-              horizontal
-              keyboardShouldPersistTaps="always"
-              showsHorizontalScrollIndicator={false}
-              contentContainerStyle={styles.categoryInlineList}
-              style={styles.categoryInlineScroll}
-            >
-              {otherCategories.map((c) => (
-                <TouchableOpacity
-                  key={c.categoryId}
-                  activeOpacity={0.7}
-                  onPress={() => onPickCategory(c.categoryId)}
-                  style={styles.categoryChip}
-                >
-                  <Text style={styles.categoryText}>{c.label}</Text>
-                </TouchableOpacity>
-              ))}
-            </ScrollView>
-          )}
-        </View>
-
-        {/* 입력창 + 전송 버튼 */}
-        <View style={styles.inputRow}>
-          <View style={styles.inputWrapper}>
-            <BottomSheetTextInput
-              ref={inputRef}
-              value={localText}
-              onChangeText={onChangeLocalText}
-              placeholder="두근두근, 무엇을 튀겨볼까요?"
-              placeholderTextColor="#C6C6C6"
-              returnKeyType="done"
-              onSubmitEditing={onSubmitInternal}
-              maxLength={20}
-              style={styles.input}
-            />
-
-            {/* ✅ 입력값 있을 때만 X 버튼 노출 */}
-            {!!value?.length && (
-              <TouchableOpacity
-                activeOpacity={0.7}
-                onPress={onClearText}
-                style={styles.clearButton}
-                hitSlop={8}
-              >
-                <Text style={styles.clearIcon}>×</Text>
-              </TouchableOpacity>
-            )}
-          </View>
-
-          <TouchableOpacity
-            activeOpacity={0.7}
-            onPress={onSubmitInternal}
-            disabled={!isSubmitEnabled}
-            style={[
-              styles.submitButton,
-              !isSubmitEnabled && styles.submitButtonDisabled,
-            ]}
-          >
-            <Text
-              style={[
-                styles.submitIcon,
-                !isSubmitEnabled && styles.submitIconDisabled,
-              ]}
-            >
-              ➔
-            </Text>
-          </TouchableOpacity>
-        </View>
-      </View>
-    </BottomSheetView>
+    <BottomSheetTextInput
+      ref={inputRef}
+      value={localText}
+      onChangeText={onChangeLocalText}
+      placeholder={placeholder}
+      placeholderTextColor="#C6C6C6"
+      returnKeyType="done"
+      onSubmitEditing={onSubmitEditing}
+      maxLength={maxLength}
+      style={style}
+    />
   );
 }
 
@@ -173,6 +86,9 @@ const TodoEditorSheet = React.forwardRef(function TodoEditorSheet(
 
   // ✅ 바텀시트 내부 임시 선택
   const [draftCategoryId, setDraftCategoryId] = useState(initialCategoryId);
+
+  // ✅ Submit 버튼 활성화 상태 (TodoBottomSheetTextInput에서 계산해서 올려줌)
+  const [isSubmitEnabled, setIsSubmitEnabled] = useState(false);
 
   const focusInput = useCallback(() => {
     InteractionManager.runAfterInteractions(() => {
@@ -237,13 +153,6 @@ const TodoEditorSheet = React.forwardRef(function TodoEditorSheet(
     requestAnimationFrame(() => inputRef.current?.focus?.());
   }, [onChangeText]);
 
-  // const handleChangeText = useCallback(
-  //   (text) => {
-  //     onChangeText?.(text);
-  //   },
-  //   [onChangeText]
-  // );
-
   return (
     <BottomSheetModal
       ref={ref}
@@ -257,20 +166,99 @@ const TodoEditorSheet = React.forwardRef(function TodoEditorSheet(
       backgroundStyle={{backgroundColor: "#F7F7F7"}}
       handleIndicatorStyle={{backgroundColor: "#D0D0D0", width: "38.4%"}}
     >
-      <TodoEditorSheetContent
-        value={value}
-        onChangeText={onChangeText}
-        onSubmitInternal={handleSubmitInternal}
-        categories={categories}
-        categoryLabel={categoryLabel}
-        isCategoryOpen={isCategoryOpen}
-        setIsCategoryOpen={setIsCategoryOpen}
-        draftCategoryId={draftCategoryId}
-        otherCategories={otherCategories}
-        onPickCategory={handlePickCategory}
-        onClearText={handleClearText}
-        inputRef={inputRef}
-      />
+      {/* ✅ TodoEditorSheetContent를 다시 합침 */}
+      <BottomSheetView>
+        <View style={styles.container}>
+          {/* ✅ 카테고리 한 줄: [선택칩] [chevron] [나머지 카테고리들(열렸을 때만)] */}
+          <View style={styles.categoryInlineRow}>
+            <View style={styles.categoryChipSelected}>
+              <Text style={styles.categorySelectedText}>
+                {categories.find((c) => c.categoryId === draftCategoryId)
+                  ?.label ?? categoryLabel}
+              </Text>
+            </View>
+
+            {/* ✅ 리스트가 닫혀 있을 때만 '>' 보이게 */}
+            {!isCategoryOpen && (
+              <TouchableOpacity
+                activeOpacity={0.7}
+                onPress={() => setIsCategoryOpen(true)}
+                style={styles.chevronButton}
+                hitSlop={8}
+              >
+                <Text style={styles.chevronText}>›</Text>
+              </TouchableOpacity>
+            )}
+
+            {isCategoryOpen && (
+              <ScrollView
+                horizontal
+                keyboardShouldPersistTaps="always"
+                showsHorizontalScrollIndicator={false}
+                contentContainerStyle={styles.categoryInlineList}
+                style={styles.categoryInlineScroll}
+              >
+                {otherCategories.map((c) => (
+                  <TouchableOpacity
+                    key={c.categoryId}
+                    activeOpacity={0.7}
+                    onPress={() => handlePickCategory(c.categoryId)}
+                    style={styles.categoryChip}
+                  >
+                    <Text style={styles.categoryText}>{c.label}</Text>
+                  </TouchableOpacity>
+                ))}
+              </ScrollView>
+            )}
+          </View>
+
+          {/* 입력창 + 전송 버튼 */}
+          <View style={styles.inputRow}>
+            <View style={styles.inputWrapper}>
+              <TodoBottomSheetTextInput
+                inputRef={inputRef}
+                value={value}
+                onChangeText={onChangeText}
+                onSubmitEditing={handleSubmitInternal}
+                onEnabledChange={setIsSubmitEnabled}
+                maxLength={20}
+                style={styles.input}
+              />
+
+              {/* ✅ 입력값 있을 때만 X 버튼 노출 */}
+              {!!value?.length && (
+                <TouchableOpacity
+                  activeOpacity={0.7}
+                  onPress={handleClearText}
+                  style={styles.clearButton}
+                  hitSlop={8}
+                >
+                  <Text style={styles.clearIcon}>×</Text>
+                </TouchableOpacity>
+              )}
+            </View>
+
+            <TouchableOpacity
+              activeOpacity={0.7}
+              onPress={handleSubmitInternal}
+              disabled={!isSubmitEnabled}
+              style={[
+                styles.submitButton,
+                !isSubmitEnabled && styles.submitButtonDisabled,
+              ]}
+            >
+              <Text
+                style={[
+                  styles.submitIcon,
+                  !isSubmitEnabled && styles.submitIconDisabled,
+                ]}
+              >
+                ➔
+              </Text>
+            </TouchableOpacity>
+          </View>
+        </View>
+      </BottomSheetView>
     </BottomSheetModal>
   );
 });
