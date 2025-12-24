@@ -86,6 +86,9 @@ export default function HomeScreen({navigation}) {
     // 3) 상태 정리는 onDismiss에서 처리하는 게 깔끔
   }, []);
 
+  // ✅ create / edit 모드
+  const sheetMode = editingTodo?.id ? "edit" : "create";
+
   const handleSubmit = useCallback(
     (draftCategoryId) => {
       if (!editingTodo && editingText.trim().length === 0) {
@@ -149,13 +152,12 @@ export default function HomeScreen({navigation}) {
         navigation={navigation}
         onPressInput={openEditor}
         categories={TAB_CATEGORIES}
-        // selectedCategoryId={selectedCategoryId}
-        // onChangeCategoryId={setSelectedCategoryId}
       />
 
       {/* ✅ @gorhom/bottom-sheet 기반 입력 시트 */}
       <TodoEditorSheet
         ref={bottomSheetRef}
+        mode={sheetMode} // ✅ 추가
         value={editingText}
         onChangeText={setEditingText}
         onCloseTogether={closeEditorTogether}

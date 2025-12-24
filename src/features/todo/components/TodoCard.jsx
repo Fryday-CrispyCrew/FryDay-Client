@@ -37,6 +37,7 @@ function TodoItem({
   onSwipeOpen,
   onSwipeClose,
   onLongPressDrag,
+  onPressItem, // ✅ 추가
 }) {
   const translateX = useSharedValue(0);
   const startX = useSharedValue(0);
@@ -102,9 +103,16 @@ function TodoItem({
             <DragHandleIcon width={12} />
           </TouchableOpacity>
 
-          <AppText variant="M500" className="text-bk" style={{flex: 1}}>
-            {item.title}
-          </AppText>
+          {/* ✅ 텍스트 눌러서 수정 바텀시트 열기 */}
+          <TouchableOpacity
+            activeOpacity={0.7}
+            style={{flex: 1}}
+            onPress={() => onPressItem?.(item)}
+          >
+            <AppText variant="M500" className="text-bk">
+              {item.title}
+            </AppText>
+          </TouchableOpacity>
 
           <TouchableOpacity
             style={styles.todoRadioHitArea}
@@ -229,6 +237,7 @@ export default function TodoCard({navigation, onPressInput, categories = []}) {
                     setSwipedTodoId((prev) => (prev === id ? null : prev))
                   }
                   onLongPressDrag={drag}
+                  onPressItem={(todo) => onPressInput?.(todo)} // ✅ 추가
                 />
               )}
               scrollEnabled={false} // ✅ 섹션 안에서 스크롤 안 하고, Home 전체 스크롤로(원하면 부모에 ScrollView)
