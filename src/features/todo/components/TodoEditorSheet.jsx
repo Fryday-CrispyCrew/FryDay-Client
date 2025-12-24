@@ -23,6 +23,7 @@ import SelectDateIcon from "../assets/svg/todoEditorSheet/calendarSelect.svg";
 
 /**
  * ✅ BottomSheetTextInput만 분리 (IME-safe 로직 포함)
+ * - 기존 로직 유지하면서 multiline 등 확장 props 추가
  */
 function TodoBottomSheetTextInput({
   inputRef,
@@ -33,6 +34,10 @@ function TodoBottomSheetTextInput({
   placeholder = "두근두근, 무엇을 튀겨볼까요?",
   maxLength = 20,
   style,
+  multiline = false,
+  blurOnSubmit = true,
+  scrollEnabled = false,
+  returnKeyType,
 }) {
   const isSubmitEnabled = (value?.trim?.() ?? "").length > 0;
 
@@ -58,13 +63,19 @@ function TodoBottomSheetTextInput({
       onChangeText={onChangeLocalText}
       placeholder={placeholder}
       placeholderTextColor="#C6C6C6"
-      returnKeyType="done"
+      returnKeyType={returnKeyType ?? (multiline ? "default" : "done")}
       onSubmitEditing={onSubmitEditing}
       maxLength={maxLength}
       style={style}
+      multiline={multiline}
+      blurOnSubmit={blurOnSubmit}
+      scrollEnabled={scrollEnabled}
     />
   );
 }
+
+const ORANGE = "#FF5B22";
+const GRAY = "#8A8989";
 
 const TodoEditorSheet = React.forwardRef(function TodoEditorSheet(
   {
@@ -81,46 +92,20 @@ const TodoEditorSheet = React.forwardRef(function TodoEditorSheet(
   ref
 ) {
   const EDIT_TOOL_ICONS = [
-    {
-      key: "memo",
-      Icon: MemoIcon,
-      onPress: () => {
-        /* TODO */
-      },
-    },
-    {
-      key: "alarm",
-      Icon: AlarmIcon,
-      onPress: () => {
-        /* TODO */
-      },
-    },
-    {
-      key: "repeat",
-      Icon: RepeatIcon,
-      onPress: () => {
-        /* TODO */
-      },
-    },
-    {
-      key: "start",
-      Icon: StartDateIcon,
-      onPress: () => {
-        /* TODO */
-      },
-    },
-    {
-      key: "select",
-      Icon: SelectDateIcon,
-      onPress: () => {
-        /* TODO */
-      },
-    },
+    {key: "memo", Icon: MemoIcon},
+    {key: "alarm", Icon: AlarmIcon},
+    {key: "repeat", Icon: RepeatIcon},
+    {key: "start", Icon: StartDateIcon},
+    {key: "select", Icon: SelectDateIcon},
   ];
 
   const inputRef = useRef(null);
 
-  // ✅ edit일 때 높이 조금 더
+  // ✅ 메모 입력용 ref/state 추가
+  const memoInputRef = useRef(null);
+  const [memoText, setMemoText] = useState("");
+
+  // ✅ edit일 때 높이 조금 더 (메모 input이 나타나므로 상향)
   const snapPoints = useMemo(() => {
     return mode === "edit" ? ["20%"] : ["15%"];
   }, [mode]);
@@ -132,7 +117,12 @@ const TodoEditorSheet = React.forwardRef(function TodoEditorSheet(
   const [selectedToolKey, setSelectedToolKey] = useState(null);
 
   const onSelectTool = useCallback((key) => {
-    setSelectedToolKey(key); // ✅ 라디오: 누르면 그 아이콘만 선택
+    setSelectedToolKey(key);
+
+    // ✅ memo 선택 시 memo input에 포커스 주고 싶으면
+    if (key === "memo") {
+      requestAnimationFrame(() => memoInputRef.current?.focus?.());
+    }
   }, []);
 
   const focusInput = useCallback(() => {
@@ -176,12 +166,16 @@ const TodoEditorSheet = React.forwardRef(function TodoEditorSheet(
   }, []);
 
   const handleSubmitInternal = useCallback(() => {
+    // ✅ 추후 서버에 memo도 저장하려면 payload로 확장
+    // onSubmit?.({ categoryId: draftCategoryId, title: value, memo: memoText })
     onSubmit?.(draftCategoryId);
   }, [onSubmit, draftCategoryId]);
 
   const handleDismiss = useCallback(() => {
     setIsCategoryOpen(false);
     setDraftCategoryId(initialCategoryId);
+    setSelectedToolKey(null);
+    setMemoText(""); // ✅ 닫을 때 메모 입력 초기화
     onDismiss?.();
   }, [onDismiss, initialCategoryId]);
 
@@ -196,7 +190,8 @@ const TodoEditorSheet = React.forwardRef(function TodoEditorSheet(
     requestAnimationFrame(() => inputRef.current?.focus?.());
   }, [onChangeText]);
 
-  // ✅ (수정 모드) 아이콘 5개는 로컬 svg로 교체 예정
+  const isMemoOpen = mode === "edit" && selectedToolKey === "memo";
+
   const renderEditTools = () => {
     return (
       <View style={styles.toolsRow}>
@@ -211,11 +206,10 @@ const TodoEditorSheet = React.forwardRef(function TodoEditorSheet(
                 style={styles.toolIconButton}
                 onPress={() => onSelectTool(key)}
               >
-                {/* ✅ 선택된 아이콘만 주황색 */}
                 <Icon
                   width={24}
                   height={24}
-                  color={isSelected ? "#FF5B22" : "#8A8989"}
+                  color={isSelected ? ORANGE : GRAY}
                 />
               </TouchableOpacity>
             );
@@ -348,7 +342,7 @@ const TodoEditorSheet = React.forwardRef(function TodoEditorSheet(
               </TouchableOpacity>
             </View>
           ) : (
-            // ===== 수정 모드: input 아래 toolsRow + submit =====
+            // ===== 수정 모드: memo 선택 시 제목 아래 메모 input + toolsRow + submit =====
             <View>
               <View style={styles.inputWrapperEdit}>
                 <TodoBottomSheetTextInput
@@ -373,6 +367,24 @@ const TodoEditorSheet = React.forwardRef(function TodoEditorSheet(
                   </TouchableOpacity>
                 )}
               </View>
+
+              {/* ✅ memo 아이콘 선택 시: 최대 3줄 메모 input */}
+              {isMemoOpen && (
+                <View style={styles.memoWrapper}>
+                  <TodoBottomSheetTextInput
+                    inputRef={memoInputRef}
+                    value={memoText}
+                    onChangeText={setMemoText}
+                    onEnabledChange={() => {}}
+                    placeholder="기억해야 할 메모를 입력해 주세요."
+                    maxLength={200}
+                    multiline
+                    blurOnSubmit={false}
+                    scrollEnabled
+                    style={styles.memoInput}
+                  />
+                </View>
+              )}
 
               {renderEditTools()}
             </View>
@@ -478,6 +490,28 @@ const styles = StyleSheet.create({
     paddingRight: 26,
   },
 
+  // ✅ memo input
+  memoWrapper: {
+    marginTop: 10,
+    borderRadius: 16,
+    backgroundColor: "#FAFAFA",
+    paddingHorizontal: 16,
+    paddingVertical: 10,
+    borderWidth: 1,
+    borderColor: "#EAEAEA",
+  },
+  // ✅ "3줄" 높이로 제한 (lineHeight 18 * 3 = 54)
+  memoInput: {
+    fontFamily: "Pretendard-Medium",
+    fontSize: 12,
+    color: "#333333",
+    lineHeight: 18,
+    minHeight: 54,
+    maxHeight: 54,
+    textAlignVertical: "top",
+    padding: 0, // wrapper가 padding을 담당하므로 깔끔
+  },
+
   clearButton: {
     position: "absolute",
     right: 12,
@@ -511,10 +545,6 @@ const styles = StyleSheet.create({
     borderRadius: 10,
     alignItems: "center",
     justifyContent: "center",
-  },
-  toolIconPlaceholder: {
-    fontSize: 14,
-    color: "#9B9B9B",
   },
 
   // submit (공통)
