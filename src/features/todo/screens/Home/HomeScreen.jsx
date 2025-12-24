@@ -20,16 +20,9 @@ import CategoryIcon from "../../assets/svg/Category.svg";
 import TodoCard from "../../components/TodoCard";
 
 import TodoEditorSheet from "../../components/TodoEditorSheet";
+import {useTodoEditorController} from "../../hooks/useTodoEditorController";
 
 const {width} = Dimensions.get("window");
-
-// 카테고리 탭 목록
-// const TAB_CATEGORIES = [
-//   {categoryId: 0, label: "전체보기"}, // 0은 "전체" 용
-//   {categoryId: 1, label: "운동하기"},
-//   {categoryId: 2, label: "공부하기"},
-//   {categoryId: 3, label: "완전놀기"},
-// ];
 
 const TAB_CATEGORIES = [
   {categoryId: 1, label: "운동하기", color: "#FF5B22"}, // 주황
@@ -38,70 +31,14 @@ const TAB_CATEGORIES = [
 ];
 
 export default function HomeScreen({navigation}) {
-  const [editingTodo, setEditingTodo] = useState(null); // { id, title } or null
-  const [editingText, setEditingText] = useState("");
-
-  // ✅ HomeScreen이 “현재 선택된 카테고리”를 소유
-  // const [selectedCategoryId, setSelectedCategoryId] = useState(0);
-
-  const [sheetInitialCategoryId, setSheetInitialCategoryId] = useState(
-    TAB_CATEGORIES?.[0]?.categoryId ?? 0
-  );
-
-  const bottomSheetRef = useRef(null);
-
-  const sheetCategory = useMemo(() => {
-    return (
-      TAB_CATEGORIES.find((c) => c.categoryId === sheetInitialCategoryId) ??
-      TAB_CATEGORIES[0]
-    );
-  }, [sheetInitialCategoryId]);
-
-  // ✅ 전체보기(0)이면 첫 번째 카테고리(0 아닌 첫 항목)로 fallback
-  // const effectiveCategory = useMemo(() => {
-  //   const firstCategory =
-  //     TAB_CATEGORIES.find((c) => c.categoryId !== 0) ?? TAB_CATEGORIES[0];
-  //   const resolved =
-  //     selectedCategoryId === 0
-  //       ? firstCategory
-  //       : TAB_CATEGORIES.find((c) => c.categoryId === selectedCategoryId);
-
-  //   return resolved ?? firstCategory;
-  // }, [selectedCategoryId]);
-
-  const openEditor = useCallback((todo) => {
-    const nextCategoryId =
-      todo?.categoryId ?? TAB_CATEGORIES?.[0]?.categoryId ?? 0;
-
-    setSheetInitialCategoryId(nextCategoryId);
-    setEditingTodo(todo);
-    setEditingText(todo?.title ?? "");
-    bottomSheetRef.current?.present();
-  }, []);
-
-  const closeEditorTogether = useCallback(() => {
-    Keyboard.dismiss();
-    // 2) 바텀시트 dismiss
-    bottomSheetRef.current?.dismiss();
-    // 3) 상태 정리는 onDismiss에서 처리하는 게 깔끔
-  }, []);
-
-  // ✅ create / edit 모드
-  const sheetMode = editingTodo?.id ? "edit" : "create";
-
-  const handleSubmit = useCallback(
-    (draftCategoryId) => {
-      if (!editingTodo && editingText.trim().length === 0) {
-        closeEditorTogether();
-        return;
-      }
-      // TODO: add/update 처리
-      // ✅ 여기서 새 투두 생성 시 effectiveCategory.categoryId를 사용하면 “시트의 카테고리”와 저장값이 일치함
-      // addTodo({ title: editingText, categoryId: effectiveCategory.categoryId })
-      closeEditorTogether();
+  const editor = useTodoEditorController({
+    categories: TAB_CATEGORIES,
+    // 나중에 react-query mutation 연결하는 자리
+    onSubmitTodo: async ({todo, text, categoryId}) => {
+      // todo?.id 있으면 update, 없으면 create
+      // await mutateAsync(...)
     },
-    [editingTodo, editingText, closeEditorTogether]
-  );
+  });
 
   return (
     <SafeAreaView style={styles.safe} edges={["top"]} mode={"margin"}>
@@ -150,28 +87,12 @@ export default function HomeScreen({navigation}) {
       {/* ✅ TodoCard에서 인풋 누르면 openEditor 호출 */}
       <TodoCard
         navigation={navigation}
-        onPressInput={openEditor}
+        onPressInput={editor.openEditor}
         categories={TAB_CATEGORIES}
       />
 
       {/* ✅ @gorhom/bottom-sheet 기반 입력 시트 */}
-      <TodoEditorSheet
-        ref={bottomSheetRef}
-        mode={sheetMode} // ✅ 추가
-        value={editingText}
-        onChangeText={setEditingText}
-        onCloseTogether={closeEditorTogether}
-        onDismiss={() => {
-          setEditingTodo(null);
-          setEditingText("");
-        }}
-        categoryLabel={sheetCategory?.label ?? "카테고리"}
-        categories={TAB_CATEGORIES}
-        initialCategoryId={sheetCategory?.categoryId ?? 0}
-        onSubmit={(draftCategoryId) => {
-          handleSubmit(draftCategoryId);
-        }}
-      />
+      <TodoEditorSheet {...editor.sheetProps} />
     </SafeAreaView>
   );
 }
