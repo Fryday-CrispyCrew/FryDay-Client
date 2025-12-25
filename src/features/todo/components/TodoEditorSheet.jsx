@@ -38,6 +38,8 @@ function TodoBottomSheetTextInput({
   blurOnSubmit = true,
   scrollEnabled = false,
   returnKeyType,
+  onFocus,
+  onBlur,
 }) {
   const isSubmitEnabled = (value?.trim?.() ?? "").length > 0;
 
@@ -70,6 +72,8 @@ function TodoBottomSheetTextInput({
       multiline={multiline}
       blurOnSubmit={blurOnSubmit}
       scrollEnabled={scrollEnabled}
+      onFocus={onFocus}
+      onBlur={onBlur}
     />
   );
 }
@@ -104,6 +108,9 @@ const TodoEditorSheet = React.forwardRef(function TodoEditorSheet(
   // ✅ 메모 입력용 ref/state 추가
   const memoInputRef = useRef(null);
   const [memoText, setMemoText] = useState("");
+
+  const [isTitleFocused, setIsTitleFocused] = useState(false);
+  const [isMemoFocused, setIsMemoFocused] = useState(false);
 
   // ✅ edit일 때 높이 조금 더 (메모 input이 나타나므로 상향)
   const snapPoints = useMemo(() => {
@@ -300,7 +307,12 @@ const TodoEditorSheet = React.forwardRef(function TodoEditorSheet(
           {mode === "create" ? (
             // ===== 생성 모드: input 옆에 submit =====
             <View style={styles.inputRow}>
-              <View style={styles.inputWrapper}>
+              <View
+                style={[
+                  styles.inputWrapper,
+                  isTitleFocused && styles.inputWrapperFocused,
+                ]}
+              >
                 <TodoBottomSheetTextInput
                   inputRef={inputRef}
                   value={value}
@@ -309,6 +321,8 @@ const TodoEditorSheet = React.forwardRef(function TodoEditorSheet(
                   onEnabledChange={setIsSubmitEnabled}
                   maxLength={20}
                   style={styles.input}
+                  onFocus={() => setIsTitleFocused(true)}
+                  onBlur={() => setIsTitleFocused(false)}
                 />
 
                 {!!value?.length && (
@@ -345,7 +359,12 @@ const TodoEditorSheet = React.forwardRef(function TodoEditorSheet(
           ) : (
             // ===== 수정 모드: memo 선택 시 제목 아래 메모 input + toolsRow + submit =====
             <View>
-              <View style={styles.inputWrapperEdit}>
+              <View
+                style={[
+                  styles.inputWrapperEdit,
+                  isTitleFocused && styles.inputWrapperFocused,
+                ]}
+              >
                 <TodoBottomSheetTextInput
                   inputRef={inputRef}
                   value={value}
@@ -355,6 +374,8 @@ const TodoEditorSheet = React.forwardRef(function TodoEditorSheet(
                   maxLength={20}
                   style={styles.inputEdit}
                   placeholder="두근두근, 무엇을 튀겨볼까요?"
+                  onFocus={() => setIsTitleFocused(true)}
+                  onBlur={() => setIsTitleFocused(false)}
                 />
 
                 {!!value?.length && (
@@ -371,7 +392,12 @@ const TodoEditorSheet = React.forwardRef(function TodoEditorSheet(
 
               {/* ✅ memo 아이콘 선택 시: 최대 3줄 메모 input */}
               {isMemoOpen && (
-                <View style={styles.memoWrapper}>
+                <View
+                  style={[
+                    styles.memoWrapper,
+                    isMemoFocused && styles.inputWrapperFocused,
+                  ]}
+                >
                   <TodoBottomSheetTextInput
                     inputRef={memoInputRef}
                     value={memoText}
@@ -383,6 +409,8 @@ const TodoEditorSheet = React.forwardRef(function TodoEditorSheet(
                     blurOnSubmit={false}
                     scrollEnabled
                     style={styles.memoInput}
+                    onFocus={() => setIsMemoFocused(true)}
+                    onBlur={() => setIsMemoFocused(false)}
                   />
                 </View>
               )}
@@ -465,6 +493,9 @@ const styles = StyleSheet.create({
     paddingVertical: 6,
     position: "relative",
     borderWidth: 1,
+    borderColor: "#F2F2F2",
+  },
+  inputWrapperFocused: {
     borderColor: "#EAEAEA",
   },
   input: {
@@ -482,7 +513,7 @@ const styles = StyleSheet.create({
     paddingVertical: 6,
     position: "relative",
     borderWidth: 1,
-    borderColor: "#EAEAEA",
+    borderColor: "#F2F2F2",
   },
   inputEdit: {
     fontFamily: "Pretendard-Medium",
@@ -499,7 +530,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: 16,
     paddingVertical: 10,
     borderWidth: 1,
-    borderColor: "#EAEAEA",
+    borderColor: "#F2F2F2",
   },
   // ✅ "3줄" 높이로 제한 (lineHeight 18 * 3 = 54)
   memoInput: {
