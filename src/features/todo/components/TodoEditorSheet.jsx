@@ -131,12 +131,20 @@ const TodoEditorSheet = React.forwardRef(function TodoEditorSheet(
 
   const onSelectTool = useCallback(
     (key) => {
-      setSelectedToolKey(key);
+      setSelectedToolKey((prev) => {
+        // ✅ 같은 아이콘 다시 누르면 해제
+        if (prev === key) {
+          blurAllInputs();
+          return null;
+        }
 
-      // ✅ memo가 아닌 경우 → 모든 input focus 해제
-      if (key !== "memo") {
-        blurAllInputs();
-      }
+        // ✅ 다른 아이콘 선택
+        if (key !== "memo") {
+          blurAllInputs();
+        }
+
+        return key;
+      });
     },
     [blurAllInputs]
   );
