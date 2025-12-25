@@ -8,6 +8,7 @@ import {
   ScrollView,
   TouchableOpacity,
   Keyboard,
+  Platform,
 } from "react-native";
 import {
   BottomSheetModal,
@@ -22,6 +23,9 @@ import RepeatIcon from "../assets/svg/todoEditorSheet/repeat.svg";
 import StartDateIcon from "../assets/svg/todoEditorSheet/calendarStart.svg";
 import SelectDateIcon from "../assets/svg/todoEditorSheet/calendarSelect.svg";
 import {useSafeAreaInsets} from "react-native-safe-area-context";
+import DateTimePicker, {
+  DateTimePickerAndroid,
+} from "@react-native-community/datetimepicker";
 
 /**
  * ✅ BottomSheetTextInput만 분리 (IME-safe 로직 포함)
@@ -118,16 +122,23 @@ const TodoEditorSheet = React.forwardRef(function TodoEditorSheet(
   const [isTitleFocused, setIsTitleFocused] = useState(false);
   const [isMemoFocused, setIsMemoFocused] = useState(false);
 
-  // ✅ edit일 때 높이 조금 더 (메모 input이 나타나므로 상향)
-  const snapPoints = useMemo(() => {
-    return mode === "edit" ? ["20%"] : ["15%"];
-  }, [mode]);
-
   const [isCategoryOpen, setIsCategoryOpen] = useState(false);
   const [draftCategoryId, setDraftCategoryId] = useState(initialCategoryId);
   const [isSubmitEnabled, setIsSubmitEnabled] = useState(false);
 
   const [selectedToolKey, setSelectedToolKey] = useState(null);
+  // 알림 시간(임시 선택 값)
+  const [alarmDraftDate, setAlarmDraftDate] = useState(new Date());
+  // 적용된 알림 시간(저장될 값)
+  const [alarmTime, setAlarmTime] = useState(null); // e.g. "07:30"
+
+  // ✅ edit일 때 높이 조금 더 (메모 input이 나타나므로 상향)
+  const snapPoints = useMemo(() => {
+    return mode === "edit" ? ["20%"] : ["15%"];
+  }, [mode]);
+
+  const isMemoOpen = mode === "edit" && selectedToolKey === "memo";
+  const isAlarmOpen = mode === "edit" && selectedToolKey === "alarm";
 
   const onSelectTool = useCallback(
     (key) => {
@@ -143,10 +154,16 @@ const TodoEditorSheet = React.forwardRef(function TodoEditorSheet(
           blurAllInputs();
         }
 
+        // ✅ Android에서 alarm 선택 시: 바텀시트 안에 UI 안 깔고, 모달로 시간 선택
+        if (key === "alarm" && Platform.OS === "android") {
+          // tool은 선택 상태로 두되, 시간 선택 모달만 띄움
+          requestAnimationFrame(() => openAndroidAlarmPicker());
+        }
+
         return key;
       });
     },
-    [blurAllInputs]
+    [blurAllInputs, openAndroidAlarmPicker]
   );
 
   const focusInput = useCallback(() => {
@@ -214,8 +231,6 @@ const TodoEditorSheet = React.forwardRef(function TodoEditorSheet(
     requestAnimationFrame(() => inputRef.current?.focus?.());
   }, [onChangeText]);
 
-  const isMemoOpen = mode === "edit" && selectedToolKey === "memo";
-
   const blurAllInputs = useCallback(() => {
     // TextInput blur
     inputRef.current?.blur?.();
@@ -228,6 +243,30 @@ const TodoEditorSheet = React.forwardRef(function TodoEditorSheet(
     // 키보드까지 확실히 내리고 싶다면
     Keyboard.dismiss();
   }, []);
+
+  const formatTime = useCallback((date) => {
+    const h = String(date.getHours()).padStart(2, "0");
+    const m = String(date.getMinutes()).padStart(2, "0");
+    return `${h}:${m}`;
+  }, []);
+
+  const openAndroidAlarmPicker = useCallback(() => {
+    DateTimePickerAndroid.open({
+      value: alarmDraftDate,
+      mode: "time",
+      is24Hour: false, // 필요하면 true
+      onChange: (event, selectedDate) => {
+        // Android: dismissed면 selectedDate가 undefined일 수 있음
+        if (event?.type === "dismissed") return;
+        if (!selectedDate) return;
+
+        setAlarmDraftDate(selectedDate);
+
+        // 선택 즉시 적용(모달 닫히는 타이밍)
+        setAlarmTime(formatTime(selectedDate));
+      },
+    });
+  }, [alarmDraftDate, formatTime]);
 
   const renderEditTools = () => {
     return (
@@ -449,6 +488,50 @@ const TodoEditorSheet = React.forwardRef(function TodoEditorSheet(
               )}
 
               {renderEditTools()}
+
+              {isAlarmOpen && Platform.OS === "ios" && (
+                <View style={styles.panelWrapper}>
+                  <Text style={styles.panelTitle}>알림 설정</Text>
+
+                  <View style={styles.pickerBox}>
+                    <DateTimePicker
+                      value={alarmDraftDate}
+                      mode="time"
+                      display="spinner"
+                      minuteInterval={1}
+                      onChange={(event, date) => {
+                        if (date) setAlarmDraftDate(date);
+                      }}
+                      style={styles.picker}
+                    />
+                  </View>
+
+                  <View style={styles.panelFooter}>
+                    <TouchableOpacity
+                      activeOpacity={0.8}
+                      style={styles.applyButton}
+                      onPress={() => {
+                        const h = String(alarmDraftDate.getHours()).padStart(
+                          2,
+                          "0"
+                        );
+                        const m = String(alarmDraftDate.getMinutes()).padStart(
+                          2,
+                          "0"
+                        );
+                        setAlarmTime(`${h}:${m}`);
+                        // ✅ 적용 후 패널 닫고 싶으면 toggle 로직 이용:
+                        // setSelectedToolKey(null);
+                      }}
+                    >
+                      <Text style={styles.applyButtonText}>적용하기</Text>
+                    </TouchableOpacity>
+                  </View>
+                </View>
+              )}
+              {isAlarmOpen && alarmTime && (
+                <Text style={styles.alarmHint}>알림: {alarmTime}</Text>
+              )}
             </View>
           )}
         </View>
@@ -633,5 +716,43 @@ const styles = StyleSheet.create({
   },
   submitIconDisabled: {
     color: "#888888",
+  },
+  panelWrapper: {
+    marginTop: 14,
+  },
+  panelTitle: {
+    fontSize: 12,
+    color: "#B0B0B0",
+    marginBottom: 10,
+  },
+  pickerBox: {
+    borderRadius: 14,
+    backgroundColor: "#F0F0F0",
+    paddingVertical: 8,
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  picker: {
+    width: "100%",
+  },
+  panelFooter: {
+    marginTop: 14,
+    alignItems: "flex-end",
+  },
+  applyButton: {
+    backgroundColor: "#FF5B22",
+    borderRadius: 18,
+    paddingHorizontal: 18,
+    paddingVertical: 10,
+  },
+  applyButtonText: {
+    color: "#fff",
+    fontSize: 12,
+    fontFamily: "Pretendard-Medium",
+  },
+  alarmHint: {
+    marginTop: 8,
+    fontSize: 16,
+    color: "#000000ff",
   },
 });
