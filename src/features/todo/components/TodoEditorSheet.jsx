@@ -7,6 +7,7 @@ import {
   Pressable,
   ScrollView,
   TouchableOpacity,
+  Keyboard,
 } from "react-native";
 import {
   BottomSheetModal,
@@ -20,6 +21,7 @@ import AlarmIcon from "../assets/svg/todoEditorSheet/alarm.svg";
 import RepeatIcon from "../assets/svg/todoEditorSheet/repeat.svg";
 import StartDateIcon from "../assets/svg/todoEditorSheet/calendarStart.svg";
 import SelectDateIcon from "../assets/svg/todoEditorSheet/calendarSelect.svg";
+import {useSafeAreaInsets} from "react-native-safe-area-context";
 
 /**
  * ✅ BottomSheetTextInput만 분리 (IME-safe 로직 포함)
@@ -40,6 +42,7 @@ function TodoBottomSheetTextInput({
   returnKeyType,
   onFocus,
   onBlur,
+  autoFocus = false,
 }) {
   const isSubmitEnabled = (value?.trim?.() ?? "").length > 0;
 
@@ -74,6 +77,7 @@ function TodoBottomSheetTextInput({
       scrollEnabled={scrollEnabled}
       onFocus={onFocus}
       onBlur={onBlur}
+      autoFocus={autoFocus}
     />
   );
 }
@@ -95,6 +99,8 @@ const TodoEditorSheet = React.forwardRef(function TodoEditorSheet(
   },
   ref
 ) {
+  const insets = useSafeAreaInsets();
+
   const EDIT_TOOL_ICONS = [
     {key: "memo", Icon: MemoIcon},
     {key: "alarm", Icon: AlarmIcon},
@@ -123,14 +129,17 @@ const TodoEditorSheet = React.forwardRef(function TodoEditorSheet(
 
   const [selectedToolKey, setSelectedToolKey] = useState(null);
 
-  const onSelectTool = useCallback((key) => {
-    setSelectedToolKey(key);
+  const onSelectTool = useCallback(
+    (key) => {
+      setSelectedToolKey(key);
 
-    // ✅ memo 선택 시 memo input에 포커스 주고 싶으면
-    if (key === "memo") {
-      requestAnimationFrame(() => memoInputRef.current?.focus?.());
-    }
-  }, []);
+      // ✅ memo가 아닌 경우 → 모든 input focus 해제
+      if (key !== "memo") {
+        blurAllInputs();
+      }
+    },
+    [blurAllInputs]
+  );
 
   const focusInput = useCallback(() => {
     InteractionManager.runAfterInteractions(() => {
@@ -199,6 +208,19 @@ const TodoEditorSheet = React.forwardRef(function TodoEditorSheet(
 
   const isMemoOpen = mode === "edit" && selectedToolKey === "memo";
 
+  const blurAllInputs = useCallback(() => {
+    // TextInput blur
+    inputRef.current?.blur?.();
+    memoInputRef.current?.blur?.();
+
+    // focus 상태 리셋 (borderColor 원복)
+    setIsTitleFocused(false);
+    setIsMemoFocused(false);
+
+    // 키보드까지 확실히 내리고 싶다면
+    Keyboard.dismiss();
+  }, []);
+
   const renderEditTools = () => {
     return (
       <View style={styles.toolsRow}>
@@ -249,7 +271,7 @@ const TodoEditorSheet = React.forwardRef(function TodoEditorSheet(
     <BottomSheetModal
       ref={ref}
       index={0}
-      snapPoints={snapPoints}
+      // snapPoints={snapPoints}
       backdropComponent={renderBackdrop}
       onDismiss={handleDismiss}
       onAnimate={handleSheetAnimate}
@@ -258,6 +280,8 @@ const TodoEditorSheet = React.forwardRef(function TodoEditorSheet(
       backgroundStyle={{backgroundColor: "#FAFAFA"}}
       handleIndicatorStyle={{backgroundColor: "#D0D0D0", width: "38.4%"}}
       enableContentPanningGesture={false} // ✅ content로는 시트 이동 X (고정)
+      bottomInset={insets.bottom}
+      // detached={true}
     >
       <BottomSheetView>
         <View style={styles.container}>
@@ -411,6 +435,7 @@ const TodoEditorSheet = React.forwardRef(function TodoEditorSheet(
                     style={styles.memoInput}
                     onFocus={() => setIsMemoFocused(true)}
                     onBlur={() => setIsMemoFocused(false)}
+                    autoFocus={true}
                   />
                 </View>
               )}
@@ -520,6 +545,7 @@ const styles = StyleSheet.create({
     fontSize: 12,
     color: "#333333",
     paddingRight: 26,
+    // borderWidth: 1,
   },
 
   // ✅ memo input
@@ -528,7 +554,7 @@ const styles = StyleSheet.create({
     borderRadius: 16,
     backgroundColor: "#FAFAFA",
     paddingHorizontal: 16,
-    paddingVertical: 10,
+    paddingVertical: 16,
     borderWidth: 1,
     borderColor: "#F2F2F2",
   },
@@ -538,10 +564,11 @@ const styles = StyleSheet.create({
     fontSize: 12,
     color: "#333333",
     lineHeight: 18,
-    minHeight: 54,
+    // minHeight: 54,
     maxHeight: 54,
     textAlignVertical: "top",
-    padding: 0, // wrapper가 padding을 담당하므로 깔끔
+    paddingVertical: 0, // wrapper가 padding을 담당하므로 깔끔
+    // borderWidth: 1,
   },
 
   clearButton: {
