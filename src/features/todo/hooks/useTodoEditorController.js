@@ -1,6 +1,7 @@
 // src/features/todo/hooks/useTodoEditorController.js
 import {useCallback, useMemo, useRef, useState} from "react";
 import {Keyboard} from "react-native";
+import {useRepeatEditorStore} from "../stores/repeatEditorStore";
 
 /**
  * TodoEditor(BottomSheet) 제어 훅
@@ -44,6 +45,7 @@ export function useTodoEditorController({
   // Editor 열기 (TodoCard에서 호출)
   const openEditor = useCallback(
     (todo) => {
+      console.log("todo", todo);
       const nextCategoryId =
         todo?.categoryId ??
         categories?.[0]?.categoryId ??
@@ -52,6 +54,24 @@ export function useTodoEditorController({
       setSheetInitialCategoryId(nextCategoryId);
       setEditingTodo(todo ?? null);
       setEditingText(todo?.title ?? "");
+
+      if (mode === "create") {
+        useRepeatEditorStore.getState().resetRepeat();
+      }
+      if (mode === "edit") {
+        // ✅ 기존 todo의 repeat 값을 store에 주입
+        useRepeatEditorStore.getState().setRepeatAll({
+          repeatStartDate: todo.repeatStartDate
+            ? new Date(todo.repeatStartDate)
+            : new Date(),
+          repeatEndType: todo.repeatEndType ?? "none",
+          repeatEndDate: todo.repeatEndDate
+            ? new Date(todo.repeatEndDate)
+            : new Date(),
+          repeatCycle: todo.repeatCycle ?? "unset",
+          repeatAlarm: todo.repeatAlarm ?? "unset",
+        });
+      }
 
       bottomSheetRef.current?.present?.();
     },

@@ -1,4 +1,4 @@
-// src/screens/Home/HomeScreen.jsx
+// src/features/todo/screens/Home/HomeScreen.jsx
 import React, {useCallback, useEffect, useMemo, useRef, useState} from "react";
 import {
   View,

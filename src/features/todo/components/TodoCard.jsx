@@ -1,4 +1,4 @@
-// src/screens/Home/components/TodoCard.jsx
+// src/features/todo/components/TodoCard.jsx
 import React, {useMemo, useState, useCallback} from "react";
 import {View, StyleSheet, TouchableOpacity, ScrollView} from "react-native";
 import DraggableFlatList from "react-native-draggable-flatlist";
@@ -175,7 +175,7 @@ export default function TodoCard({navigation, onPressInput, categories = []}) {
 
   const handlePressAddTodo = useCallback(
     (categoryId) => {
-      onPressInput?.({id: null, title: "", categoryId}); // ✅ 바텀시트 열기 + 카테고리 힌트 전달(원하면 사용)
+      onPressInput?.({id: null, title: "", categoryId, mode: "create"}); // ✅ 바텀시트 열기 + 카테고리 힌트 전달(원하면 사용)
     },
     [onPressInput]
   );
@@ -237,7 +237,9 @@ export default function TodoCard({navigation, onPressInput, categories = []}) {
                     setSwipedTodoId((prev) => (prev === id ? null : prev))
                   }
                   onLongPressDrag={drag}
-                  onPressItem={(todo) => onPressInput?.(todo)} // ✅ 추가
+                  onPressItem={(todo) =>
+                    onPressInput?.({...todo, mode: "edit"})
+                  } // ✅ 추가
                 />
               )}
               scrollEnabled={false} // ✅ 섹션 안에서 스크롤 안 하고, Home 전체 스크롤로(원하면 부모에 ScrollView)

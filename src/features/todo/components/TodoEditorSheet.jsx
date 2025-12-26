@@ -1,4 +1,4 @@
-// src/screens/Home/components/TodoEditorSheet.jsx
+// src/features/todo/components/TodoEditorSheet.jsx
 import React, {useCallback, useEffect, useMemo, useRef, useState} from "react";
 import {
   View,
@@ -26,6 +26,8 @@ import {useSafeAreaInsets} from "react-native-safe-area-context";
 import DateTimePicker, {
   DateTimePickerAndroid,
 } from "@react-native-community/datetimepicker";
+import {useRepeatEditorStore} from "../stores/repeatEditorStore";
+import RepeatSettingsSection from "./RepeatSettingsSection/RepeatSettingsSection";
 
 /**
  * ✅ BottomSheetTextInput만 분리 (IME-safe 로직 포함)
@@ -104,6 +106,7 @@ const TodoEditorSheet = React.forwardRef(function TodoEditorSheet(
   ref
 ) {
   const insets = useSafeAreaInsets();
+  const repeatPayload = useRepeatEditorStore.getState().getRepeatPayload();
 
   const EDIT_TOOL_ICONS = [
     {key: "memo", Icon: MemoIcon},
@@ -132,6 +135,17 @@ const TodoEditorSheet = React.forwardRef(function TodoEditorSheet(
   // 적용된 알림 시간(저장될 값)
   const [alarmTime, setAlarmTime] = useState(null); // e.g. "07:30"
 
+  // ✅ repeat panel 내부 드롭다운 open 상태 (하나만 열리게)
+  const [openRepeatDropdownKey, setOpenRepeatDropdownKey] = useState(null); // "repeatStart" | "repeatEnd" | "repeatCycle" | "repeatAlarm" | null
+
+  useEffect(() => {
+    if (!isRepeatOpen) setOpenRepeatDropdownKey(null);
+  }, [isRepeatOpen]);
+
+  const toggleRepeatDropdown = useCallback((key) => {
+    setOpenRepeatDropdownKey((prev) => (prev === key ? null : key));
+  }, []);
+
   // ✅ edit일 때 높이 조금 더 (메모 input이 나타나므로 상향)
   const snapPoints = useMemo(() => {
     return mode === "edit" ? ["20%"] : ["15%"];
@@ -139,6 +153,7 @@ const TodoEditorSheet = React.forwardRef(function TodoEditorSheet(
 
   const isMemoOpen = mode === "edit" && selectedToolKey === "memo";
   const isAlarmOpen = mode === "edit" && selectedToolKey === "alarm";
+  const isRepeatOpen = mode === "edit" && selectedToolKey === "repeat";
 
   const onSelectTool = useCallback(
     (key) => {
@@ -201,6 +216,11 @@ const TodoEditorSheet = React.forwardRef(function TodoEditorSheet(
   }, []);
 
   const handleSubmitInternal = useCallback(() => {
+    const payload = {
+      // 기존 title, memo, icon 등등...
+      ...repeatPayload,
+    };
+
     // ✅ 추후 서버에 memo도 저장하려면 payload로 확장
     // onSubmit?.({ categoryId: draftCategoryId, title: value, memo: memoText })
     onSubmit?.(draftCategoryId);
@@ -561,6 +581,11 @@ const TodoEditorSheet = React.forwardRef(function TodoEditorSheet(
                   </View>
                 </View>
               )}
+              <RepeatSettingsSection
+                visible={isRepeatOpen}
+                openKey={openRepeatDropdownKey}
+                onToggleOpenKey={toggleRepeatDropdown}
+              />
             </View>
           )}
         </View>
