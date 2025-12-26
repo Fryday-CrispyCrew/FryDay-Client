@@ -154,12 +154,6 @@ const TodoEditorSheet = React.forwardRef(function TodoEditorSheet(
           blurAllInputs();
         }
 
-        // ✅ Android에서 alarm 선택 시: 바텀시트 안에 UI 안 깔고, 모달로 시간 선택
-        if (key === "alarm" && Platform.OS === "android") {
-          // tool은 선택 상태로 두되, 시간 선택 모달만 띄움
-          requestAnimationFrame(() => openAndroidAlarmPicker());
-        }
-
         return key;
       });
     },
@@ -247,14 +241,14 @@ const TodoEditorSheet = React.forwardRef(function TodoEditorSheet(
   const formatTime = useCallback((date) => {
     const h = String(date.getHours()).padStart(2, "0");
     const m = String(date.getMinutes()).padStart(2, "0");
-    return `${h}:${m}`;
+    return `${h} : ${m}`; // ✅ 스샷처럼 "07 : 30" 형태
   }, []);
 
   const openAndroidAlarmPicker = useCallback(() => {
     DateTimePickerAndroid.open({
       value: alarmDraftDate,
       mode: "time",
-      is24Hour: false, // 필요하면 true
+      is24Hour: true, // 필요하면 true
       onChange: (event, selectedDate) => {
         // Android: dismissed면 selectedDate가 undefined일 수 있음
         if (event?.type === "dismissed") return;
@@ -262,8 +256,8 @@ const TodoEditorSheet = React.forwardRef(function TodoEditorSheet(
 
         setAlarmDraftDate(selectedDate);
 
-        // 선택 즉시 적용(모달 닫히는 타이밍)
-        setAlarmTime(formatTime(selectedDate));
+        // ✅ 선택 즉시 위 박스 시간 표시가 바뀌게 됨 (alarmDraftDate 기반)
+        // 적용하기 버튼은 따로 눌러서 alarmTime 확정
       },
     });
   }, [alarmDraftDate, formatTime]);
@@ -529,8 +523,43 @@ const TodoEditorSheet = React.forwardRef(function TodoEditorSheet(
                   </View>
                 </View>
               )}
-              {isAlarmOpen && alarmTime && (
-                <Text style={styles.alarmHint}>알림: {alarmTime}</Text>
+              {Platform.OS === "android" && isAlarmOpen && (
+                <View style={styles.alarmPanel}>
+                  <Text style={styles.alarmTitle}>알림 설정</Text>
+
+                  <View style={styles.alarmBox}>
+                    <Text style={styles.alarmTimeText}>
+                      {formatTime(alarmDraftDate)}
+                    </Text>
+
+                    <View style={styles.alarmDivider} />
+
+                    <TouchableOpacity
+                      activeOpacity={0.8}
+                      onPress={openAndroidAlarmPicker} // ✅ 기존 android picker 함수 연결
+                      style={styles.alarmPickButton}
+                    >
+                      <Text style={styles.alarmPickButtonText}>
+                        여기를 터치해서 알림 시간 설정하기
+                      </Text>
+                    </TouchableOpacity>
+                  </View>
+
+                  <View style={styles.alarmFooter}>
+                    <TouchableOpacity
+                      activeOpacity={0.8}
+                      style={styles.alarmApplyButton}
+                      onPress={() => {
+                        // ✅ 확정 저장(표시/전송용)
+                        setAlarmTime(formatTime(alarmDraftDate));
+                        // 원하면 패널 닫기:
+                        // setSelectedToolKey(null);
+                      }}
+                    >
+                      <Text style={styles.alarmApplyText}>적용하기</Text>
+                    </TouchableOpacity>
+                  </View>
+                </View>
               )}
             </View>
           )}
@@ -750,9 +779,52 @@ const styles = StyleSheet.create({
     fontSize: 12,
     fontFamily: "Pretendard-Medium",
   },
-  alarmHint: {
-    marginTop: 8,
-    fontSize: 16,
-    color: "#000000ff",
+  alarmPanel: {
+    marginTop: 14,
+  },
+  alarmTitle: {
+    fontSize: 12,
+    color: "#B0B0B0",
+    marginBottom: 10,
+  },
+  alarmBox: {
+    borderRadius: 14,
+    backgroundColor: "#F0F0F0",
+    overflow: "hidden",
+  },
+  alarmTimeText: {
+    textAlign: "center",
+    fontSize: 22,
+    color: "#FF5B22",
+    fontFamily: "Pretendard-Bold",
+    paddingVertical: 18,
+  },
+  alarmDivider: {
+    height: 1,
+    backgroundColor: "#E6E6E6",
+  },
+  alarmPickButton: {
+    paddingVertical: 14,
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  alarmPickButtonText: {
+    fontSize: 12,
+    color: "#B0B0B0",
+  },
+  alarmFooter: {
+    marginTop: 14,
+    alignItems: "flex-end",
+  },
+  alarmApplyButton: {
+    backgroundColor: "#FF5B22",
+    borderRadius: 18,
+    paddingHorizontal: 18,
+    paddingVertical: 10,
+  },
+  alarmApplyText: {
+    color: "#fff",
+    fontSize: 12,
+    fontFamily: "Pretendard-Medium",
   },
 });
