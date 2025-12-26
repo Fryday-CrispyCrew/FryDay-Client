@@ -55,10 +55,10 @@ export function useTodoEditorController({
       setEditingTodo(todo ?? null);
       setEditingText(todo?.title ?? "");
 
-      if (mode === "create") {
+      if (todo?.mode === "create") {
         useRepeatEditorStore.getState().resetRepeat();
       }
-      if (mode === "edit") {
+      if (todo?.mode === "edit") {
         // ✅ 기존 todo의 repeat 값을 store에 주입
         useRepeatEditorStore.getState().setRepeatAll({
           repeatStartDate: todo.repeatStartDate
