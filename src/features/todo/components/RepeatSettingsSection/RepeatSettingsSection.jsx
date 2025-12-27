@@ -62,7 +62,7 @@ export default function RepeatSettingsSection({
 
   return (
     <View style={styles.repeatPanel}>
-      <Text style={styles.repeatTitle}>반복 설정</Text>
+      {/* <Text style={styles.repeatTitle}>반복 설정</Text> */}
 
       {openKey === null && (
         <>
@@ -71,6 +71,7 @@ export default function RepeatSettingsSection({
             value={formatKoreanDate(repeatStartDate)}
             onPress={() => onToggleOpenKey("repeatStart")}
           />
+          <View style={styles.rowDivider} />
           <Row
             label="반복 종료 날짜"
             value={
@@ -80,11 +81,13 @@ export default function RepeatSettingsSection({
             }
             onPress={() => onToggleOpenKey("repeatEnd")}
           />
+          <View style={styles.rowDivider} />
           <Row
             label="반복 주기"
             value={cycleLabel(repeatCycle)}
             onPress={() => onToggleOpenKey("repeatCycle")}
           />
+          <View style={styles.rowDivider} />
           <Row
             label="반복 알림 설정"
             value={alarmLabel(repeatAlarm)}
@@ -264,24 +267,25 @@ const alarmLabel = (v) =>
 
 const styles = StyleSheet.create({
   repeatPanel: {
+    height: 335,
     marginTop: 14,
-    borderTopWidth: 1,
-    borderTopColor: "#F0F0F0",
-    paddingTop: 10,
+    // borderTopWidth: 1,
+    // borderTopColor: "#F0F0F0",
+    // paddingTop: 10,
   },
   repeatTitle: {fontSize: 12, color: "#B0B0B0", marginBottom: 8},
 
   row: {
-    height: 44,
+    height: 48,
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "space-between",
   },
-  left: {fontSize: 12, color: "#B0B0B0"},
+  left: {fontSize: 12, color: "#5D5E60"},
   right: {flexDirection: "row", alignItems: "center", gap: 8},
-  value: {fontSize: 12, color: "#333"},
+  value: {fontSize: 12, color: "#5D5E60"},
   chev: {fontSize: 14, color: "#B0B0B0"},
-
+  rowDivider: {height: 1, backgroundColor: "#F2F2F2", marginVertical: 8},
   option: {
     height: 40,
     justifyContent: "center",

@@ -45,7 +45,6 @@ export function useTodoEditorController({
   // Editor 열기 (TodoCard에서 호출)
   const openEditor = useCallback(
     (todo) => {
-      console.log("todo", todo);
       const nextCategoryId =
         todo?.categoryId ??
         categories?.[0]?.categoryId ??
