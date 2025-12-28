@@ -5,8 +5,7 @@ import DateTimePicker from "@react-native-community/datetimepicker";
 import {DateTimePickerAndroid} from "@react-native-community/datetimepicker";
 import {useRepeatEditorStore} from "../../stores/repeatEditorStore";
 import {formatKoreanDate} from "../../utils/dateFormat";
-
-const ORANGE = "#FF5722";
+import colors from "../../../../shared/styles/colors";
 
 export default function RepeatSettingsSection({
   visible,
@@ -275,7 +274,9 @@ function Option({text, onPress, active}) {
       activeOpacity={0.8}
       onPress={onPress}
     >
-      <Text style={[styles.optionText, active && {color: ORANGE}]}>{text}</Text>
+      <Text style={[styles.optionText, active && {color: colors.or}]}>
+        {text}
+      </Text>
     </TouchableOpacity>
   );
 }
@@ -363,14 +364,14 @@ const styles = StyleSheet.create({
   segmentItemActive: {
     backgroundColor: "#FFFFFF",
     borderWidth: 1,
-    borderColor: ORANGE,
+    borderColor: colors.or,
   },
   segmentText: {
     fontSize: 12,
     color: "#C2C2C2",
   },
   segmentTextActive: {
-    color: ORANGE,
+    color: colors.or,
     fontWeight: "600",
   },
 
@@ -379,7 +380,7 @@ const styles = StyleSheet.create({
     height: 44,
     paddingHorizontal: 18,
     borderRadius: 22,
-    backgroundColor: ORANGE,
+    backgroundColor: colors.or,
     alignItems: "center",
     justifyContent: "center",
   },
