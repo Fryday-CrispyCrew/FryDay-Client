@@ -1,5 +1,5 @@
 // src/features/todo/components/RepeatSettingsSection/RepeatSettingsSection.jsx
-import React, {useCallback} from "react";
+import React, {useCallback, useEffect, useState} from "react";
 import {View, Text, TouchableOpacity, Platform, StyleSheet} from "react-native";
 import DateTimePicker from "@react-native-community/datetimepicker";
 import {DateTimePickerAndroid} from "@react-native-community/datetimepicker";
@@ -24,6 +24,15 @@ export default function RepeatSettingsSection({
   const setRepeatEndDate = useRepeatEditorStore((s) => s.setRepeatEndDate);
   const setRepeatCycle = useRepeatEditorStore((s) => s.setRepeatCycle);
   const setRepeatAlarm = useRepeatEditorStore((s) => s.setRepeatAlarm);
+
+  const [draftCycle, setDraftCycle] = useState(repeatCycle);
+
+  // repeatCycle 드롭다운이 열릴 때마다 현재 store 값을 draft로 동기화
+  useEffect(() => {
+    if (openKey === "repeatCycle") {
+      setDraftCycle(repeatCycle === "unset" ? "daily" : repeatCycle);
+    }
+  }, [openKey, repeatCycle]);
 
   const openAndroidDatePicker = useCallback(
     (kind) => {
@@ -162,20 +171,50 @@ export default function RepeatSettingsSection({
             value={cycleLabel(repeatCycle)}
             onPress={() => onToggleOpenKey("repeatCycle")}
           />
-          {[
-            ["unset", "미설정"],
-            ["daily", "매일"],
-            ["weekly", "매주"],
-            ["monthly", "매월"],
-            ["yearly", "매년"],
-          ].map(([key, label]) => (
-            <Option
-              key={key}
-              text={label}
-              active={repeatCycle === key}
-              onPress={() => setRepeatCycle(key)}
-            />
-          ))}
+
+          <View style={styles.segmentWrap}>
+            <View style={styles.segmentPill}>
+              {[
+                {key: "daily", label: "매일"},
+                {key: "weekly", label: "매주"},
+                {key: "monthly", label: "매월"},
+                {key: "yearly", label: "매년"},
+              ].map((opt) => {
+                const isActive = draftCycle === opt.key;
+                return (
+                  <TouchableOpacity
+                    key={opt.key}
+                    activeOpacity={0.85}
+                    onPress={() => setDraftCycle(opt.key)}
+                    style={[
+                      styles.segmentItem,
+                      isActive && styles.segmentItemActive,
+                    ]}
+                  >
+                    <Text
+                      style={[
+                        styles.segmentText,
+                        isActive && styles.segmentTextActive,
+                      ]}
+                    >
+                      {opt.label}
+                    </Text>
+                  </TouchableOpacity>
+                );
+              })}
+            </View>
+          </View>
+
+          <TouchableOpacity
+            activeOpacity={0.9}
+            style={styles.applyButton}
+            onPress={() => {
+              setRepeatCycle(draftCycle);
+              onToggleOpenKey("repeatCycle"); // fold → 나머지 항목 다시 보이게
+            }}
+          >
+            <Text style={styles.applyButtonText}>적용하기</Text>
+          </TouchableOpacity>
         </View>
       )}
 
@@ -300,5 +339,53 @@ const styles = StyleSheet.create({
     backgroundColor: "#F0F0F0",
     paddingVertical: 8,
     marginBottom: 8,
+  },
+  segmentWrap: {
+    marginTop: 14,
+    marginBottom: 24,
+  },
+  segmentPill: {
+    // height: 44,
+    borderRadius: 200,
+    backgroundColor: "#F2F2F2",
+    flexDirection: "row",
+    alignItems: "center",
+    // padding: 4,
+  },
+  segmentItem: {
+    flex: 1,
+    // height: 44,
+    paddingVertical: 10,
+    borderRadius: 200,
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  segmentItemActive: {
+    backgroundColor: "#FFFFFF",
+    borderWidth: 1,
+    borderColor: ORANGE,
+  },
+  segmentText: {
+    fontSize: 12,
+    color: "#C2C2C2",
+  },
+  segmentTextActive: {
+    color: ORANGE,
+    fontWeight: "600",
+  },
+
+  applyButton: {
+    alignSelf: "flex-end",
+    height: 44,
+    paddingHorizontal: 18,
+    borderRadius: 22,
+    backgroundColor: ORANGE,
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  applyButtonText: {
+    color: "#FFFFFF",
+    fontSize: 12,
+    fontWeight: "700",
   },
 });
