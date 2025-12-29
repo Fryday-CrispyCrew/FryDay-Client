@@ -155,6 +155,19 @@ const TodoEditorSheet = React.forwardRef(function TodoEditorSheet(
   const isAlarmOpen = mode === "edit" && selectedToolKey === "alarm";
   const isRepeatOpen = mode === "edit" && selectedToolKey === "repeat";
 
+  const blurAllInputs = useCallback(() => {
+    // TextInput blur
+    inputRef.current?.blur?.();
+    memoInputRef.current?.blur?.();
+
+    // focus 상태 리셋 (borderColor 원복)
+    setIsTitleFocused(false);
+    setIsMemoFocused(false);
+
+    // 키보드까지 확실히 내리고 싶다면
+    Keyboard.dismiss();
+  }, []);
+
   const onSelectTool = useCallback(
     (key) => {
       setSelectedToolKey((prev) => {
@@ -244,19 +257,6 @@ const TodoEditorSheet = React.forwardRef(function TodoEditorSheet(
     onChangeText?.("");
     requestAnimationFrame(() => inputRef.current?.focus?.());
   }, [onChangeText]);
-
-  const blurAllInputs = useCallback(() => {
-    // TextInput blur
-    inputRef.current?.blur?.();
-    memoInputRef.current?.blur?.();
-
-    // focus 상태 리셋 (borderColor 원복)
-    setIsTitleFocused(false);
-    setIsMemoFocused(false);
-
-    // 키보드까지 확실히 내리고 싶다면
-    Keyboard.dismiss();
-  }, []);
 
   const formatTime = useCallback((date) => {
     const h = String(date.getHours()).padStart(2, "0");

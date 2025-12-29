@@ -18,11 +18,23 @@ export default function RepeatSettingsSection({
   const repeatCycle = useRepeatEditorStore((s) => s.repeatCycle);
   const repeatAlarm = useRepeatEditorStore((s) => s.repeatAlarm);
 
+  const repeatWeekdays = useRepeatEditorStore((s) => s.repeatWeekdays);
+  const repeatMonthDays = useRepeatEditorStore((s) => s.repeatMonthDays);
+  const repeatYearMonths = useRepeatEditorStore((s) => s.repeatYearMonths);
+  const repeatYearDays = useRepeatEditorStore((s) => s.repeatYearDays);
+
   const setRepeatStartDate = useRepeatEditorStore((s) => s.setRepeatStartDate);
   const setRepeatEndType = useRepeatEditorStore((s) => s.setRepeatEndType);
   const setRepeatEndDate = useRepeatEditorStore((s) => s.setRepeatEndDate);
   const setRepeatCycle = useRepeatEditorStore((s) => s.setRepeatCycle);
   const setRepeatAlarm = useRepeatEditorStore((s) => s.setRepeatAlarm);
+
+  const setRepeatWeekdays = useRepeatEditorStore((s) => s.setRepeatWeekdays);
+  const setRepeatMonthDays = useRepeatEditorStore((s) => s.setRepeatMonthDays);
+  const setRepeatYearMonths = useRepeatEditorStore(
+    (s) => s.setRepeatYearMonths
+  );
+  const setRepeatYearDays = useRepeatEditorStore((s) => s.setRepeatYearDays);
 
   const [draftCycle, setDraftCycle] = useState(repeatCycle);
   const [draftWeekdays, setDraftWeekdays] = useState([]); // ["mon","tue",...]
@@ -33,16 +45,22 @@ export default function RepeatSettingsSection({
   // repeatCycle 드롭다운이 열릴 때마다 현재 store 값을 draft로 동기화
   useEffect(() => {
     if (openKey === "repeatCycle") {
-      // setDraftCycle(repeatCycle === "unset" ? "daily" : repeatCycle);
-      setDraftCycle(repeatCycle === "unset" ? "yearly" : repeatCycle);
-      // ✅ 매주일 때 요일 선택 초기 상태 (요구사항: 기본은 월~토처럼 회색 = 아무것도 선택 X)
-      setDraftWeekdays([]);
-      // ✅ 매월일 때 날짜 선택 초기 상태 (아무것도 선택 X)
-      setDraftMonthDays([]);
-      setDraftYearMonths([]);
-      setDraftYearDays([]);
+      setDraftCycle(repeatCycle === "unset" ? "daily" : repeatCycle);
+      // setDraftCycle(repeatCycle === "unset" ? "yearly" : repeatCycle);
+      // ✅ 저장된 선택값을 draft에 반영 (다시 들어갔을 때 선택 유지)
+      setDraftWeekdays(repeatWeekdays ?? []);
+      setDraftMonthDays(repeatMonthDays ?? []);
+      setDraftYearMonths(repeatYearMonths ?? []);
+      setDraftYearDays(repeatYearDays ?? []);
     }
-  }, [openKey, repeatCycle]);
+  }, [
+    openKey,
+    repeatCycle,
+    repeatWeekdays,
+    repeatMonthDays,
+    repeatYearMonths,
+    repeatYearDays,
+  ]);
 
   const toggleWeekday = useCallback((key) => {
     setDraftWeekdays((prev) =>
@@ -100,6 +118,56 @@ export default function RepeatSettingsSection({
       setRepeatEndDate,
     ]
   );
+
+  // ✅ 적용하기 disabled 조건
+  const isApplyDisabled =
+    (draftCycle === "weekly" && draftWeekdays.length === 0) ||
+    (draftCycle === "monthly" && draftMonthDays.length === 0) ||
+    (draftCycle === "yearly" &&
+      (draftYearMonths.length === 0 || draftYearDays.length === 0));
+
+  const handleApplyRepeatCycle = useCallback(() => {
+    if (isApplyDisabled) return;
+
+    // 1️⃣ 주기 저장
+    setRepeatCycle(draftCycle);
+
+    // 2️⃣ 모든 상세 값 초기화
+    setRepeatWeekdays([]);
+    setRepeatMonthDays([]);
+    setRepeatYearMonths([]);
+    setRepeatYearDays([]);
+
+    // 3️⃣ 선택된 주기에 맞는 값만 저장
+    if (draftCycle === "weekly") {
+      setRepeatWeekdays(draftWeekdays);
+    }
+
+    if (draftCycle === "monthly") {
+      setRepeatMonthDays(draftMonthDays);
+    }
+
+    if (draftCycle === "yearly") {
+      setRepeatYearMonths(draftYearMonths);
+      setRepeatYearDays(draftYearDays);
+    }
+
+    // 4️⃣ 드롭다운 fold
+    onToggleOpenKey("repeatCycle");
+  }, [
+    isApplyDisabled,
+    draftCycle,
+    draftWeekdays,
+    draftMonthDays,
+    draftYearMonths,
+    draftYearDays,
+    setRepeatCycle,
+    setRepeatWeekdays,
+    setRepeatMonthDays,
+    setRepeatYearMonths,
+    setRepeatYearDays,
+    onToggleOpenKey,
+  ]);
 
   if (!visible) return null;
 
@@ -382,13 +450,21 @@ export default function RepeatSettingsSection({
 
           <TouchableOpacity
             activeOpacity={0.9}
-            style={styles.applyButton}
-            onPress={() => {
-              setRepeatCycle(draftCycle);
-              onToggleOpenKey("repeatCycle"); // fold → 나머지 항목 다시 보이게
-            }}
+            disabled={isApplyDisabled}
+            style={[
+              styles.applyButton,
+              isApplyDisabled && styles.applyButtonDisabled,
+            ]}
+            onPress={handleApplyRepeatCycle}
           >
-            <Text style={styles.applyButtonText}>적용하기</Text>
+            <Text
+              style={[
+                styles.applyButtonText,
+                isApplyDisabled && styles.applyButtonTextDisabled,
+              ]}
+            >
+              적용하기
+            </Text>
           </TouchableOpacity>
         </View>
       )}
@@ -562,11 +638,17 @@ const styles = StyleSheet.create({
     alignItems: "center",
     justifyContent: "center",
   },
+  applyButtonDisabled: {
+    backgroundColor: colors.gr200, // 회색 톤 (원하면 gr300 등으로 조절)
+  },
   applyButtonText: {
     fontFamily: "Pretendard-SemiBold",
     color: colors.wt,
     fontSize: 14,
     // fontWeight: "700",
+  },
+  applyButtonTextDisabled: {
+    color: colors.gr300,
   },
   weekdayRow: {
     flexDirection: "row",
