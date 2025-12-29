@@ -178,6 +178,8 @@ export default function RepeatSettingsSection({
     ]
   );
 
+  const isApplyStartDisabled = !draftStartDate;
+
   const handleApplyStartDate = useCallback(() => {
     setRepeatStartDate(draftStartDate);
 
@@ -389,9 +391,19 @@ export default function RepeatSettingsSection({
           <TouchableOpacity
             activeOpacity={0.9}
             onPress={handleApplyStartDate}
-            style={[styles.applyButton, {marginTop: 18}]}
+            style={[
+              styles.applyButton,
+              isApplyStartDisabled && styles.applyButtonDisabled,
+            ]}
           >
-            <Text style={styles.applyButtonText}>적용하기</Text>
+            <Text
+              style={[
+                styles.applyButtonText,
+                isApplyStartDisabled && styles.applyButtonTextDisabled,
+              ]}
+            >
+              적용하기
+            </Text>
           </TouchableOpacity>
 
           {/* (원하면) Android에서 네이티브 picker로도 진입할 수 있게 보조 옵션 유지 가능 */}
