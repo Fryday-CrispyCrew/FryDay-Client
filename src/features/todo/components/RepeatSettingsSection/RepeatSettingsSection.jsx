@@ -1,11 +1,54 @@
 // src/features/todo/components/RepeatSettingsSection/RepeatSettingsSection.jsx
-import React, {useCallback, useEffect, useState} from "react";
+import React, {useCallback, useEffect, useMemo, useState} from "react";
 import {View, Text, TouchableOpacity, Platform, StyleSheet} from "react-native";
 import DateTimePicker from "@react-native-community/datetimepicker";
 import {DateTimePickerAndroid} from "@react-native-community/datetimepicker";
 import {useRepeatEditorStore} from "../../stores/repeatEditorStore";
 import {formatKoreanDate} from "../../utils/dateFormat";
 import colors from "../../../../shared/styles/colors";
+
+const WEEKDAYS = ["일", "월", "화", "수", "목", "금", "토"];
+
+const isSameDay = (a, b) => {
+  if (!a || !b) return false;
+  return (
+    a.getFullYear() === b.getFullYear() &&
+    a.getMonth() === b.getMonth() &&
+    a.getDate() === b.getDate()
+  );
+};
+
+const addMonths = (date, delta) => {
+  const d = new Date(date);
+  d.setMonth(d.getMonth() + delta);
+  return d;
+};
+
+/**
+ * 월 달력 grid 생성 (7열 고정)
+ * - 빈 칸은 null
+ */
+const buildMonthGrid = (monthDate) => {
+  const y = monthDate.getFullYear();
+  const m = monthDate.getMonth(); // 0~11
+  const first = new Date(y, m, 1);
+  const last = new Date(y, m + 1, 0);
+  const startDow = first.getDay(); // 0(일)~6(토)
+
+  const daysInMonth = last.getDate();
+  const cells = [];
+
+  // leading blanks
+  for (let i = 0; i < startDow; i++) cells.push(null);
+  // days
+  for (let day = 1; day <= daysInMonth; day++) {
+    cells.push(new Date(y, m, day));
+  }
+  // trailing blanks to fill 7 columns
+  while (cells.length % 7 !== 0) cells.push(null);
+
+  return cells;
+};
 
 export default function RepeatSettingsSection({
   visible,
@@ -36,18 +79,34 @@ export default function RepeatSettingsSection({
   );
   const setRepeatYearDays = useRepeatEditorStore((s) => s.setRepeatYearDays);
 
+  const [draftStartDate, setDraftStartDate] = useState(
+    repeatStartDate ?? new Date()
+  );
   const [draftCycle, setDraftCycle] = useState(repeatCycle);
-  const [draftWeekdays, setDraftWeekdays] = useState([]); // ["mon","tue",...]
-  const [draftMonthDays, setDraftMonthDays] = useState([]); // number[] (e.g. [1, 12, 28])
-  const [draftYearMonths, setDraftYearMonths] = useState([]); // number[] (1~12)
-  const [draftYearDays, setDraftYearDays] = useState([]); // number[] (1~31)
+  const [draftWeekdays, setDraftWeekdays] = useState([]);
+  const [draftMonthDays, setDraftMonthDays] = useState([]);
+  const [draftYearMonths, setDraftYearMonths] = useState([]);
+  const [draftYearDays, setDraftYearDays] = useState([]);
+
+  // ✅ repeatStart 캘린더 표시용(월 이동 상태)
+  const [startMonthCursor, setStartMonthCursor] = useState(() => {
+    const base = repeatStartDate ?? new Date();
+    return new Date(base.getFullYear(), base.getMonth(), 1);
+  });
+
+  // ✅ repeatStart 열릴 때: 선택된 시작 날짜 기준으로 캘린더 월 커서 맞추기
+  useEffect(() => {
+    if (openKey === "repeatStart") {
+      const base = repeatStartDate ?? new Date();
+      setDraftStartDate(base); // ✅ 드롭다운 열릴 때 현재 값으로 세팅
+      setStartMonthCursor(new Date(base.getFullYear(), base.getMonth(), 1));
+    }
+  }, [openKey, repeatStartDate]);
 
   // repeatCycle 드롭다운이 열릴 때마다 현재 store 값을 draft로 동기화
   useEffect(() => {
     if (openKey === "repeatCycle") {
       setDraftCycle(repeatCycle === "unset" ? "daily" : repeatCycle);
-      // setDraftCycle(repeatCycle === "unset" ? "yearly" : repeatCycle);
-      // ✅ 저장된 선택값을 draft에 반영 (다시 들어갔을 때 선택 유지)
       setDraftWeekdays(repeatWeekdays ?? []);
       setDraftMonthDays(repeatMonthDays ?? []);
       setDraftYearMonths(repeatYearMonths ?? []);
@@ -119,6 +178,24 @@ export default function RepeatSettingsSection({
     ]
   );
 
+  const handleApplyStartDate = useCallback(() => {
+    setRepeatStartDate(draftStartDate);
+
+    // 시작일이 종료일보다 뒤면 종료일도 당겨주기(기존 규칙 유지)
+    if (repeatEndType === "date" && draftStartDate > repeatEndDate) {
+      setRepeatEndDate(draftStartDate);
+    }
+
+    onToggleOpenKey("repeatStart"); // ✅ 드롭다운 닫기
+  }, [
+    draftStartDate,
+    setRepeatStartDate,
+    repeatEndType,
+    repeatEndDate,
+    setRepeatEndDate,
+    onToggleOpenKey,
+  ]);
+
   // ✅ 적용하기 disabled 조건
   const isApplyDisabled =
     (draftCycle === "weekly" && draftWeekdays.length === 0) ||
@@ -129,30 +206,20 @@ export default function RepeatSettingsSection({
   const handleApplyRepeatCycle = useCallback(() => {
     if (isApplyDisabled) return;
 
-    // 1️⃣ 주기 저장
     setRepeatCycle(draftCycle);
 
-    // 2️⃣ 모든 상세 값 초기화
     setRepeatWeekdays([]);
     setRepeatMonthDays([]);
     setRepeatYearMonths([]);
     setRepeatYearDays([]);
 
-    // 3️⃣ 선택된 주기에 맞는 값만 저장
-    if (draftCycle === "weekly") {
-      setRepeatWeekdays(draftWeekdays);
-    }
-
-    if (draftCycle === "monthly") {
-      setRepeatMonthDays(draftMonthDays);
-    }
-
+    if (draftCycle === "weekly") setRepeatWeekdays(draftWeekdays);
+    if (draftCycle === "monthly") setRepeatMonthDays(draftMonthDays);
     if (draftCycle === "yearly") {
       setRepeatYearMonths(draftYearMonths);
       setRepeatYearDays(draftYearDays);
     }
 
-    // 4️⃣ 드롭다운 fold
     onToggleOpenKey("repeatCycle");
   }, [
     isApplyDisabled,
@@ -169,12 +236,23 @@ export default function RepeatSettingsSection({
     onToggleOpenKey,
   ]);
 
+  // ✅ repeatStart 캘린더 grid
+  const startMonthGrid = useMemo(
+    () => buildMonthGrid(startMonthCursor),
+    [startMonthCursor]
+  );
+
+  const today = useMemo(() => new Date(), []);
+
+  const handlePickStartDateFromCalendar = useCallback((date) => {
+    if (!date) return;
+    setDraftStartDate(date); // ✅ store 반영 X, 임시값만 변경
+  }, []);
+
   if (!visible) return null;
 
   return (
     <View style={styles.repeatPanel}>
-      {/* <Text style={styles.repeatTitle}>반복 설정</Text> */}
-
       {openKey === null && (
         <>
           <Row
@@ -207,6 +285,7 @@ export default function RepeatSettingsSection({
         </>
       )}
 
+      {/* ✅ 반복 시작 날짜 - 첨부 스샷처럼 캘린더 펼치기 */}
       {openKey === "repeatStart" && (
         <View>
           <RowOpen
@@ -214,21 +293,111 @@ export default function RepeatSettingsSection({
             value={formatKoreanDate(repeatStartDate)}
             onPress={() => onToggleOpenKey("repeatStart")}
           />
-          {Platform.OS === "android" ? (
-            <Option
-              text="날짜 선택하기"
-              onPress={() => openAndroidDatePicker("start")}
-            />
-          ) : (
-            <PickerBox>
-              <DateTimePicker
-                value={repeatStartDate}
-                mode="date"
-                display="spinner"
-                onChange={(e, date) => date && setRepeatStartDate(date)}
-              />
-            </PickerBox>
-          )}
+
+          {/* 필요하면 Android도 네이티브 picker가 아니라 이 캘린더를 그대로 쓰면 됨 */}
+          {/* 지금 요구사항(스샷 UI)대로면 아래 커스텀 캘린더를 우선 렌더 */}
+          <View style={styles.calendarWrap}>
+            {/* 월 네비게이션 */}
+            <View style={styles.calendarHeader}>
+              <TouchableOpacity
+                activeOpacity={0.7}
+                onPress={() => setStartMonthCursor((d) => addMonths(d, -1))}
+                style={styles.monthNavBtn}
+                hitSlop={8}
+              >
+                <Text style={styles.monthNavText}>‹</Text>
+              </TouchableOpacity>
+
+              <Text style={styles.calendarHeaderText}>
+                {startMonthCursor.getFullYear()}년{" "}
+                {startMonthCursor.getMonth() + 1}월
+              </Text>
+
+              <TouchableOpacity
+                activeOpacity={0.7}
+                onPress={() => setStartMonthCursor((d) => addMonths(d, 1))}
+                style={styles.monthNavBtn}
+                hitSlop={8}
+              >
+                <Text style={styles.monthNavText}>›</Text>
+              </TouchableOpacity>
+            </View>
+
+            {/* 요일 */}
+            <View style={styles.weekHeaderRow}>
+              {WEEKDAYS.map((w, idx) => (
+                <View key={w} style={styles.weekHeaderCell}>
+                  <Text
+                    style={[
+                      styles.weekHeaderText,
+                      idx === 0 && styles.weekHeaderSun,
+                      idx === 6 && styles.weekHeaderSat,
+                    ]}
+                  >
+                    {w}
+                  </Text>
+                </View>
+              ))}
+            </View>
+
+            {/* 날짜 grid */}
+            <View style={styles.calendarGrid}>
+              {startMonthGrid.map((cellDate, i) => {
+                const isEmpty = !cellDate;
+                const selected = cellDate
+                  ? isSameDay(cellDate, draftStartDate)
+                  : false;
+                const isToday = cellDate ? isSameDay(cellDate, today) : false;
+
+                // ✅ 오늘이더라도 "선택"이면 오늘 스타일을 쓰지 않음
+                const useTodayStyle = isToday && !selected;
+
+                return (
+                  <TouchableOpacity
+                    key={`d-${i}`}
+                    disabled={isEmpty}
+                    activeOpacity={0.85}
+                    onPress={() => handlePickStartDateFromCalendar(cellDate)}
+                    style={styles.dayCell}
+                  >
+                    {isEmpty ? (
+                      <View style={styles.dayCircle} />
+                    ) : (
+                      <View
+                        style={[
+                          styles.dayCircle,
+                          selected && styles.daySelectedCircle,
+                          useTodayStyle && styles.dayTodayCircle,
+                        ]}
+                      >
+                        <Text
+                          style={[
+                            styles.dayText,
+                            selected && styles.daySelectedText,
+                            useTodayStyle && styles.dayTodayText,
+                          ]}
+                        >
+                          {cellDate.getDate()}
+                        </Text>
+                      </View>
+                    )}
+                  </TouchableOpacity>
+                );
+              })}
+            </View>
+          </View>
+          <TouchableOpacity
+            activeOpacity={0.9}
+            onPress={handleApplyStartDate}
+            style={[styles.applyButton, {marginTop: 18}]}
+          >
+            <Text style={styles.applyButtonText}>적용하기</Text>
+          </TouchableOpacity>
+
+          {/* (원하면) Android에서 네이티브 picker로도 진입할 수 있게 보조 옵션 유지 가능 */}
+          {/* {Platform.OS === "android" && (
+            <Option text="날짜 선택하기" onPress={() => openAndroidDatePicker("start")} />
+          )} */}
         </View>
       )}
 
@@ -307,7 +476,6 @@ export default function RepeatSettingsSection({
             </View>
           </View>
 
-          {/* ✅ 매주 선택 시 요일 선택 UI */}
           {draftCycle === "weekly" && (
             <View style={styles.weekdayRow}>
               {[
@@ -344,7 +512,6 @@ export default function RepeatSettingsSection({
             </View>
           )}
 
-          {/* ✅ 매월 선택 시 날짜(1~31) 선택 UI */}
           {draftCycle === "monthly" && (
             <View style={styles.monthGrid}>
               {Array.from({length: 31}, (_, i) => i + 1).map((day) => {
@@ -377,7 +544,6 @@ export default function RepeatSettingsSection({
             </View>
           )}
 
-          {/* ✅ 매년 선택 시 월(1~12) + 일(1~31) 선택 UI */}
           {draftCycle === "yearly" && (
             <View style={styles.yearlyWrap}>
               <Text style={styles.yearlyLabel}>반복 월 선택</Text>
@@ -561,24 +727,20 @@ const styles = StyleSheet.create({
   repeatPanel: {
     minHeight: 335,
     marginTop: 14,
-    // borderTopWidth: 1,
-    // borderTopColor: "#F0F0F0",
-    // paddingTop: 10,
   },
-  repeatTitle: {fontSize: 12, color: "#B0B0B0", marginBottom: 8},
 
   row: {
     height: 48,
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "space-between",
-    // borderWidth: 1,
   },
   left: {fontSize: 12, color: "#5D5E60"},
   right: {flexDirection: "row", alignItems: "center", gap: 8},
   value: {fontSize: 12, color: "#5D5E60"},
   chev: {fontSize: 14, color: "#B0B0B0"},
   rowDivider: {height: 1, backgroundColor: colors.gr100, marginVertical: 8},
+
   option: {
     height: 40,
     justifyContent: "center",
@@ -594,21 +756,109 @@ const styles = StyleSheet.create({
     paddingVertical: 8,
     marginBottom: 8,
   },
+
+  // ===== repeatStart calendar =====
+  calendarWrap: {
+    // marginTop: 6,
+  },
+  calendarHeader: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "center",
+    height: 38,
+    gap: 10,
+  },
+  monthNavBtn: {
+    width: 28,
+    height: 28,
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  monthNavText: {
+    fontSize: 20,
+    color: "#333333",
+    lineHeight: 20,
+  },
+  calendarHeaderText: {
+    fontFamily: "Pretendard-Medium",
+    fontSize: 14,
+    color: colors.bk,
+  },
+
+  weekHeaderRow: {
+    flexDirection: "row",
+    marginTop: 10,
+    marginBottom: 8,
+  },
+  weekHeaderCell: {
+    width: `${100 / 7}%`,
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  weekHeaderText: {
+    fontFamily: "Pretendard-Medium",
+    fontSize: 11,
+    color: colors.bk,
+  },
+  weekHeaderSun: {color: colors.or}, // 일
+  weekHeaderSat: {color: "#2F6BFF"}, // 토 (스샷 느낌)
+
+  calendarGrid: {
+    flexDirection: "row",
+    flexWrap: "wrap",
+    rowGap: 12,
+  },
+  dayCell: {
+    width: `${100 / 7.01}%`,
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  dayCircle: {
+    width: 18,
+    height: 18,
+    // borderRadius: 20,
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  dayText: {
+    fontFamily: "Pretendard-Medium",
+    fontSize: 10,
+    color: colors.bk,
+    lineHeight: 12,
+  },
+  // 선택 날짜(18일): 테두리
+  daySelectedCircle: {
+    aspectRatio: 1,
+    borderWidth: 1,
+    borderRadius: 20,
+
+    borderColor: colors.or,
+    // backgroundColor: "transparent",
+  },
+  daySelectedText: {
+    color: colors.or,
+  },
+  // 오늘(19일): 채움
+  dayTodayCircle: {
+    backgroundColor: colors.or,
+    borderRadius: 20,
+  },
+  dayTodayText: {
+    color: colors.wt,
+  },
+  // ===== repeatCycle 기존 스타일 =====
   segmentWrap: {
     marginTop: 8,
     marginBottom: 24,
   },
   segmentPill: {
-    // height: 44,
     borderRadius: 200,
     backgroundColor: colors.gr100,
     flexDirection: "row",
     alignItems: "center",
-    // padding: 4,
   },
   segmentItem: {
     flex: 1,
-    // height: 44,
     paddingVertical: 10,
     borderRadius: 200,
     alignItems: "center",
@@ -632,24 +882,23 @@ const styles = StyleSheet.create({
     alignSelf: "flex-end",
     height: 44,
     width: 100,
-    // paddingHorizontal: 18,
     borderRadius: 16,
     backgroundColor: colors.or,
     alignItems: "center",
     justifyContent: "center",
   },
   applyButtonDisabled: {
-    backgroundColor: colors.gr200, // 회색 톤 (원하면 gr300 등으로 조절)
+    backgroundColor: colors.gr200,
   },
   applyButtonText: {
     fontFamily: "Pretendard-SemiBold",
     color: colors.wt,
     fontSize: 14,
-    // fontWeight: "700",
   },
   applyButtonTextDisabled: {
     color: colors.gr300,
   },
+
   weekdayRow: {
     flexDirection: "row",
     justifyContent: "space-between",
@@ -670,38 +919,28 @@ const styles = StyleSheet.create({
   weekdayText: {
     fontSize: 12,
     color: colors.gr300,
-    // fontWeight: "600",
   },
   weekdayTextActive: {
     color: colors.wt,
   },
-  // ✅ monthly day grid
+
   monthGrid: {
-    // marginTop: 8,
-    // marginBottom: 24,
     flexDirection: "row",
     flexWrap: "wrap",
-    // borderWidth: 1,
     rowGap: 12,
   },
   monthCell: {
-    width: `${100 / 7.01}%`, // 7칸 그리드
+    width: `${100 / 7.01}%`,
     alignItems: "center",
     justifyContent: "center",
-    // paddingVertical: 6,
-    // borderWidth: 1,
   },
   monthCircle: {
-    // borderWidth: 1,
     width: 18,
     height: 18,
-    // borderRadius: 20,
-    // borderWidth: 1,
     alignItems: "center",
     justifyContent: "center",
   },
   monthCircleActive: {
-    // height: 20,
     aspectRatio: 1,
     borderWidth: 1,
     borderColor: colors.or,
@@ -710,61 +949,50 @@ const styles = StyleSheet.create({
   monthText: {
     fontFamily: "Pretendard-Medium",
     fontSize: 10,
-    color: "#111111",
+    color: colors.bk,
     lineHeight: 12,
   },
   monthTextActive: {
     color: colors.or,
-    // fontWeight: "600",
-  },
-  yearlyWrap: {
-    // marginTop: 4,
   },
 
+  yearlyWrap: {},
   yearlyLabel: {
     fontFamily: "Pretendard-Medium",
     fontSize: 12,
     color: colors.gr400 ?? "#5D5E60",
     marginBottom: 10,
   },
-
   yearMonthGrid: {
     flexDirection: "row",
     flexWrap: "wrap",
     rowGap: 12,
   },
-
   yearMonthCell: {
-    width: `${100 / 6}%`, // 6칸 -> 2줄(1~12)
+    width: `${100 / 6}%`,
     alignItems: "center",
     justifyContent: "center",
   },
-
   yearMonthChip: {
     height: 18,
     width: 18,
-    // paddingHorizontal: 10,
     borderRadius: 18,
-    // borderWidth: 1,
     backgroundColor: "transparent",
     alignItems: "center",
     justifyContent: "center",
   },
-
   yearMonthChipActive: {
     aspectRatio: 1,
     borderWidth: 1,
     borderColor: colors.or,
     borderRadius: 24,
   },
-
   yearMonthText: {
     fontFamily: "Pretendard-Medium",
     fontSize: 10,
     color: colors.bk,
     lineHeight: 12,
   },
-
   yearMonthTextActive: {
     color: colors.or,
   },
