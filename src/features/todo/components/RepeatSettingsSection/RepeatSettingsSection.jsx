@@ -6,6 +6,7 @@ import {DateTimePickerAndroid} from "@react-native-community/datetimepicker";
 import {useRepeatEditorStore} from "../../stores/repeatEditorStore";
 import {formatKoreanDate} from "../../utils/dateFormat";
 import colors from "../../../../shared/styles/colors";
+import YearMonthWheelModal from "./wheel/YearMonthWheelModal";
 
 const WEEKDAYS = ["일", "월", "화", "수", "목", "금", "토"];
 
@@ -93,6 +94,9 @@ export default function RepeatSettingsSection({
     const base = repeatStartDate ?? new Date();
     return new Date(base.getFullYear(), base.getMonth(), 1);
   });
+
+  const [ymWheelOpen, setYmWheelOpen] = useState(false);
+  const [ymInitial, setYmInitial] = useState({year: 2025, month: 10});
 
   // ✅ repeatStart 열릴 때: 선택된 시작 날짜 기준으로 캘린더 월 커서 맞추기
   useEffect(() => {
@@ -251,6 +255,19 @@ export default function RepeatSettingsSection({
     setDraftStartDate(date); // ✅ store 반영 X, 임시값만 변경
   }, []);
 
+  const openStartYearMonthWheel = () => {
+    setYmInitial({
+      year: startMonthCursor.getFullYear(),
+      month: startMonthCursor.getMonth() + 1,
+    });
+    setYmWheelOpen(true);
+  };
+
+  const applyStartYearMonth = (year, month) => {
+    setStartMonthCursor(new Date(year, month - 1, 1));
+    setYmWheelOpen(false);
+  };
+
   if (!visible) return null;
 
   return (
@@ -310,10 +327,12 @@ export default function RepeatSettingsSection({
                 <Text style={styles.monthNavText}>‹</Text>
               </TouchableOpacity>
 
-              <Text style={styles.calendarHeaderText}>
-                {startMonthCursor.getFullYear()}년{" "}
-                {startMonthCursor.getMonth() + 1}월
-              </Text>
+              <TouchableOpacity onPress={openStartYearMonthWheel}>
+                <Text style={styles.calendarHeaderText}>
+                  {startMonthCursor.getFullYear()}년{" "}
+                  {startMonthCursor.getMonth() + 1}월
+                </Text>
+              </TouchableOpacity>
 
               <TouchableOpacity
                 activeOpacity={0.7}
@@ -669,6 +688,13 @@ export default function RepeatSettingsSection({
           ))}
         </View>
       )}
+      <YearMonthWheelModal
+        visible={ymWheelOpen}
+        initialYear={ymInitial.year}
+        initialMonth={ymInitial.month}
+        onCancel={() => setYmWheelOpen(false)}
+        onConfirm={applyStartYearMonth}
+      />
     </View>
   );
 }
