@@ -134,6 +134,11 @@ const TodoEditorSheet = React.forwardRef(function TodoEditorSheet(
   const [alarmDraftDate, setAlarmDraftDate] = useState(new Date());
   // 적용된 알림 시간(저장될 값)
   const [alarmTime, setAlarmTime] = useState(null); // e.g. "07:30"
+  // ✅ 알림 시간을 "사용자가 실제로 선택했는지" (초기: 미설정 상태)
+  const [hasPickedAlarmTime, setHasPickedAlarmTime] = useState(false);
+  // ✅ iOS에서만: 버튼 누른 뒤 인라인 스피너로 전환
+  const [isIosInlineAlarmPickerOpen, setIsIosInlineAlarmPickerOpen] =
+    useState(false);
 
   // ✅ repeat panel 내부 드롭다운 open 상태 (하나만 열리게)
   const [openRepeatDropdownKey, setOpenRepeatDropdownKey] = useState(null); // "repeatStart" | "repeatEnd" | "repeatCycle" | "repeatAlarm" | null
@@ -141,6 +146,19 @@ const TodoEditorSheet = React.forwardRef(function TodoEditorSheet(
   useEffect(() => {
     if (!isRepeatOpen) setOpenRepeatDropdownKey(null);
   }, [isRepeatOpen]);
+
+  useEffect(() => {
+    if (isAlarmOpen) {
+      // ✅ 알림 패널에 들어올 때, 아직 저장된 알림이 없으면 "미설정" 상태 유지
+      if (!alarmTime) setHasPickedAlarmTime(false);
+      // ✅ 저장된 알림이 있다면(추후 todo 편집 진입 시 주입한다면) 표시 상태로
+      if (alarmTime) setHasPickedAlarmTime(true);
+    }
+  }, [isAlarmOpen, alarmTime]);
+
+  useEffect(() => {
+    if (!isAlarmOpen) setIsIosInlineAlarmPickerOpen(false);
+  }, [isAlarmOpen]);
 
   const toggleRepeatDropdown = useCallback((key) => {
     setOpenRepeatDropdownKey((prev) => (prev === key ? null : key));
@@ -174,6 +192,7 @@ const TodoEditorSheet = React.forwardRef(function TodoEditorSheet(
         // ✅ 같은 아이콘 다시 누르면 해제
         if (prev === key) {
           blurAllInputs();
+          if (key === "alarm") setIsIosInlineAlarmPickerOpen(false);
           return null;
         }
 
@@ -182,10 +201,12 @@ const TodoEditorSheet = React.forwardRef(function TodoEditorSheet(
           blurAllInputs();
         }
 
+        if (key === "alarm") setIsIosInlineAlarmPickerOpen(false);
+
         return key;
       });
     },
-    [blurAllInputs, openAndroidAlarmPicker]
+    [blurAllInputs]
   );
 
   const focusInput = useCallback(() => {
@@ -275,6 +296,7 @@ const TodoEditorSheet = React.forwardRef(function TodoEditorSheet(
         if (!selectedDate) return;
 
         setAlarmDraftDate(selectedDate);
+        setHasPickedAlarmTime(true);
 
         // ✅ 선택 즉시 위 박스 시간 표시가 바뀌게 됨 (alarmDraftDate 기반)
         // 적용하기 버튼은 따로 눌러서 alarmTime 확정
@@ -503,66 +525,75 @@ const TodoEditorSheet = React.forwardRef(function TodoEditorSheet(
 
               {renderEditTools()}
 
-              {isAlarmOpen && Platform.OS === "ios" && (
-                <View style={styles.panelWrapper}>
-                  <Text style={styles.panelTitle}>알림 설정</Text>
-
-                  <View style={styles.pickerBox}>
-                    <DateTimePicker
-                      value={alarmDraftDate}
-                      mode="time"
-                      display="spinner"
-                      minuteInterval={1}
-                      onChange={(event, date) => {
-                        if (date) setAlarmDraftDate(date);
-                      }}
-                      style={styles.picker}
-                    />
-                  </View>
-
-                  <View style={styles.panelFooter}>
-                    <TouchableOpacity
-                      activeOpacity={0.8}
-                      style={styles.applyButton}
-                      onPress={() => {
-                        const h = String(alarmDraftDate.getHours()).padStart(
-                          2,
-                          "0"
-                        );
-                        const m = String(alarmDraftDate.getMinutes()).padStart(
-                          2,
-                          "0"
-                        );
-                        setAlarmTime(`${h}:${m}`);
-                        // ✅ 적용 후 패널 닫고 싶으면 toggle 로직 이용:
-                        // setSelectedToolKey(null);
-                      }}
-                    >
-                      <Text style={styles.applyButtonText}>적용하기</Text>
-                    </TouchableOpacity>
-                  </View>
-                </View>
-              )}
-              {Platform.OS === "android" && isAlarmOpen && (
+              {/* ✅ iOS/Android 공통: 처음엔 동일한 '미설정' UI */}
+              {isAlarmOpen && (
                 <View style={styles.alarmPanel}>
                   <Text style={styles.alarmTitle}>알림 설정</Text>
 
                   <View style={styles.alarmBox}>
-                    <Text style={styles.alarmTimeText}>
-                      {formatTime(alarmDraftDate)}
-                    </Text>
+                    <View style={styles.alarmTimeRow}>
+                      <Text style={styles.alarmTimeText}>
+                        {hasPickedAlarmTime
+                          ? formatTime(alarmDraftDate)
+                          : "--  :  --"}
+                      </Text>
+
+                      {/* ✅ 시간 설정된 상태에서만 X 버튼 노출 */}
+                      {hasPickedAlarmTime && (
+                        <TouchableOpacity
+                          activeOpacity={0.8}
+                          style={styles.alarmClearButton}
+                          onPress={() => {
+                            // ✅ 알림 삭제 → 다시 "미설정" 상태로
+                            setHasPickedAlarmTime(false);
+                            setAlarmTime(null);
+
+                            // iOS 인라인 피커가 열려있다면 닫기
+                            setIsIosInlineAlarmPickerOpen(false);
+                          }}
+                          hitSlop={8}
+                        >
+                          <Text style={styles.alarmClearIcon}>×</Text>
+                        </TouchableOpacity>
+                      )}
+                    </View>
 
                     <View style={styles.alarmDivider} />
 
-                    <TouchableOpacity
-                      activeOpacity={0.8}
-                      onPress={openAndroidAlarmPicker} // ✅ 기존 android picker 함수 연결
-                      style={styles.alarmPickButton}
-                    >
-                      <Text style={styles.alarmPickButtonText}>
-                        여기를 터치해서 알림 시간 설정하기
-                      </Text>
-                    </TouchableOpacity>
+                    {/* ✅ 버튼 누른 뒤에만 platform 분기 */}
+                    {Platform.OS === "ios" && isIosInlineAlarmPickerOpen ? (
+                      <View style={styles.iosInlinePickerWrap}>
+                        <DateTimePicker
+                          value={alarmDraftDate}
+                          mode="time"
+                          display="spinner"
+                          minuteInterval={1}
+                          onChange={(event, date) => {
+                            if (date) {
+                              setAlarmDraftDate(date);
+                              setHasPickedAlarmTime(true);
+                            }
+                          }}
+                          style={styles.iosInlinePicker}
+                        />
+                      </View>
+                    ) : (
+                      <TouchableOpacity
+                        activeOpacity={0.8}
+                        style={styles.alarmPickButton}
+                        onPress={() => {
+                          if (Platform.OS === "android") {
+                            openAndroidAlarmPicker(); // ✅ 기존 함수 연결
+                          } else {
+                            setIsIosInlineAlarmPickerOpen(true); // ✅ iOS는 인라인 스피너로 전환
+                          }
+                        }}
+                      >
+                        <Text style={styles.alarmPickButtonText}>
+                          여기를 터치해서 알림 시간 설정하기
+                        </Text>
+                      </TouchableOpacity>
+                    )}
                   </View>
 
                   <View style={styles.alarmFooter}>
@@ -570,10 +601,16 @@ const TodoEditorSheet = React.forwardRef(function TodoEditorSheet(
                       activeOpacity={0.8}
                       style={styles.alarmApplyButton}
                       onPress={() => {
-                        // ✅ 확정 저장(표시/전송용)
+                        // ✅ 확정 저장
                         setAlarmTime(formatTime(alarmDraftDate));
+                        // 적용 시 "설정됨" 상태 보장
+                        setHasPickedAlarmTime(true);
+
+                        // ✅ iOS에서 적용 후 스피너 닫고 싶으면
+                        setIsIosInlineAlarmPickerOpen(false);
+
                         // 원하면 패널 닫기:
-                        // setSelectedToolKey(null);
+                        setSelectedToolKey(null);
                       }}
                     >
                       <Text style={styles.alarmApplyText}>적용하기</Text>
@@ -581,6 +618,7 @@ const TodoEditorSheet = React.forwardRef(function TodoEditorSheet(
                   </View>
                 </View>
               )}
+
               <RepeatSettingsSection
                 visible={isRepeatOpen}
                 openKey={openRepeatDropdownKey}
@@ -805,6 +843,7 @@ const styles = StyleSheet.create({
     fontFamily: "Pretendard-Medium",
   },
   alarmPanel: {
+    minHeight: 335,
     marginTop: 14,
   },
   alarmTitle: {
@@ -817,12 +856,36 @@ const styles = StyleSheet.create({
     backgroundColor: "#F0F0F0",
     overflow: "hidden",
   },
+
+  alarmTimeRow: {
+    position: "relative", // ✅ 기준 컨테이너
+    alignItems: "center",
+    justifyContent: "center",
+    paddingVertical: 18,
+  },
+
   alarmTimeText: {
     textAlign: "center",
     fontSize: 22,
     color: "#FF5B22",
     fontFamily: "Pretendard-Bold",
-    paddingVertical: 18,
+  },
+  alarmClearButton: {
+    position: "absolute",
+    right: "25%", // ✅ 중앙 텍스트 기준 살짝 우측
+    width: 26,
+    height: 26,
+    borderRadius: 13,
+    // borderWidth: 2,
+    borderColor: "#B0B0B0",
+    alignItems: "center",
+    justifyContent: "center",
+  },
+
+  alarmClearIcon: {
+    fontSize: 18,
+    lineHeight: 18,
+    color: "#B0B0B0",
   },
   alarmDivider: {
     height: 1,
