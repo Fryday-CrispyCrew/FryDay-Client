@@ -1,6 +1,15 @@
 // src/features/todo/components/RepeatSettingsSection/RepeatSettingsSection.jsx
 import React, {useCallback, useEffect, useMemo, useState} from "react";
-import {View, Text, TouchableOpacity, Platform, StyleSheet} from "react-native";
+import {
+  View,
+  Text,
+  TouchableOpacity,
+  Platform,
+  StyleSheet,
+  Switch,
+} from "react-native";
+import RadioOn from "../../assets/svg/RadioOn.svg";
+import RadioOff from "../../assets/svg/RadioOff.svg";
 import DateTimePicker from "@react-native-community/datetimepicker";
 import {DateTimePickerAndroid} from "@react-native-community/datetimepicker";
 import {useRepeatEditorStore} from "../../stores/repeatEditorStore";
@@ -83,6 +92,12 @@ export default function RepeatSettingsSection({
   const [draftStartDate, setDraftStartDate] = useState(
     repeatStartDate ?? new Date()
   );
+  const [draftEndType, setDraftEndType] = useState(repeatEndType); // "none" | "date"
+  const [draftEndDate, setDraftEndDate] = useState(repeatEndDate ?? new Date());
+  const [endMonthCursor, setEndMonthCursor] = useState(() => {
+    const base = repeatEndDate ?? new Date();
+    return new Date(base.getFullYear(), base.getMonth(), 1);
+  });
   const [draftCycle, setDraftCycle] = useState(repeatCycle);
   const [draftWeekdays, setDraftWeekdays] = useState([]);
   const [draftMonthDays, setDraftMonthDays] = useState([]);
@@ -106,6 +121,26 @@ export default function RepeatSettingsSection({
       setStartMonthCursor(new Date(base.getFullYear(), base.getMonth(), 1));
     }
   }, [openKey, repeatStartDate]);
+
+  useEffect(() => {
+    if (openKey === "repeatEnd") {
+      setDraftEndType(repeatEndType);
+
+      const base =
+        repeatEndType === "date"
+          ? (repeatEndDate ?? repeatStartDate ?? new Date())
+          : (repeatStartDate ?? new Date());
+
+      // 종료일은 시작일보다 빠를 수 없게 보정
+      const normalized =
+        repeatStartDate && base < repeatStartDate ? repeatStartDate : base;
+
+      setDraftEndDate(normalized);
+      setEndMonthCursor(
+        new Date(normalized.getFullYear(), normalized.getMonth(), 1)
+      );
+    }
+  }, [openKey, repeatEndType, repeatEndDate, repeatStartDate]);
 
   // repeatCycle 드롭다운이 열릴 때마다 현재 store 값을 draft로 동기화
   useEffect(() => {
@@ -182,6 +217,7 @@ export default function RepeatSettingsSection({
     ]
   );
 
+  //반복 시작 날짜 관련
   const isApplyStartDisabled = !draftStartDate;
 
   const handleApplyStartDate = useCallback(() => {
@@ -202,7 +238,57 @@ export default function RepeatSettingsSection({
     onToggleOpenKey,
   ]);
 
-  // ✅ 적용하기 disabled 조건
+  //반복 종료 날짜 관련
+  const endMonthGrid = useMemo(
+    () => buildMonthGrid(endMonthCursor),
+    [endMonthCursor]
+  );
+
+  const handlePickEndDateFromCalendar = useCallback(
+    (date) => {
+      if (!date) return;
+
+      // 종료일은 시작일보다 빠를 수 없음
+      const normalized =
+        repeatStartDate && date < repeatStartDate ? repeatStartDate : date;
+
+      setDraftEndDate(normalized);
+      setDraftEndType("date");
+    },
+    [repeatStartDate]
+  );
+
+  const isEndNone = draftEndType === "none";
+
+  // ✅ "반복 종료 없음"이 아니고 && 날짜가 없을 때만 disabled
+  const isApplyEndDisabled = !isEndNone && !draftEndDate;
+
+  const handleApplyEndDate = useCallback(() => {
+    if (draftEndType === "none") {
+      setRepeatEndType("none");
+      onToggleOpenKey("repeatEnd");
+      return;
+    }
+
+    setRepeatEndType("date");
+
+    const normalized =
+      repeatStartDate && draftEndDate < repeatStartDate
+        ? repeatStartDate
+        : draftEndDate;
+
+    setRepeatEndDate(normalized);
+    onToggleOpenKey("repeatEnd");
+  }, [
+    draftEndType,
+    draftEndDate,
+    repeatStartDate,
+    setRepeatEndType,
+    setRepeatEndDate,
+    onToggleOpenKey,
+  ]);
+
+  // 반복 주기 관련
   const isApplyDisabled =
     (draftCycle === "weekly" && draftWeekdays.length === 0) ||
     (draftCycle === "monthly" && draftMonthDays.length === 0) ||
@@ -443,26 +529,143 @@ export default function RepeatSettingsSection({
             }
             onPress={() => onToggleOpenKey("repeatEnd")}
           />
-          <Option text="종료 없음" onPress={() => setRepeatEndType("none")} />
-          {Platform.OS === "android" ? (
-            <Option
-              text="종료 날짜 선택하기"
-              onPress={() => openAndroidDatePicker("end")}
-            />
-          ) : (
-            <PickerBox>
-              <DateTimePicker
-                value={repeatEndDate}
-                mode="date"
-                display="spinner"
-                onChange={(e, date) => {
-                  if (!date) return;
-                  setRepeatEndType("date");
-                  setRepeatEndDate(date);
-                }}
-              />
-            </PickerBox>
-          )}
+          {/* 캘린더 (repeatStart UI 재사용) */}
+          <View
+            style={[
+              styles.calendarWrap,
+              isEndNone && styles.calendarWrapDisabled,
+            ]}
+          >
+            <View style={styles.calendarHeader}>
+              <TouchableOpacity
+                activeOpacity={0.7}
+                onPress={() => setEndMonthCursor((d) => addMonths(d, -1))}
+                style={styles.monthNavBtn}
+                hitSlop={8}
+              >
+                <Text style={styles.monthNavText}>‹</Text>
+              </TouchableOpacity>
+
+              <Text style={styles.calendarHeaderText}>
+                {endMonthCursor.getFullYear()}년 {endMonthCursor.getMonth() + 1}
+                월
+              </Text>
+
+              <TouchableOpacity
+                activeOpacity={0.7}
+                onPress={() => setEndMonthCursor((d) => addMonths(d, 1))}
+                style={styles.monthNavBtn}
+                hitSlop={8}
+              >
+                <Text style={styles.monthNavText}>›</Text>
+              </TouchableOpacity>
+            </View>
+            <View style={styles.weekHeaderRow}>
+              {WEEKDAYS.map((w, idx) => (
+                <View key={w} style={styles.weekHeaderCell}>
+                  <Text
+                    style={[
+                      styles.weekHeaderText,
+                      idx === 0 && styles.weekHeaderSun,
+                      idx === 6 && styles.weekHeaderSat,
+                    ]}
+                  >
+                    {w}
+                  </Text>
+                </View>
+              ))}
+            </View>
+            <View style={styles.calendarGrid}>
+              {endMonthGrid.map((cellDate, i) => {
+                const isEmpty = !cellDate;
+
+                const selected =
+                  cellDate && draftEndType === "date"
+                    ? isSameDay(cellDate, draftEndDate)
+                    : false;
+
+                const isToday = cellDate ? isSameDay(cellDate, today) : false;
+
+                // ✅ 오늘이더라도 "선택"이면 오늘 스타일을 쓰지 않음
+                const useTodayStyle = isToday && !selected;
+
+                return (
+                  <TouchableOpacity
+                    key={`end-${i}`}
+                    disabled={isEmpty || draftEndType === "none"}
+                    activeOpacity={0.85}
+                    onPress={() => handlePickEndDateFromCalendar(cellDate)}
+                    style={styles.dayCell}
+                  >
+                    {isEmpty ? (
+                      <View style={styles.dayCircle} />
+                    ) : (
+                      <View
+                        style={[
+                          styles.dayCircle,
+                          selected && styles.daySelectedCircle,
+                          useTodayStyle && styles.dayTodayCircle,
+                        ]}
+                      >
+                        <Text
+                          style={[
+                            styles.dayText,
+                            selected && styles.daySelectedText,
+                            useTodayStyle && styles.dayTodayText,
+                          ]}
+                        >
+                          {cellDate.getDate()}
+                        </Text>
+                      </View>
+                    )}
+                  </TouchableOpacity>
+                );
+              })}
+            </View>
+          </View>
+          {/* 첨부처럼 "반복 종료 없음" 스위치 */}
+          <View style={styles.endNoneRow}>
+            <Text
+              style={[
+                styles.endNoneText,
+                isEndNone && styles.endNoneTextDisabled,
+              ]}
+            >
+              반복 종료 없음
+            </Text>
+
+            <TouchableOpacity
+              activeOpacity={0.8}
+              onPress={() => setDraftEndType(isEndNone ? "date" : "none")}
+              style={styles.endNoneRadioBtn}
+              hitSlop={8}
+            >
+              {isEndNone ? (
+                <RadioOn width={18} height={18} />
+              ) : (
+                <RadioOff width={18} height={18} />
+              )}
+            </TouchableOpacity>
+          </View>
+          {/* 적용하기 */}
+          <TouchableOpacity
+            activeOpacity={0.9}
+            disabled={isApplyEndDisabled}
+            onPress={handleApplyEndDate}
+            style={[
+              styles.applyButton,
+              isApplyEndDisabled && styles.applyButtonDisabled,
+            ]}
+          >
+            <Text
+              style={[
+                styles.applyButtonText,
+                isApplyEndDisabled && styles.applyButtonTextDisabled,
+              ]}
+            >
+              적용하기
+            </Text>
+          </TouchableOpacity>
         </View>
       )}
 
@@ -799,6 +1002,10 @@ const styles = StyleSheet.create({
   calendarWrap: {
     // marginTop: 6,
   },
+  // ✅ 캘린더 흐리게
+  calendarWrapDisabled: {
+    opacity: 0.35,
+  },
   calendarHeader: {
     flexDirection: "row",
     alignItems: "center",
@@ -844,19 +1051,21 @@ const styles = StyleSheet.create({
   calendarGrid: {
     flexDirection: "row",
     flexWrap: "wrap",
-    rowGap: 12,
+    rowGap: 10,
   },
   dayCell: {
     width: `${100 / 7.01}%`,
     alignItems: "center",
     justifyContent: "center",
+    // borderWidth: 1,
   },
   dayCircle: {
-    width: 18,
-    height: 18,
+    width: "100%",
+    height: 20,
     // borderRadius: 20,
     alignItems: "center",
     justifyContent: "center",
+    // borderWidth: 1,
   },
   dayText: {
     fontFamily: "Pretendard-Medium",
@@ -878,6 +1087,7 @@ const styles = StyleSheet.create({
   },
   // 오늘(19일): 채움
   dayTodayCircle: {
+    aspectRatio: 1,
     backgroundColor: colors.or,
     borderRadius: 20,
   },
@@ -914,6 +1124,31 @@ const styles = StyleSheet.create({
   segmentTextActive: {
     color: colors.or,
     fontWeight: "600",
+  },
+  endNoneRow: {
+    marginTop: 10,
+    height: 44,
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+  },
+  endNoneText: {
+    fontFamily: "Pretendard-Medium",
+    fontSize: 12,
+    color: colors.bk,
+  },
+
+  // ✅ none일 때 라벨 톤 다운(첨부 2번째처럼)
+  endNoneTextDisabled: {
+    color: colors.gr300,
+  },
+
+  // ✅ 라디오 버튼 터치 영역
+  endNoneRadioBtn: {
+    width: 28,
+    height: 28,
+    alignItems: "center",
+    justifyContent: "center",
   },
 
   applyButton: {
