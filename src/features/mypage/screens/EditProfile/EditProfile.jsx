@@ -149,7 +149,7 @@ export default function EditProfile() {
                 </View>
             </Pressable>
             <Modal transparent visible={modalType !== null} animationType="fade">
-                <View className="flex-1 justify-center items-center bg-black/40">
+                <View className="flex-1 justify-center items-center bg-black/50">
                     <View className="bg-wt rounded-xl px-6 py-5 w-[80%] gap-4">
                         <AppText variant="L500" className="text-bk">
                             {modalType === 'logout'
