@@ -361,6 +361,12 @@ export default function RepeatSettingsSection({
       {openKey === null && (
         <>
           <Row
+            label="반복 주기"
+            value={cycleLabel(repeatCycle)}
+            onPress={() => onToggleOpenKey("repeatCycle")}
+          />
+          <View style={styles.rowDivider} />
+          <Row
             label="반복 시작 날짜"
             value={formatKoreanDate(repeatStartDate)}
             onPress={() => onToggleOpenKey("repeatStart")}
@@ -374,12 +380,6 @@ export default function RepeatSettingsSection({
                 : formatKoreanDate(repeatEndDate)
             }
             onPress={() => onToggleOpenKey("repeatEnd")}
-          />
-          <View style={styles.rowDivider} />
-          <Row
-            label="반복 주기"
-            value={cycleLabel(repeatCycle)}
-            onPress={() => onToggleOpenKey("repeatCycle")}
           />
           <View style={styles.rowDivider} />
           <Row
