@@ -1,4 +1,4 @@
-// src/features/todo/components/TodoEditorSheet.jsx
+// src/features/todo/components/TodoEditorSheet/TodoEditorSheet.jsx
 import React, {useCallback, useEffect, useMemo, useRef, useState} from "react";
 import {
   View,
@@ -17,18 +17,19 @@ import {
   BottomSheetView,
 } from "@gorhom/bottom-sheet";
 import {InteractionManager} from "react-native";
-import MemoIcon from "../assets/svg/todoEditorSheet/memo.svg";
-import AlarmIcon from "../assets/svg/todoEditorSheet/alarm.svg";
-import RepeatIcon from "../assets/svg/todoEditorSheet/repeat.svg";
-import StartDateIcon from "../assets/svg/todoEditorSheet/calendarStart.svg";
-import SelectDateIcon from "../assets/svg/todoEditorSheet/calendarSelect.svg";
+import MemoIcon from "../../assets/svg/todoEditorSheet/memo.svg";
+import AlarmIcon from "../../assets/svg/todoEditorSheet/alarm.svg";
+import RepeatIcon from "../../assets/svg/todoEditorSheet/repeat.svg";
+import StartDateIcon from "../../assets/svg/todoEditorSheet/calendarStart.svg";
+import SelectDateIcon from "../../assets/svg/todoEditorSheet/calendarSelect.svg";
 import {useSafeAreaInsets} from "react-native-safe-area-context";
 import DateTimePicker, {
   DateTimePickerAndroid,
 } from "@react-native-community/datetimepicker";
-import {useRepeatEditorStore} from "../stores/repeatEditorStore";
-import RepeatSettingsSection from "./RepeatSettingsSection/RepeatSettingsSection";
-import colors from "../../../shared/styles/colors";
+import {useRepeatEditorStore} from "../../stores/repeatEditorStore";
+import RepeatSettingsSection from "../RepeatSettingsSection/RepeatSettingsSection";
+import colors from "../../../../shared/styles/colors";
+import AlarmTimeSettingSection from "./AlarmTimeSettingsSection";
 
 /**
  * ✅ BottomSheetTextInput만 분리 (IME-safe 로직 포함)
@@ -280,31 +281,6 @@ const TodoEditorSheet = React.forwardRef(function TodoEditorSheet(
     requestAnimationFrame(() => inputRef.current?.focus?.());
   }, [onChangeText]);
 
-  const formatTime = useCallback((date) => {
-    const h = String(date.getHours()).padStart(2, "0");
-    const m = String(date.getMinutes()).padStart(2, "0");
-    return `${h}   :   ${m}`; // ✅ 스샷처럼 "07 : 30" 형태
-  }, []);
-
-  const openAndroidAlarmPicker = useCallback(() => {
-    DateTimePickerAndroid.open({
-      value: alarmDraftDate,
-      mode: "time",
-      is24Hour: true, // 필요하면 true
-      onChange: (event, selectedDate) => {
-        // Android: dismissed면 selectedDate가 undefined일 수 있음
-        if (event?.type === "dismissed") return;
-        if (!selectedDate) return;
-
-        setAlarmDraftDate(selectedDate);
-        setHasPickedAlarmTime(true);
-
-        // ✅ 선택 즉시 위 박스 시간 표시가 바뀌게 됨 (alarmDraftDate 기반)
-        // 적용하기 버튼은 따로 눌러서 alarmTime 확정
-      },
-    });
-  }, [alarmDraftDate, formatTime]);
-
   const renderEditTools = () => {
     return (
       <View style={styles.toolsRow}>
@@ -531,90 +507,20 @@ const TodoEditorSheet = React.forwardRef(function TodoEditorSheet(
                 <View style={styles.alarmPanel}>
                   <Text style={styles.alarmTitle}>알림 설정</Text>
 
-                  <View style={styles.alarmBox}>
-                    {Platform.OS === "ios" && isIosInlineAlarmPickerOpen ? (
-                      // ✅ iOS: 버튼 누른 뒤에는 alarmBox 전체를 인라인 휠로 교체
-                      <View style={styles.iosInlineAlarmBox}>
-                        <DateTimePicker
-                          value={alarmDraftDate}
-                          mode="time"
-                          display="spinner"
-                          minuteInterval={1}
-                          onChange={(event, date) => {
-                            if (date) {
-                              setAlarmDraftDate(date);
-                              setHasPickedAlarmTime(true);
-                            }
-                          }}
-                          style={styles.iosInlinePicker}
-                        />
-                      </View>
-                    ) : (
-                      // ✅ 공통 기본 UI(미설정/설정 + x + 안내 버튼)
-                      <>
-                        <View style={styles.alarmTimeRow}>
-                          <Text style={styles.alarmTimeText}>
-                            {hasPickedAlarmTime
-                              ? formatTime(alarmDraftDate)
-                              : "--   :   --"}
-                          </Text>
-
-                          {hasPickedAlarmTime && (
-                            <TouchableOpacity
-                              activeOpacity={0.8}
-                              style={styles.alarmClearButton}
-                              onPress={() => {
-                                setHasPickedAlarmTime(false);
-                                setAlarmTime(null);
-                                setIsIosInlineAlarmPickerOpen(false);
-                              }}
-                              hitSlop={8}
-                            >
-                              <Text style={styles.alarmClearIcon}>×</Text>
-                            </TouchableOpacity>
-                          )}
-                        </View>
-
-                        <View style={styles.alarmDivider} />
-                        <TouchableOpacity
-                          activeOpacity={0.8}
-                          style={styles.alarmPickButton}
-                          onPress={() => {
-                            if (Platform.OS === "android") {
-                              openAndroidAlarmPicker();
-                            } else {
-                              setIsIosInlineAlarmPickerOpen(true);
-                            }
-                          }}
-                        >
-                          <Text style={styles.alarmPickButtonText}>
-                            여기를 터치해서 알림 시간 설정하기
-                          </Text>
-                        </TouchableOpacity>
-                      </>
-                    )}
-                  </View>
-
-                  <View style={styles.alarmFooter}>
-                    <TouchableOpacity
-                      activeOpacity={0.8}
-                      style={styles.alarmApplyButton}
-                      onPress={() => {
-                        // ✅ 확정 저장
-                        setAlarmTime(formatTime(alarmDraftDate));
-                        // 적용 시 "설정됨" 상태 보장
-                        setHasPickedAlarmTime(true);
-
-                        // ✅ iOS에서 적용 후 스피너 닫고 싶으면
-                        setIsIosInlineAlarmPickerOpen(false);
-
-                        // 원하면 패널 닫기:
-                        setSelectedToolKey(null);
-                      }}
-                    >
-                      <Text style={styles.alarmApplyText}>적용하기</Text>
-                    </TouchableOpacity>
-                  </View>
+                  <AlarmTimeSettingSection
+                    alarmDraftDate={alarmDraftDate}
+                    alarmTime={alarmTime}
+                    hasPickedAlarmTime={hasPickedAlarmTime}
+                    isIosInlineAlarmPickerOpen={isIosInlineAlarmPickerOpen}
+                    setAlarmDraftDate={setAlarmDraftDate}
+                    setAlarmTime={setAlarmTime}
+                    setHasPickedAlarmTime={setHasPickedAlarmTime}
+                    setIsIosInlineAlarmPickerOpen={
+                      setIsIosInlineAlarmPickerOpen
+                    }
+                    onClosePanel={() => setSelectedToolKey(null)}
+                    styles={styles}
+                  />
                 </View>
               )}
 
@@ -853,84 +759,5 @@ const styles = StyleSheet.create({
     lineHeight: 12 * 1.5,
     color: colors.gr700,
     marginBottom: 10,
-  },
-  alarmBox: {
-    borderRadius: 16,
-    backgroundColor: "#F0F0F0",
-    overflow: "hidden",
-  },
-
-  alarmTimeRow: {
-    position: "relative", // ✅ 기준 컨테이너
-    alignItems: "center",
-    justifyContent: "center",
-    // paddingVertical: 18,
-    height: 91,
-  },
-
-  alarmTimeText: {
-    textAlign: "center",
-    fontSize: 24,
-    lineHeight: 24 * 1.5,
-    color: "#FF5B22",
-    fontFamily: "Pretendard-Bold",
-  },
-  alarmClearButton: {
-    position: "absolute",
-    right: "20%", // ✅ 중앙 텍스트 기준 살짝 우측
-    width: 26,
-    height: 26,
-    borderRadius: 13,
-    // borderWidth: 2,
-    borderColor: "#B0B0B0",
-    alignItems: "center",
-    justifyContent: "center",
-  },
-
-  alarmClearIcon: {
-    fontSize: 18,
-    lineHeight: 18,
-    color: "#B0B0B0",
-  },
-  alarmDivider: {
-    height: 1,
-    backgroundColor: "#E6E6E6",
-  },
-  alarmPickButton: {
-    height: 73,
-    // paddingVertical: 14,
-    alignItems: "center",
-    justifyContent: "center",
-  },
-  alarmPickButtonText: {
-    fontFamily: "Pretendard-Medium",
-    fontSize: 12,
-    color: colors.gr500,
-  },
-  iosInlineAlarmBox: {
-    height: 164, // alarmTimeRow(91) + alarmPickButton(73) 합과 동일하게 맞춤
-    alignItems: "center",
-    justifyContent: "center",
-  },
-  iosInlinePicker: {
-    width: "100%",
-  },
-  alarmFooter: {
-    marginTop: 14,
-    alignItems: "flex-end",
-  },
-  alarmApplyButton: {
-    backgroundColor: "#FF5B22",
-    borderRadius: 16,
-    // paddingHorizontal: 18,
-    width: 100,
-    paddingVertical: 12,
-  },
-  alarmApplyText: {
-    color: "#fff",
-    textAlign: "center",
-    fontSize: 14,
-    lineHeight: 14 * 1.5,
-    fontFamily: "Pretendard-SemiBold",
   },
 });

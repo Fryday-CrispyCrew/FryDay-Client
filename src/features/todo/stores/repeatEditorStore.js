@@ -7,6 +7,7 @@ const initialState = {
   repeatEndDate: new Date(),
   repeatCycle: "unset", // "unset" | "daily" | "weekly" | "monthly" | "yearly"
   repeatAlarm: "unset", // "unset" | "sameTime" | "morning9" | "custom"
+  repeatAlarmTime: null, // ✅ "HH:mm" (예: "07:30") / custom일 때만 사용
 
   // ✅ 반복 주기별 상세 선택값
   repeatWeekdays: [], // ["mon","tue"...]
@@ -23,6 +24,7 @@ export const useRepeatEditorStore = create((set, get) => ({
   setRepeatEndDate: (date) => set({repeatEndDate: date}),
   setRepeatCycle: (cycle) => set({repeatCycle: cycle}),
   setRepeatAlarm: (alarm) => set({repeatAlarm: alarm}),
+  setRepeatAlarmTime: (time) => set({repeatAlarmTime: time}),
 
   setRepeatWeekdays: (days) => set({repeatWeekdays: days}),
   setRepeatMonthDays: (days) => set({repeatMonthDays: days}),
@@ -43,6 +45,7 @@ export const useRepeatEditorStore = create((set, get) => ({
       repeatEndDate,
       repeatCycle,
       repeatAlarm,
+      repeatAlarmTime,
       repeatWeekdays,
       repeatMonthDays,
       repeatYearMonths,
@@ -58,6 +61,7 @@ export const useRepeatEditorStore = create((set, get) => ({
           : null,
       repeatCycle,
       repeatAlarm,
+      repeatAlarmTime,
 
       repeatWeekdays,
       repeatMonthDays,

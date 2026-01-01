@@ -16,6 +16,7 @@ import {useRepeatEditorStore} from "../../stores/repeatEditorStore";
 import {formatKoreanDate} from "../../utils/dateFormat";
 import colors from "../../../../shared/styles/colors";
 import YearMonthWheelModal from "./wheel/YearMonthWheelModal";
+import AlarmTimeSettingSection from "../TodoEditorSheet/AlarmTimeSettingsSection";
 
 const WEEKDAYS = ["일", "월", "화", "수", "목", "금", "토"];
 
@@ -70,6 +71,7 @@ export default function RepeatSettingsSection({
   const repeatEndDate = useRepeatEditorStore((s) => s.repeatEndDate);
   const repeatCycle = useRepeatEditorStore((s) => s.repeatCycle);
   const repeatAlarm = useRepeatEditorStore((s) => s.repeatAlarm);
+  const repeatAlarmTime = useRepeatEditorStore((s) => s.repeatAlarmTime);
 
   const repeatWeekdays = useRepeatEditorStore((s) => s.repeatWeekdays);
   const repeatMonthDays = useRepeatEditorStore((s) => s.repeatMonthDays);
@@ -81,6 +83,7 @@ export default function RepeatSettingsSection({
   const setRepeatEndDate = useRepeatEditorStore((s) => s.setRepeatEndDate);
   const setRepeatCycle = useRepeatEditorStore((s) => s.setRepeatCycle);
   const setRepeatAlarm = useRepeatEditorStore((s) => s.setRepeatAlarm);
+  const setRepeatAlarmTime = useRepeatEditorStore((s) => s.setRepeatAlarmTime);
 
   const setRepeatWeekdays = useRepeatEditorStore((s) => s.setRepeatWeekdays);
   const setRepeatMonthDays = useRepeatEditorStore((s) => s.setRepeatMonthDays);
@@ -103,6 +106,16 @@ export default function RepeatSettingsSection({
   const [draftMonthDays, setDraftMonthDays] = useState([]);
   const [draftYearMonths, setDraftYearMonths] = useState([]);
   const [draftYearDays, setDraftYearDays] = useState([]);
+
+  // ===== 반복 알림 설정(Repeat Alarm) 전용 상태 =====
+  const [repeatAlarmDraftDate, setRepeatAlarmDraftDate] = useState(new Date());
+  // const [repeatAlarmTime, setRepeatAlarmTime] = useState(null); // "HH   :   mm" 형태로 저장
+  const [hasPickedRepeatAlarmTime, setHasPickedRepeatAlarmTime] =
+    useState(false);
+  const [
+    isIosInlineRepeatAlarmPickerOpen,
+    setIsIosInlineRepeatAlarmPickerOpen,
+  ] = useState(false);
 
   // ✅ repeatStart 캘린더 표시용(월 이동 상태)
   const [startMonthCursor, setStartMonthCursor] = useState(() => {
@@ -159,6 +172,28 @@ export default function RepeatSettingsSection({
     repeatYearMonths,
     repeatYearDays,
   ]);
+
+  useEffect(() => {
+    if (openKey !== "repeatAlarm") return;
+
+    // custom 시간이 있으면 그 시간을 draft에 반영
+    if (repeatAlarm === "custom" && repeatAlarmTime) {
+      const [hh, mm] = repeatAlarmTime.split(":").map((n) => Number(n));
+      const base = new Date();
+      base.setHours(hh || 0);
+      base.setMinutes(mm || 0);
+      base.setSeconds(0);
+      base.setMilliseconds(0);
+
+      setRepeatAlarmDraftDate(base);
+      setHasPickedRepeatAlarmTime(true);
+    } else {
+      setRepeatAlarmDraftDate(new Date());
+      setHasPickedRepeatAlarmTime(false);
+    }
+
+    setIsIosInlineRepeatAlarmPickerOpen(false);
+  }, [openKey, repeatAlarm, repeatAlarmTime]);
 
   const toggleWeekday = useCallback((key) => {
     setDraftWeekdays((prev) =>
@@ -384,7 +419,7 @@ export default function RepeatSettingsSection({
           <View style={styles.rowDivider} />
           <Row
             label="반복 알림 설정"
-            value={alarmLabel(repeatAlarm)}
+            value={alarmLabel(repeatAlarm, repeatAlarmTime)}
             onPress={() => onToggleOpenKey("repeatAlarm")}
           />
         </>
@@ -873,24 +908,39 @@ export default function RepeatSettingsSection({
         <View>
           <RowOpen
             label="반복 알림 설정"
-            value={alarmLabel(repeatAlarm)}
+            value={alarmLabel(repeatAlarm, repeatAlarmTime)}
             onPress={() => onToggleOpenKey("repeatAlarm")}
           />
-          {[
-            ["unset", "미설정"],
-            ["sameTime", "시작 시간과 동일"],
-            ["morning9", "오전 9시"],
-            ["custom", "직접 선택"],
-          ].map(([key, label]) => (
-            <Option
-              key={key}
-              text={label}
-              active={repeatAlarm === key}
-              onPress={() => setRepeatAlarm(key)}
+          <View style={styles.repeatAlarmPanel}>
+            <AlarmTimeSettingSection
+              alarmDraftDate={repeatAlarmDraftDate}
+              alarmTime={repeatAlarmTime} // 표시에는 크게 영향 없음(컴포넌트 내부가 hasPicked 기준)
+              hasPickedAlarmTime={hasPickedRepeatAlarmTime}
+              isIosInlineAlarmPickerOpen={isIosInlineRepeatAlarmPickerOpen}
+              setAlarmDraftDate={setRepeatAlarmDraftDate}
+              setHasPickedAlarmTime={setHasPickedRepeatAlarmTime}
+              setIsIosInlineAlarmPickerOpen={
+                setIsIosInlineRepeatAlarmPickerOpen
+              }
+              setAlarmTime={(t) => {
+                // AlarmTimeSettingSection은 "HH   :   mm" 형태로 내려주므로 공백 제거해서 "HH:mm"로 저장
+                const compact = t ? t.replace(/\s+/g, "") : null;
+
+                if (!compact) {
+                  setRepeatAlarm("unset");
+                  setRepeatAlarmTime(null);
+                  return;
+                }
+
+                setRepeatAlarm("custom");
+                setRepeatAlarmTime(compact); // ✅ store에 저장
+              }}
+              onClosePanel={() => onToggleOpenKey("repeatAlarm")}
             />
-          ))}
+          </View>
         </View>
       )}
+
       <YearMonthWheelModal
         visible={ymWheelOpen}
         initialYear={ymInitial.year}
@@ -955,14 +1005,14 @@ const cycleLabel = (v) =>
           ? "매월"
           : "매년";
 
-const alarmLabel = (v) =>
+const alarmLabel = (v, time) =>
   v === "unset"
     ? "미설정"
     : v === "sameTime"
       ? "시작 시간과 동일"
       : v === "morning9"
         ? "오전 9시"
-        : "직접 선택";
+        : (time ?? "미설정");
 
 const styles = StyleSheet.create({
   repeatPanel: {
@@ -1268,5 +1318,10 @@ const styles = StyleSheet.create({
   },
   yearMonthTextActive: {
     color: colors.or,
+  },
+  repeatAlarmPanel: {
+    height: 287,
+    justifyContent: "space-evenly",
+    paddingBottom: 12,
   },
 });

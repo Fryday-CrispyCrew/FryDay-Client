@@ -19,7 +19,7 @@ import CategoryIcon from "../../assets/svg/Category.svg";
 
 import TodoCard from "../../components/TodoCard";
 
-import TodoEditorSheet from "../../components/TodoEditorSheet";
+import TodoEditorSheet from "../../components/TodoEditorSheet/TodoEditorSheet";
 import {useTodoEditorController} from "../../hooks/useTodoEditorController";
 
 const {width} = Dimensions.get("window");
