@@ -1048,7 +1048,7 @@ const alarmLabel = (v, time) =>
 const styles = StyleSheet.create({
   repeatPanel: {
     minHeight: 335,
-    marginTop: 14,
+    // paddingTop: 14,
   },
 
   row: {

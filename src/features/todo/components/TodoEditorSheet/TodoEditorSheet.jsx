@@ -188,13 +188,40 @@ const TodoEditorSheet = React.forwardRef(function TodoEditorSheet(
     Keyboard.dismiss();
   }, []);
 
+  const focusTitleInput = useCallback(() => {
+    InteractionManager.runAfterInteractions(() => {
+      requestAnimationFrame(() => {
+        inputRef.current?.focus?.();
+      });
+    });
+  }, []);
+
+  const blurMemoOnly = useCallback(() => {
+    memoInputRef.current?.blur?.();
+    setIsMemoFocused(false);
+  }, []);
+
+  const closeToolAndFocusTitle = useCallback(
+    (closingKey) => {
+      // ✅ 메모 입력이 열려있었으면 메모만 내리기
+      blurMemoOnly();
+
+      // ✅ 알림 인라인 picker도 같이 닫기
+      if (closingKey === "alarm") setIsIosInlineAlarmPickerOpen(false);
+
+      // ✅ 키보드는 내리지 않고, 제목 input으로 포커스 이동
+      setIsTitleFocused(true);
+      focusTitleInput();
+    },
+    [blurMemoOnly, focusTitleInput]
+  );
+
   const onSelectTool = useCallback(
     (key) => {
       setSelectedToolKey((prev) => {
         // ✅ 같은 아이콘 다시 누르면 해제
         if (prev === key) {
-          blurAllInputs();
-          if (key === "alarm") setIsIosInlineAlarmPickerOpen(false);
+          closeToolAndFocusTitle(key);
           return null;
         }
 
@@ -458,7 +485,20 @@ const TodoEditorSheet = React.forwardRef(function TodoEditorSheet(
                   maxLength={20}
                   style={styles.inputEdit}
                   placeholder="두근두근, 무엇을 튀겨볼까요?"
-                  onFocus={() => setIsTitleFocused(true)}
+                  onFocus={() => {
+                    setIsTitleFocused(true);
+
+                    if (selectedToolKey) {
+                      // ✅ 켜져있던 툴/패널 닫기
+                      setSelectedToolKey(null);
+                      // ✅ repeat 내부 드롭다운도 정리
+                      setOpenRepeatDropdownKey(null);
+                      // ✅ 알림 인라인 picker 정리
+                      setIsIosInlineAlarmPickerOpen(false);
+                      // ✅ 메모 input 열려있으면 내려주기
+                      blurMemoOnly();
+                    }
+                  }}
                   onBlur={() => setIsTitleFocused(false)}
                 />
 
@@ -544,7 +584,7 @@ const styles = StyleSheet.create({
     flex: 1,
     paddingHorizontal: 20,
     paddingTop: 8,
-    paddingBottom: 16,
+    // paddingBottom: 16,
   },
 
   categoryInlineRow: {
@@ -676,10 +716,12 @@ const styles = StyleSheet.create({
 
   // ===== edit tools row =====
   toolsRow: {
-    marginTop: 10,
+    marginTop: 16,
+    marginBottom: 16,
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "space-between",
+    // borderWidth: 1,
   },
   toolsLeft: {
     flexDirection: "row",
@@ -752,6 +794,7 @@ const styles = StyleSheet.create({
     minHeight: 335,
     paddingTop: 16,
     paddingBottom: 32,
+    // borderWidth: 1,
   },
   alarmTitle: {
     fontFamily: "Pretendard-Medium",
