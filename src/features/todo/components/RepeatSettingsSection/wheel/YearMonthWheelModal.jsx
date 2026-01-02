@@ -9,6 +9,7 @@ import {
   StyleSheet,
 } from "react-native";
 import WheelColumn from "./WheelColumn";
+import colors from "../../../../../shared/styles/colors";
 
 const range = (from, to) =>
   Array.from({length: to - from + 1}, (_, i) => from + i);
@@ -20,12 +21,12 @@ export default function YearMonthWheelModal({
   onCancel,
   onConfirm, // (year, month) => void
 
-  // 옵션: 연도 범위 커스터마이즈
   yearFrom,
   yearTo,
-  title = "년 · 월 선택",
-  confirmText = "확인",
-  cancelText = "취소",
+
+  // ✅ 스샷 기준 기본값
+  title = "연월 이동",
+  moveText = "이동하기",
 }) {
   const baseYear = new Date().getFullYear();
 
@@ -46,7 +47,7 @@ export default function YearMonthWheelModal({
     setMonthIdx(Math.max(0, months.indexOf(initialMonth)));
   }, [visible, initialYear, initialMonth, years, months]);
 
-  const handleConfirm = useCallback(() => {
+  const handleMove = useCallback(() => {
     const y = years[yearIdx] ?? initialYear;
     const m = months[monthIdx] ?? initialMonth;
     onConfirm?.(y, m);
@@ -54,45 +55,54 @@ export default function YearMonthWheelModal({
 
   return (
     <Modal visible={visible} transparent animationType="fade">
+      {/* dim */}
       <Pressable style={styles.backdrop} onPress={onCancel} />
 
+      {/* sheet */}
       <View style={styles.sheet}>
-        <Text style={styles.title}>{title}</Text>
+        {/* header: title + close */}
+        <View style={styles.header}>
+          <View style={styles.headerSide} />
+          <Text style={styles.title}>{title}</Text>
+          <TouchableOpacity
+            activeOpacity={0.8}
+            onPress={onCancel}
+            style={styles.closeBtn}
+            hitSlop={10}
+          >
+            <Text style={styles.closeText}>×</Text>
+          </TouchableOpacity>
+        </View>
 
-        <View style={styles.row}>
+        {/* wheels */}
+        <View style={styles.wheelRow}>
           <WheelColumn
             data={years}
             selectedIndex={yearIdx}
             onChangeIndex={setYearIdx}
             renderLabel={(y) => `${y}년`}
+            containerStyle={styles.wheelColBox}
+            textStyle={styles.wheelText}
+            activeTextStyle={styles.wheelTextActive}
           />
           <WheelColumn
             data={months}
             selectedIndex={monthIdx}
             onChangeIndex={setMonthIdx}
             renderLabel={(m) => `${m}월`}
+            containerStyle={styles.wheelColBox}
+            textStyle={styles.wheelText}
+            activeTextStyle={styles.wheelTextActive}
           />
         </View>
-
-        <View style={styles.actions}>
-          <TouchableOpacity
-            activeOpacity={0.85}
-            onPress={onCancel}
-            style={[styles.btn, styles.btnGhost]}
-          >
-            <Text style={[styles.btnText, styles.btnTextGhost]}>
-              {cancelText}
-            </Text>
-          </TouchableOpacity>
-
+        {/* bottom CTA */}
+        <View style={styles.buttonSection}>
           <TouchableOpacity
             activeOpacity={0.9}
-            onPress={handleConfirm}
-            style={[styles.btn, styles.btnPrimary]}
+            onPress={handleMove}
+            style={styles.moveBtn}
           >
-            <Text style={[styles.btnText, styles.btnTextPrimary]}>
-              {confirmText}
-            </Text>
+            <Text style={styles.moveBtnText}>{moveText}</Text>
           </TouchableOpacity>
         </View>
       </View>
@@ -103,43 +113,99 @@ export default function YearMonthWheelModal({
 const styles = StyleSheet.create({
   backdrop: {
     ...StyleSheet.absoluteFillObject,
-    backgroundColor: "rgba(0,0,0,0.35)",
+    backgroundColor: "rgba(0,0,0,0.45)",
   },
+
   sheet: {
     position: "absolute",
-    left: 20,
-    right: 20,
+    left: 24,
+    right: 24,
     top: "25%",
-    borderRadius: 18,
-    backgroundColor: "#FFFFFF",
-    paddingTop: 16,
-    paddingBottom: 14,
-    paddingHorizontal: 14,
+    borderRadius: 20,
+    backgroundColor: colors.wt,
+    // paddingHorizontal: 18,
+    // paddingTop: 14,
+    // paddingBottom: 18,
   },
-  title: {
-    fontSize: 14,
-    fontWeight: "700",
-    color: "#111",
-    textAlign: "center",
-    marginBottom: 12,
-  },
-  row: {flexDirection: "row", gap: 10},
-  actions: {
-    marginTop: 14,
+
+  header: {
+    // height: 34,
+    paddingVertical: 16,
+    paddingHorizontal: 18,
     flexDirection: "row",
-    justifyContent: "flex-end",
-    gap: 10,
+    alignItems: "center",
+    justifyContent: "space-between",
+    borderBottomWidth: 1,
+    borderBottomColor: colors.gr100,
+    // borderWidth: 1,
+    // marginBottom: 12,
   },
-  btn: {
-    height: 40,
-    paddingHorizontal: 16,
-    borderRadius: 14,
+  headerSide: {width: 34, height: 18}, // title center 정렬용 더미
+  title: {
+    fontFamily: "Pretendard-SemiBold",
+    fontSize: 16,
+    lineHeight: 16 * 1.5,
+    // fontWeight: "700",
+    color: colors.bk,
+  },
+  closeBtn: {
+    width: 34,
+    height: 18,
     alignItems: "center",
     justifyContent: "center",
   },
-  btnGhost: {backgroundColor: "#F1F1F1"},
-  btnPrimary: {backgroundColor: "#FF5722"},
-  btnText: {fontSize: 13},
-  btnTextGhost: {color: "#5D5E60", fontWeight: "600"},
-  btnTextPrimary: {color: "#fff", fontWeight: "700"},
+  closeText: {
+    fontSize: 18,
+    lineHeight: 18,
+    color: colors.bk,
+  },
+
+  wheelRow: {
+    paddingHorizontal: 20,
+    paddingVertical: 24,
+    // borderWidth: 1,
+    flexDirection: "row",
+    gap: 12,
+    justifyContent: "space-between",
+  },
+
+  // WheelColumn에 주입되는 박스 스타일(스샷처럼 밝은 회색 + 둥글게)
+  wheelColBox: {
+    backgroundColor: colors.gr,
+    borderRadius: 16,
+  },
+
+  wheelText: {
+    fontFamily: "Pretendard-Medium",
+    fontSize: 12,
+    lineHeight: 12 * 1.5,
+    color: colors.gr300,
+    // fontWeight: "500",
+  },
+  wheelTextActive: {
+    fontFamily: "Pretendard-SemiBold",
+    fontSize: 14,
+    lineHeight: 14 * 1.5,
+    color: colors.or,
+    // fontWeight: "700",
+  },
+  buttonSection: {
+    paddingHorizontal: 20,
+    paddingBottom: 24,
+  },
+  moveBtn: {
+    // marginTop: 16,
+    // width: 225,
+    height: 45,
+    borderRadius: 18,
+    backgroundColor: colors.or,
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  moveBtnText: {
+    fontFamily: "Pretendard-Medium",
+    fontSize: 14,
+    // fontWeight: "800",
+    color: colors.wt,
+  },
 });

@@ -41,7 +41,7 @@ export default function WheelColumn({
     <View
       style={[
         styles.col,
-        {height: itemHeight * visibleCount, borderRadius: 14},
+        {height: itemHeight * visibleCount, borderRadius: 200},
         containerStyle,
       ]}
     >
@@ -100,9 +100,11 @@ const styles = StyleSheet.create({
     position: "absolute",
     left: 0,
     right: 0,
-    borderTopWidth: 1,
-    borderBottomWidth: 1,
-    borderColor: "rgba(0,0,0,0.08)",
-    backgroundColor: "rgba(255,255,255,0.6)",
+    // borderTopWidth: 1,
+    // borderBottomWidth: 1,
+    // borderColor: "rgba(0,0,0,0.08)",
+    // backgroundColor: "rgba(255,255,255,0.6)",
+    // borderColor: "rgba(0,0,0,0.04)",
+    // backgroundColor: "rgba(255,255,255,0.35)",
   },
 });

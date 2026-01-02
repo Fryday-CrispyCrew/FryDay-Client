@@ -124,7 +124,8 @@ export default function RepeatSettingsSection({
   });
 
   const [ymWheelOpen, setYmWheelOpen] = useState(false);
-  const [ymInitial, setYmInitial] = useState({year: 2025, month: 10});
+  const [ymTarget, setYmTarget] = useState("start"); // "start" | "end"
+  const [ymInitial, setYmInitial] = useState({year: 0, month: 0}); // month: 1~12
 
   // ✅ repeatStart 열릴 때: 선택된 시작 날짜 기준으로 캘린더 월 커서 맞추기
   useEffect(() => {
@@ -384,6 +385,33 @@ export default function RepeatSettingsSection({
     setYmWheelOpen(true);
   };
 
+  const openEndYearMonthWheel = useCallback(() => {
+    // ✅ 종료 없음이면 모달 못 열게
+    if (draftEndType === "none") return;
+
+    setYmTarget("end");
+    setYmInitial({
+      year: endMonthCursor.getFullYear(),
+      month: endMonthCursor.getMonth() + 1,
+    });
+    setYmWheelOpen(true);
+  }, [draftEndType, endMonthCursor]);
+
+  const handleConfirmYearMonth = useCallback(
+    (year, month) => {
+      const next = new Date(year, month - 1, 1);
+
+      if (ymTarget === "start") {
+        setStartMonthCursor(next);
+      } else {
+        setEndMonthCursor(next);
+      }
+
+      setYmWheelOpen(false);
+    },
+    [ymTarget]
+  );
+
   const applyStartYearMonth = (year, month) => {
     setStartMonthCursor(new Date(year, month - 1, 1));
     setYmWheelOpen(false);
@@ -528,23 +556,25 @@ export default function RepeatSettingsSection({
               })}
             </View>
           </View>
-          <TouchableOpacity
-            activeOpacity={0.9}
-            onPress={handleApplyStartDate}
-            style={[
-              styles.applyButton,
-              isApplyStartDisabled && styles.applyButtonDisabled,
-            ]}
-          >
-            <Text
+          <View style={styles.repeatStartButtonSection}>
+            <TouchableOpacity
+              activeOpacity={0.9}
+              onPress={handleApplyStartDate}
               style={[
-                styles.applyButtonText,
-                isApplyStartDisabled && styles.applyButtonTextDisabled,
+                styles.applyButton,
+                isApplyStartDisabled && styles.applyButtonDisabled,
               ]}
             >
-              적용하기
-            </Text>
-          </TouchableOpacity>
+              <Text
+                style={[
+                  styles.applyButtonText,
+                  isApplyStartDisabled && styles.applyButtonTextDisabled,
+                ]}
+              >
+                적용하기
+              </Text>
+            </TouchableOpacity>
+          </View>
 
           {/* (원하면) Android에서 네이티브 picker로도 진입할 수 있게 보조 옵션 유지 가능 */}
           {/* {Platform.OS === "android" && (
@@ -581,10 +611,16 @@ export default function RepeatSettingsSection({
                 <Text style={styles.monthNavText}>‹</Text>
               </TouchableOpacity>
 
-              <Text style={styles.calendarHeaderText}>
-                {endMonthCursor.getFullYear()}년 {endMonthCursor.getMonth() + 1}
-                월
-              </Text>
+              <TouchableOpacity
+                activeOpacity={0.8}
+                onPress={openEndYearMonthWheel}
+                disabled={draftEndType === "none"} // ✅ 종료 없음일 때는 탭 비활성
+              >
+                <Text style={styles.calendarHeaderText}>
+                  {endMonthCursor.getFullYear()}년{" "}
+                  {endMonthCursor.getMonth() + 1}월
+                </Text>
+              </TouchableOpacity>
 
               <TouchableOpacity
                 activeOpacity={0.7}
@@ -659,48 +695,43 @@ export default function RepeatSettingsSection({
             </View>
           </View>
           {/* 첨부처럼 "반복 종료 없음" 스위치 */}
-          <View style={styles.endNoneRow}>
-            <Text
-              style={[
-                styles.endNoneText,
-                isEndNone && styles.endNoneTextDisabled,
-              ]}
-            >
-              반복 종료 없음
-            </Text>
+          <View style={styles.endBottomRow}>
+            <View style={styles.endNoneRow}>
+              <Text style={styles.endNoneText}>반복 종료 없음</Text>
+
+              <TouchableOpacity
+                activeOpacity={0.8}
+                onPress={() => setDraftEndType(isEndNone ? "date" : "none")}
+                style={styles.endNoneRadioBtn}
+                hitSlop={8}
+              >
+                {isEndNone ? (
+                  <RadioOn width={18} height={18} />
+                ) : (
+                  <RadioOff width={18} height={18} />
+                )}
+              </TouchableOpacity>
+            </View>
 
             <TouchableOpacity
-              activeOpacity={0.8}
-              onPress={() => setDraftEndType(isEndNone ? "date" : "none")}
-              style={styles.endNoneRadioBtn}
-              hitSlop={8}
-            >
-              {isEndNone ? (
-                <RadioOn width={18} height={18} />
-              ) : (
-                <RadioOff width={18} height={18} />
-              )}
-            </TouchableOpacity>
-          </View>
-          {/* 적용하기 */}
-          <TouchableOpacity
-            activeOpacity={0.9}
-            disabled={isApplyEndDisabled}
-            onPress={handleApplyEndDate}
-            style={[
-              styles.applyButton,
-              isApplyEndDisabled && styles.applyButtonDisabled,
-            ]}
-          >
-            <Text
+              activeOpacity={0.9}
+              disabled={isApplyEndDisabled}
+              onPress={handleApplyEndDate}
               style={[
-                styles.applyButtonText,
-                isApplyEndDisabled && styles.applyButtonTextDisabled,
+                styles.applyButton,
+                isApplyEndDisabled && styles.applyButtonDisabled,
               ]}
             >
-              적용하기
-            </Text>
-          </TouchableOpacity>
+              <Text
+                style={[
+                  styles.applyButtonText,
+                  isApplyEndDisabled && styles.applyButtonTextDisabled,
+                ]}
+              >
+                적용하기
+              </Text>
+            </TouchableOpacity>
+          </View>
         </View>
       )}
 
@@ -946,7 +977,7 @@ export default function RepeatSettingsSection({
         initialYear={ymInitial.year}
         initialMonth={ymInitial.month}
         onCancel={() => setYmWheelOpen(false)}
-        onConfirm={applyStartYearMonth}
+        onConfirm={handleConfirmYearMonth}
       />
     </View>
   );
@@ -1051,6 +1082,7 @@ const styles = StyleSheet.create({
   // ===== repeatStart calendar =====
   calendarWrap: {
     // marginTop: 6,
+    // borderWidth: 1,
   },
   // ✅ 캘린더 흐리게
   calendarWrapDisabled: {
@@ -1059,24 +1091,25 @@ const styles = StyleSheet.create({
   calendarHeader: {
     flexDirection: "row",
     alignItems: "center",
-    justifyContent: "center",
+    // justifyContent: "center",
     height: 38,
     gap: 10,
   },
   monthNavBtn: {
-    width: 28,
-    height: 28,
+    width: 24,
+    height: 24,
     alignItems: "center",
     justifyContent: "center",
   },
   monthNavText: {
-    fontSize: 20,
+    fontSize: 18,
     color: "#333333",
-    lineHeight: 20,
+    lineHeight: 18,
   },
   calendarHeaderText: {
-    fontFamily: "Pretendard-Medium",
+    fontFamily: "Pretendard-SemiBold",
     fontSize: 14,
+    lineHeight: 14 * 1.5,
     color: colors.bk,
   },
 
@@ -1086,9 +1119,10 @@ const styles = StyleSheet.create({
     marginBottom: 8,
   },
   weekHeaderCell: {
-    width: `${100 / 7}%`,
+    width: `${100 / 7.01}%`,
     alignItems: "center",
     justifyContent: "center",
+    // borderWidth: 1,
   },
   weekHeaderText: {
     fontFamily: "Pretendard-Medium",
@@ -1176,8 +1210,15 @@ const styles = StyleSheet.create({
     fontWeight: "600",
   },
   endNoneRow: {
-    marginTop: 10,
-    height: 44,
+    // marginTop: 10,
+    // height: 44,
+    flexDirection: "row",
+    alignItems: "center",
+    // justifyContent: "space-between",
+    gap: 6,
+  },
+  endBottomRow: {
+    marginTop: 16,
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "space-between",
@@ -1199,6 +1240,10 @@ const styles = StyleSheet.create({
     height: 28,
     alignItems: "center",
     justifyContent: "center",
+  },
+
+  repeatStartButtonSection: {
+    marginTop: 16,
   },
 
   applyButton: {
