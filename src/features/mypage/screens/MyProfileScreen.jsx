@@ -2,10 +2,24 @@ import {SafeAreaView, View} from 'react-native'
 import React from 'react'
 import MyPageHeader from "../components/MypageHeader";
 import MyPageMenu from "../components/MypageMenu";
+// import {useQuery} from "@tanstack/react-query";
+// import LoadingScreen from "../../../shared/components/LoadingScreen";
+// import ErrorScreen from "../../../shared/components/ErrorScreen";
 
 export default function MyProfileScreen({}){
-  return (
+
+    // const { isFetching, isError, refetch } = useQuery({
+    //     queryKey: ["test-loading"],
+    //     queryFn: () => new Promise((r) => setTimeout(() => r(true), 1500)),
+    //     retry: false,
+    // });
+    // loadingScreen test
+
+
+    return (
       <SafeAreaView className="flex-1 bg-gr">
+          {/*{isFetching && <LoadingScreen />}*/}
+          {/*{isError && <ErrorScreen />}*/}
           <MyPageHeader
           showBackButton={false}
           title="설정"/>

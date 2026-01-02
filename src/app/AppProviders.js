@@ -7,12 +7,28 @@ import {
   QueryClientProvider,
   onlineManager,
   focusManager,
+  useIsFetching,
+  useIsMutating,
 } from "@tanstack/react-query";
 import {queryClient} from "../shared/lib/queryClient";
 import {useFonts} from "expo-font";
 import * as SplashScreen from "expo-splash-screen";
 import {GestureHandlerRootView} from "react-native-gesture-handler";
 import {SafeAreaProvider} from "react-native-safe-area-context";
+import LoadingScreen from "../shared/components/LoadingScreen"
+
+function GlobalLoading({children}) {
+  const fetching = useIsFetching();
+  const mutating = useIsMutating();
+  const isLoading = fetching + mutating > 0;
+
+  return (
+      <>
+        {children}
+        {isLoading ? <LoadingScreen /> : null}
+      </>
+  );
+}
 
 export default function AppProviders({children}) {
   const [fontsLoaded] = useFonts({
@@ -56,7 +72,9 @@ export default function AppProviders({children}) {
       <SafeAreaProvider>
         {/* ⭐ SafeArea 컨텍스트 */}
         <QueryClientProvider client={queryClient}>
-          <NavigationContainer>{children}</NavigationContainer>
+          <GlobalLoading>
+            <NavigationContainer>{children}</NavigationContainer>
+          </GlobalLoading>
         </QueryClientProvider>
       </SafeAreaProvider>
     </GestureHandlerRootView>
