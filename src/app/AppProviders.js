@@ -16,6 +16,8 @@ import * as SplashScreen from "expo-splash-screen";
 import {GestureHandlerRootView} from "react-native-gesture-handler";
 import {SafeAreaProvider} from "react-native-safe-area-context";
 import LoadingScreen from "../shared/components/LoadingScreen"
+import LoginScreen from "../features/auth/screens/Login/LoginScreen";
+
 
 function GlobalLoading({children}) {
   const fetching = useIsFetching();
@@ -73,7 +75,9 @@ export default function AppProviders({children}) {
         {/* ⭐ SafeArea 컨텍스트 */}
         <QueryClientProvider client={queryClient}>
           <GlobalLoading>
-            <NavigationContainer>{children}</NavigationContainer>
+            <NavigationContainer>
+              {children ?? <LoginScreen />}
+            </NavigationContainer>
           </GlobalLoading>
         </QueryClientProvider>
       </SafeAreaProvider>
