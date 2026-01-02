@@ -132,6 +132,8 @@ const TodoEditorSheet = React.forwardRef(function TodoEditorSheet(
   const [isSubmitEnabled, setIsSubmitEnabled] = useState(false);
 
   const [selectedToolKey, setSelectedToolKey] = useState(null);
+  const selectedToolKeyRef = useRef(null);
+
   // 알림 시간(임시 선택 값)
   const [alarmDraftDate, setAlarmDraftDate] = useState(new Date());
   // 적용된 알림 시간(저장될 값)
@@ -144,6 +146,10 @@ const TodoEditorSheet = React.forwardRef(function TodoEditorSheet(
 
   // ✅ repeat panel 내부 드롭다운 open 상태 (하나만 열리게)
   const [openRepeatDropdownKey, setOpenRepeatDropdownKey] = useState(null); // "repeatStart" | "repeatEnd" | "repeatCycle" | "repeatAlarm" | null
+
+  useEffect(() => {
+    selectedToolKeyRef.current = selectedToolKey;
+  }, [selectedToolKey]);
 
   useEffect(() => {
     if (!isRepeatOpen) setOpenRepeatDropdownKey(null);
@@ -188,6 +194,22 @@ const TodoEditorSheet = React.forwardRef(function TodoEditorSheet(
     Keyboard.dismiss();
   }, []);
 
+  const openToolAfterKeyboardDismiss = useCallback((key) => {
+    // 1) 먼저 포커스/키보드 정리
+    inputRef.current?.blur?.();
+    memoInputRef.current?.blur?.();
+    setIsTitleFocused(false);
+    setIsMemoFocused(false);
+    Keyboard.dismiss();
+
+    // 2) 키보드/시트 인터랙션이 끝난 다음 프레임에 패널 오픈
+    InteractionManager.runAfterInteractions(() => {
+      requestAnimationFrame(() => {
+        setSelectedToolKey(key);
+      });
+    });
+  }, []);
+
   const focusTitleInput = useCallback(() => {
     InteractionManager.runAfterInteractions(() => {
       requestAnimationFrame(() => {
@@ -218,24 +240,28 @@ const TodoEditorSheet = React.forwardRef(function TodoEditorSheet(
 
   const onSelectTool = useCallback(
     (key) => {
-      setSelectedToolKey((prev) => {
-        // ✅ 같은 아이콘 다시 누르면 해제
-        if (prev === key) {
-          closeToolAndFocusTitle(key);
-          return null;
-        }
+      const current = selectedToolKeyRef.current;
 
-        // ✅ 다른 아이콘 선택
-        if (key !== "memo") {
-          blurAllInputs();
-        }
-
+      // ✅ 같은 아이콘 다시 누르면: 패널 닫고 제목으로 복귀(키보드 올리기)
+      if (current === key) {
         if (key === "alarm") setIsIosInlineAlarmPickerOpen(false);
+        setSelectedToolKey(null);
+        setIsTitleFocused(true);
+        focusTitleInput();
+        return;
+      }
 
-        return key;
-      });
+      // ✅ memo는 키보드 유지(메모 입력 UX) - 기존 의도 유지
+      if (key === "memo") {
+        setSelectedToolKey("memo");
+        return;
+      }
+
+      // ✅ alarm/repeat/start/select 등: A안 적용 (키보드 내려간 뒤 열기)
+      if (key === "alarm") setIsIosInlineAlarmPickerOpen(false);
+      openToolAfterKeyboardDismiss(key);
     },
-    [blurAllInputs]
+    [focusTitleInput, openToolAfterKeyboardDismiss]
   );
 
   const focusInput = useCallback(() => {
@@ -359,6 +385,7 @@ const TodoEditorSheet = React.forwardRef(function TodoEditorSheet(
       ref={ref}
       index={0}
       // snapPoints={snapPoints}
+      enableDynamicSizing
       backdropComponent={renderBackdrop}
       onDismiss={handleDismiss}
       onAnimate={handleSheetAnimate}
