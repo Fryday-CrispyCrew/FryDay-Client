@@ -1,7 +1,6 @@
 import React, { useMemo } from 'react';
-import { View, Image } from 'react-native';
+import { View, Image, useWindowDimensions } from 'react-native';
 import Svg, { Path, Circle } from 'react-native-svg';
-import { Dimensions } from 'react-native';
 
 import AppText from '../../../shared/components/AppText';
 import CategoryBg from '../assets/svg/Category_bg.svg';
@@ -9,7 +8,6 @@ import Tung from '../assets/png/Tung.png';
 import CategoryLine from '../assets/svg/Category_line.svg';
 
 const TICKS = [100, 80, 60, 40, 20];
-const { height: DEVICE_HEIGHT } = Dimensions.get('window');
 
 const clamp01 = (v) => Math.max(0, Math.min(100, v));
 
@@ -31,7 +29,6 @@ export default function ReportCategoryCard({ data = [] }) {
             isMostFailCount: d.fail === maxFailCount,
         }));
     }, [data]);
-
 
     return (
         <View className="px-5 gap-4">
@@ -59,16 +56,11 @@ function RateCard({ data }) {
             <View
                 className="bg-wt rounded-2xl overflow-hidden"
                 style={{ borderWidth: 1, borderColor: '#F2F2F2' }}>
-                {isEmpty ? (
-                    <EmptyState />
-                ) : (
-                    <BarChart data={data} />
-                )}
+                {isEmpty ? <EmptyState /> : <BarChart data={data} />}
             </View>
         </View>
     );
 }
-
 
 // 바삭함 개수 Card
 function CountCard({ data }) {
@@ -101,11 +93,7 @@ function CountCard({ data }) {
             <View
                 className="bg-wt rounded-2xl overflow-hidden"
                 style={{ borderWidth: 1, borderColor: '#F2F2F2' }}>
-                {isEmpty ? (
-                    <EmptyState />
-                ) : (
-                    <LineChart data={data} />
-                )}
+                {isEmpty ? <EmptyState /> : <LineChart data={data} />}
             </View>
         </View>
     );
@@ -113,16 +101,11 @@ function CountCard({ data }) {
 
 // 텅
 function EmptyState() {
-    return (
-        <View
-            className="h-60 items-center justify-center"
-            style={{ maxHeight: DEVICE_HEIGHT * 0.45 }}>
-            <Image
-                source={Tung}
-                style={{ width: 110, height: 110 }}
-                resizeMode="contain"
-            />
+    const { height } = useWindowDimensions();
 
+    return (
+        <View className="h-60 items-center justify-center" style={{ maxHeight: height * 0.45 }}>
+            <Image source={Tung} style={{ width: 110, height: 110 }} resizeMode="contain" />
             <AppText variant="S500" className="text-gr500 text-center mt-2">
                 아직 추가된 투두 튀김이 없어요{'\n'}먼저 할 일을 튀겨 주세요!
             </AppText>
@@ -130,15 +113,25 @@ function EmptyState() {
     );
 }
 
-
 // 공통 : 가로 격자 + y축
 function GridLayer() {
+    const { width } = useWindowDimensions();
+
+    const padX = 20;
+    const cardWidth = Math.min(390, width - padX * 2);
+    const plotLeft = 44;
+    const plotRightPadding = 20;
+    const plotHeight = 144;
+    const plotTop = 12;
+    const bgW = Math.max(0, cardWidth - plotLeft - plotRightPadding);
+    const bgH = 180;
+
     return (
         <>
             <CategoryBg
-                width={310}
-                height={180}
-                style={{ position: 'absolute', bottom: 8, left: 45,maxWidth: '100%' }}
+                width={bgW}
+                height={bgH}
+                style={{ position: 'absolute', bottom: 8, left: plotLeft, maxWidth: '100%' }}
             />
             <View className="absolute left-6 top-6 justify-between h-36">
                 {TICKS.map((v) => (
@@ -153,6 +146,11 @@ function GridLayer() {
 
 // 막대그래프
 function BarChart({ data }) {
+    const { width, height } = useWindowDimensions();
+
+    const padX = 20;
+    const cardWidth = Math.min(390, width - padX * 2);
+
     const plotLeft = 44;
     const plotRightPadding = 20;
     const plotTop = 12;
@@ -161,16 +159,13 @@ function BarChart({ data }) {
     const barW = 24;
     const labelBoxW = 44;
 
-    // 카테고리 이름 자동 자르기
     const splitCategoryName = (name) => {
         if (name.length <= 4) return name;
         return `${name.slice(0, 4)}\n${name.slice(4)}`;
     };
 
     return (
-        <View
-            className="h-60"
-            style={{ maxHeight: DEVICE_HEIGHT * 0.45 }}>
+        <View className="h-60" style={{ maxHeight: height * 0.45, width: cardWidth }}>
             <GridLayer />
 
             <View
@@ -187,13 +182,7 @@ function BarChart({ data }) {
 
                     return (
                         <View key={`${d.name}-${i}`} style={{ flex: 1, alignItems: 'center' }}>
-
-                            {/*세로 격자*/}
-                            <CategoryLine
-                                width={barW}
-                                height={plotHeight}
-                                pointerEvents="none"
-                            />
+                            <CategoryLine width={barW} height={plotHeight} pointerEvents="none" />
 
                             <View
                                 style={{
@@ -203,7 +192,7 @@ function BarChart({ data }) {
                                     height: barH,
                                     borderTopLeftRadius: 12,
                                     borderTopRightRadius: 12,
-                                    backgroundColor: d.isBestRate ? '#FF5B22' : '#EAEAEA', // primary-or : gr200
+                                    backgroundColor: d.isBestRate ? '#FF5B22' : '#EAEAEA',
                                 }}
                             />
                         </View>
@@ -218,7 +207,8 @@ function BarChart({ data }) {
                     left: plotLeft,
                     right: plotRightPadding,
                     bottom: 12,
-                    alignItems: 'center', justifyContent: 'center'
+                    alignItems: 'center',
+                    justifyContent: 'center',
                 }}
             >
                 {data.map((d, i) => (
@@ -231,7 +221,6 @@ function BarChart({ data }) {
                             >
                                 {splitCategoryName(d.name)}
                             </AppText>
-
                         </View>
                     </View>
                 ))}
@@ -240,10 +229,13 @@ function BarChart({ data }) {
     );
 }
 
-
 // 꺾은선 그래프
 function LineChart({ data }) {
+    const { width, height } = useWindowDimensions();
     const n = data.length;
+
+    const padX = 20;
+    const cardWidth = Math.min(390, width - padX * 2);
 
     const plotLeft = 44;
     const plotRightPadding = 16;
@@ -252,20 +244,19 @@ function LineChart({ data }) {
     const topPadding = 16;
     const usableHeight = plotHeight - topPadding;
 
-
     const barW = 24;
 
     const successVals = data.map((d) => clamp01(d.success));
     const failVals = data.map((d) => clamp01(d.fail));
 
-    const makePath = (vals, width) => {
+    const makePath = (vals, w) => {
         if (n === 1) {
-            const x = width / 2;
-            const y = plotHeight - (vals[0] / 100) * plotHeight;
+            const x = w / 2;
+            const y = topPadding + (usableHeight - (vals[0] / 100) * usableHeight);
             return `M ${x} ${y}`;
         }
 
-        const step = width / n;
+        const step = w / n;
         return vals
             .map((v, i) => {
                 const x = step * i + step / 2;
@@ -274,18 +265,14 @@ function LineChart({ data }) {
             })
             .join(' ');
     };
-    // 카테고리 이름 자동 자르기
+
     const splitCategoryName = (name) => {
         if (name.length <= 4) return name;
         return `${name.slice(0, 4)}\n${name.slice(4)}`;
     };
 
     return (
-        <View
-            className="h-60"
-            style={{ maxHeight: DEVICE_HEIGHT * 0.45 }}>
-
-
+        <View className="h-60" style={{ maxHeight: height * 0.45, width: cardWidth }}>
             <GridLayer />
 
             <View
@@ -294,18 +281,13 @@ function LineChart({ data }) {
                     left: plotLeft,
                     right: plotRightPadding,
                     top: plotTop,
-                    height: plotHeight
+                    height: plotHeight,
                 }}
             >
-                {/*세로 격자*/}
                 <View className="absolute inset-0 flex-row">
                     {data.map((_, i) => (
                         <View key={`grid-${i}`} style={{ flex: 1, alignItems: 'center' }}>
-                            <CategoryLine
-                                width={barW}
-                                height={plotHeight}
-                                pointerEvents="none"
-                            />
+                            <CategoryLine width={barW} height={plotHeight} pointerEvents="none" />
                         </View>
                     ))}
                 </View>
@@ -313,10 +295,8 @@ function LineChart({ data }) {
                 <MeasureWidth
                     render={(w) => {
                         const isSingle = n === 1;
-                        const successY =
-                            topPadding + (usableHeight - (successVals[0] / 100) * usableHeight);
-                        const failY =
-                            topPadding + (usableHeight - (failVals[0] / 100) * usableHeight);
+                        const successY = topPadding + (usableHeight - (successVals[0] / 100) * usableHeight);
+                        const failY = topPadding + (usableHeight - (failVals[0] / 100) * usableHeight);
                         const centerX = w / 2;
 
                         return (
@@ -340,27 +320,15 @@ function LineChart({ data }) {
 
                                 {isSingle && (
                                     <>
-                                        <Circle
-                                            cx={centerX}
-                                            cy={failY}
-                                            r={6}
-                                            fill="#4F4E4D"
-                                        />
-                                        <Circle
-                                            cx={centerX}
-                                            cy={successY}
-                                            r={6}
-                                            fill="#FF5B22"
-                                        />
+                                        <Circle cx={centerX} cy={failY} r={6} fill="#4F4E4D" />
+                                        <Circle cx={centerX} cy={successY} r={6} fill="#FF5B22" />
                                     </>
                                 )}
                             </Svg>
                         );
                     }}
                 />
-
             </View>
-
 
             <View
                 className="absolute flex-row bg-wt"
@@ -395,7 +363,6 @@ function LineChart({ data }) {
                         }
                     }
 
-
                     return (
                         <View key={`${d.name}-label2-${i}`} style={{ flex: 1, alignItems: 'center' }}>
                             <AppText
@@ -408,22 +375,33 @@ function LineChart({ data }) {
                         </View>
                     );
                 })}
-
             </View>
-
         </View>
     );
 }
 
 function MeasureWidth({ render }) {
     const [w, setW] = React.useState(0);
+    const mountedRef = React.useRef(false);
+
+    React.useEffect(() => {
+        mountedRef.current = true;
+        return () => {
+            mountedRef.current = false;
+        };
+    }, []);
 
     return (
         <View
             className="flex-1"
-            onLayout={(e) => setW(e.nativeEvent.layout.width)}
+            onLayout={(e) => {
+                const nextW = e.nativeEvent.layout.width;
+                if (!mountedRef.current) return;
+                setW((prev) => (prev === nextW ? prev : nextW));
+            }}
         >
             {w > 0 ? render(w) : null}
         </View>
     );
 }
+
