@@ -1,0 +1,7 @@
+export const STEP_KEY = "onboardingStep";
+
+export const ONBOARDING_STEP = {
+    NEEDS_AGREEMENT: "NEEDS_AGREEMENT",
+    NEEDS_ONBOARDING: "NEEDS_ONBOARDING",
+    COMPLETED: "COMPLETED",
+};

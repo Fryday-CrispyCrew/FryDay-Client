@@ -5,6 +5,9 @@ import AppText from "../../../../shared/components/AppText";
 
 import Balloon from "../../assets/svg/naming-balloon.svg";
 import NamingArrow from "../../assets/svg/naming-arrow.svg";
+import {CommonActions} from "@react-navigation/native";
+import AsyncStorage from "@react-native-async-storage/async-storage";
+import {STEP_KEY} from "../../../../shared/constants/onboardingStep";
 
 export default function NamingScreen({ navigation }) {
     const { width, height } = useWindowDimensions();
@@ -30,9 +33,18 @@ export default function NamingScreen({ navigation }) {
 
     const onSubmit = async () => {
         if (!isValid) return;
+
         await SecureStore.setItemAsync("nickname", trimmed);
-        navigation.reset({ index: 0, routes: [{ name: "Main" }] });
+        await AsyncStorage.setItem(STEP_KEY, "NEEDS_AGREEMENT");
+
+        const rootNav = navigation.getParent("root") ?? navigation.getParent();
+        rootNav?.reset({ index: 0, routes: [{ name: "Main" }] });
+
+        requestAnimationFrame(() => {
+            rootNav?.navigate("Agreement");
+        });
     };
+
 
     const [line1, line2] = balloonText.split("\n");
 

@@ -24,7 +24,7 @@ export default function OnboardingScreen({ navigation }) {
 
     const onDone = async () => {
         await SecureStore.setItemAsync("hasOnboarded", "true");
-        navigation.reset({ index: 0, routes: [{ name: "Naming" }] });
+        navigation.reset({ index: 0, routes: [{ name: "Main" }] });
     };
 
     const onNext = () => {
@@ -34,21 +34,32 @@ export default function OnboardingScreen({ navigation }) {
 
     return (
         <SafeAreaView className="flex-1 bg-wt">
-            {/* Skip */}
             <View className="px-5 pt-4 items-end">
-                <TouchableOpacity onPress={onDone} activeOpacity={0.5} className="flex-row items-center gap-1">
-                    <AppText variant="H3" className="text-bk">
-                        Skip
-                    </AppText>
-                    <SkipIcon />
-                </TouchableOpacity>
-            </View>
+                    <TouchableOpacity
+                        onPress={onDone}
+                        activeOpacity={0.5}
+                        disabled={isLast}
+                        className="flex-row items-center gap-1"
+                        style={{ opacity: isLast ? 0 : 1 }}
+                    >
+                        <AppText variant="H3" className="text-bk">
+                            Skip
+                        </AppText>
+                        <SkipIcon />
+                    </TouchableOpacity>
+                </View>
 
             <Pressable className="flex-1" onPress={onNext}>
                 {/* dots */}
-                <View className="flex-row justify-center items-center gap-2" style={{ marginTop: Math.max(12, height * 0.015) }}>
+                <View
+                    className="flex-row justify-center items-center gap-2"
+                    style={{ marginTop: Math.max(12, height * 0.015) }}
+                >
                     {PAGES.map((_, i) => (
-                        <View key={i} className={`${i === idx ? "w-2 h-2 bg-or" : "w-2 h-2 bg-gr200"} rounded-full`} />
+                        <View
+                            key={i}
+                            className={`${i === idx ? "w-2 h-2 bg-or" : "w-2 h-2 bg-gr200"} rounded-full`}
+                        />
                     ))}
                 </View>
 
