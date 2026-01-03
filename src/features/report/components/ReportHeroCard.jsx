@@ -1,6 +1,5 @@
-import { View, Image } from 'react-native';
+import { View, Image, useWindowDimensions } from 'react-native';
 import AppText from '../../../shared/components/AppText';
-
 
 /**
  * caseType: 'A' | 'B' | 'C'
@@ -8,40 +7,42 @@ import AppText from '../../../shared/components/AppText';
  */
 export default function ReportHeroCard({ caseType, nickname }) {
     const { lines, image } = HERO_CONTENT[caseType];
+    const { width } = useWindowDimensions();
+
+    const imageSize = Math.min(150, width * 0.42);
 
     return (
-        <View className="justify-between items-start px-5 py-6 bg-wt relative">
+        <View className="px-5 py-6 bg-wt">
             {/* 텍스트 영역 */}
-            <View className="pr-5">
+            <View className="pr-2">
                 {lines.map((line, lineIdx) => (
-                    <View
-                        key={lineIdx}
-                    >
-                        <View className="flex-row flex-wrap">
-                            {line.map((part, idx) => (
-                                <AppText
-                                    key={idx}
-                                    variant={part.weight}
-                                    className={`text-${part.color}`}
-                                    style={{ lineHeight: 26 }}
-                                >
-                                    {part.text.replace('{nickname}', nickname)}
-                                </AppText>
-                            ))}
-                        </View>
+                    <View key={lineIdx} className="flex-row flex-wrap">
+                        {line.map((part, idx) => (
+                            <AppText
+                                key={idx}
+                                variant={part.weight}
+                                className={`text-${part.color}`}
+                                style={{ lineHeight: 26 }}
+                            >
+                                {part.text.replace('{nickname}', nickname)}
+                            </AppText>
+                        ))}
                     </View>
                 ))}
             </View>
 
-            {/* 이미지 영역 */}
-            <Image
-                source={image}
-                resizeMode="contain"
-                className="absolute right-5 top-20 w-[150px] h-[150px]"
-            />
+            {/* 아이콘 영역 (텍스트 아래) */}
+            <View className="items-end mt-4">
+                <Image
+                    source={image}
+                    resizeMode="contain"
+                    style={{ width: imageSize, height: imageSize }}
+                />
+            </View>
         </View>
     );
 }
+
 
 
 export const HERO_CONTENT = {

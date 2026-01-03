@@ -40,22 +40,18 @@ export default function ReportHeader({ currentDate, onChangeMonth, joinedAt }) {
 
             <View className="flex-row items-center gap-3">
                 <TouchableOpacity onPress={handlePrev} activeOpacity={0.5}>
-                    <View className="w-8 h-8 rounded-full items-center justify-center ${isPrevDisabled ? 'opacity-30' :''}">
-                        {!isPrevHidden &&(
-                            <ArrowLeft width={18} height={18} />
-                        )}
+                    <View className={`w-8 h-8 rounded-full items-center justify-center ${isPrevHidden ? 'opacity-30' : ''}`}>
+                        {!isPrevHidden &&
+                            <ArrowLeft width={18} height={18} />}
                     </View>
                 </TouchableOpacity>
 
                 <TouchableOpacity onPress={handleNext} activeOpacity={0.5}>
-                    <View className="w-8 h-8 rounded-full items-center justify-center">
-                        {!isNextHidden &&(
-                            <ArrowRight width={18} height={18} />
-                        )}
+                    <View className={`w-8 h-8 rounded-full items-center justify-center ${isNextHidden ? 'opacity-30' : ''}`}>
+                        {!isNextHidden &&
+                            <ArrowRight width={18} height={18} />}
                     </View>
                 </TouchableOpacity>
-
-
             </View>
         </View>
     );
