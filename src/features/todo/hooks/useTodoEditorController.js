@@ -1,5 +1,5 @@
 // src/features/todo/hooks/useTodoEditorController.js
-import {useCallback, useMemo, useRef, useState} from "react";
+import {useCallback, useEffect, useMemo, useRef, useState} from "react";
 import {Keyboard} from "react-native";
 import {useRepeatEditorStore} from "../stores/repeatEditorStore";
 
@@ -18,6 +18,20 @@ export function useTodoEditorController({
   defaultCategoryId,
 } = {}) {
   const bottomSheetRef = useRef(null);
+
+  useEffect(() => {
+    const subHide = Keyboard.addListener("keyboardDidHide", () => {
+      // ✅ 키보드는 내려갔는데 시트가 떠있는 잔상(translate)이 남는 케이스 방지
+      // Modal ref는 외부에서 forwardRef로 들어오니 ref 사용
+      requestAnimationFrame(() => {
+        bottomSheetRef?.current?.snapToIndex?.(0);
+      });
+    });
+
+    return () => {
+      subHide.remove();
+    };
+  }, [bottomSheetRef]);
 
   // 편집 대상 todo / 입력 텍스트
   const [editingTodo, setEditingTodo] = useState(null); // { id, title, categoryId } or null

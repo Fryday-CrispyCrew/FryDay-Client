@@ -155,6 +155,23 @@ const TodoEditorSheet = React.forwardRef(function TodoEditorSheet(
   const isAlarmOpen = mode === "edit" && selectedToolKey === "alarm";
   const isRepeatOpen = mode === "edit" && selectedToolKey === "repeat";
 
+  useEffect(() => {
+    console.log("TodoEditorSheet mounted - setting up keyboard listener");
+    const subHide = Keyboard.addListener("keyboardDidHide", () => {
+      // ✅ 키보드는 내려갔는데 시트가 떠있는 잔상(translate)이 남는 케이스 방지
+      // Modal ref는 외부에서 forwardRef로 들어오니 ref 사용
+      console.log("Keyboard hidden - snapping sheet to index 0");
+
+      requestAnimationFrame(() => {
+        ref?.current?.snapToIndex?.(0);
+      });
+    });
+
+    return () => {
+      subHide.remove();
+    };
+  }, [ref]);
+
   const blurAllInputs = useCallback(() => {
     // TextInput blur
     inputRef.current?.blur?.();
