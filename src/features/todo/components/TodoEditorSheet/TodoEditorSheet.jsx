@@ -147,6 +147,10 @@ const TodoEditorSheet = React.forwardRef(function TodoEditorSheet(
   // ✅ repeat panel 내부 드롭다운 open 상태 (하나만 열리게)
   const [openRepeatDropdownKey, setOpenRepeatDropdownKey] = useState(null); // "repeatStart" | "repeatEnd" | "repeatCycle" | "repeatAlarm" | null
 
+  const isMemoOpen = mode === "edit" && selectedToolKey === "memo";
+  const isAlarmOpen = mode === "edit" && selectedToolKey === "alarm";
+  const isRepeatOpen = mode === "edit" && selectedToolKey === "repeat";
+
   useEffect(() => {
     selectedToolKeyRef.current = selectedToolKey;
   }, [selectedToolKey]);
@@ -176,10 +180,6 @@ const TodoEditorSheet = React.forwardRef(function TodoEditorSheet(
   const snapPoints = useMemo(() => {
     return mode === "edit" ? ["20%"] : ["15%"];
   }, [mode]);
-
-  const isMemoOpen = mode === "edit" && selectedToolKey === "memo";
-  const isAlarmOpen = mode === "edit" && selectedToolKey === "alarm";
-  const isRepeatOpen = mode === "edit" && selectedToolKey === "repeat";
 
   const blurAllInputs = useCallback(() => {
     // TextInput blur
