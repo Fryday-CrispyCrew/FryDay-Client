@@ -349,6 +349,21 @@ export default function RepeatSettingsSection({
       setRepeatYearDays(draftYearDays);
     }
 
+    // ✅ 주기를 처음 설정하는 순간: 시작=오늘, 종료=종료 없음 기본값 세팅
+    // (처음 상태에서만 자동 세팅되도록 조건 걸기)
+    const isStartUnset = !repeatStartDate;
+    const isEndUnset = repeatEndType !== "none" && repeatEndType !== "date";
+
+    if (isStartUnset && isEndUnset) {
+      const today = new Date();
+      today.setSeconds(0);
+      today.setMilliseconds(0);
+
+      setRepeatStartDate(today);
+      setRepeatEndType("none");
+      // endDate는 none일 때 굳이 세팅할 필요 없지만, store 정책에 따라 유지해도 됨
+    }
+
     onToggleOpenKey("repeatCycle");
   }, [
     isApplyDisabled,
@@ -363,6 +378,10 @@ export default function RepeatSettingsSection({
     setRepeatYearMonths,
     setRepeatYearDays,
     onToggleOpenKey,
+    repeatStartDate,
+    repeatEndType,
+    setRepeatStartDate,
+    setRepeatEndType,
   ]);
 
   // ✅ repeatStart 캘린더 grid
@@ -432,7 +451,9 @@ export default function RepeatSettingsSection({
           <View style={styles.rowDivider} />
           <Row
             label="반복 시작 날짜"
-            value={formatKoreanDate(repeatStartDate)}
+            value={
+              repeatStartDate ? formatKoreanDate(repeatStartDate) : "미설정"
+            }
             onPress={() => onToggleOpenKey("repeatStart")}
           />
           <View style={styles.rowDivider} />
@@ -441,7 +462,9 @@ export default function RepeatSettingsSection({
             value={
               repeatEndType === "none"
                 ? "종료 없음"
-                : formatKoreanDate(repeatEndDate)
+                : repeatEndType === "date"
+                  ? formatKoreanDate(repeatEndDate)
+                  : "미설정"
             }
             onPress={() => onToggleOpenKey("repeatEnd")}
           />

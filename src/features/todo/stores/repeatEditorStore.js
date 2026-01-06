@@ -1,10 +1,9 @@
 import {create} from "zustand";
 
 const initialState = {
-  // 날짜는 JS Date로 들고 있다가, submit할 때 ISO로 변환 추천
-  repeatStartDate: new Date(),
-  repeatEndType: "none", // "none" | "date"
-  repeatEndDate: new Date(),
+  repeatStartDate: null, // ✅ 미설정
+  repeatEndType: "unset", // ✅ "unset" | "none" | "date"
+  repeatEndDate: null, // ✅ 미설정
   repeatCycle: "unset", // "unset" | "daily" | "weekly" | "monthly" | "yearly"
   repeatAlarm: "unset", // "unset" | "sameTime" | "morning9" | "custom"
   repeatAlarmTime: null, // ✅ "HH:mm" (예: "07:30") / custom일 때만 사용
@@ -39,34 +38,38 @@ export const useRepeatEditorStore = create((set, get) => ({
 
   // ✅ submit할 payload 형태로 뽑아주면 handleSubmitInternal이 깔끔해짐
   getRepeatPayload: () => {
-    const {
-      repeatStartDate,
-      repeatEndType,
-      repeatEndDate,
-      repeatCycle,
-      repeatAlarm,
-      repeatAlarmTime,
-      repeatWeekdays,
-      repeatMonthDays,
-      repeatYearMonths,
-      repeatYearDays,
-    } = get();
+    const s = get();
+
+    // ✅ 반복 주기 자체가 미설정이면 반복 관련 값은 모두 null 처리
+    if (s.repeatCycle === "unset") {
+      return {
+        repeatStartDate: null,
+        repeatEndType: null,
+        repeatEndDate: null,
+        repeatCycle: "unset",
+        repeatAlarm: "unset",
+        repeatAlarmTime: null,
+        repeatWeekdays: [],
+        repeatMonthDays: [],
+        repeatYearMonths: [],
+        repeatYearDays: [],
+      };
+    }
 
     return {
-      repeatStartDate: repeatStartDate?.toISOString?.() ?? null,
-      repeatEndType,
+      repeatStartDate: s.repeatStartDate?.toISOString?.() ?? null,
+      repeatEndType: s.repeatEndType === "unset" ? "none" : s.repeatEndType,
       repeatEndDate:
-        repeatEndType === "date"
-          ? (repeatEndDate?.toISOString?.() ?? null)
+        s.repeatEndType === "date"
+          ? (s.repeatEndDate?.toISOString?.() ?? null)
           : null,
-      repeatCycle,
-      repeatAlarm,
-      repeatAlarmTime,
-
-      repeatWeekdays,
-      repeatMonthDays,
-      repeatYearMonths,
-      repeatYearDays,
+      repeatCycle: s.repeatCycle,
+      repeatAlarm: s.repeatAlarm,
+      repeatAlarmTime: s.repeatAlarmTime,
+      repeatWeekdays: s.repeatWeekdays,
+      repeatMonthDays: s.repeatMonthDays,
+      repeatYearMonths: s.repeatYearMonths,
+      repeatYearDays: s.repeatYearDays,
     };
   },
 }));

@@ -74,15 +74,22 @@ export function useTodoEditorController({
       if (todo?.mode === "edit") {
         // ✅ 기존 todo의 repeat 값을 store에 주입
         useRepeatEditorStore.getState().setRepeatAll({
+          // ✅ 기존 todo에 반복이 없으면 'unset' 상태로 주입
+          repeatCycle: todo.repeatCycle ?? "unset",
           repeatStartDate: todo.repeatStartDate
             ? new Date(todo.repeatStartDate)
-            : new Date(),
-          repeatEndType: todo.repeatEndType ?? "none",
+            : null,
+          repeatEndType: todo.repeatEndType ?? "unset",
           repeatEndDate: todo.repeatEndDate
             ? new Date(todo.repeatEndDate)
-            : new Date(),
-          repeatCycle: todo.repeatCycle ?? "unset",
+            : null,
           repeatAlarm: todo.repeatAlarm ?? "unset",
+          repeatAlarmTime: todo.repeatAlarmTime ?? null,
+
+          repeatWeekdays: todo.repeatWeekdays ?? [],
+          repeatMonthDays: todo.repeatMonthDays ?? [],
+          repeatYearMonths: todo.repeatYearMonths ?? [],
+          repeatYearDays: todo.repeatYearDays ?? [],
         });
       }
 
