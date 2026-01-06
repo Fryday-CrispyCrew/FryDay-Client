@@ -148,6 +148,7 @@ const TodoEditorSheet = React.forwardRef(function TodoEditorSheet(
   const [openRepeatDropdownKey, setOpenRepeatDropdownKey] = useState(null); // "repeatStart" | "repeatEnd" | "repeatCycle" | "repeatAlarm" | null
 
   const isMemoOpen = mode === "edit" && selectedToolKey === "memo";
+  2;
   const isAlarmOpen = mode === "edit" && selectedToolKey === "alarm";
   const isRepeatOpen = mode === "edit" && selectedToolKey === "repeat";
 

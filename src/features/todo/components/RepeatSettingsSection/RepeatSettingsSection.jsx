@@ -159,7 +159,7 @@ export default function RepeatSettingsSection({
   // repeatCycle 드롭다운이 열릴 때마다 현재 store 값을 draft로 동기화
   useEffect(() => {
     if (openKey === "repeatCycle") {
-      setDraftCycle(repeatCycle === "unset" ? "daily" : repeatCycle);
+      setDraftCycle(repeatCycle ?? "unset");
       setDraftWeekdays(repeatWeekdays ?? []);
       setDraftMonthDays(repeatMonthDays ?? []);
       setDraftYearMonths(repeatYearMonths ?? []);
@@ -326,6 +326,7 @@ export default function RepeatSettingsSection({
 
   // 반복 주기 관련
   const isApplyDisabled =
+    draftCycle === "unset" ||
     (draftCycle === "weekly" && draftWeekdays.length === 0) ||
     (draftCycle === "monthly" && draftMonthDays.length === 0) ||
     (draftCycle === "yearly" &&
