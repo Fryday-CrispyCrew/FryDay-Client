@@ -187,7 +187,6 @@ const TodoEditorSheet = React.forwardRef(function TodoEditorSheet(
   });
 
   const isMemoOpen = mode === "edit" && selectedToolKey === "memo";
-  2;
   const isAlarmOpen = mode === "edit" && selectedToolKey === "alarm";
   const isRepeatOpen = mode === "edit" && selectedToolKey === "repeat";
   const isSelectDateOpen = mode === "edit" && selectedToolKey === "select";
@@ -570,6 +569,10 @@ const TodoEditorSheet = React.forwardRef(function TodoEditorSheet(
                 style={[
                   styles.inputWrapperEdit,
                   isTitleFocused && styles.inputWrapperFocused,
+                  isMemoOpen && {
+                    borderBottomLeftRadius: 0,
+                    borderBottomRightRadius: 0,
+                  },
                 ]}
               >
                 <TodoBottomSheetTextInput
@@ -858,7 +861,7 @@ const styles = StyleSheet.create({
     paddingVertical: 6,
     position: "relative",
     borderWidth: 1,
-    borderColor: "#F2F2F2",
+    borderColor: colors.gr100,
   },
   inputWrapperFocused: {
     borderColor: "#EAEAEA",
@@ -875,26 +878,33 @@ const styles = StyleSheet.create({
     borderRadius: 16,
     backgroundColor: "#FAFAFA",
     paddingHorizontal: 16,
-    paddingVertical: 6,
+    // paddingVertical: 6,
+    minHeight: 44,
     position: "relative",
+    justifyContent: "center",
     borderWidth: 1,
-    borderColor: "#F2F2F2",
+    borderColor: colors.gr100,
   },
   inputEdit: {
     fontFamily: "Pretendard-Medium",
     fontSize: 12,
-    color: "#333333",
+    lineHeight: 12 * 1.5,
+    color: colors.gr700,
     paddingRight: 26,
+    paddingVertical: 0,
     // borderWidth: 1,
   },
 
   // ✅ memo input
   memoWrapper: {
-    marginTop: 10,
+    // marginTop: 10,
     borderRadius: 16,
+    borderTopLeftRadius: 0,
+    borderTopRightRadius: 0,
+    borderTopWidth: 0,
     backgroundColor: "#FAFAFA",
     paddingHorizontal: 16,
-    paddingVertical: 16,
+    paddingVertical: 12,
     borderWidth: 1,
     borderColor: "#F2F2F2",
   },
@@ -902,7 +912,7 @@ const styles = StyleSheet.create({
   memoInput: {
     fontFamily: "Pretendard-Medium",
     fontSize: 12,
-    color: "#333333",
+    color: colors.gr700,
     lineHeight: 18,
     // minHeight: 54,
     maxHeight: 54,
@@ -919,6 +929,7 @@ const styles = StyleSheet.create({
     justifyContent: "center",
     alignItems: "center",
     width: 24,
+    // borderWidth: 1,
   },
   clearIcon: {
     fontSize: 16,
