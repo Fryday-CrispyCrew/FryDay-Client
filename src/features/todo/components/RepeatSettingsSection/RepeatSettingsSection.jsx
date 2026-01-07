@@ -17,6 +17,7 @@ import {formatKoreanDate} from "../../utils/dateFormat";
 import colors from "../../../../shared/styles/colors";
 import YearMonthWheelModal from "./wheel/YearMonthWheelModal";
 import AlarmTimeSettingSection from "../TodoEditorSheet/AlarmTimeSettingsSection";
+import ChevronIcon from "../../../../shared/components/ChevronIcon";
 
 const WEEKDAYS = ["일", "월", "화", "수", "목", "금", "토"];
 
@@ -697,7 +698,12 @@ export default function RepeatSettingsSection({
                 style={styles.monthNavBtn}
                 hitSlop={8}
               >
-                <Text style={styles.monthNavText}>‹</Text>
+                <ChevronIcon
+                  direction="left"
+                  size={18}
+                  color={colors.gr500}
+                  strokeWidth={2}
+                />
               </TouchableOpacity>
 
               <TouchableOpacity onPress={openStartYearMonthWheel}>
@@ -713,7 +719,12 @@ export default function RepeatSettingsSection({
                 style={styles.monthNavBtn}
                 hitSlop={8}
               >
-                <Text style={styles.monthNavText}>›</Text>
+                <ChevronIcon
+                  direction="right"
+                  size={18}
+                  color={colors.gr500}
+                  strokeWidth={2}
+                />
               </TouchableOpacity>
             </View>
 
@@ -832,7 +843,12 @@ export default function RepeatSettingsSection({
                 style={styles.monthNavBtn}
                 hitSlop={8}
               >
-                <Text style={styles.monthNavText}>‹</Text>
+                <ChevronIcon
+                  direction="left"
+                  size={18}
+                  color={colors.gr500}
+                  strokeWidth={2}
+                />
               </TouchableOpacity>
 
               <TouchableOpacity
@@ -852,7 +868,12 @@ export default function RepeatSettingsSection({
                 style={styles.monthNavBtn}
                 hitSlop={8}
               >
-                <Text style={styles.monthNavText}>›</Text>
+                <ChevronIcon
+                  direction="right"
+                  size={18}
+                  color={colors.gr500}
+                  strokeWidth={2}
+                />
               </TouchableOpacity>
             </View>
             <View style={styles.weekHeaderRow}>
@@ -1013,7 +1034,12 @@ function Row({label, value, onPress}) {
       <Text style={styles.left}>{label}</Text>
       <View style={styles.right}>
         <Text style={styles.value}>{value}</Text>
-        <Text style={styles.chev}>˅</Text>
+        <ChevronIcon
+          direction="down"
+          size={18}
+          color={styles.chev.color}
+          strokeWidth={1.5}
+        />
       </View>
     </TouchableOpacity>
   );
@@ -1025,7 +1051,12 @@ function RowOpen({label, value, onPress}) {
       <Text style={styles.left}>{label}</Text>
       <View style={styles.right}>
         <Text style={styles.value}>{value}</Text>
-        <Text style={styles.chev}>˄</Text>
+        <ChevronIcon
+          direction="up"
+          size={18}
+          color={styles.chev.color}
+          strokeWidth={1.5}
+        />
       </View>
     </TouchableOpacity>
   );
@@ -1082,7 +1113,7 @@ const styles = StyleSheet.create({
     justifyContent: "space-between",
   },
   left: {fontSize: 12, color: "#5D5E60"},
-  right: {flexDirection: "row", alignItems: "center", gap: 8},
+  right: {flexDirection: "row", alignItems: "center", gap: 4},
   value: {fontSize: 12, color: "#5D5E60"},
   chev: {fontSize: 14, color: "#B0B0B0"},
   rowDivider: {height: 1, backgroundColor: colors.gr100, marginVertical: 8},
@@ -1124,11 +1155,6 @@ const styles = StyleSheet.create({
     height: 24,
     alignItems: "center",
     justifyContent: "center",
-  },
-  monthNavText: {
-    fontSize: 18,
-    color: "#333333",
-    lineHeight: 18,
   },
   calendarHeaderText: {
     fontFamily: "Pretendard-SemiBold",

@@ -29,6 +29,7 @@ import {useRepeatEditorStore} from "../../stores/repeatEditorStore";
 import RepeatSettingsSection from "../RepeatSettingsSection/RepeatSettingsSection";
 import colors from "../../../../shared/styles/colors";
 import AlarmTimeSettingSection from "./AlarmTimeSettingsSection";
+import ChevronIcon from "../../../../shared/components/ChevronIcon";
 
 /**
  * ✅ BottomSheetTextInput만 분리 (IME-safe 로직 포함)
@@ -435,14 +436,12 @@ const TodoEditorSheet = React.forwardRef(function TodoEditorSheet(
             !isSubmitEnabled && styles.submitButtonDisabled,
           ]}
         >
-          <Text
-            style={[
-              styles.submitIcon,
-              !isSubmitEnabled && styles.submitIconDisabled,
-            ]}
-          >
-            ➔
-          </Text>
+          <ChevronIcon
+            direction="right"
+            size={24}
+            color={isSubmitEnabled ? colors.gr : colors.gr300}
+            strokeWidth={2.5}
+          />
         </TouchableOpacity>
       </View>
     );
@@ -483,7 +482,12 @@ const TodoEditorSheet = React.forwardRef(function TodoEditorSheet(
                 style={styles.chevronButton}
                 hitSlop={8}
               >
-                <Text style={styles.chevronText}>›</Text>
+                <ChevronIcon
+                  direction="right"
+                  size={14}
+                  color={colors.gr500}
+                  strokeWidth={2.5}
+                />
               </TouchableOpacity>
             )}
 
@@ -552,14 +556,12 @@ const TodoEditorSheet = React.forwardRef(function TodoEditorSheet(
                   !isSubmitEnabled && styles.submitButtonDisabled,
                 ]}
               >
-                <Text
-                  style={[
-                    styles.submitIcon,
-                    !isSubmitEnabled && styles.submitIconDisabled,
-                  ]}
-                >
-                  ➔
-                </Text>
+                <ChevronIcon
+                  direction="right"
+                  size={24}
+                  color={isSubmitEnabled ? colors.gr : colors.gr300}
+                  strokeWidth={2.5}
+                />
               </TouchableOpacity>
             </View>
           ) : (
@@ -685,7 +687,12 @@ const TodoEditorSheet = React.forwardRef(function TodoEditorSheet(
                         style={styles.monthNavBtn}
                         hitSlop={8}
                       >
-                        <Text style={styles.monthNavText}>‹</Text>
+                        <ChevronIcon
+                          direction="left"
+                          size={18}
+                          color={colors.gr500}
+                          strokeWidth={2}
+                        />
                       </TouchableOpacity>
 
                       <Text style={styles.calendarHeaderText}>
@@ -701,7 +708,12 @@ const TodoEditorSheet = React.forwardRef(function TodoEditorSheet(
                         style={styles.monthNavBtn}
                         hitSlop={8}
                       >
-                        <Text style={styles.monthNavText}>›</Text>
+                        <ChevronIcon
+                          direction="right"
+                          size={18}
+                          color={colors.gr500}
+                          strokeWidth={2}
+                        />
                       </TouchableOpacity>
                     </View>
 
@@ -805,7 +817,7 @@ const styles = StyleSheet.create({
   categoryInlineRow: {
     flexDirection: "row",
     alignItems: "center",
-    gap: 6,
+    gap: 8,
     marginBottom: 12,
   },
 
@@ -821,17 +833,12 @@ const styles = StyleSheet.create({
   },
 
   chevronButton: {
-    width: 26,
-    height: 26,
+    // width: 26,
+    // height: 26,
     alignItems: "center",
     justifyContent: "center",
+    // borderWidth: 1,
   },
-  chevronText: {
-    fontSize: 28,
-    lineHeight: 22,
-    color: "#B0B0B0",
-  },
-
   categoryInlineScroll: {flex: 1},
   categoryInlineList: {
     flexDirection: "row",
@@ -852,7 +859,7 @@ const styles = StyleSheet.create({
   },
 
   // ===== create =====
-  inputRow: {flexDirection: "row", alignItems: "center"},
+  inputRow: {flexDirection: "row", alignItems: "center", paddingBottom: 16},
   inputWrapper: {
     flex: 1,
     borderRadius: 16,
@@ -972,13 +979,6 @@ const styles = StyleSheet.create({
   submitButtonDisabled: {
     backgroundColor: "#E4E4E4",
   },
-  submitIcon: {
-    fontSize: 18,
-    color: "#FFFFFF",
-  },
-  submitIconDisabled: {
-    color: "#888888",
-  },
   panelWrapper: {
     marginTop: 14,
   },
@@ -1052,11 +1052,6 @@ const styles = StyleSheet.create({
     height: 24,
     alignItems: "center",
     justifyContent: "center",
-  },
-  monthNavText: {
-    fontSize: 18,
-    color: "#333333",
-    lineHeight: 18,
   },
   calendarHeaderText: {
     fontFamily: "Pretendard-SemiBold",

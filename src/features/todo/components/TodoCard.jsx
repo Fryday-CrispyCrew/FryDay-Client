@@ -16,6 +16,8 @@ import Animated, {
   withTiming,
   runOnJS,
 } from "react-native-reanimated";
+import ChevronIcon from "../../../shared/components/ChevronIcon";
+import colors from "../../../shared/styles/colors";
 
 /** ✅ 목업 투두 (규칙: 현재는 mock) */
 const MOCK_TODOS = [
@@ -133,9 +135,15 @@ function TodoItem({
 
 function Chevron({isOpen, color}) {
   return (
-    <AppText variant="M600" style={{color, fontSize: 16, lineHeight: 16}}>
-      {isOpen ? "˄" : "˅"}
-    </AppText>
+    // <AppText variant="M600" style={{color, fontSize: 16, lineHeight: 16}}>
+    //   {isOpen ? "˄" : "˅"}
+    // </AppText>
+    <ChevronIcon
+      direction={isOpen ? "up" : "down"}
+      size={14}
+      color={color}
+      strokeWidth={2}
+    />
   );
 }
 
@@ -190,7 +198,7 @@ export default function TodoCard({navigation, onPressInput, categories = []}) {
   const renderSection = (category) => {
     const isOpen = !!openMap?.[category.categoryId];
     const sectionTodos = grouped?.[category.categoryId] ?? [];
-    const color = category.color ?? "#FF5B22";
+    const color = category.color ?? colors.or;
 
     return (
       <View key={category.categoryId} style={styles.section}>
@@ -200,10 +208,10 @@ export default function TodoCard({navigation, onPressInput, categories = []}) {
             onPress={() => handleToggleSection(category.categoryId)}
             style={[styles.categoryChip, {backgroundColor: color}]}
           >
-            <AppText variant="M600" style={{color: "#FFFFFF"}}>
+            <AppText variant="M600" style={{color: colors.wt}}>
               {category.label}
             </AppText>
-            <View style={{width: 6}} />
+            <View style={{width: 4}} />
             <Chevron isOpen={isOpen} color="#FFFFFF" />
           </TouchableOpacity>
 
