@@ -1186,6 +1186,8 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     flexWrap: "wrap",
     rowGap: 10,
+    // borderWidth: 1,
+    minHeight: 145,
   },
   dayCell: {
     width: `${100 / 7.01}%`,
@@ -1294,6 +1296,7 @@ const styles = StyleSheet.create({
 
   repeatStartButtonSection: {
     marginTop: 16,
+    marginBottom: 8,
   },
 
   applyButton: {

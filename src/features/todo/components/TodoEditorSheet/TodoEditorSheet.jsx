@@ -1083,6 +1083,8 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     flexWrap: "wrap",
     rowGap: 12,
+    // borderWidth: 1,
+    minHeight: 150,
   },
   dayCell: {
     width: `${100 / 7.01}%`,
