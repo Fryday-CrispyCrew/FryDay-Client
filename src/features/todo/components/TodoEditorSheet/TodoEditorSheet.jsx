@@ -20,7 +20,6 @@ import {InteractionManager} from "react-native";
 import MemoIcon from "../../assets/svg/todoEditorSheet/memo.svg";
 import AlarmIcon from "../../assets/svg/todoEditorSheet/alarm.svg";
 import RepeatIcon from "../../assets/svg/todoEditorSheet/repeat.svg";
-import StartDateIcon from "../../assets/svg/todoEditorSheet/calendarStart.svg";
 import SelectDateIcon from "../../assets/svg/todoEditorSheet/calendarSelect.svg";
 import {useSafeAreaInsets} from "react-native-safe-area-context";
 import DateTimePicker, {
@@ -114,7 +113,6 @@ const TodoEditorSheet = React.forwardRef(function TodoEditorSheet(
     {key: "memo", Icon: MemoIcon},
     {key: "alarm", Icon: AlarmIcon},
     {key: "repeat", Icon: RepeatIcon},
-    {key: "start", Icon: StartDateIcon},
     {key: "select", Icon: SelectDateIcon},
   ];
 
@@ -258,7 +256,7 @@ const TodoEditorSheet = React.forwardRef(function TodoEditorSheet(
         return;
       }
 
-      // ✅ alarm/repeat/start/select 등: A안 적용 (키보드 내려간 뒤 열기)
+      // ✅ alarm/repeat/select 등: A안 적용 (키보드 내려간 뒤 열기)
       if (key === "alarm") setIsIosInlineAlarmPickerOpen(false);
       openToolAfterKeyboardDismiss(key);
     },
