@@ -477,6 +477,206 @@ export default function RepeatSettingsSection({
         </>
       )}
 
+      {openKey === "repeatCycle" && (
+        <View>
+          <RowOpen
+            label="반복 주기"
+            value={cycleLabel(repeatCycle)}
+            onPress={() => onToggleOpenKey("repeatCycle")}
+          />
+
+          <View style={styles.segmentWrap}>
+            <View style={styles.segmentPill}>
+              {[
+                {key: "daily", label: "매일"},
+                {key: "weekly", label: "매주"},
+                {key: "monthly", label: "매월"},
+                {key: "yearly", label: "매년"},
+              ].map((opt) => {
+                const isActive = draftCycle === opt.key;
+                return (
+                  <TouchableOpacity
+                    key={opt.key}
+                    activeOpacity={0.85}
+                    onPress={() => setDraftCycle(opt.key)}
+                    style={[
+                      styles.segmentItem,
+                      isActive && styles.segmentItemActive,
+                    ]}
+                  >
+                    <Text
+                      style={[
+                        styles.segmentText,
+                        isActive && styles.segmentTextActive,
+                      ]}
+                    >
+                      {opt.label}
+                    </Text>
+                  </TouchableOpacity>
+                );
+              })}
+            </View>
+          </View>
+
+          {draftCycle === "weekly" && (
+            <View style={styles.weekdayRow}>
+              {[
+                {key: "mon", label: "월"},
+                {key: "tue", label: "화"},
+                {key: "wed", label: "수"},
+                {key: "thu", label: "목"},
+                {key: "fri", label: "금"},
+                {key: "sat", label: "토"},
+                {key: "sun", label: "일"},
+              ].map((d) => {
+                const active = draftWeekdays.includes(d.key);
+                return (
+                  <TouchableOpacity
+                    key={d.key}
+                    activeOpacity={0.85}
+                    onPress={() => toggleWeekday(d.key)}
+                    style={[
+                      styles.weekdayChip,
+                      active && styles.weekdayChipActive,
+                    ]}
+                  >
+                    <Text
+                      style={[
+                        styles.weekdayText,
+                        active && styles.weekdayTextActive,
+                      ]}
+                    >
+                      {d.label}
+                    </Text>
+                  </TouchableOpacity>
+                );
+              })}
+            </View>
+          )}
+
+          {draftCycle === "monthly" && (
+            <View style={styles.monthGrid}>
+              {Array.from({length: 31}, (_, i) => i + 1).map((day) => {
+                const active = draftMonthDays.includes(day);
+                return (
+                  <TouchableOpacity
+                    key={day}
+                    activeOpacity={0.85}
+                    onPress={() => toggleMonthDay(day)}
+                    style={styles.monthCell}
+                  >
+                    <View
+                      style={[
+                        styles.monthCircle,
+                        active && styles.monthCircleActive,
+                      ]}
+                    >
+                      <Text
+                        style={[
+                          styles.monthText,
+                          active && styles.monthTextActive,
+                        ]}
+                      >
+                        {day}
+                      </Text>
+                    </View>
+                  </TouchableOpacity>
+                );
+              })}
+            </View>
+          )}
+
+          {draftCycle === "yearly" && (
+            <View style={styles.yearlyWrap}>
+              <Text style={styles.yearlyLabel}>반복 월 선택</Text>
+
+              <View style={styles.yearMonthGrid}>
+                {Array.from({length: 12}, (_, i) => i + 1).map((m) => {
+                  const active = draftYearMonths.includes(m);
+                  return (
+                    <TouchableOpacity
+                      key={m}
+                      activeOpacity={0.85}
+                      onPress={() => toggleYearMonth(m)}
+                      style={styles.yearMonthCell}
+                    >
+                      <View
+                        style={[
+                          styles.yearMonthChip,
+                          active && styles.yearMonthChipActive,
+                        ]}
+                      >
+                        <Text
+                          style={[
+                            styles.yearMonthText,
+                            active && styles.yearMonthTextActive,
+                          ]}
+                        >
+                          {m}
+                        </Text>
+                      </View>
+                    </TouchableOpacity>
+                  );
+                })}
+              </View>
+
+              <Text style={[styles.yearlyLabel, {marginTop: 18}]}>
+                반복 일 선택
+              </Text>
+
+              <View style={styles.monthGrid}>
+                {Array.from({length: 31}, (_, i) => i + 1).map((day) => {
+                  const active = draftYearDays.includes(day);
+                  return (
+                    <TouchableOpacity
+                      key={day}
+                      activeOpacity={0.85}
+                      onPress={() => toggleYearDay(day)}
+                      style={styles.monthCell}
+                    >
+                      <View
+                        style={[
+                          styles.monthCircle,
+                          active && styles.monthCircleActive,
+                        ]}
+                      >
+                        <Text
+                          style={[
+                            styles.monthText,
+                            active && styles.monthTextActive,
+                          ]}
+                        >
+                          {day}
+                        </Text>
+                      </View>
+                    </TouchableOpacity>
+                  );
+                })}
+              </View>
+            </View>
+          )}
+
+          <TouchableOpacity
+            activeOpacity={0.9}
+            disabled={isApplyDisabled}
+            style={[
+              styles.applyButton,
+              isApplyDisabled && styles.applyButtonDisabled,
+            ]}
+            onPress={handleApplyRepeatCycle}
+          >
+            <Text
+              style={[
+                styles.applyButtonText,
+                isApplyDisabled && styles.applyButtonTextDisabled,
+              ]}
+            >
+              적용하기
+            </Text>
+          </TouchableOpacity>
+        </View>
+      )}
+
       {/* ✅ 반복 시작 날짜 - 첨부 스샷처럼 캘린더 펼치기 */}
       {openKey === "repeatStart" && (
         <View>
@@ -756,206 +956,6 @@ export default function RepeatSettingsSection({
               </Text>
             </TouchableOpacity>
           </View>
-        </View>
-      )}
-
-      {openKey === "repeatCycle" && (
-        <View>
-          <RowOpen
-            label="반복 주기"
-            value={cycleLabel(repeatCycle)}
-            onPress={() => onToggleOpenKey("repeatCycle")}
-          />
-
-          <View style={styles.segmentWrap}>
-            <View style={styles.segmentPill}>
-              {[
-                {key: "daily", label: "매일"},
-                {key: "weekly", label: "매주"},
-                {key: "monthly", label: "매월"},
-                {key: "yearly", label: "매년"},
-              ].map((opt) => {
-                const isActive = draftCycle === opt.key;
-                return (
-                  <TouchableOpacity
-                    key={opt.key}
-                    activeOpacity={0.85}
-                    onPress={() => setDraftCycle(opt.key)}
-                    style={[
-                      styles.segmentItem,
-                      isActive && styles.segmentItemActive,
-                    ]}
-                  >
-                    <Text
-                      style={[
-                        styles.segmentText,
-                        isActive && styles.segmentTextActive,
-                      ]}
-                    >
-                      {opt.label}
-                    </Text>
-                  </TouchableOpacity>
-                );
-              })}
-            </View>
-          </View>
-
-          {draftCycle === "weekly" && (
-            <View style={styles.weekdayRow}>
-              {[
-                {key: "mon", label: "월"},
-                {key: "tue", label: "화"},
-                {key: "wed", label: "수"},
-                {key: "thu", label: "목"},
-                {key: "fri", label: "금"},
-                {key: "sat", label: "토"},
-                {key: "sun", label: "일"},
-              ].map((d) => {
-                const active = draftWeekdays.includes(d.key);
-                return (
-                  <TouchableOpacity
-                    key={d.key}
-                    activeOpacity={0.85}
-                    onPress={() => toggleWeekday(d.key)}
-                    style={[
-                      styles.weekdayChip,
-                      active && styles.weekdayChipActive,
-                    ]}
-                  >
-                    <Text
-                      style={[
-                        styles.weekdayText,
-                        active && styles.weekdayTextActive,
-                      ]}
-                    >
-                      {d.label}
-                    </Text>
-                  </TouchableOpacity>
-                );
-              })}
-            </View>
-          )}
-
-          {draftCycle === "monthly" && (
-            <View style={styles.monthGrid}>
-              {Array.from({length: 31}, (_, i) => i + 1).map((day) => {
-                const active = draftMonthDays.includes(day);
-                return (
-                  <TouchableOpacity
-                    key={day}
-                    activeOpacity={0.85}
-                    onPress={() => toggleMonthDay(day)}
-                    style={styles.monthCell}
-                  >
-                    <View
-                      style={[
-                        styles.monthCircle,
-                        active && styles.monthCircleActive,
-                      ]}
-                    >
-                      <Text
-                        style={[
-                          styles.monthText,
-                          active && styles.monthTextActive,
-                        ]}
-                      >
-                        {day}
-                      </Text>
-                    </View>
-                  </TouchableOpacity>
-                );
-              })}
-            </View>
-          )}
-
-          {draftCycle === "yearly" && (
-            <View style={styles.yearlyWrap}>
-              <Text style={styles.yearlyLabel}>반복 월 선택</Text>
-
-              <View style={styles.yearMonthGrid}>
-                {Array.from({length: 12}, (_, i) => i + 1).map((m) => {
-                  const active = draftYearMonths.includes(m);
-                  return (
-                    <TouchableOpacity
-                      key={m}
-                      activeOpacity={0.85}
-                      onPress={() => toggleYearMonth(m)}
-                      style={styles.yearMonthCell}
-                    >
-                      <View
-                        style={[
-                          styles.yearMonthChip,
-                          active && styles.yearMonthChipActive,
-                        ]}
-                      >
-                        <Text
-                          style={[
-                            styles.yearMonthText,
-                            active && styles.yearMonthTextActive,
-                          ]}
-                        >
-                          {m}
-                        </Text>
-                      </View>
-                    </TouchableOpacity>
-                  );
-                })}
-              </View>
-
-              <Text style={[styles.yearlyLabel, {marginTop: 18}]}>
-                반복 일 선택
-              </Text>
-
-              <View style={styles.monthGrid}>
-                {Array.from({length: 31}, (_, i) => i + 1).map((day) => {
-                  const active = draftYearDays.includes(day);
-                  return (
-                    <TouchableOpacity
-                      key={day}
-                      activeOpacity={0.85}
-                      onPress={() => toggleYearDay(day)}
-                      style={styles.monthCell}
-                    >
-                      <View
-                        style={[
-                          styles.monthCircle,
-                          active && styles.monthCircleActive,
-                        ]}
-                      >
-                        <Text
-                          style={[
-                            styles.monthText,
-                            active && styles.monthTextActive,
-                          ]}
-                        >
-                          {day}
-                        </Text>
-                      </View>
-                    </TouchableOpacity>
-                  );
-                })}
-              </View>
-            </View>
-          )}
-
-          <TouchableOpacity
-            activeOpacity={0.9}
-            disabled={isApplyDisabled}
-            style={[
-              styles.applyButton,
-              isApplyDisabled && styles.applyButtonDisabled,
-            ]}
-            onPress={handleApplyRepeatCycle}
-          >
-            <Text
-              style={[
-                styles.applyButtonText,
-                isApplyDisabled && styles.applyButtonTextDisabled,
-              ]}
-            >
-              적용하기
-            </Text>
-          </TouchableOpacity>
         </View>
       )}
 
