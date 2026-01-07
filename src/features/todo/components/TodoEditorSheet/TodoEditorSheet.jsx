@@ -89,8 +89,41 @@ function TodoBottomSheetTextInput({
   );
 }
 
-const ORANGE = "#FF5B22";
-const GRAY = "#8A8989";
+const WEEKDAYS = ["일", "월", "화", "수", "목", "금", "토"];
+
+const isSameDay = (a, b) => {
+  if (!a || !b) return false;
+  return (
+    a.getFullYear() === b.getFullYear() &&
+    a.getMonth() === b.getMonth() &&
+    a.getDate() === b.getDate()
+  );
+};
+
+const addMonths = (date, delta) => {
+  const d = new Date(date);
+  d.setMonth(d.getMonth() + delta);
+  return d;
+};
+
+const buildMonthGrid = (monthDate) => {
+  const y = monthDate.getFullYear();
+  const m = monthDate.getMonth(); // 0~11
+  const first = new Date(y, m, 1);
+  const last = new Date(y, m + 1, 0);
+  const startDow = first.getDay(); // 0(일)~6(토)
+
+  const daysInMonth = last.getDate();
+  const cells = [];
+
+  for (let i = 0; i < startDow; i++) cells.push(null);
+  for (let day = 1; day <= daysInMonth; day++) {
+    cells.push(new Date(y, m, day));
+  }
+  while (cells.length % 7 !== 0) cells.push(null);
+
+  return cells;
+};
 
 const TodoEditorSheet = React.forwardRef(function TodoEditorSheet(
   {
@@ -145,10 +178,19 @@ const TodoEditorSheet = React.forwardRef(function TodoEditorSheet(
   // ✅ repeat panel 내부 드롭다운 open 상태 (하나만 열리게)
   const [openRepeatDropdownKey, setOpenRepeatDropdownKey] = useState(null); // "repeatStart" | "repeatEnd" | "repeatCycle" | "repeatAlarm" | null
 
+  // ===== 투두 날짜 변경(SelectDateIcon) =====
+  const [todoDate, setTodoDate] = useState(new Date()); // ✅ 실제 적용된 값(추후 서버 저장용)
+  const [draftTodoDate, setDraftTodoDate] = useState(new Date()); // ✅ 캘린더에서 임시 선택
+  const [todoMonthCursor, setTodoMonthCursor] = useState(() => {
+    const base = new Date();
+    return new Date(base.getFullYear(), base.getMonth(), 1);
+  });
+
   const isMemoOpen = mode === "edit" && selectedToolKey === "memo";
   2;
   const isAlarmOpen = mode === "edit" && selectedToolKey === "alarm";
   const isRepeatOpen = mode === "edit" && selectedToolKey === "repeat";
+  const isSelectDateOpen = mode === "edit" && selectedToolKey === "select";
 
   useEffect(() => {
     selectedToolKeyRef.current = selectedToolKey;
@@ -171,14 +213,22 @@ const TodoEditorSheet = React.forwardRef(function TodoEditorSheet(
     if (!isAlarmOpen) setIsIosInlineAlarmPickerOpen(false);
   }, [isAlarmOpen]);
 
-  const toggleRepeatDropdown = useCallback((key) => {
-    setOpenRepeatDropdownKey((prev) => (prev === key ? null : key));
-  }, []);
+  // 패널 열릴 때: 현재 todoDate 기준으로 캘린더/선택값 동기화
+  useEffect(() => {
+    if (!isSelectDateOpen) return;
+    const base = todoDate ?? new Date();
+    setDraftTodoDate(base);
+    setTodoMonthCursor(new Date(base.getFullYear(), base.getMonth(), 1));
+  }, [isSelectDateOpen, todoDate]);
 
   // ✅ edit일 때 높이 조금 더 (메모 input이 나타나므로 상향)
   const snapPoints = useMemo(() => {
     return mode === "edit" ? ["20%"] : ["15%"];
   }, [mode]);
+
+  const toggleRepeatDropdown = useCallback((key) => {
+    setOpenRepeatDropdownKey((prev) => (prev === key ? null : key));
+  }, []);
 
   const blurAllInputs = useCallback(() => {
     // TextInput blur
@@ -333,6 +383,26 @@ const TodoEditorSheet = React.forwardRef(function TodoEditorSheet(
     requestAnimationFrame(() => inputRef.current?.focus?.());
   }, [onChangeText]);
 
+  const todoMonthGrid = useMemo(
+    () => buildMonthGrid(todoMonthCursor),
+    [todoMonthCursor]
+  );
+
+  const today = useMemo(() => new Date(), []);
+
+  const handlePickTodoDateFromCalendar = useCallback((date) => {
+    if (!date) return;
+    setDraftTodoDate(date);
+  }, []);
+
+  const handleApplyTodoDate = useCallback(() => {
+    if (!draftTodoDate) return;
+    setTodoDate(draftTodoDate);
+
+    // 적용 후 패널 닫기 (원하면 유지로 바꿔도 됨)
+    setSelectedToolKey(null);
+  }, [draftTodoDate]);
+
   const renderEditTools = () => {
     return (
       <View style={styles.toolsRow}>
@@ -350,7 +420,7 @@ const TodoEditorSheet = React.forwardRef(function TodoEditorSheet(
                 <Icon
                   width={24}
                   height={24}
-                  color={isSelected ? ORANGE : GRAY}
+                  color={isSelected ? colors.or : colors.gr500}
                 />
               </TouchableOpacity>
             );
@@ -595,6 +665,122 @@ const TodoEditorSheet = React.forwardRef(function TodoEditorSheet(
                 openKey={openRepeatDropdownKey}
                 onToggleOpenKey={toggleRepeatDropdown}
               />
+
+              {/* ✅ SelectDateIcon: 투두 날짜 변경 캘린더 */}
+              {isSelectDateOpen && (
+                <View style={styles.selectDatePanel}>
+                  <Text style={styles.selectDateTitle}>변경할 날짜</Text>
+
+                  <View style={styles.calendarWrap}>
+                    {/* 월 네비게이션 */}
+                    <View style={styles.calendarHeader}>
+                      <TouchableOpacity
+                        activeOpacity={0.7}
+                        onPress={() =>
+                          setTodoMonthCursor((d) => addMonths(d, -1))
+                        }
+                        style={styles.monthNavBtn}
+                        hitSlop={8}
+                      >
+                        <Text style={styles.monthNavText}>‹</Text>
+                      </TouchableOpacity>
+
+                      <Text style={styles.calendarHeaderText}>
+                        {todoMonthCursor.getFullYear()}년{" "}
+                        {todoMonthCursor.getMonth() + 1}월
+                      </Text>
+
+                      <TouchableOpacity
+                        activeOpacity={0.7}
+                        onPress={() =>
+                          setTodoMonthCursor((d) => addMonths(d, 1))
+                        }
+                        style={styles.monthNavBtn}
+                        hitSlop={8}
+                      >
+                        <Text style={styles.monthNavText}>›</Text>
+                      </TouchableOpacity>
+                    </View>
+
+                    {/* 요일 */}
+                    <View style={styles.weekHeaderRow}>
+                      {WEEKDAYS.map((w, idx) => (
+                        <View key={w} style={styles.weekHeaderCell}>
+                          <Text
+                            style={[
+                              styles.weekHeaderText,
+                              idx === 0 && styles.weekHeaderSun,
+                              idx === 6 && styles.weekHeaderSat,
+                            ]}
+                          >
+                            {w}
+                          </Text>
+                        </View>
+                      ))}
+                    </View>
+
+                    {/* 날짜 grid */}
+                    <View style={styles.calendarGrid}>
+                      {todoMonthGrid.map((cellDate, i) => {
+                        const isEmpty = !cellDate;
+                        const selected = cellDate
+                          ? isSameDay(cellDate, draftTodoDate)
+                          : false;
+                        const isToday = cellDate
+                          ? isSameDay(cellDate, today)
+                          : false;
+
+                        // ✅ 오늘이더라도 선택이면 오늘 스타일은 적용 X
+                        const useTodayStyle = isToday && !selected;
+
+                        return (
+                          <TouchableOpacity
+                            key={`todo-d-${i}`}
+                            disabled={isEmpty}
+                            activeOpacity={0.85}
+                            onPress={() =>
+                              handlePickTodoDateFromCalendar(cellDate)
+                            }
+                            style={styles.dayCell}
+                          >
+                            {isEmpty ? (
+                              <View style={styles.dayCircle} />
+                            ) : (
+                              <View
+                                style={[
+                                  styles.dayCircle,
+                                  selected && styles.daySelectedCircle,
+                                  useTodayStyle && styles.dayTodayCircle,
+                                ]}
+                              >
+                                <Text
+                                  style={[
+                                    styles.dayText,
+                                    selected && styles.daySelectedText,
+                                    useTodayStyle && styles.dayTodayText,
+                                  ]}
+                                >
+                                  {cellDate.getDate()}
+                                </Text>
+                              </View>
+                            )}
+                          </TouchableOpacity>
+                        );
+                      })}
+                    </View>
+                  </View>
+
+                  <View style={styles.selectDateFooter}>
+                    <TouchableOpacity
+                      activeOpacity={0.9}
+                      onPress={handleApplyTodoDate}
+                      style={styles.selectDateApplyButton}
+                    >
+                      <Text style={styles.selectDateApplyText}>적용하기</Text>
+                    </TouchableOpacity>
+                  </View>
+                </View>
+              )}
             </View>
           )}
         </View>
@@ -828,5 +1014,120 @@ const styles = StyleSheet.create({
     lineHeight: 12 * 1.5,
     color: colors.gr700,
     marginBottom: 10,
+  },
+  // ===== SelectDate(투두 날짜 변경) =====
+  selectDatePanel: {
+    paddingTop: 15,
+    minHeight: 335,
+    // borderWidth: 1,
+  },
+  selectDateTitle: {
+    fontFamily: "Pretendard-Medium",
+    marginBottom: 15,
+    fontSize: 12,
+    lineHeight: 12 * 1.5,
+    color: colors.gr700,
+  },
+
+  calendarWrap: {},
+  calendarHeader: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 10,
+    // borderWidth: 1,
+  },
+  monthNavBtn: {
+    width: 24,
+    height: 24,
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  monthNavText: {
+    fontSize: 18,
+    color: "#333333",
+    lineHeight: 18,
+  },
+  calendarHeaderText: {
+    fontFamily: "Pretendard-SemiBold",
+    fontSize: 14,
+    lineHeight: 14 * 1.5,
+    color: colors.bk,
+  },
+
+  weekHeaderRow: {
+    flexDirection: "row",
+    marginTop: 16,
+    marginBottom: 12,
+  },
+  weekHeaderCell: {
+    width: `${100 / 7.01}%`,
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  weekHeaderText: {
+    fontFamily: "Pretendard-Medium",
+    fontSize: 12,
+    lineHeight: 12 * 1.5,
+    color: colors.bk,
+  },
+  weekHeaderSun: {color: colors.rd75},
+  weekHeaderSat: {color: colors.bl75},
+
+  calendarGrid: {
+    flexDirection: "row",
+    flexWrap: "wrap",
+    rowGap: 12,
+  },
+  dayCell: {
+    width: `${100 / 7.01}%`,
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  dayCircle: {
+    width: "100%",
+    height: 20,
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  dayText: {
+    fontFamily: "Pretendard-Medium",
+    fontSize: 10,
+    color: colors.bk,
+    lineHeight: 10 * 1.5,
+  },
+  daySelectedCircle: {
+    aspectRatio: 1,
+    borderWidth: 1,
+    borderRadius: 20,
+    borderColor: colors.or,
+  },
+  daySelectedText: {
+    color: colors.or,
+  },
+  dayTodayCircle: {
+    aspectRatio: 1,
+    backgroundColor: colors.or,
+    borderRadius: 20,
+  },
+  dayTodayText: {
+    color: colors.wt,
+  },
+
+  selectDateFooter: {
+    marginTop: 16,
+    alignItems: "flex-end",
+  },
+  selectDateApplyButton: {
+    height: 44,
+    width: 100,
+    borderRadius: 16,
+    backgroundColor: colors.or,
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  selectDateApplyText: {
+    fontFamily: "Pretendard-SemiBold",
+    color: colors.wt,
+    fontSize: 14,
   },
 });
