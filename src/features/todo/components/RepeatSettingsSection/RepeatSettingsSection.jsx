@@ -18,6 +18,7 @@ import colors from "../../../../shared/styles/colors";
 import YearMonthWheelModal from "./wheel/YearMonthWheelModal";
 import AlarmTimeSettingSection from "../TodoEditorSheet/AlarmTimeSettingsSection";
 import ChevronIcon from "../../../../shared/components/ChevronIcon";
+import RepeatOffIcon from "../../assets/svg/todoEditorSheet/RepeatSettingsSection/RepeatOff.svg";
 
 const WEEKDAYS = ["일", "월", "화", "수", "목", "금", "토"];
 
@@ -456,6 +457,52 @@ export default function RepeatSettingsSection({
     setYmWheelOpen(false);
   };
 
+  const isRepeatStartSet = !!repeatStartDate;
+
+  // repeatEndType: "none" | "date" | "unset"(너가 지금 사용 중)
+  const isRepeatEndSet = repeatEndType === "none" || repeatEndType === "date";
+
+  const isRepeatCycleSet = repeatCycle && repeatCycle !== "unset";
+  const isRepeatAlarmSet = repeatAlarm && repeatAlarm !== "unset";
+
+  // ✅ 하나라도 "미설정이 아님"이면 true
+  const shouldShowRepeatReset =
+    isRepeatCycleSet || isRepeatStartSet || isRepeatEndSet || isRepeatAlarmSet;
+
+  const handleResetRepeatAll = useCallback(() => {
+    // ✅ cycle
+    setRepeatCycle("unset");
+    setRepeatWeekdays([]);
+    setRepeatMonthDays([]);
+    setRepeatYearMonths([]);
+    setRepeatYearDays([]);
+
+    // ✅ start/end
+    setRepeatStartDate(null);
+    setRepeatEndType("unset");
+    setRepeatEndDate(null);
+
+    // ✅ repeat alarm
+    setRepeatAlarm("unset");
+    setRepeatAlarmTime(null);
+
+    // ✅ 혹시 어떤 드롭다운 열려있던 상태라면 닫기 (안전)
+    if (openKey !== null) onToggleOpenKey(openKey);
+  }, [
+    setRepeatCycle,
+    setRepeatWeekdays,
+    setRepeatMonthDays,
+    setRepeatYearMonths,
+    setRepeatYearDays,
+    setRepeatStartDate,
+    setRepeatEndType,
+    setRepeatEndDate,
+    setRepeatAlarm,
+    setRepeatAlarmTime,
+    openKey,
+    onToggleOpenKey,
+  ]);
+
   if (!visible) return null;
 
   return (
@@ -493,6 +540,18 @@ export default function RepeatSettingsSection({
             value={alarmLabel(repeatAlarm, repeatAlarmTime)}
             onPress={() => onToggleOpenKey("repeatAlarm")}
           />
+
+          {/* ✅ 우측 하단 '반복 해제' */}
+          {shouldShowRepeatReset && (
+            <TouchableOpacity
+              activeOpacity={0.85}
+              onPress={handleResetRepeatAll}
+              style={styles.repeatResetButton}
+            >
+              <RepeatOffIcon width={14} height={14} />
+              <Text style={styles.repeatResetButtonText}>반복 해제</Text>
+            </TouchableOpacity>
+          )}
         </>
       )}
 
@@ -1135,11 +1194,40 @@ const styles = StyleSheet.create({
     alignItems: "center",
     justifyContent: "space-between",
   },
-  left: {fontSize: 12, color: "#5D5E60"},
+  left: {
+    fontFamily: "Pretendard-Medium",
+    fontSize: 12,
+    lineHeight: 12 * 1.5,
+    color: colors.gr700,
+  },
   right: {flexDirection: "row", alignItems: "center", gap: 4},
-  value: {fontSize: 12, color: "#5D5E60"},
-  chev: {fontSize: 14, color: "#B0B0B0"},
+  value: {
+    fontFamily: "Pretendard-Medium",
+    fontSize: 12,
+    lineHeight: 12 * 1.5,
+    color: colors.gr700,
+  },
+  chev: {color: colors.gr500},
   rowDivider: {height: 1, backgroundColor: colors.gr100, marginVertical: 8},
+
+  repeatResetButton: {
+    position: "absolute",
+    right: 0,
+    bottom: 50,
+    paddingVertical: 6,
+    paddingHorizontal: 10,
+    borderRadius: 16,
+    backgroundColor: colors.gr200,
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 4, // RN 0.71+면 OK, 아니면 marginRight로 처리
+  },
+  repeatResetButtonText: {
+    fontFamily: "Pretendard-SemiBold",
+    fontSize: 12,
+    lineHeight: 12 * 1.5,
+    color: colors.gr700,
+  },
 
   option: {
     height: 40,

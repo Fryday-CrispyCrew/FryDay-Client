@@ -30,6 +30,7 @@ import RepeatSettingsSection from "../RepeatSettingsSection/RepeatSettingsSectio
 import colors from "../../../../shared/styles/colors";
 import AlarmTimeSettingSection from "./AlarmTimeSettingsSection";
 import ChevronIcon from "../../../../shared/components/ChevronIcon";
+import YearMonthWheelModal from "../RepeatSettingsSection/wheel/YearMonthWheelModal";
 
 /**
  * ✅ BottomSheetTextInput만 분리 (IME-safe 로직 포함)
@@ -186,6 +187,15 @@ const TodoEditorSheet = React.forwardRef(function TodoEditorSheet(
     const base = new Date();
     return new Date(base.getFullYear(), base.getMonth(), 1);
   });
+  // ✅ YearMonthWheelModal용 (number)
+  const [isTodoYearMonthWheelOpen, setIsTodoYearMonthWheelOpen] =
+    useState(false);
+  const [todoWheelInitialYear, setTodoWheelInitialYear] = useState(
+    todoMonthCursor.getFullYear()
+  );
+  const [todoWheelInitialMonth, setTodoWheelInitialMonth] = useState(
+    todoMonthCursor.getMonth() + 1
+  );
 
   const isMemoOpen = mode === "edit" && selectedToolKey === "memo";
   const isAlarmOpen = mode === "edit" && selectedToolKey === "alarm";
@@ -695,10 +705,24 @@ const TodoEditorSheet = React.forwardRef(function TodoEditorSheet(
                         />
                       </TouchableOpacity>
 
-                      <Text style={styles.calendarHeaderText}>
-                        {todoMonthCursor.getFullYear()}년{" "}
-                        {todoMonthCursor.getMonth() + 1}월
-                      </Text>
+                      <TouchableOpacity
+                        activeOpacity={0.7}
+                        onPress={() => {
+                          setTodoWheelInitialYear(
+                            todoMonthCursor.getFullYear()
+                          );
+                          setTodoWheelInitialMonth(
+                            todoMonthCursor.getMonth() + 1
+                          );
+                          setIsTodoYearMonthWheelOpen(true);
+                        }}
+                        hitSlop={8}
+                      >
+                        <Text style={styles.calendarHeaderText}>
+                          {todoMonthCursor.getFullYear()}년{" "}
+                          {todoMonthCursor.getMonth() + 1}월
+                        </Text>
+                      </TouchableOpacity>
 
                       <TouchableOpacity
                         activeOpacity={0.7}
@@ -794,6 +818,30 @@ const TodoEditorSheet = React.forwardRef(function TodoEditorSheet(
                       <Text style={styles.selectDateApplyText}>적용하기</Text>
                     </TouchableOpacity>
                   </View>
+                  <YearMonthWheelModal
+                    visible={isTodoYearMonthWheelOpen}
+                    initialYear={todoWheelInitialYear}
+                    initialMonth={todoWheelInitialMonth} // 1~12
+                    onCancel={() => setIsTodoYearMonthWheelOpen(false)}
+                    onConfirm={(year, month) => {
+                      // ✅ 캘린더 커서 이동
+                      setTodoMonthCursor(new Date(year, month - 1, 1));
+
+                      // ✅ draftTodoDate도 같은 '일' 유지하면서 이동 (말일 보정)
+                      setDraftTodoDate((prev) => {
+                        const base = prev ?? new Date();
+                        const day = base.getDate();
+                        const lastDay = new Date(year, month, 0).getDate();
+                        return new Date(
+                          year,
+                          month - 1,
+                          Math.min(day, lastDay)
+                        );
+                      });
+
+                      setIsTodoYearMonthWheelOpen(false);
+                    }}
+                  />
                 </View>
               )}
             </View>
