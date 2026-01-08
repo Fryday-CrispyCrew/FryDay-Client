@@ -19,7 +19,6 @@ import YearMonthWheelModal from "./wheel/YearMonthWheelModal";
 import AlarmTimeSettingSection from "../TodoEditorSheet/AlarmTimeSettingsSection";
 import ChevronIcon from "../../../../shared/components/ChevronIcon";
 import RepeatOffIcon from "../../assets/svg/todoEditorSheet/RepeatSettingsSection/RepeatOff.svg";
-
 const WEEKDAYS = ["일", "월", "화", "수", "목", "금", "토"];
 
 const WEEKDAY_LABEL = {
@@ -77,6 +76,7 @@ export default function RepeatSettingsSection({
   visible,
   openKey,
   onToggleOpenKey,
+  onShowToast, // ✅ 추가
 }) {
   const repeatStartDate = useRepeatEditorStore((s) => s.repeatStartDate);
   const repeatEndType = useRepeatEditorStore((s) => s.repeatEndType);
@@ -103,6 +103,8 @@ export default function RepeatSettingsSection({
     (s) => s.setRepeatYearMonths
   );
   const setRepeatYearDays = useRepeatEditorStore((s) => s.setRepeatYearDays);
+
+  const isCycleUnset = !repeatCycle || repeatCycle === "unset";
 
   const [draftStartDate, setDraftStartDate] = useState(
     repeatStartDate ?? new Date()
@@ -207,6 +209,17 @@ export default function RepeatSettingsSection({
 
     setIsIosInlineRepeatAlarmPickerOpen(false);
   }, [openKey, repeatAlarm, repeatAlarmTime]);
+
+  const guardOpen = useCallback(
+    (nextKey) => {
+      if (isCycleUnset) {
+        onShowToast?.("반복 주기를 먼저 설정해주세요.");
+        return;
+      }
+      onToggleOpenKey(nextKey);
+    },
+    [isCycleUnset, onShowToast, onToggleOpenKey]
+  );
 
   const toggleWeekday = useCallback((key) => {
     setDraftWeekdays((prev) =>
@@ -537,7 +550,7 @@ export default function RepeatSettingsSection({
             value={
               repeatStartDate ? formatKoreanDate(repeatStartDate) : "미설정"
             }
-            onPress={() => onToggleOpenKey("repeatStart")}
+            onPress={() => guardOpen("repeatStart")}
           />
           <View style={styles.rowDivider} />
           <Row
@@ -549,13 +562,13 @@ export default function RepeatSettingsSection({
                   ? formatKoreanDate(repeatEndDate)
                   : "미설정"
             }
-            onPress={() => onToggleOpenKey("repeatEnd")}
+            onPress={() => guardOpen("repeatEnd")}
           />
           <View style={styles.rowDivider} />
           <Row
             label="반복 알림 설정"
             value={alarmLabel(repeatAlarm, repeatAlarmTime)}
-            onPress={() => onToggleOpenKey("repeatAlarm")}
+            onPress={() => guardOpen("repeatAlarm")}
           />
 
           {/* ✅ 우측 하단 '반복 해제' */}

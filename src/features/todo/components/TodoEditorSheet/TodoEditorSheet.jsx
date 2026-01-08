@@ -700,6 +700,7 @@ const TodoEditorSheet = React.forwardRef(function TodoEditorSheet(
                 visible={isRepeatOpen}
                 openKey={openRepeatDropdownKey}
                 onToggleOpenKey={toggleRepeatDropdown}
+                onShowToast={showToast} // ✅ 추가
               />
 
               {/* ✅ SelectDateIcon: 투두 날짜 변경 캘린더 */}
@@ -863,14 +864,11 @@ const TodoEditorSheet = React.forwardRef(function TodoEditorSheet(
                       setIsTodoYearMonthWheelOpen(false);
                     }}
                   />
-                  <CenterToast
-                    visible={toast.visible}
-                    message={toast.message}
-                  />
                 </View>
               )}
             </View>
           )}
+          <CenterToast visible={toast.visible} message={toast.message} />
         </View>
       </BottomSheetView>
     </BottomSheetModal>
