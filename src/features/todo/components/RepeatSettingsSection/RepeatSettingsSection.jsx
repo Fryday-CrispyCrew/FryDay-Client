@@ -41,6 +41,25 @@ const isSameDay = (a, b) => {
   );
 };
 
+const toDayKey = (d) => {
+  if (!d) return null;
+  return new Date(d.getFullYear(), d.getMonth(), d.getDate()).getTime();
+};
+
+const isBeforeDay = (a, b) => {
+  const ak = toDayKey(a);
+  const bk = toDayKey(b);
+  if (ak == null || bk == null) return false;
+  return ak < bk;
+};
+
+const isAfterDay = (a, b) => {
+  const ak = toDayKey(a);
+  const bk = toDayKey(b);
+  if (ak == null || bk == null) return false;
+  return ak > bk;
+};
+
 const addMonths = (date, delta) => {
   const d = new Date(date);
   d.setMonth(d.getMonth() + delta);
@@ -282,6 +301,16 @@ export default function RepeatSettingsSection({
   const isApplyStartDisabled = !draftStartDate;
 
   const handleApplyStartDate = useCallback(() => {
+    //가드 처리
+    if (
+      repeatEndType === "date" &&
+      repeatEndDate &&
+      isAfterDay(draftStartDate, repeatEndDate)
+    ) {
+      toast.show("시작 날짜는 종료 날짜보다 뒤로 선택할 수 없어요");
+      return;
+    }
+
     setRepeatStartDate(draftStartDate);
 
     // 시작일이 종료일보다 뒤면 종료일도 당겨주기(기존 규칙 유지)
@@ -309,11 +338,13 @@ export default function RepeatSettingsSection({
     (date) => {
       if (!date) return;
 
-      // 종료일은 시작일보다 빠를 수 없음
-      const normalized =
-        repeatStartDate && date < repeatStartDate ? repeatStartDate : date;
+      // ✅ 종료일은 시작일보다 앞설 수 없음 → 선택 무시 + 토스트
+      if (repeatStartDate && isBeforeDay(date, repeatStartDate)) {
+        toast.show("종료 날짜는 시작 날짜보다 앞설 수 없어요");
+        return;
+      }
 
-      setDraftEndDate(normalized);
+      setDraftEndDate(date);
       setDraftEndType("date");
     },
     [repeatStartDate]
@@ -325,6 +356,10 @@ export default function RepeatSettingsSection({
   const isApplyEndDisabled = !isEndNone && !draftEndDate;
 
   const handleApplyEndDate = useCallback(() => {
+    if (repeatStartDate && isBeforeDay(draftEndDate, repeatStartDate)) {
+      toast.show("종료 날짜는 시작 날짜보다 앞설 수 없어요");
+      return;
+    }
     if (draftEndType === "none") {
       setRepeatEndType("none");
       onToggleOpenKey("repeatEnd");
@@ -435,10 +470,24 @@ export default function RepeatSettingsSection({
 
   const today = useMemo(() => new Date(), []);
 
-  const handlePickStartDateFromCalendar = useCallback((date) => {
-    if (!date) return;
-    setDraftStartDate(date); // ✅ store 반영 X, 임시값만 변경
-  }, []);
+  const handlePickStartDateFromCalendar = useCallback(
+    (date) => {
+      if (!date) return;
+
+      // ✅ 종료일이 이미 설정되어 있으면 시작일은 종료일보다 뒤로 갈 수 없음
+      if (
+        repeatEndType === "date" &&
+        repeatEndDate &&
+        isAfterDay(date, repeatEndDate)
+      ) {
+        toast.show("시작 날짜는 종료 날짜보다 뒤로 선택할 수 없어요");
+        return;
+      }
+
+      setDraftStartDate(date); // store 반영 X, 임시값만 변경
+    },
+    [repeatEndType, repeatEndDate]
+  );
 
   const openStartYearMonthWheel = () => {
     setYmInitial({
