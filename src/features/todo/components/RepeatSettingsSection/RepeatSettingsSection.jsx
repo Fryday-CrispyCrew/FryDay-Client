@@ -479,7 +479,7 @@ export default function RepeatSettingsSection({
       )}
 
       {openKey === "repeatCycle" && (
-        <View>
+        <View style={{position: "relative", flex: 1, paddingBottom: 68}}>
           <RowOpen
             label="반복 주기"
             value={cycleLabel(repeatCycle)}
@@ -662,6 +662,7 @@ export default function RepeatSettingsSection({
             disabled={isApplyDisabled}
             style={[
               styles.applyButton,
+              styles.repeatApplyButton,
               isApplyDisabled && styles.applyButtonDisabled,
             ]}
             onPress={handleApplyRepeatCycle}
@@ -680,7 +681,7 @@ export default function RepeatSettingsSection({
 
       {/* ✅ 반복 시작 날짜 - 첨부 스샷처럼 캘린더 펼치기 */}
       {openKey === "repeatStart" && (
-        <View>
+        <View style={{position: "relative", flex: 1, borderWidth: 1}}>
           <RowOpen
             label="반복 시작 날짜"
             value={formatKoreanDate(repeatStartDate)}
@@ -1295,8 +1296,8 @@ const styles = StyleSheet.create({
   },
 
   repeatStartButtonSection: {
-    marginTop: 16,
-    marginBottom: 8,
+    // marginTop: 16,
+    // marginBottom: 8,
   },
 
   applyButton: {
@@ -1307,6 +1308,10 @@ const styles = StyleSheet.create({
     backgroundColor: colors.or,
     alignItems: "center",
     justifyContent: "center",
+  },
+  repeatApplyButton: {
+    position: "absolute",
+    bottom: 24,
   },
   applyButtonDisabled: {
     backgroundColor: colors.gr200,
