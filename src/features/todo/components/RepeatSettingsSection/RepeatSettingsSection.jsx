@@ -22,6 +22,16 @@ import RepeatOffIcon from "../../assets/svg/todoEditorSheet/RepeatSettingsSectio
 
 const WEEKDAYS = ["일", "월", "화", "수", "목", "금", "토"];
 
+const WEEKDAY_LABEL = {
+  mon: "월",
+  tue: "화",
+  wed: "수",
+  thu: "목",
+  fri: "금",
+  sat: "토",
+  sun: "일",
+};
+
 const isSameDay = (a, b) => {
   if (!a || !b) return false;
   return (
@@ -511,9 +521,16 @@ export default function RepeatSettingsSection({
         <>
           <Row
             label="반복 주기"
-            value={cycleLabel(repeatCycle)}
+            value={repeatCycleLabel({
+              repeatCycle,
+              repeatWeekdays,
+              repeatMonthDays,
+              repeatYearMonths,
+              repeatYearDays,
+            })}
             onPress={() => onToggleOpenKey("repeatCycle")}
           />
+
           <View style={styles.rowDivider} />
           <Row
             label="반복 시작 날짜"
@@ -1181,6 +1198,69 @@ const alarmLabel = (v, time) =>
       : v === "morning9"
         ? "오전 9시"
         : (time ?? "미설정");
+
+const formatWithEllipsis = (items, {max = 3, joiner = ","} = {}) => {
+  const arr = (items ?? []).filter(Boolean);
+  if (arr.length === 0) return "";
+
+  const shown = arr.slice(0, max).join(joiner);
+  return arr.length > max ? `${shown},...` : shown;
+};
+
+const repeatCycleLabel = ({
+  repeatCycle,
+  repeatWeekdays,
+  repeatMonthDays,
+  repeatYearMonths,
+  repeatYearDays,
+}) => {
+  if (!repeatCycle || repeatCycle === "unset") return "미설정";
+
+  if (repeatCycle === "daily") return "매일";
+
+  if (repeatCycle === "weekly") {
+    const mapped = (repeatWeekdays ?? [])
+      .map((k) => WEEKDAY_LABEL[k])
+      .filter(Boolean);
+
+    const text = formatWithEllipsis(mapped);
+    return text ? `매주 ${text}` : "매주";
+  }
+
+  if (repeatCycle === "monthly") {
+    const days = [...(repeatMonthDays ?? [])]
+      .map((n) => Number(n))
+      .filter((n) => Number.isFinite(n))
+      .sort((a, b) => a - b);
+
+    const text = formatWithEllipsis(days);
+    return text ? `매월 ${text}${days.length > 3 ? "일" : "일"}` : "매월";
+    // 위는 결과: "매월 10,16,28일" / "매월 10,16,28,...일"
+  }
+
+  if (repeatCycle === "yearly") {
+    const months = [...(repeatYearMonths ?? [])]
+      .map((n) => Number(n))
+      .filter((n) => Number.isFinite(n))
+      .sort((a, b) => a - b);
+
+    const days = [...(repeatYearDays ?? [])]
+      .map((n) => Number(n))
+      .filter((n) => Number.isFinite(n))
+      .sort((a, b) => a - b);
+
+    const mText = formatWithEllipsis(months);
+    const dText = formatWithEllipsis(days);
+
+    // 요구 형식: "매년 2,6,9,...월 8,20,21,...일"
+    if (mText && dText) return `매년 ${mText}월 ${dText}일`;
+    if (mText) return `매년 ${mText}월`;
+    if (dText) return `매년 ${dText}일`;
+    return "매년";
+  }
+
+  return "미설정";
+};
 
 const styles = StyleSheet.create({
   repeatPanel: {
