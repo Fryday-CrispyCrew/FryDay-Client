@@ -335,7 +335,7 @@ export default function RepeatSettingsSection({
   const handleApplyRepeatCycle = useCallback(() => {
     if (isApplyDisabled) return;
 
-    // ✅ 공통: store에 cycle 반영
+    // ✅ 공통: cycle 반영
     setRepeatCycle(draftCycle);
 
     // ✅ 공통: 상세 선택값 초기화
@@ -343,6 +343,21 @@ export default function RepeatSettingsSection({
     setRepeatMonthDays([]);
     setRepeatYearMonths([]);
     setRepeatYearDays([]);
+
+    // ✅ [추가] 미설정(unset)으로 적용하면: 날짜/알림까지 전부 "미설정"으로 초기화
+    if (draftCycle === "unset") {
+      // 반복 시작/종료 날짜 초기화
+      setRepeatStartDate(null);
+      setRepeatEndType("unset"); // "none"도 아니고 "date"도 아닌 값이면 Row에서 "미설정"으로 표시됨
+      setRepeatEndDate(null);
+
+      // 반복 알림 초기화
+      setRepeatAlarm("unset");
+      setRepeatAlarmTime(null);
+
+      onToggleOpenKey("repeatCycle");
+      return;
+    }
 
     // ✅ cycle별 상세 선택값 저장
     if (draftCycle === "weekly") setRepeatWeekdays(draftWeekdays);
@@ -353,19 +368,16 @@ export default function RepeatSettingsSection({
     }
 
     // ✅ 주기를 "처음 설정"할 때만 시작/종료 기본값 세팅
-    //    (unset으로 적용할 때는 절대 기본값 세팅하면 안 됨)
-    if (draftCycle !== "unset") {
-      const isStartUnset = !repeatStartDate;
-      const isEndUnset = repeatEndType !== "none" && repeatEndType !== "date";
+    const isStartUnset = !repeatStartDate;
+    const isEndUnset = repeatEndType !== "none" && repeatEndType !== "date";
 
-      if (isStartUnset && isEndUnset) {
-        const today = new Date();
-        today.setSeconds(0);
-        today.setMilliseconds(0);
+    if (isStartUnset && isEndUnset) {
+      const today = new Date();
+      today.setSeconds(0);
+      today.setMilliseconds(0);
 
-        setRepeatStartDate(today);
-        setRepeatEndType("none");
-      }
+      setRepeatStartDate(today);
+      setRepeatEndType("none");
     }
 
     onToggleOpenKey("repeatCycle");
@@ -381,11 +393,14 @@ export default function RepeatSettingsSection({
     setRepeatMonthDays,
     setRepeatYearMonths,
     setRepeatYearDays,
+    setRepeatStartDate,
+    setRepeatEndType,
+    setRepeatEndDate,
+    setRepeatAlarm,
+    setRepeatAlarmTime,
     onToggleOpenKey,
     repeatStartDate,
     repeatEndType,
-    setRepeatStartDate,
-    setRepeatEndType,
   ]);
 
   // ✅ repeatStart 캘린더 grid
