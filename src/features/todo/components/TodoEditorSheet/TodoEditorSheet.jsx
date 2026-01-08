@@ -8,7 +8,6 @@ import {
   ScrollView,
   TouchableOpacity,
   Keyboard,
-  Platform,
 } from "react-native";
 import {
   BottomSheetModal,
@@ -22,15 +21,15 @@ import AlarmIcon from "../../assets/svg/todoEditorSheet/alarm.svg";
 import RepeatIcon from "../../assets/svg/todoEditorSheet/repeat.svg";
 import SelectDateIcon from "../../assets/svg/todoEditorSheet/calendarSelect.svg";
 import {useSafeAreaInsets} from "react-native-safe-area-context";
-import DateTimePicker, {
-  DateTimePickerAndroid,
-} from "@react-native-community/datetimepicker";
 import {useRepeatEditorStore} from "../../stores/repeatEditorStore";
 import RepeatSettingsSection from "../RepeatSettingsSection/RepeatSettingsSection";
 import colors from "../../../../shared/styles/colors";
 import AlarmTimeSettingSection from "./AlarmTimeSettingsSection";
 import ChevronIcon from "../../../../shared/components/ChevronIcon";
 import YearMonthWheelModal from "../RepeatSettingsSection/wheel/YearMonthWheelModal";
+import CenterToast, {
+  useCenterToast,
+} from "../../../../shared/components/toast/CenterToast";
 
 /**
  * ✅ BottomSheetTextInput만 분리 (IME-safe 로직 포함)
@@ -108,6 +107,13 @@ const addMonths = (date, delta) => {
   return d;
 };
 
+//날짜 비교 helper
+const startOfDay = (d) => {
+  const x = new Date(d);
+  x.setHours(0, 0, 0, 0);
+  return x;
+};
+
 const buildMonthGrid = (monthDate) => {
   const y = monthDate.getFullYear();
   const m = monthDate.getMonth(); // 0~11
@@ -152,6 +158,8 @@ const TodoEditorSheet = React.forwardRef(function TodoEditorSheet(
   ];
 
   const inputRef = useRef(null);
+
+  const {toast, showToast} = useCenterToast();
 
   // ✅ 메모 입력용 ref/state 추가
   const memoInputRef = useRef(null);
@@ -400,10 +408,23 @@ const TodoEditorSheet = React.forwardRef(function TodoEditorSheet(
 
   const today = useMemo(() => new Date(), []);
 
-  const handlePickTodoDateFromCalendar = useCallback((date) => {
-    if (!date) return;
-    setDraftTodoDate(date);
-  }, []);
+  const handlePickTodoDateFromCalendar = useCallback(
+    (date) => {
+      if (!date) return;
+
+      const today0 = startOfDay(new Date());
+      const picked0 = startOfDay(date);
+
+      // ✅ 과거 날짜면: 선택 무시 + 중앙 토스트
+      if (picked0 < today0) {
+        showToast("과거 날짜로는 이동할 수 없어요.");
+        return;
+      }
+
+      setDraftTodoDate(date);
+    },
+    [showToast]
+  );
 
   const handleApplyTodoDate = useCallback(() => {
     if (!draftTodoDate) return;
@@ -842,6 +863,10 @@ const TodoEditorSheet = React.forwardRef(function TodoEditorSheet(
                       setIsTodoYearMonthWheelOpen(false);
                     }}
                   />
+                  <CenterToast
+                    visible={toast.visible}
+                    message={toast.message}
+                  />
                 </View>
               )}
             </View>
@@ -1185,5 +1210,24 @@ const styles = StyleSheet.create({
     fontFamily: "Pretendard-SemiBold",
     color: colors.wt,
     fontSize: 14,
+  },
+  toastOverlay: {
+    ...StyleSheet.absoluteFillObject,
+    alignItems: "center",
+    justifyContent: "center",
+    zIndex: 999,
+  },
+  toastBubble: {
+    maxWidth: "80%",
+    paddingHorizontal: 14,
+    paddingVertical: 10,
+    borderRadius: 999,
+    backgroundColor: "rgba(0,0,0,0.85)",
+  },
+  toastText: {
+    fontFamily: "Pretendard-Medium",
+    fontSize: 12,
+    lineHeight: 12 * 1.5,
+    color: "#FFFFFF",
   },
 });
