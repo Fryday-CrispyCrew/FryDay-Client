@@ -327,7 +327,6 @@ export default function RepeatSettingsSection({
 
   // 반복 주기 관련
   const isApplyDisabled =
-    draftCycle === "unset" ||
     (draftCycle === "weekly" && draftWeekdays.length === 0) ||
     (draftCycle === "monthly" && draftMonthDays.length === 0) ||
     (draftCycle === "yearly" &&
@@ -336,13 +335,16 @@ export default function RepeatSettingsSection({
   const handleApplyRepeatCycle = useCallback(() => {
     if (isApplyDisabled) return;
 
+    // ✅ 공통: store에 cycle 반영
     setRepeatCycle(draftCycle);
 
+    // ✅ 공통: 상세 선택값 초기화
     setRepeatWeekdays([]);
     setRepeatMonthDays([]);
     setRepeatYearMonths([]);
     setRepeatYearDays([]);
 
+    // ✅ cycle별 상세 선택값 저장
     if (draftCycle === "weekly") setRepeatWeekdays(draftWeekdays);
     if (draftCycle === "monthly") setRepeatMonthDays(draftMonthDays);
     if (draftCycle === "yearly") {
@@ -350,19 +352,20 @@ export default function RepeatSettingsSection({
       setRepeatYearDays(draftYearDays);
     }
 
-    // ✅ 주기를 처음 설정하는 순간: 시작=오늘, 종료=종료 없음 기본값 세팅
-    // (처음 상태에서만 자동 세팅되도록 조건 걸기)
-    const isStartUnset = !repeatStartDate;
-    const isEndUnset = repeatEndType !== "none" && repeatEndType !== "date";
+    // ✅ 주기를 "처음 설정"할 때만 시작/종료 기본값 세팅
+    //    (unset으로 적용할 때는 절대 기본값 세팅하면 안 됨)
+    if (draftCycle !== "unset") {
+      const isStartUnset = !repeatStartDate;
+      const isEndUnset = repeatEndType !== "none" && repeatEndType !== "date";
 
-    if (isStartUnset && isEndUnset) {
-      const today = new Date();
-      today.setSeconds(0);
-      today.setMilliseconds(0);
+      if (isStartUnset && isEndUnset) {
+        const today = new Date();
+        today.setSeconds(0);
+        today.setMilliseconds(0);
 
-      setRepeatStartDate(today);
-      setRepeatEndType("none");
-      // endDate는 none일 때 굳이 세팅할 필요 없지만, store 정책에 따라 유지해도 됨
+        setRepeatStartDate(today);
+        setRepeatEndType("none");
+      }
     }
 
     onToggleOpenKey("repeatCycle");
@@ -499,7 +502,11 @@ export default function RepeatSettingsSection({
                   <TouchableOpacity
                     key={opt.key}
                     activeOpacity={0.85}
-                    onPress={() => setDraftCycle(opt.key)}
+                    onPress={() =>
+                      setDraftCycle((prev) =>
+                        prev === opt.key ? "unset" : opt.key
+                      )
+                    }
                     style={[
                       styles.segmentItem,
                       isActive && styles.segmentItemActive,
@@ -681,7 +688,7 @@ export default function RepeatSettingsSection({
 
       {/* ✅ 반복 시작 날짜 - 첨부 스샷처럼 캘린더 펼치기 */}
       {openKey === "repeatStart" && (
-        <View style={{position: "relative", flex: 1, borderWidth: 1}}>
+        <View style={{position: "relative", flex: 1}}>
           <RowOpen
             label="반복 시작 날짜"
             value={formatKoreanDate(repeatStartDate)}
