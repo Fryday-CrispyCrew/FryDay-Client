@@ -19,6 +19,7 @@ import YearMonthWheelModal from "./wheel/YearMonthWheelModal";
 import AlarmTimeSettingSection from "../TodoEditorSheet/AlarmTimeSettingsSection";
 import ChevronIcon from "../../../../shared/components/ChevronIcon";
 import RepeatOffIcon from "../../assets/svg/todoEditorSheet/RepeatSettingsSection/RepeatOff.svg";
+import {toast} from "../../../../shared/components/toast/CenterToast";
 const WEEKDAYS = ["일", "월", "화", "수", "목", "금", "토"];
 
 const WEEKDAY_LABEL = {
@@ -76,7 +77,6 @@ export default function RepeatSettingsSection({
   visible,
   openKey,
   onToggleOpenKey,
-  onShowToast, // ✅ 추가
 }) {
   const repeatStartDate = useRepeatEditorStore((s) => s.repeatStartDate);
   const repeatEndType = useRepeatEditorStore((s) => s.repeatEndType);
@@ -213,12 +213,12 @@ export default function RepeatSettingsSection({
   const guardOpen = useCallback(
     (nextKey) => {
       if (isCycleUnset) {
-        onShowToast?.("반복 주기를 먼저 설정해주세요.");
+        toast.show("반복 주기를 먼저 설정해주세요.");
         return;
       }
       onToggleOpenKey(nextKey);
     },
-    [isCycleUnset, onShowToast, onToggleOpenKey]
+    [isCycleUnset, onToggleOpenKey]
   );
 
   const toggleWeekday = useCallback((key) => {

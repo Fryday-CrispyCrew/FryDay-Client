@@ -3,11 +3,18 @@ import React, {useCallback, useEffect, useRef, useState} from "react";
 import {Animated, StyleSheet, Text, View} from "react-native";
 
 /**
- * CenterToast
- * - 화면 중앙에 잠깐 뜨는 토스트
- * - pointerEvents="none" 으로 터치 방해 X
+ * ✅ 전역 toast API
+ * - 어디서든 toast.show("문구") 호출 가능
  */
-export function CenterToast({visible, message, style}) {
+let _show = null;
+
+export const toast = {
+  show: (message, options = {}) => {
+    _show?.(message, options);
+  },
+};
+
+export function CenterToast({visible, message, position = "center", style}) {
   const opacity = useRef(new Animated.Value(0)).current;
   const translateY = useRef(new Animated.Value(6)).current;
 
@@ -26,10 +33,25 @@ export function CenterToast({visible, message, style}) {
     ]).start();
   }, [visible, opacity, translateY]);
 
+  const getPositionStyle = (position) => {
+    switch (position) {
+      case "top":
+        return {justifyContent: "flex-start", paddingTop: 80};
+      case "bottom":
+        return {justifyContent: "flex-end", paddingBottom: 80};
+      case "center":
+      default:
+        return {justifyContent: "center"};
+    }
+  };
+
   if (!message) return null;
 
   return (
-    <View pointerEvents="none" style={[styles.overlay, style]}>
+    <View
+      pointerEvents="none"
+      style={[styles.overlay, getPositionStyle(position), style]}
+    >
       <Animated.View
         style={[styles.bubble, {opacity, transform: [{translateY}]}]}
       >
@@ -39,28 +61,24 @@ export function CenterToast({visible, message, style}) {
   );
 }
 
-/**
- * useCenterToast
- * - showToast(message, duration)
- */
-export function useCenterToast() {
-  const [toast, setToast] = useState({visible: false, message: ""});
+function useCenterToastInternal() {
+  const [toastState, setToastState] = useState({
+    visible: false,
+    message: "",
+    position: "center", // "top" | "center" | "bottom"
+  });
   const timerRef = useRef(null);
 
-  const hideToast = useCallback(() => {
-    if (timerRef.current) clearTimeout(timerRef.current);
-    timerRef.current = null;
-    setToast((prev) => ({...prev, visible: false}));
-  }, []);
-
-  const showToast = useCallback((message, duration = 1700) => {
+  const showToast = useCallback((message, options = {}) => {
+    const {duration = 1700, position = "center"} = options;
     if (!message) return;
+
     if (timerRef.current) clearTimeout(timerRef.current);
 
-    setToast({visible: true, message});
+    setToastState({visible: true, message, position});
 
     timerRef.current = setTimeout(() => {
-      setToast((prev) => ({...prev, visible: false}));
+      setToastState((prev) => ({...prev, visible: false}));
       timerRef.current = null;
     }, duration);
   }, []);
@@ -71,7 +89,31 @@ export function useCenterToast() {
     };
   }, []);
 
-  return {toast, showToast, hideToast};
+  return {toastState, showToast};
+}
+
+/**
+ * ✅ 앱 최상단에 1번만 렌더하는 Host
+ * - 여기서 _show를 주입해서 전역 toast.show()가 동작하도록 함
+ */
+export function CenterToastHost() {
+  const {toastState, showToast} = useCenterToastInternal();
+
+  useEffect(() => {
+    _show = showToast;
+    return () => {
+      // 언마운트 시 안전하게 해제
+      if (_show === showToast) _show = null;
+    };
+  }, [showToast]);
+
+  return (
+    <CenterToast
+      visible={toastState.visible}
+      message={toastState.message}
+      position={toastState.position}
+    />
+  );
 }
 
 export default CenterToast;

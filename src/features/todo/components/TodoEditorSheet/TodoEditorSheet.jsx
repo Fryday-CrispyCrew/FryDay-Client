@@ -27,10 +27,7 @@ import colors from "../../../../shared/styles/colors";
 import AlarmTimeSettingSection from "./AlarmTimeSettingsSection";
 import ChevronIcon from "../../../../shared/components/ChevronIcon";
 import YearMonthWheelModal from "../RepeatSettingsSection/wheel/YearMonthWheelModal";
-import CenterToast, {
-  useCenterToast,
-} from "../../../../shared/components/toast/CenterToast";
-
+import {toast} from "../../../../shared/components/toast/CenterToast";
 /**
  * ✅ BottomSheetTextInput만 분리 (IME-safe 로직 포함)
  * - 기존 로직 유지하면서 multiline 등 확장 props 추가
@@ -158,8 +155,6 @@ const TodoEditorSheet = React.forwardRef(function TodoEditorSheet(
   ];
 
   const inputRef = useRef(null);
-
-  const {toast, showToast} = useCenterToast();
 
   // ✅ 메모 입력용 ref/state 추가
   const memoInputRef = useRef(null);
@@ -417,13 +412,13 @@ const TodoEditorSheet = React.forwardRef(function TodoEditorSheet(
 
       // ✅ 과거 날짜면: 선택 무시 + 중앙 토스트
       if (picked0 < today0) {
-        showToast("과거 날짜로는 이동할 수 없어요.");
+        toast.show("과거 날짜로는 이동할 수 없어요.");
         return;
       }
 
       setDraftTodoDate(date);
     },
-    [showToast]
+    [toast]
   );
 
   const handleApplyTodoDate = useCallback(() => {
@@ -700,7 +695,6 @@ const TodoEditorSheet = React.forwardRef(function TodoEditorSheet(
                 visible={isRepeatOpen}
                 openKey={openRepeatDropdownKey}
                 onToggleOpenKey={toggleRepeatDropdown}
-                onShowToast={showToast} // ✅ 추가
               />
 
               {/* ✅ SelectDateIcon: 투두 날짜 변경 캘린더 */}
@@ -868,7 +862,6 @@ const TodoEditorSheet = React.forwardRef(function TodoEditorSheet(
               )}
             </View>
           )}
-          <CenterToast visible={toast.visible} message={toast.message} />
         </View>
       </BottomSheetView>
     </BottomSheetModal>
