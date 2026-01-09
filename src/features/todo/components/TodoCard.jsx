@@ -6,6 +6,7 @@ import DraggableFlatList from "react-native-draggable-flatlist";
 import AppText from "../../../shared/components/AppText";
 import DragHandleIcon from "../assets/svg/DragHandle.svg";
 import DeleteIcon from "../assets/svg/Delete.svg";
+import StartDateIcon from "../assets/svg/StartDate.svg";
 import TodoRadioOnIcon from "../assets/svg/RadioOn.svg";
 import TodoRadioOffIcon from "../assets/svg/RadioOff.svg";
 
@@ -27,8 +28,11 @@ const MOCK_TODOS = [
   {id: "4", title: "알고리즘 공부", done: true, categoryId: 2},
 ];
 
-const SWIPE_OPEN_OFFSET = -72;
-const SWIPE_THRESHOLD = -36;
+const ACTION_BTN_W = 56; // 버튼 하나 너비(원하는 값으로)
+const ACTION_GAP = 10; // 버튼 간격
+const ACTIONS_TOTAL_W = ACTION_BTN_W * 2 + ACTION_GAP;
+const SWIPE_OPEN_OFFSET = -ACTIONS_TOTAL_W;
+const SWIPE_THRESHOLD = -(ACTIONS_TOTAL_W * 0.5);
 
 function TodoItem({
   item,
@@ -40,6 +44,7 @@ function TodoItem({
   onSwipeClose,
   onLongPressDrag,
   onPressItem, // ✅ 추가
+  onDoToday,
 }) {
   const translateX = useSharedValue(0);
   const startX = useSharedValue(0);
@@ -84,6 +89,18 @@ function TodoItem({
           onPress={() => onDelete(item.id)}
         >
           <DeleteIcon width={20} height={20} />
+        </TouchableOpacity>
+
+        <TouchableOpacity
+          style={styles.todoTodayButton}
+          activeOpacity={0.7}
+          onPress={() => onDoToday?.(item.id)}
+        >
+          <StartDateIcon width={20} height={20} />
+          {/* 아이콘 있으면 아이콘으로, 없으면 텍스트로 */}
+          {/* <AppText variant="M600" style={{color: "#FF5B22"}}>
+            오늘
+          </AppText> */}
         </TouchableOpacity>
       </View>
 
@@ -147,7 +164,12 @@ function Chevron({isOpen, color}) {
   );
 }
 
-export default function TodoCard({navigation, onPressInput, categories = []}) {
+export default function TodoCard({
+  navigation,
+  onPressInput,
+  categories = [],
+  onDoToday,
+}) {
   const [todos, setTodos] = useState(MOCK_TODOS);
   const [swipedTodoId, setSwipedTodoId] = useState(null);
 
@@ -240,6 +262,7 @@ export default function TodoCard({navigation, onPressInput, categories = []}) {
                   isOpen={swipedTodoId === item.id}
                   onToggleDone={toggleTodoDone}
                   onDelete={handleDeleteTodo}
+                  onDoToday={onDoToday}
                   onSwipeOpen={(id) => setSwipedTodoId(id)}
                   onSwipeClose={(id) =>
                     setSwipedTodoId((prev) => (prev === id ? null : prev))
@@ -374,15 +397,30 @@ const styles = StyleSheet.create({
     right: 0,
     top: 0,
     bottom: 0,
-    justifyContent: "center",
-    alignItems: "flex-end",
-    paddingRight: 4,
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "flex-end",
+    gap: 10,
+    paddingRight: 6,
   },
   todoDeleteButton: {
     paddingHorizontal: 12,
     paddingVertical: 8,
     borderRadius: 12,
+    // width: 56,
+    // height: 44,
+    // borderRadius: 14,
     backgroundColor: "#FF5B22",
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  todoTodayButton: {
+    paddingHorizontal: 10,
+    paddingVertical: 6,
+    borderRadius: 12,
+    backgroundColor: "#FFFFFF",
+    borderWidth: 2,
+    borderColor: "#FF5B22",
     alignItems: "center",
     justifyContent: "center",
   },

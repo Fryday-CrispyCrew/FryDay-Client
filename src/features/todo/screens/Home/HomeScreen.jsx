@@ -89,6 +89,11 @@ export default function HomeScreen({navigation}) {
         navigation={navigation}
         onPressInput={editor.openEditor}
         categories={TAB_CATEGORIES}
+        onDoToday={(todoId) => {
+          // ✅ 여기서 "오늘하기" 처리(예: 날짜를 오늘로 바꾸거나 todayList로 이동 등)
+          // 나중에 react-query mutation 연결하면 여기서 mutate 호출하면 됨
+          console.log("오늘하기:", todoId);
+        }}
       />
 
       {/* ✅ @gorhom/bottom-sheet 기반 입력 시트 */}
