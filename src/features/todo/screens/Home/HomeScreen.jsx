@@ -7,6 +7,7 @@ import {
   Dimensions,
   StatusBar,
   TouchableOpacity,
+  ScrollView,
   Platform,
   InteractionManager,
   Pressable,
@@ -22,7 +23,7 @@ import TodoCard from "../../components/TodoCard";
 import TodoEditorSheet from "../../components/TodoEditorSheet/TodoEditorSheet";
 import {useTodoEditorController} from "../../hooks/useTodoEditorController";
 
-const {width} = Dimensions.get("window");
+const {width, height} = Dimensions.get("window");
 
 const TAB_CATEGORIES = [
   {categoryId: 1, label: "운동하기", color: "#FF5B22"}, // 주황
@@ -43,7 +44,6 @@ export default function HomeScreen({navigation}) {
   return (
     <SafeAreaView style={styles.safe} edges={["top"]} mode={"margin"}>
       <StatusBar barStyle="dark-content" />
-
       {/* topBar: 날짜 + 우측 SVG 아이콘들 */}
       <View style={styles.topBar}>
         <View>
@@ -74,27 +74,33 @@ export default function HomeScreen({navigation}) {
         </View>
       </View>
 
-      {/* 새우 일러스트 + 배경 */}
-      <View style={styles.illustrationWrapper}>
-        <View style={styles.sunburst} />
-        <View style={styles.shrimp}>
-          <Text style={{fontSize: 32}}>🦐</Text>
+      {/* ✅ illustrationWrapper + TodoCard 포함 영역 전체 스크롤 */}
+      <ScrollView
+        style={styles.bodyScroll}
+        contentContainerStyle={styles.bodyContent}
+        showsVerticalScrollIndicator={false}
+        keyboardShouldPersistTaps="handled"
+      >
+        {/* 새우 일러스트 + 배경 */}
+        <View style={styles.illustrationWrapper}>
+          <View style={styles.sunburst} />
+          <View style={styles.shrimp}>
+            <Text style={{fontSize: 32}}>🦐</Text>
+          </View>
         </View>
-      </View>
 
-      <View style={styles.dashedDivider} />
+        <View style={styles.dashedDivider} />
 
-      {/* ✅ TodoCard에서 인풋 누르면 openEditor 호출 */}
-      <TodoCard
-        navigation={navigation}
-        onPressInput={editor.openEditor}
-        categories={TAB_CATEGORIES}
-        onDoToday={(todoId) => {
-          // ✅ 여기서 "오늘하기" 처리(예: 날짜를 오늘로 바꾸거나 todayList로 이동 등)
-          // 나중에 react-query mutation 연결하면 여기서 mutate 호출하면 됨
-          console.log("오늘하기:", todoId);
-        }}
-      />
+        {/* ✅ TodoCard에서 인풋 누르면 openEditor 호출 */}
+        <TodoCard
+          navigation={navigation}
+          onPressInput={editor.openEditor}
+          categories={TAB_CATEGORIES}
+          onDoToday={(todoId) => {
+            console.log("오늘하기:", todoId);
+          }}
+        />
+      </ScrollView>
 
       {/* ✅ @gorhom/bottom-sheet 기반 입력 시트 */}
       <TodoEditorSheet {...editor.sheetProps} />
@@ -114,6 +120,12 @@ const styles = StyleSheet.create({
     justifyContent: "space-between",
     height: "11%",
   },
+  bodyScroll: {
+    flex: 1, // ✅ topBar 아래 남은 영역을 스크롤이 차지
+  },
+  bodyContent: {
+    paddingBottom: 36, // ✅ 맨 아래 여백(탭바/홈바 겹침 방지용)
+  },
   iconRow: {
     flexDirection: "row",
     alignItems: "center",
@@ -127,7 +139,8 @@ const styles = StyleSheet.create({
     justifyContent: "center",
   },
   illustrationWrapper: {
-    height: "42%",
+    // height: "42%",
+    height: height * 0.377,
     alignItems: "center",
     justifyContent: "center",
   },

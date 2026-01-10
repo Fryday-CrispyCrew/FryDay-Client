@@ -1,6 +1,6 @@
 // src/features/todo/components/TodoCard.jsx
 import React, {useMemo, useState, useCallback} from "react";
-import {View, StyleSheet, TouchableOpacity, ScrollView} from "react-native";
+import {View, StyleSheet, TouchableOpacity} from "react-native";
 import DraggableFlatList from "react-native-draggable-flatlist";
 
 import AppText from "../../../shared/components/AppText";
@@ -282,12 +282,7 @@ export default function TodoCard({
   };
 
   return (
-    <ScrollView
-      style={styles.container}
-      contentContainerStyle={styles.contentContainer}
-      showsVerticalScrollIndicator={false}
-      keyboardShouldPersistTaps="handled"
-    >
+    <View style={styles.container}>
       <View style={styles.todoSection}>{categories.map(renderSection)}</View>
 
       <View style={styles.dashedDivider} />
@@ -301,7 +296,7 @@ export default function TodoCard({
           새 카테고리 +
         </AppText>
       </TouchableOpacity>
-    </ScrollView>
+    </View>
   );
 }
 
@@ -309,11 +304,10 @@ const styles = StyleSheet.create({
   container: {
     paddingTop: 18,
     // borderWidth: 1,
-    flex: 1,
   },
-  contentContainer: {
-    paddingBottom: 36, // ✅ 스크롤 끝에서 버튼/여백 확보
-  },
+  // contentContainer: {
+  //   paddingBottom: 36, // ✅ 스크롤 끝에서 버튼/여백 확보
+  // },
   todoSection: {
     gap: 24,
     // borderWidth: 1,
