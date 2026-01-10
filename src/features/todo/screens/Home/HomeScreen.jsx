@@ -31,6 +31,8 @@ const TAB_CATEGORIES = [
   {categoryId: 3, label: "완전놀기", color: "#3CB492"}, // 연두
 ];
 
+const canAddCategory = TAB_CATEGORIES.length < 6;
+
 export default function HomeScreen({navigation}) {
   const editor = useTodoEditorController({
     categories: TAB_CATEGORIES,
@@ -67,7 +69,7 @@ export default function HomeScreen({navigation}) {
           <TouchableOpacity
             activeOpacity={0.5}
             style={styles.iconButton}
-            onPress={() => {}}
+            onPress={() => navigation?.navigate?.("CategList")}
           >
             <CategoryIcon width={24} height={24} />
           </TouchableOpacity>
