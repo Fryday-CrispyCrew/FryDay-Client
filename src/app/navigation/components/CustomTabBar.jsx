@@ -17,6 +17,11 @@ export default function CustomTabBar({state, navigation}) {
     return null;
   }
 
+  const isMyPage =
+      activeTabRoute.name === 'MyPage' ||
+      activeNestedRouteName === 'MyPage';
+
+
   return (
     <View style={[styles.tabBar, {paddingBottom: insets.bottom}]}>
       {state.routes.map((route, index) => {

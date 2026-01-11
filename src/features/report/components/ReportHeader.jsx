@@ -1,0 +1,58 @@
+import { View, TouchableOpacity } from 'react-native';
+import dayjs from 'dayjs';
+import AppText from '../../../shared/components/AppText';
+import ArrowLeft from '../assets/svg/ArrowLeft.svg';
+import ArrowRight from '../assets/svg/ArrowRight.svg';
+
+export default function ReportHeader({ currentDate, onChangeMonth, joinedAt }) {
+    const date = dayjs(currentDate).startOf('month');
+
+    const yearText = date.format('YYYY년');
+    const monthText = date.format('M월 리포트');
+
+    const todayMonth = dayjs().startOf('month');
+    const joinedMonth = dayjs(joinedAt).startOf('month');
+
+    const isPrevHidden = date.isSame(joinedMonth);
+    const isNextHidden = date.isSame(todayMonth);
+
+    const handlePrev = () => {
+        if (isPrevHidden) return;
+        onChangeMonth(date.subtract(1, 'month'));
+    };
+
+    const handleNext = () => {
+        const nextMonth = date.add(1, 'month')
+        if (nextMonth.isAfter(todayMonth)) return;
+        onChangeMonth(nextMonth);
+    };
+
+    return (
+        <View className="px-5 py-4 flex-row justify-between items-center">
+            <View>
+                <AppText variant="M500" className="text-gr500">
+                    {yearText}
+                </AppText>
+                <AppText variant="H3" className="mt-1 text-bk">
+                    {monthText}
+                </AppText>
+            </View>
+
+            <View className="flex-row items-center gap-3">
+                <TouchableOpacity onPress={handlePrev} activeOpacity={0.5}>
+                    <View className={`w-8 h-8 rounded-full items-center justify-center ${isPrevHidden ? 'opacity-30' : ''}`}>
+                        {!isPrevHidden &&
+                            <ArrowLeft width={18} height={18} />}
+                    </View>
+                </TouchableOpacity>
+
+                <TouchableOpacity onPress={handleNext} activeOpacity={0.5}>
+                    <View className={`w-8 h-8 rounded-full items-center justify-center ${isNextHidden ? 'opacity-30' : ''}`}>
+                        {!isNextHidden &&
+                            <ArrowRight width={18} height={18} />}
+                    </View>
+                </TouchableOpacity>
+            </View>
+        </View>
+    );
+}
