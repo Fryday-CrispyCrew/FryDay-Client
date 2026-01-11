@@ -3,7 +3,7 @@ import React from "react";
 import {createBottomTabNavigator} from "@react-navigation/bottom-tabs";
 import TodoStack from "./stacks/TodoStack";
 import CalendarStack from "./stacks/CalendarStack";
-import ReportScreen from "../../features/report/screens/report/ReportScreen";
+import ReportScreen from "../../features/report/screens/ReportScreen";
 import MyPageStack from "./stacks/MyPageStack";
 
 import CustomTabBar from "./components/CustomTabBar";
