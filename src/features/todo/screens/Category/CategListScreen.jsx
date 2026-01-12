@@ -31,7 +31,7 @@ export default function CategListScreen({navigation}) {
       <CategoryHeader
         variant="list"
         onPressBack={() => navigation.goBack()}
-        onPressPlus={() => navigation.navigate("CategEdit")}
+        onPressPlus={() => navigation.navigate("CategEdit", {mode: "create"})}
       />
 
       {/* List */}
@@ -43,11 +43,18 @@ export default function CategListScreen({navigation}) {
           contentContainerStyle={styles.listContent}
           ItemSeparatorComponent={() => <View style={styles.separator} />}
           renderItem={({item, drag, isActive}) => (
-            <CategoryItem
-              item={item}
-              onLongPressDrag={drag}
-              isActive={isActive}
-            />
+            <TouchableOpacity
+              activeOpacity={0.8}
+              onPress={() =>
+                navigation.navigate("CategEdit", {mode: "edit", category: item})
+              }
+            >
+              <CategoryItem
+                item={item}
+                onLongPressDrag={drag}
+                isActive={isActive}
+              />
+            </TouchableOpacity>
           )}
         />
       </View>

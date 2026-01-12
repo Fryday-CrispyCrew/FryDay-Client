@@ -33,31 +33,56 @@ const COLOR_OPTIONS = [
   colors.pk, // light pink
 ];
 
-export default function CategEditScreen({navigation}) {
-  // ✅ create mode UI
-  const [name, setName] = useState("");
-  const [selectedColor, setSelectedColor] = useState(null);
-  const [isColorOpen, setIsColorOpen] = useState(false); // 드롭다운 UI 확장용 (지금은 닫힘 상태만)
+export default function CategEditScreen({navigation, route}) {
+  const mode = route?.params?.mode ?? "create"; // "create" | "edit"
+  const editingCategory = route?.params?.category ?? null;
+
+  const isEdit = mode === "edit";
+
+  // ✅ edit이면 기존 값으로 초기화, create면 빈 값
+  const [name, setName] = useState(
+    isEdit ? (editingCategory?.label ?? "") : ""
+  );
+  const [selectedColor, setSelectedColor] = useState(
+    isEdit ? (editingCategory?.color ?? null) : null
+  );
+
+  const [isColorOpen, setIsColorOpen] = useState(false);
 
   const helperText = useMemo(
     () => `카테고리 이름은 ${MAX_NAME_LEN}자까지 입력할 수 있어요`,
     []
   );
 
+  // ✅ create: 이름+컬러 둘 다 필요
+  // ✅ edit: (보통은) 이름만 있어도 되지만, 현재 UX가 “컬러도 선택해야”가 아니라
+  //         “기존 컬러가 이미 선택되어 있음”이므로 selectedColor null이면 안 됨.
   const isSubmitEnabled =
     (name?.trim?.() ?? "").length > 0 && selectedColor != null;
 
   const onChangeName = (text) => {
-    // ✅ 최대 글자수 제한
-    const next = text.slice(0, MAX_NAME_LEN);
-    setName(next);
+    setName(text.slice(0, MAX_NAME_LEN));
   };
 
-  const onPressSubmit = () => {
+  const onPressSave = () => {
     if (!isSubmitEnabled) return;
-    if (selectedColor == null) return;
+
+    // TODO: edit API 연결
+    // updateCategory({ id: editingCategory.id, name: name.trim(), color: selectedColor })
+    navigation?.goBack?.();
+  };
+
+  const onPressCreate = () => {
+    if (!isSubmitEnabled) return;
+
     // TODO: create API 연결
     // createCategory({ name: name.trim(), color: selectedColor })
+    navigation?.goBack?.();
+  };
+
+  const onPressDelete = () => {
+    // TODO: delete API 연결
+    // deleteCategory({ id: editingCategory.id })
     navigation?.goBack?.();
   };
 
@@ -67,12 +92,10 @@ export default function CategEditScreen({navigation}) {
         style={styles.flex}
         behavior={Platform.OS === "ios" ? "padding" : undefined}
       >
-        {/* Header */}
         <View style={styles.headerWrap}>
           <CategoryHeader
-            variant="create"
+            variant={isEdit ? "edit" : "create"}
             onPressBack={() => navigation?.goBack?.()}
-            // ✅ create 화면은 + 버튼 없음
           />
         </View>
 
@@ -179,27 +202,63 @@ export default function CategEditScreen({navigation}) {
           )}
         </View>
 
-        {/* Bottom Button */}
+        {/* Bottom Buttons */}
         <View style={styles.bottomArea}>
-          <TouchableOpacity
-            activeOpacity={0.8}
-            onPress={onPressSubmit}
-            disabled={!isSubmitEnabled}
-            style={[
-              styles.submitBtn,
-              !isSubmitEnabled && styles.submitBtnDisabled,
-            ]}
-          >
-            <AppText
-              variant="L600"
+          {isEdit ? (
+            <>
+              <TouchableOpacity
+                activeOpacity={0.8}
+                onPress={onPressSave}
+                disabled={!isSubmitEnabled}
+                style={[
+                  styles.submitBtn,
+                  !isSubmitEnabled && styles.submitBtnDisabled,
+                ]}
+              >
+                <AppText
+                  variant="L600"
+                  style={[
+                    styles.submitText,
+                    !isSubmitEnabled && styles.submitTextDisabled,
+                  ]}
+                >
+                  변경사항 저장하기
+                </AppText>
+              </TouchableOpacity>
+
+              <View style={{height: 12}} />
+
+              <TouchableOpacity
+                activeOpacity={0.8}
+                onPress={onPressDelete}
+                style={styles.deleteBtn}
+              >
+                <AppText variant="L600" style={styles.deleteText}>
+                  카테고리 삭제하기
+                </AppText>
+              </TouchableOpacity>
+            </>
+          ) : (
+            <TouchableOpacity
+              activeOpacity={0.8}
+              onPress={onPressCreate}
+              disabled={!isSubmitEnabled}
               style={[
-                styles.submitText,
-                !isSubmitEnabled && styles.submitTextDisabled,
+                styles.submitBtn,
+                !isSubmitEnabled && styles.submitBtnDisabled,
               ]}
             >
-              추가하기
-            </AppText>
-          </TouchableOpacity>
+              <AppText
+                variant="L600"
+                style={[
+                  styles.submitText,
+                  !isSubmitEnabled && styles.submitTextDisabled,
+                ]}
+              >
+                추가하기
+              </AppText>
+            </TouchableOpacity>
+          )}
         </View>
       </KeyboardAvoidingView>
     </SafeAreaView>
@@ -338,5 +397,17 @@ const styles = StyleSheet.create({
     color: colors.wt,
     fontSize: 18,
     lineHeight: 18,
+  },
+  deleteBtn: {
+    height: 48,
+    borderRadius: 12,
+    backgroundColor: colors.wt,
+    borderWidth: 1,
+    borderColor: colors.bk,
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  deleteText: {
+    color: colors.bk,
   },
 });
