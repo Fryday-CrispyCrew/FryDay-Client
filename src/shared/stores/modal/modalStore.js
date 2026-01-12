@@ -1,4 +1,4 @@
-// src/shared/components/modal/modalStore.js
+// src/shared/stores/modal/modalStore.js
 import {create} from "zustand";
 
 export const useModalStore = create((set, get) => ({

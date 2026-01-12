@@ -1,7 +1,7 @@
 // src/shared/components/modal/ModalHost.jsx
 import React from "react";
 import CommonModal from "./CommonModal";
-import {useModalStore} from "./modalStore";
+import {useModalStore} from "../../stores/modal/modalStore";
 
 export default function ModalHost() {
   const {visible, props, close} = useModalStore();

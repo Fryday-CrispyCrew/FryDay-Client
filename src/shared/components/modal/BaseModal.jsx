@@ -9,6 +9,8 @@ import {
   StyleSheet,
 } from "react-native";
 import colors from "../../styles/colors";
+import ClearIcon from "../../assets/svg/Clear.svg"; // ✅ 경로는 네 파일 위치에 맞게 수정
+import AppText from "../AppText";
 
 export default function BaseModal({
   visible,
@@ -35,7 +37,9 @@ export default function BaseModal({
       <View style={styles.card}>
         <View style={styles.header}>
           <View style={styles.side} />
-          <Text style={styles.title}>{title}</Text>
+          <AppText variant="H3" style={styles.title}>
+            {title}
+          </AppText>
 
           {showClose ? (
             <TouchableOpacity
@@ -43,7 +47,11 @@ export default function BaseModal({
               hitSlop={10}
               style={styles.closeBtn}
             >
-              <Text style={styles.closeText}>×</Text>
+              <ClearIcon
+                width={18}
+                height={18}
+                color={colors?.bk ?? "#141312"}
+              />
             </TouchableOpacity>
           ) : (
             <View style={styles.side} />
@@ -59,7 +67,7 @@ export default function BaseModal({
 const styles = StyleSheet.create({
   backdrop: {
     ...StyleSheet.absoluteFillObject,
-    backgroundColor: "rgba(0,0,0,0.45)", // ✅ 스샷 같은 dim
+    backgroundColor: "rgba(0,0,0,0.5)", // ✅ 스샷 같은 dim
   },
   card: {
     position: "absolute",
@@ -81,10 +89,7 @@ const styles = StyleSheet.create({
   },
   side: {width: 34, height: 18},
   title: {
-    fontFamily: "Pretendard-SemiBold",
-    fontSize: 16,
     lineHeight: 16 * 1.5,
-    color: colors.bk,
   },
   closeBtn: {
     width: 34,
@@ -93,5 +98,5 @@ const styles = StyleSheet.create({
     justifyContent: "center",
   },
   closeText: {fontSize: 18, lineHeight: 18, color: colors.bk},
-  body: {paddingHorizontal: 18, paddingVertical: 16},
+  body: {paddingHorizontal: 40, paddingVertical: 24},
 });

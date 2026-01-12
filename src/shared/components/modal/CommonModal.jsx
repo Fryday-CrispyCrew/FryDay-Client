@@ -3,6 +3,7 @@ import React from "react";
 import {View, Text, TouchableOpacity, StyleSheet} from "react-native";
 import BaseModal from "./BaseModal";
 import colors from "../../styles/colors";
+import AppText from "../AppText";
 
 function Button({label, onPress, variant = "primary"}) {
   const isPrimary = variant === "primary";
@@ -12,14 +13,15 @@ function Button({label, onPress, variant = "primary"}) {
       onPress={onPress}
       style={[styles.btn, isPrimary ? styles.btnPrimary : styles.btnOutline]}
     >
-      <Text
+      <AppText
+        variant="L500"
         style={[
           styles.btnText,
           isPrimary ? styles.btnTextPrimary : styles.btnTextOutline,
         ]}
       >
         {label}
-      </Text>
+      </AppText>
     </TouchableOpacity>
   );
 }
@@ -49,7 +51,11 @@ export default function CommonModal({
       onBackdropPress={closeOnBackdrop ? onClose : undefined}
       showClose={showClose}
     >
-      {!!description && <Text style={styles.desc}>{description}</Text>}
+      {!!description && (
+        <AppText variant="L500" style={styles.desc}>
+          {description}
+        </AppText>
+      )}
 
       {!!footerSlot && <View style={{marginTop: 12}}>{footerSlot}</View>}
 
@@ -75,17 +81,16 @@ export default function CommonModal({
 
 const styles = StyleSheet.create({
   desc: {
-    fontFamily: "Pretendard-Medium",
-    fontSize: 12,
-    lineHeight: 12 * 1.5,
-    color: colors.gr500,
+    lineHeight: 14 * 1.5,
+    color: colors.gr700,
     textAlign: "center",
-    marginTop: 6,
+    // marginTop: 6,
+    // borderWidth: 1,
   },
-  btnStack: {marginTop: 16, gap: 10},
+  btnStack: {marginTop: 24, gap: 12},
   btn: {
     height: 48,
-    borderRadius: 14,
+    borderRadius: 16,
     alignItems: "center",
     justifyContent: "center",
   },
@@ -95,7 +100,7 @@ const styles = StyleSheet.create({
     borderColor: colors.bk,
     backgroundColor: colors.wt,
   },
-  btnText: {fontFamily: "Pretendard-SemiBold", fontSize: 14},
+  btnText: {lineHeight: 14 * 1.5, color: colors.bk},
   btnTextPrimary: {color: colors.wt},
   btnTextOutline: {color: colors.bk},
 });

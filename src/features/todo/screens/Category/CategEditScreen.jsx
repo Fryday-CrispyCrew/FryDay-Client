@@ -16,10 +16,9 @@ import ChevronIcon from "../../../../shared/components/ChevronIcon";
 import ClearIcon from "../../../../shared/assets/svg/Clear.svg"; // ✅ 경로는 네 파일 위치에 맞게 수정
 import colors from "../../../../shared/styles/colors";
 
-const MAX_NAME_LEN = 8;
+import {useModalStore} from "../../../../shared/stores/modal/modalStore";
 
-// mock: 기본 컬러(스샷은 오렌지)
-const DEFAULT_COLOR = "#FF5B22";
+const MAX_NAME_LEN = 8;
 
 const COLOR_OPTIONS = [
   colors.or, // orange
@@ -48,6 +47,8 @@ export default function CategEditScreen({navigation, route}) {
   );
 
   const [isColorOpen, setIsColorOpen] = useState(false);
+
+  const openModal = useModalStore((s) => s.open);
 
   const helperText = useMemo(
     () => `카테고리 이름은 ${MAX_NAME_LEN}자까지 입력할 수 있어요`,
@@ -81,9 +82,33 @@ export default function CategEditScreen({navigation, route}) {
   };
 
   const onPressDelete = () => {
-    // TODO: delete API 연결
-    // deleteCategory({ id: editingCategory.id })
-    navigation?.goBack?.();
+    openModal({
+      title: "카테고리 삭제하기",
+      description:
+        "카테고리에 속한 모든 투두가 함께 삭제돼요!\n정말 카테고리를 삭제할까요?",
+      closeOnBackdrop: true,
+      showClose: true,
+
+      primary: {
+        label: "네, 삭제할래요",
+        variant: "outline",
+        onPress: () => {
+          // TODO: delete API 연결
+          // deleteCategory({ id: editingCategory.id })
+
+          navigation?.goBack?.();
+        },
+        // closeAfterPress: false, // ✅ API 완료 후 닫고 싶으면 false로 바꾸고 store.close()를 직접 호출
+      },
+
+      secondary: {
+        label: "아니요, 그만 둘래요",
+        variant: "outline",
+        onPress: () => {
+          // 닫기는 ModalHost가 자동 처리함
+        },
+      },
+    });
   };
 
   return (
