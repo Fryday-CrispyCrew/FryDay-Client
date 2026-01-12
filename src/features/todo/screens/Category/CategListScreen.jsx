@@ -10,12 +10,12 @@ import colors from "../../../../shared/styles/colors";
 import CategoryHeader from "../../components/Category/CategoryHeader";
 
 const MOCK_CATEGORIES = [
-  {id: "1", label: "카테고리 이름 1", color: "#693838"},
-  {id: "2", label: "카테고리 이름 2", color: "#8BC34A"},
-  {id: "3", label: "카테고리 이름 3", color: "#4A90E2"},
-  {id: "4", label: "카테고리 이름 4", color: "#E91E63"},
-  {id: "5", label: "카테고리 이름 5", color: "#3CB492"},
-  {id: "6", label: "카테고리 이름 6", color: "#9C27B0"},
+  {id: "1", label: "카테고리 이름 1", color: colors.br},
+  {id: "2", label: "카테고리 이름 2", color: colors.lg},
+  {id: "3", label: "카테고리 이름 3", color: colors.cb},
+  {id: "4", label: "카테고리 이름 4", color: colors.dp},
+  {id: "5", label: "카테고리 이름 5", color: colors.mb2},
+  {id: "6", label: "카테고리 이름 6", color: colors.vl},
 ];
 
 export default function CategListScreen({navigation}) {

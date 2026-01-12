@@ -140,35 +140,35 @@ export default function CategEditScreen({navigation, route}) {
           {/* 컬러 */}
           <View style={{height: 26}} />
 
-          <View style={styles.colorRowHeader}>
-            <AppText variant="L600" style={styles.sectionTitle}>
-              컬러
-            </AppText>
+          <TouchableOpacity
+            activeOpacity={0.7}
+            onPress={() => setIsColorOpen((prev) => !prev)}
+            // hitSlop={10}
+          >
+            <View style={styles.colorRowHeader}>
+              <AppText variant="L600" style={styles.sectionTitle}>
+                컬러
+              </AppText>
+              <View style={styles.colorRight}>
+                <View
+                  style={[
+                    styles.colorDot,
+                    {
+                      backgroundColor: selectedColor ?? "transparent", // ✅ 선택 전 placeholder
+                    },
+                  ]}
+                />
 
-            <TouchableOpacity
-              activeOpacity={0.7}
-              onPress={() => setIsColorOpen((prev) => !prev)}
-              style={styles.colorRight}
-              hitSlop={10}
-            >
-              <View
-                style={[
-                  styles.colorDot,
-                  {
-                    backgroundColor: selectedColor ?? "transparent", // ✅ 선택 전 placeholder
-                  },
-                ]}
-              />
-
-              <View style={{width: 8}} />
-              <ChevronIcon
-                direction={isColorOpen ? "up" : "down"}
-                size={18}
-                color={colors?.gr500 ?? "#8A8989"}
-                strokeWidth={2}
-              />
-            </TouchableOpacity>
-          </View>
+                <View style={{width: 8}} />
+                <ChevronIcon
+                  direction={isColorOpen ? "up" : "down"}
+                  size={18}
+                  color={colors?.gr500 ?? "#8A8989"}
+                  strokeWidth={2}
+                />
+              </View>
+            </View>
+          </TouchableOpacity>
 
           {/* ✅ 여기 아래에 컬러 팔레트(드롭다운) 넣으면 됨
               create 화면 스샷은 닫힌 상태라 현재는 렌더 안 함 */}
