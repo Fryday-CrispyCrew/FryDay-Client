@@ -293,7 +293,11 @@ export default function TodoCard({
 
       <TouchableOpacity
         activeOpacity={0.8}
-        onPress={() => navigation?.navigate?.("CategCreate")}
+        onPress={() =>
+          navigation.navigate("Category", {
+            screen: "CategEdit",
+          })
+        }
         style={styles.newCategoryButton}
       >
         <AppText variant="M600" style={{color: "#FF5B22"}}>
