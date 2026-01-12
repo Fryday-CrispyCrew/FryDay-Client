@@ -17,6 +17,7 @@ import {GestureHandlerRootView} from "react-native-gesture-handler";
 import {SafeAreaProvider} from "react-native-safe-area-context";
 import {BottomSheetModalProvider} from "@gorhom/bottom-sheet";
 import {CenterToastHost} from "../shared/components/toast/CenterToast";
+import ModalHost from "../shared/components/modal/ModalHost";
 
 export default function AppProviders({children}) {
   const [fontsLoaded] = useFonts({
@@ -63,6 +64,7 @@ export default function AppProviders({children}) {
           <QueryClientProvider client={queryClient}>
             <NavigationContainer>{children}</NavigationContainer>
             <CenterToastHost />
+            <ModalHost />
           </QueryClientProvider>
         </BottomSheetModalProvider>
       </SafeAreaProvider>
