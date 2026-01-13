@@ -17,7 +17,7 @@ export default class AppErrorBoundary extends React.Component {
 
     render() {
         if (this.state.hasError) {
-            return <ErrorScreen onRetry={this.reset} />;
+            return <ErrorScreen onRetry={() => {}} />;
         }
         return this.props.children;
     }

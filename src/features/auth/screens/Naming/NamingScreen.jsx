@@ -1,13 +1,20 @@
-import React, { useMemo, useState } from "react";
-import { SafeAreaView, View, Image, TextInput, TouchableOpacity, useWindowDimensions } from "react-native";
+import React, { useEffect, useMemo, useRef, useState } from "react";
+import {
+    View,
+    Image,
+    TextInput,
+    TouchableOpacity,
+    useWindowDimensions,
+} from "react-native";
 import * as SecureStore from "expo-secure-store";
 import AppText from "../../../../shared/components/AppText";
+import { SafeAreaView } from "react-native-safe-area-context";
 
 import Balloon from "../../assets/svg/naming-balloon.svg";
 import NamingArrow from "../../assets/svg/naming-arrow.svg";
-import {CommonActions} from "@react-navigation/native";
 import AsyncStorage from "@react-native-async-storage/async-storage";
-import {STEP_KEY} from "../../../../shared/constants/onboardingStep";
+import { STEP_KEY, ONBOARDING_STEP } from "../../../../shared/constants/onboardingStep";
+import { checkNickname, setMyNickname } from "../../api/nickname";
 
 export default function NamingScreen({ navigation }) {
     const { width, height } = useWindowDimensions();
@@ -15,12 +22,41 @@ export default function NamingScreen({ navigation }) {
     const [name, setName] = useState("");
     const trimmed = name.trim();
 
-    const duplicatedNames = useMemo(() => ["김닉네임", "admin", "test"], []);
-    const isDuplicate = useMemo(() => duplicatedNames.includes(trimmed), [duplicatedNames, trimmed]);
+    const [available, setAvailable] = useState(null); // true | false | null
+    const [checking, setChecking] = useState(false);
+
+    const reqIdRef = useRef(0);
 
     const isTooLong = trimmed.length > 10;
     const isLengthValid = trimmed.length >= 2 && trimmed.length <= 10;
-    const isValid = isLengthValid && !isDuplicate;
+
+    const isDuplicate = available === false;
+    const isValid = isLengthValid && available === true;
+
+    useEffect(() => {
+        if (!trimmed || !isLengthValid) {
+            setAvailable(null);
+            return;
+        }
+
+        const myId = ++reqIdRef.current;
+        setChecking(true);
+
+        const t = setTimeout(async () => {
+            try {
+                const res = await checkNickname(trimmed);
+                if (reqIdRef.current !== myId) return;
+                setAvailable(res.available);
+            } catch {
+                if (reqIdRef.current !== myId) return;
+                setAvailable(null);
+            } finally {
+                if (reqIdRef.current === myId) setChecking(false);
+            }
+        }, 300);
+
+        return () => clearTimeout(t);
+    }, [trimmed, isLengthValid]);
 
     const balloonEmphasis = isTooLong || isDuplicate ? "error" : "default";
 
@@ -28,23 +64,41 @@ export default function NamingScreen({ navigation }) {
         if (!trimmed) return "이제 다 왔어요!\n마지막으로 당신의 이름을 알려주세요.";
         if (isTooLong) return "아차차...\n닉네임은 10자까지 입력 가능해요!";
         if (isDuplicate) return "아앗...\n이미 존재하는 닉네임이에요!";
-        return "좋아요!\n가입하기 버튼을 눌러주세요.";
-    }, [trimmed, isTooLong, isDuplicate]);
+
+        if (isLengthValid && available === null && !checking)
+            return "닉네임을 확인할 수 없어요.\n잠시 후 다시 시도해주세요.";
+        if (available === true) return "좋아요!\n가입하기 버튼을 눌러주세요.";
+        return "닉네임을 2~10자로 입력해주세요.";
+    }, [trimmed, isTooLong, isDuplicate, isLengthValid, available, checking]);
 
     const onSubmit = async () => {
         if (!isValid) return;
 
-        await SecureStore.setItemAsync("nickname", trimmed);
-        await AsyncStorage.setItem(STEP_KEY, "NEEDS_AGREEMENT");
+        try {
+            await setMyNickname(trimmed);
 
-        const rootNav = navigation.getParent("root") ?? navigation.getParent();
-        rootNav?.reset({ index: 0, routes: [{ name: "Main" }] });
+            await SecureStore.setItemAsync("nickname", trimmed);
+            await AsyncStorage.setItem(STEP_KEY, ONBOARDING_STEP.NEEDS_AGREEMENT);
 
-        requestAnimationFrame(() => {
-            rootNav?.navigate("Agreement");
-        });
+            const rootNav = navigation.getParent("root") ?? navigation.getParent();
+            rootNav?.reset({ index: 0, routes: [{ name: "Main" }] });
+
+            requestAnimationFrame(() => {
+                rootNav?.navigate("Agreement");
+            });
+        } catch (e) {
+            console.log("[onSubmit] ERR", e?.status, e?.code, e?.message);
+            if (e?.status === 409 && e?.code === "DUPLICATE_NICKNAME") {
+                setAvailable(false);
+                return;
+            }
+            if (e?.status === 400 && e?.code === "INVALID_NICKNAME_LENGTH") {
+                setAvailable(null);
+                return;
+            }
+            setAvailable(null);
+        }
     };
-
 
     const [line1, line2] = balloonText.split("\n");
 
@@ -100,7 +154,6 @@ export default function NamingScreen({ navigation }) {
                     />
                 </View>
 
-                {/* 입력 영역 */}
                 <View style={{ marginTop: Math.max(20, height * 0.04) }}>
                     <AppText variant="M500" className="text-gr500 mb-2">
                         내 이름은...

@@ -1,7 +1,11 @@
-import React, { useMemo } from "react";
-import { SafeAreaView, View, Image, TouchableOpacity, useWindowDimensions } from "react-native";
-import AsyncStorage from "@react-native-async-storage/async-storage";
+import React, { useMemo, useEffect } from "react";
+import { View, Image, TouchableOpacity, useWindowDimensions } from "react-native";
 import AppText from "../../../../shared/components/AppText";
+import { SafeAreaView } from "react-native-safe-area-context";
+
+import { kakaoGetAccessToken } from "../../lib/kakao";
+import { naverGetAccessToken } from "../../lib/naver";
+import { loginWithAccessToken } from "../../api/socialLogin";
 
 const LOGGED_IN_KEY = "hasLoggedIn";
 const STEP_KEY = "onboardingStep";
@@ -24,6 +28,30 @@ export default function LoginScreen({ navigation }) {
     //     await AsyncStorage.setItem(STEP_KEY, "NEEDS_NICKNAME");
     //     navigation.reset({ index: 0, routes: [{ name: "Naming" }] });
     // };
+    const onPressKakao = async () => {
+        try {
+            const token = await kakaoGetAccessToken();
+            await loginWithAccessToken("KAKAO", token, navigation);
+
+        } catch (e) {
+            console.log("ERR status", e?.response?.status);
+            // console.log("ERR data", e?.response?.data);
+            // console.log("ERR headers", e?.response?.headers);
+            // console.log("ERR message", e?.message);
+        }
+
+    };
+
+    const onPressNaver = async () => {
+        try {
+            const token = await naverGetAccessToken();
+            console.log("NAVER token =", token);
+            await loginWithAccessToken("NAVER", token, navigation);
+        } catch (e) {
+            console.log(e);
+        }
+    };
+
 
     return (
         <SafeAreaView className="flex-1 bg-or">
@@ -56,14 +84,12 @@ export default function LoginScreen({ navigation }) {
 
                     <View className="flex-row justify-center" style={{ columnGap: Math.min(32, width * 0.07), marginBottom: 18 }}>
                         {[
-                            { label: "카카오", img: require("../../assets/png/login-kakao.png") },
-                            { label: "네이버", img: require("../../assets/png/login-naver.png") },
-                            { label: "Apple", img: require("../../assets/png/login-apple.png") },
+                            { label: "카카오", img: require("../../assets/png/login-kakao.png"), onPress: onPressKakao },
+                            { label: "네이버", img: require("../../assets/png/login-naver.png"), onPress: onPressNaver },
+                            { label: "Apple", img: require("../../assets/png/login-apple.png"), onPress: () => {} },
                         ].map((it) => (
                             <View key={it.label} className="items-center">
-                                <TouchableOpacity activeOpacity={0.8}
-                                                  onPress={() => navigation.reset({ index: 0, routes: [{ name: "Naming" }] })}>
-
+                                <TouchableOpacity activeOpacity={0.8} onPress={it.onPress}>
                                     <Image source={it.img} style={{ width: iconSize, height: iconSize }} resizeMode="contain" />
                                 </TouchableOpacity>
                                 <AppText variant="M500" className="text-wt mt-2">
@@ -71,6 +97,7 @@ export default function LoginScreen({ navigation }) {
                                 </AppText>
                             </View>
                         ))}
+
                     </View>
 
                     <AppText variant="S400" className="text-wt/75 text-center mt-4" style={{ paddingHorizontal: 8 }}>
