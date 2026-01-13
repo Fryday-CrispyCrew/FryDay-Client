@@ -2,7 +2,6 @@
 import React from "react";
 import {createNativeStackNavigator} from "@react-navigation/native-stack";
 import CategListScreen from "../../../features/todo/screens/Category/CategListScreen";
-import CategCreateScreen from "../../../features/todo/screens/Category/CategCreateScreen";
 import CategEditScreen from "../../../features/todo/screens/Category/CategEditScreen";
 
 const Stack = createNativeStackNavigator();
@@ -14,7 +13,6 @@ export default function CategoryStack() {
       screenOptions={{headerShown: false}}
     >
       <Stack.Screen name="CategList" component={CategListScreen} />
-      <Stack.Screen name="CategCreate" component={CategCreateScreen} />
       <Stack.Screen name="CategEdit" component={CategEditScreen} />
     </Stack.Navigator>
   );
