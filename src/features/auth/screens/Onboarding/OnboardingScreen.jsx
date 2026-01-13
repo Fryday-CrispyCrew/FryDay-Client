@@ -1,8 +1,10 @@
 import React, { useMemo, useState } from "react";
-import { SafeAreaView, View, Image, TouchableOpacity, Pressable, useWindowDimensions } from "react-native";
+import {View, Image, TouchableOpacity, Pressable, useWindowDimensions } from "react-native";
 import * as SecureStore from "expo-secure-store";
 import AppText from "../../../../shared/components/AppText";
 import SkipIcon from "../../assets/svg/skip-arrow.svg";
+import {completeOnboarding} from "../../api/onboarding";
+import { SafeAreaView } from "react-native-safe-area-context";
 
 const PAGES = [
     { id: "1", title: "할 일을 미루면 발등에 불이 떨어지죠.", desc: "FryDay에서는 그 불을 튀김기의 열기로 바꿉니다.", image: require("../../assets/png/onboarding-1.png") },
@@ -23,9 +25,15 @@ export default function OnboardingScreen({ navigation }) {
     const overlayHeight = useMemo(() => Math.max(96, height * 0.14), [height]);
 
     const onDone = async () => {
+        try {
+            await completeOnboarding();
+        } catch (e) {
+            console.log("[completeOnboarding] ERR", e?.status, e?.code, e?.message);
+        }
         await SecureStore.setItemAsync("hasOnboarded", "true");
         navigation.reset({ index: 0, routes: [{ name: "Main" }] });
     };
+
 
     const onNext = () => {
         if (isLast) return;

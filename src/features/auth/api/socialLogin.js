@@ -12,7 +12,7 @@ function nextRoute(status) {
         case "NEEDS_ONBOARDING":
             return "Onboarding";
         case "COMPLETED":
-            return "MainTabs";
+            return "Main";
         default:
             return "Naming";
     }
@@ -21,12 +21,18 @@ function nextRoute(status) {
 export async function loginWithAccessToken(provider, accessToken, navigation) {
     const deviceId = await getDeviceId();
 
+    console.log("provider", provider);
+    console.log("tokenLen", accessToken?.length);
+    console.log("deviceId", deviceId);
+
+    if (!deviceId) throw new Error("deviceId 없음");
+
     const { data } = await api.post("/api/users/social/login", {
         provider,
         accessToken,
         deviceId,
         deviceType: Platform.OS === "ios" ? "iOS" : "Android",
-        deviceName: "ExpoGo",
+        deviceName: "FryDay",
     });
 
     await AsyncStorage.setItem("accessToken", data.accessToken);
@@ -46,7 +52,6 @@ export async function loginWithCode(provider, code, navigation) {
         code,
         deviceId,
         deviceType: Platform.OS === "ios" ? "iOS" : "Android",
-        deviceName: "ExpoGo",
     });
 
     await AsyncStorage.setItem("accessToken", data.accessToken);

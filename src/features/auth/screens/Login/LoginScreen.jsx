@@ -1,7 +1,7 @@
 import React, { useMemo, useEffect } from "react";
-import { SafeAreaView, View, Image, TouchableOpacity, useWindowDimensions } from "react-native";
-import AsyncStorage from "@react-native-async-storage/async-storage";
+import { View, Image, TouchableOpacity, useWindowDimensions } from "react-native";
 import AppText from "../../../../shared/components/AppText";
+import { SafeAreaView } from "react-native-safe-area-context";
 
 import { kakaoGetAccessToken } from "../../lib/kakao";
 import { naverGetAccessToken } from "../../lib/naver";
@@ -32,14 +32,20 @@ export default function LoginScreen({ navigation }) {
         try {
             const token = await kakaoGetAccessToken();
             await loginWithAccessToken("KAKAO", token, navigation);
+
         } catch (e) {
-            console.log(e);
+            console.log("ERR status", e?.response?.status);
+            // console.log("ERR data", e?.response?.data);
+            // console.log("ERR headers", e?.response?.headers);
+            // console.log("ERR message", e?.message);
         }
+
     };
 
     const onPressNaver = async () => {
         try {
             const token = await naverGetAccessToken();
+            console.log("NAVER token =", token);
             await loginWithAccessToken("NAVER", token, navigation);
         } catch (e) {
             console.log(e);

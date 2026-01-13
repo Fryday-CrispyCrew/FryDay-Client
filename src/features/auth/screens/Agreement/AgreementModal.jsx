@@ -3,7 +3,7 @@ import { View, Modal, TouchableOpacity } from "react-native";
 import { useFocusEffect } from "@react-navigation/native";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import AppText from "../../../../shared/components/AppText";
-import { STEP_KEY } from "../../../../shared/constants/onboardingStep";
+import { STEP_KEY, ONBOARDING_STEP } from "../../../../shared/constants/onboardingStep";
 
 export default function AgreementModal({ navigation }) {
     const [visible, setVisible] = useState(false);
@@ -29,7 +29,7 @@ export default function AgreementModal({ navigation }) {
 
     const goOnboarding = async () => {
         setVisible(false);
-        await AsyncStorage.setItem(STEP_KEY, "NEEDS_ONBOARDING");
+        await AsyncStorage.setItem(STEP_KEY, ONBOARDING_STEP.NEEDS_ONBOARDING);
         navigation.reset({ index: 0, routes: [{ name: "Onboarding" }] });
     };
 

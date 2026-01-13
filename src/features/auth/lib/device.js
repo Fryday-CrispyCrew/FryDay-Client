@@ -1,12 +1,24 @@
-import AsyncStorage from "@react-native-async-storage/async-storage";
+import * as Application from "expo-application";
+import * as SecureStore from "expo-secure-store";
+import { Platform } from "react-native";
+
+const KEY = "deviceId";
 
 export async function getDeviceId() {
-    const key = "deviceId";
-    let id = await AsyncStorage.getItem(key);
+    if (Platform.OS === "ios") {
+        const id = await Application.getIosIdForVendorAsync();
+        if (id) return id;
+    } else {
+        const id = Application.getAndroidId?.();
+        if (id) return id;
+    }
 
-    if (id) return id;
+    const saved = await SecureStore.getItemAsync(KEY);
+    if (saved) return saved;
 
-    id = `${Date.now()}-${Math.random().toString(16).slice(2)}`;
-    await AsyncStorage.setItem(key, id);
-    return id;
+    const uuid =
+        globalThis.crypto?.randomUUID?.() ?? `${Date.now()}-${Math.random()}`;
+
+    await SecureStore.setItemAsync(KEY, uuid);
+    return uuid;
 }

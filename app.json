@@ -2,6 +2,7 @@
   "expo": {
     "name": "FryDay",
     "slug": "FryDay",
+    "scheme": "fryday",
     "version": "1.0.0",
     "orientation": "portrait",
     "icon": "./assets/fryday-icon.png",
@@ -13,7 +14,8 @@
       "backgroundColor": "#FF5B22"
     },
     "ios": {
-      "supportsTablet": true
+      "supportsTablet": true,
+      "bundleIdentifier": "com.hamsj2413.fryday"
     },
     "android": {
       "adaptiveIcon": {
