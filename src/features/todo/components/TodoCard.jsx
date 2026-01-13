@@ -56,6 +56,10 @@ function TodoItem({
   }, [isOpen, translateX]);
 
   const panGesture = Gesture.Pan()
+    // ✅ 가로로 확실히 움직일 때만 스와이프를 "활성화"
+    .activeOffsetX([-8, 8])
+    // ✅ 세로로 조금만 움직여도 스와이프는 "실패" → ScrollView가 스크롤 우선
+    .failOffsetY([-4, 4])
     .onBegin(() => {
       startX.value = translateX.value;
     })
@@ -289,7 +293,11 @@ export default function TodoCard({
 
       <TouchableOpacity
         activeOpacity={0.8}
-        onPress={() => navigation?.navigate?.("CategCreate")}
+        onPress={() =>
+          navigation.navigate("Category", {
+            screen: "CategEdit",
+          })
+        }
         style={styles.newCategoryButton}
       >
         <AppText variant="M600" style={{color: "#FF5B22"}}>

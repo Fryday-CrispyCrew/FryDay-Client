@@ -69,7 +69,11 @@ export default function HomeScreen({navigation}) {
           <TouchableOpacity
             activeOpacity={0.5}
             style={styles.iconButton}
-            onPress={() => navigation?.navigate?.("CategList")}
+            onPress={() =>
+              navigation.navigate("Category", {
+                screen: "CategList",
+              })
+            }
           >
             <CategoryIcon width={24} height={24} />
           </TouchableOpacity>
