@@ -1,5 +1,5 @@
 // src/features/todo/screens/Category/CategListScreen.jsx
-import React, {useCallback, useState} from "react";
+import React, {useCallback, useMemo, useState} from "react";
 import {View, StyleSheet, TouchableOpacity} from "react-native";
 import {SafeAreaView} from "react-native-safe-area-context";
 import DraggableFlatList from "react-native-draggable-flatlist";
@@ -8,22 +8,45 @@ import AppText from "../../../../shared/components/AppText";
 import CategoryItem from "../../components/Category/CategoryItem";
 import colors from "../../../../shared/styles/colors";
 import CategoryHeader from "../../components/Category/CategoryHeader";
+import {useCategoriesQuery} from "../../queries/category/useCategoriesQuery";
 
-const MOCK_CATEGORIES = [
-  {id: "1", label: "카테고리 이름 1", color: colors.br},
-  {id: "2", label: "카테고리 이름 2", color: colors.lg},
-  {id: "3", label: "카테고리 이름 3", color: colors.cb},
-  {id: "4", label: "카테고리 이름 4", color: colors.dp},
-  {id: "5", label: "카테고리 이름 5", color: colors.mb2},
-  {id: "6", label: "카테고리 이름 6", color: colors.vl},
-];
+// const MOCK_CATEGORIES = [
+//   {id: "1", label: "카테고리 이름 1", color: colors.br},
+//   {id: "2", label: "카테고리 이름 2", color: colors.lg},
+//   {id: "3", label: "카테고리 이름 3", color: colors.cb},
+//   {id: "4", label: "카테고리 이름 4", color: colors.dp},
+//   {id: "5", label: "카테고리 이름 5", color: colors.mb2},
+//   {id: "6", label: "카테고리 이름 6", color: colors.vl},
+// ];
 
 export default function CategListScreen({navigation}) {
-  const [categories, setCategories] = useState(MOCK_CATEGORIES);
+  const {
+    data: serverCategories = [],
+    isLoading,
+    isError,
+    error,
+  } = useCategoriesQuery();
 
-  const handleDragEnd = useCallback(({data}) => {
-    setCategories(data); // ✅ 순서 반영 (mock)
-  }, []);
+  if (isError) {
+    // TanStack Query error는 보통 axios error일 가능성이 높음
+    console.log("[useCategoriesQuery] error:", error);
+    console.log("[useCategoriesQuery] message:", error?.message);
+    console.log("[useCategoriesQuery] status:", error?.response?.status);
+    console.log("[useCategoriesQuery] data:", error?.response?.data);
+  }
+
+  // ✅ API 응답(data[].name, data[].colorHex, data[].displayOrder ...) → 화면용(item.label, item.color)로 변환
+  const categories = useMemo(() => {
+    return [...(serverCategories ?? [])]
+      .sort((a, b) => (a?.displayOrder ?? 0) - (b?.displayOrder ?? 0))
+      .map((c) => ({
+        id: String(c.id),
+        label: c.name,
+        color: c.colorHex, // 화면 표시용
+        // edit 화면에 넘길 때 쓰고 싶으면 원본 필드도 같이 유지 가능
+        raw: c,
+      }));
+  }, [serverCategories]);
 
   return (
     <SafeAreaView style={styles.safe} edges={["top"]}>
@@ -34,30 +57,47 @@ export default function CategListScreen({navigation}) {
         onPressPlus={() => navigation.navigate("CategEdit", {mode: "create"})}
       />
 
-      {/* List */}
-      <View style={styles.listWrap}>
-        <DraggableFlatList
-          data={categories}
-          keyExtractor={(item) => item.id}
-          onDragEnd={handleDragEnd}
-          contentContainerStyle={styles.listContent}
-          ItemSeparatorComponent={() => <View style={styles.separator} />}
-          renderItem={({item, drag, isActive}) => (
-            <TouchableOpacity
-              activeOpacity={0.8}
-              onPress={() =>
-                navigation.navigate("CategEdit", {mode: "edit", category: item})
-              }
-            >
-              <CategoryItem
-                item={item}
-                onLongPressDrag={drag}
-                isActive={isActive}
-              />
-            </TouchableOpacity>
-          )}
-        />
-      </View>
+      {isLoading ? (
+        <View style={{paddingTop: 16}}>
+          <AppText variant="S400" style={{color: colors.gr500}}>
+            카테고리를 불러오는 중…
+          </AppText>
+        </View>
+      ) : isError ? (
+        <View style={{paddingTop: 16}}>
+          <AppText variant="S400" style={{color: colors.gr500}}>
+            카테고리를 불러오지 못했어요.
+          </AppText>
+        </View>
+      ) : (
+        //List
+        <View style={styles.listWrap}>
+          <DraggableFlatList
+            data={categories}
+            keyExtractor={(item) => item.id}
+            // onDragEnd={handleDragEnd}
+            contentContainerStyle={styles.listContent}
+            ItemSeparatorComponent={() => <View style={styles.separator} />}
+            renderItem={({item, drag, isActive}) => (
+              <TouchableOpacity
+                activeOpacity={0.8}
+                onPress={() =>
+                  navigation.navigate("CategEdit", {
+                    mode: "edit",
+                    category: item.raw ?? item, // ✅ edit 화면에서 원본 응답을 쓰고 싶을 때
+                  })
+                }
+              >
+                <CategoryItem
+                  item={item}
+                  onLongPressDrag={drag}
+                  isActive={isActive}
+                />
+              </TouchableOpacity>
+            )}
+          />
+        </View>
+      )}
 
       {/* Footer hint */}
       <View style={styles.footer}>
