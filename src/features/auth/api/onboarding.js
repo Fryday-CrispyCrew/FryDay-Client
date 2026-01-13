@@ -1,69 +1,41 @@
 import AsyncStorage from "@react-native-async-storage/async-storage";
-const BASE_URL = process.env.EXPO_PUBLIC_BACKEND_URL;
-
-async function parseJson(res) {
-    try {
-        return await res.json();
-    } catch {
-        return {};
-    }
-}
+import api from "../../../shared/lib/api";
 
 async function getAccessToken() {
     return await AsyncStorage.getItem("accessToken");
 }
 
-export async function setConsent({ privacyRequired, pushNotificationOptional }) {
+export async function setConsent({ privacyRequired, pushNotificationOptional }, options = {}) {
     const token = await getAccessToken();
     if (!token) throw new Error("인증 토큰이 없습니다.");
 
-    const url = `${BASE_URL}/api/users/me/consent`;
-    const res = await fetch(url, {
-        method: "POST",
-        headers: {
-            "Content-Type": "application/json",
-            Authorization: `Bearer ${token}`,
-        },
-        body: JSON.stringify({
+    const { data } = await api.post(
+        "/api/users/me/consent",
+        {
             privacyRequired: !!privacyRequired,
             pushNotificationOptional: !!pushNotificationOptional,
-        }),
-    });
-
-    const data = await parseJson(res);
-
-    if (!res.ok) {
-        const err = new Error(data.message ?? `동의 설정 실패 (${res.status})`);
-        err.status = res.status;
-        err.code = data.code;
-        err.body = data;
-        throw err;
-    }
+        },
+        {
+            headers: { Authorization: `Bearer ${token}` },
+            meta: { skipErrorToast: !!options.skipErrorToast },
+        }
+    );
 
     return data;
 }
 
-export async function completeOnboarding() {
+export async function completeOnboarding(options = {}) {
     const token = await getAccessToken();
     if (!token) throw new Error("인증 토큰이 없습니다.");
 
-    const url = `${BASE_URL}/api/users/me/onboarding`;
-    const res = await fetch(url, {
-        method: "POST",
-        headers: {
-            Authorization: `Bearer ${token}`,
-        },
-    });
-
-    const data = await parseJson(res);
-
-    if (!res.ok) {
-        const err = new Error(data.message ?? `온보딩 완료 처리 실패 (${res.status})`);
-        err.status = res.status;
-        err.code = data.code;
-        err.body = data;
-        throw err;
-    }
+    const { data } = await api.post(
+        "/api/users/me/onboarding",
+        null,
+        {
+            headers: { Authorization: `Bearer ${token}` },
+            meta: { skipErrorToast: !!options.skipErrorToast },
+        }
+    );
 
     return data;
 }
