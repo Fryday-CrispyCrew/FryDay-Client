@@ -4,7 +4,9 @@ import api from "../../../../shared/lib/api"; // ✅ 프로젝트 내 api.js 위
 export const categoryApi = {
   // GET /api/categories
   getCategories: async () => {
-    const res = await api.get("/api/categories");
+    const res = await api.get("/api/categories", {
+      meta: {skipErrorToast: true}, // ✅ 이 GET은 토스트 안 뜸
+    });
     return res.data; // { success, message, data: [...], timestamp }
   },
 
