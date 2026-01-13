@@ -2,11 +2,30 @@
 import axios from "axios";
 import {toast} from "../components/toast/CenterToast";
 import {TOAST_MESSAGES} from "../constants/toastMessages";
+import {getAccessToken} from "./storage/tokenStorage";
 
 const api = axios.create({
   baseURL: process.env.EXPO_PUBLIC_API_URL,
   timeout: 10000,
 });
+
+api.interceptors.request.use(
+  async (config) => {
+    const accessToken = await getAccessToken();
+
+    if (accessToken) {
+      config.headers = {
+        ...config.headers,
+        Authorization: `Bearer ${accessToken}`,
+      };
+    }
+
+    return config;
+  },
+  (error) => {
+    return Promise.reject(error);
+  }
+);
 
 api.interceptors.response.use(
   (res) => res,
