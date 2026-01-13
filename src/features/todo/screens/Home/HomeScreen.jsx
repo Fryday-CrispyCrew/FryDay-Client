@@ -1,5 +1,5 @@
-// src/screens/Home/HomeScreen.jsx
-import React from "react";
+// src/features/todo/screens/Home/HomeScreen.jsx
+import React, {useCallback, useEffect, useMemo, useRef, useState} from "react";
 import {
   View,
   Text,
@@ -7,21 +7,45 @@ import {
   Dimensions,
   StatusBar,
   TouchableOpacity,
+  ScrollView,
+  Platform,
+  InteractionManager,
+  Pressable,
+  Keyboard,
 } from "react-native";
 import {SafeAreaView} from "react-native-safe-area-context";
 import AppText from "../../../../shared/components/AppText";
 import TodayIcon from "../../assets/svg/Today.svg";
 import CategoryIcon from "../../assets/svg/Category.svg";
 
-import TodoCard from "../../components/TodoCard"; // ✅ 새로 추가
+import TodoCard from "../../components/TodoCard";
 
-const {width} = Dimensions.get("window");
+import TodoEditorSheet from "../../components/TodoEditorSheet/TodoEditorSheet";
+import {useTodoEditorController} from "../../hooks/useTodoEditorController";
+
+const {width, height} = Dimensions.get("window");
+
+const TAB_CATEGORIES = [
+  {categoryId: 1, label: "운동하기", color: "#FF5B22"}, // 주황
+  {categoryId: 2, label: "공부하기", color: "#693838"}, // 브라운
+  {categoryId: 3, label: "완전놀기", color: "#3CB492"}, // 연두
+];
+
+const canAddCategory = TAB_CATEGORIES.length < 6;
 
 export default function HomeScreen({navigation}) {
+  const editor = useTodoEditorController({
+    categories: TAB_CATEGORIES,
+    // 나중에 react-query mutation 연결하는 자리
+    onSubmitTodo: async ({todo, text, categoryId}) => {
+      // todo?.id 있으면 update, 없으면 create
+      // await mutateAsync(...)
+    },
+  });
+
   return (
     <SafeAreaView style={styles.safe} edges={["top"]} mode={"margin"}>
       <StatusBar barStyle="dark-content" />
-
       {/* topBar: 날짜 + 우측 SVG 아이콘들 */}
       <View style={styles.topBar}>
         <View>
@@ -45,23 +69,47 @@ export default function HomeScreen({navigation}) {
           <TouchableOpacity
             activeOpacity={0.5}
             style={styles.iconButton}
-            onPress={() => {}}
+            onPress={() =>
+              navigation.navigate("Category", {
+                screen: "CategList",
+              })
+            }
           >
             <CategoryIcon width={24} height={24} />
           </TouchableOpacity>
         </View>
       </View>
 
-      {/* 새우 일러스트 + 배경 */}
-      <View style={styles.illustrationWrapper}>
-        <View style={styles.sunburst} />
-        <View style={styles.shrimp}>
-          <Text style={{fontSize: 32}}>🦐</Text>
+      {/* ✅ illustrationWrapper + TodoCard 포함 영역 전체 스크롤 */}
+      <ScrollView
+        style={styles.bodyScroll}
+        contentContainerStyle={styles.bodyContent}
+        showsVerticalScrollIndicator={false}
+        keyboardShouldPersistTaps="handled"
+      >
+        {/* 새우 일러스트 + 배경 */}
+        <View style={styles.illustrationWrapper}>
+          <View style={styles.sunburst} />
+          <View style={styles.shrimp}>
+            <Text style={{fontSize: 32}}>🦐</Text>
+          </View>
         </View>
-      </View>
 
-      {/* 분리된 카드 컴포넌트 */}
-      <TodoCard navigation={navigation} />
+        <View style={styles.dashedDivider} />
+
+        {/* ✅ TodoCard에서 인풋 누르면 openEditor 호출 */}
+        <TodoCard
+          navigation={navigation}
+          onPressInput={editor.openEditor}
+          categories={TAB_CATEGORIES}
+          onDoToday={(todoId) => {
+            console.log("오늘하기:", todoId);
+          }}
+        />
+      </ScrollView>
+
+      {/* ✅ @gorhom/bottom-sheet 기반 입력 시트 */}
+      <TodoEditorSheet {...editor.sheetProps} />
     </SafeAreaView>
   );
 }
@@ -78,6 +126,12 @@ const styles = StyleSheet.create({
     justifyContent: "space-between",
     height: "11%",
   },
+  bodyScroll: {
+    flex: 1, // ✅ topBar 아래 남은 영역을 스크롤이 차지
+  },
+  bodyContent: {
+    paddingBottom: 36, // ✅ 맨 아래 여백(탭바/홈바 겹침 방지용)
+  },
   iconRow: {
     flexDirection: "row",
     alignItems: "center",
@@ -91,7 +145,8 @@ const styles = StyleSheet.create({
     justifyContent: "center",
   },
   illustrationWrapper: {
-    height: "42%",
+    // height: "42%",
+    height: height * 0.377,
     alignItems: "center",
     justifyContent: "center",
   },
@@ -110,5 +165,71 @@ const styles = StyleSheet.create({
     backgroundColor: "#FF7A1A",
     alignItems: "center",
     justifyContent: "center",
+  },
+  dashedDivider: {
+    // marginVertical: 18,
+    borderBottomWidth: 1,
+    borderBottomColor: "#E6E6E6",
+    borderStyle: "dashed",
+  },
+});
+
+// ✅ 바텀 시트 내부 스타일
+const sheetStyles = StyleSheet.create({
+  container: {
+    flex: 1,
+    paddingHorizontal: 20,
+    paddingTop: 8,
+    paddingBottom: 16,
+  },
+  categoryRow: {
+    flexDirection: "row",
+    marginBottom: 12,
+  },
+  categoryChip: {
+    paddingHorizontal: 16,
+    paddingVertical: 7,
+    borderRadius: 999,
+    backgroundColor: "#F0F0F0",
+  },
+  categoryText: {
+    fontSize: 13,
+    color: "#B0B0B0",
+  },
+  inputRow: {
+    flexDirection: "row",
+    alignItems: "center",
+  },
+  inputWrapper: {
+    flex: 1,
+    borderRadius: 16,
+    backgroundColor: "#FFFFFF",
+    paddingHorizontal: 16,
+    paddingVertical: 6,
+    // height: 44,
+    // shadowColor: "#000",
+    // shadowOpacity: 0.04,
+    // shadowRadius: 6,
+    // shadowOffset: {width: 0, height: 2},
+    // elevation: 4,
+  },
+  input: {
+    fontFamily: "Pretendard-Medium",
+    fontSize: 12,
+    // fontSize: 15,
+    color: "#333333",
+  },
+  submitButton: {
+    marginLeft: 8,
+    width: 44,
+    height: 44,
+    borderRadius: 22,
+    backgroundColor: "#E4E4E4",
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  submitIcon: {
+    fontSize: 18,
+    color: "#888888",
   },
 });

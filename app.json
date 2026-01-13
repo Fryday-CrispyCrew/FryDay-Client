@@ -32,7 +32,20 @@
     "plugins": [
       "expo-font",
       "expo-build-properties",
-      "expo-secure-store"
+      "expo-secure-store",
+      [
+        "@react-native-community/datetimepicker",
+        {
+          "android": {
+            "timePicker": {
+              "headerBackground": {"light": "#FF5B22", "dark": "#555555"},
+              "numbersSelectorColor": {"light": "#FF5B22", "dark": "#80CBC4"},
+              "background": {"light": "#FFFFFF", "dark": "#383838"},
+              "numbersBackgroundColor": {"light": "#EEEEEE", "dark": "#555555"}
+            }
+          }
+        }
+      ]
     ],
     "extra": {
       "eas": {

@@ -1,50 +1,38 @@
-// src/screens/Home/components/TodoCard.jsx
-import React, {useState} from "react";
-import {
-  View,
-  StyleSheet,
-  TouchableOpacity,
-  TextInput,
-  Dimensions,
-  ScrollView,
-} from "react-native";
-import {Gesture, GestureDetector} from "react-native-gesture-handler";
+// src/features/todo/components/TodoCard.jsx
+import React, {useMemo, useState, useCallback} from "react";
+import {View, StyleSheet, TouchableOpacity} from "react-native";
 import DraggableFlatList from "react-native-draggable-flatlist";
+
+import AppText from "../../../shared/components/AppText";
+import DragHandleIcon from "../assets/svg/DragHandle.svg";
+import DeleteIcon from "../assets/svg/Delete.svg";
+import StartDateIcon from "../assets/svg/StartDate.svg";
+import TodoRadioOnIcon from "../assets/svg/RadioOn.svg";
+import TodoRadioOffIcon from "../assets/svg/RadioOff.svg";
+
+import {Gesture, GestureDetector} from "react-native-gesture-handler";
 import Animated, {
   useSharedValue,
   useAnimatedStyle,
   withTiming,
-  // runOnJS,
+  runOnJS,
 } from "react-native-reanimated";
-// import {runOnJS} from "react-native-worklets";
-import {scheduleOnRN} from "react-native-worklets";
-import AppText from "../../../shared/components/AppText";
-import TodoRadioOnIcon from "../assets/svg/RadioOn.svg";
-import TodoRadioOffIcon from "../assets/svg/RadioOff.svg";
-import DragHandleIcon from "../assets/svg/DragHandle.svg";
-import DeleteIcon from "../assets/svg/Delete.svg";
+import ChevronIcon from "../../../shared/components/ChevronIcon";
+import colors from "../../../shared/styles/colors";
 
-const {width} = Dimensions.get("window");
-
-// 카테고리 탭 목록
-const TAB_CATEGORIES = [
-  {categoryId: 0, label: "전체보기"}, // 0은 "전체" 용
-  {categoryId: 1, label: "운동하기"},
-  {categoryId: 2, label: "공부하기"},
-  {categoryId: 3, label: "완전놀기"},
-];
-
-// 목업 투두
+/** ✅ 목업 투두 (규칙: 현재는 mock) */
 const MOCK_TODOS = [
-  {id: "1", title: "헬스하기", done: false, categoryId: 1},
-  {id: "2", title: "런닝 뛰기", done: false, categoryId: 1},
-  {id: "3", title: "필라테스하기", done: false, categoryId: 1},
-  {id: "4", title: "토익 공부", done: true, categoryId: 2},
-  {id: "5", title: "알고리즘 공부", done: true, categoryId: 2},
+  {id: "1", title: "연우님 기획 차력쇼 감상", done: false, categoryId: 1},
+  {id: "2", title: "기찬님의 프로젝트 관리 전략", done: false, categoryId: 1},
+  {id: "3", title: "토익 공부", done: true, categoryId: 2},
+  {id: "4", title: "알고리즘 공부", done: true, categoryId: 2},
 ];
 
-const SWIPE_OPEN_OFFSET = -54;
-const SWIPE_THRESHOLD = -36;
+const ACTION_BTN_W = 56; // 버튼 하나 너비(원하는 값으로)
+const ACTION_GAP = 10; // 버튼 간격
+const ACTIONS_TOTAL_W = ACTION_BTN_W * 2 + ACTION_GAP;
+const SWIPE_OPEN_OFFSET = -ACTIONS_TOTAL_W;
+const SWIPE_THRESHOLD = -(ACTIONS_TOTAL_W * 0.5);
 
 function TodoItem({
   item,
@@ -55,19 +43,23 @@ function TodoItem({
   onSwipeOpen,
   onSwipeClose,
   onLongPressDrag,
+  onPressItem, // ✅ 추가
+  onDoToday,
 }) {
   const translateX = useSharedValue(0);
   const startX = useSharedValue(0);
 
   React.useEffect(() => {
-    if (isOpen) {
-      translateX.value = withTiming(SWIPE_OPEN_OFFSET, {duration: 180});
-    } else {
-      translateX.value = withTiming(0, {duration: 180});
-    }
+    translateX.value = withTiming(isOpen ? SWIPE_OPEN_OFFSET : 0, {
+      duration: 180,
+    });
   }, [isOpen, translateX]);
 
   const panGesture = Gesture.Pan()
+    // ✅ 가로로 확실히 움직일 때만 스와이프를 "활성화"
+    .activeOffsetX([-8, 8])
+    // ✅ 세로로 조금만 움직여도 스와이프는 "실패" → ScrollView가 스크롤 우선
+    .failOffsetY([-4, 4])
     .onBegin(() => {
       startX.value = translateX.value;
     })
@@ -80,12 +72,10 @@ function TodoItem({
     .onEnd(() => {
       if (translateX.value < SWIPE_THRESHOLD) {
         translateX.value = withTiming(SWIPE_OPEN_OFFSET, {duration: 180});
-        // runOnJS(onSwipeOpen)(item.id);
-        scheduleOnRN(onSwipeOpen, item.id);
+        runOnJS(onSwipeOpen)(item.id);
       } else {
         translateX.value = withTiming(0, {duration: 180});
-        // runOnJS(onSwipeClose)(item.id);
-        scheduleOnRN(onSwipeClose, item.id);
+        runOnJS(onSwipeClose)(item.id);
       }
     });
 
@@ -104,19 +94,30 @@ function TodoItem({
         >
           <DeleteIcon width={20} height={20} />
         </TouchableOpacity>
+
+        <TouchableOpacity
+          style={styles.todoTodayButton}
+          activeOpacity={0.7}
+          onPress={() => onDoToday?.(item.id)}
+        >
+          <StartDateIcon width={20} height={20} />
+          {/* 아이콘 있으면 아이콘으로, 없으면 텍스트로 */}
+          {/* <AppText variant="M600" style={{color: "#FF5B22"}}>
+            오늘
+          </AppText> */}
+        </TouchableOpacity>
       </View>
 
-      {/* 앞에서 좌우로 움직이는 투두 카드 */}
+      {/* 앞에서 좌우로 움직이는 투두 row */}
       <GestureDetector gesture={panGesture}>
         <Animated.View
           style={[
             styles.todoRow,
-            isActive && {backgroundColor: "#EAEAEA"},
-            isOpen && {backgroundColor: "#EAEAEA", borderRadius: 12},
+            isActive && {backgroundColor: "#F2F2F2"},
+            isOpen && {backgroundColor: "#F2F2F2"},
             animatedRowStyle,
           ]}
         >
-          {/* 드래그 핸들 */}
           <TouchableOpacity
             onLongPress={onLongPressDrag}
             hitSlop={8}
@@ -125,12 +126,17 @@ function TodoItem({
             <DragHandleIcon width={12} />
           </TouchableOpacity>
 
-          {/* 텍스트 */}
-          <AppText variant="M500" className="text-bk" style={{flex: 1}}>
-            {item.title}
-          </AppText>
+          {/* ✅ 텍스트 눌러서 수정 바텀시트 열기 */}
+          <TouchableOpacity
+            activeOpacity={0.7}
+            style={{flex: 1}}
+            onPress={() => onPressItem?.(item)}
+          >
+            <AppText variant="M500" className="text-bk">
+              {item.title}
+            </AppText>
+          </TouchableOpacity>
 
-          {/* 완료 라디오 버튼 */}
           <TouchableOpacity
             style={styles.todoRadioHitArea}
             activeOpacity={0.6}
@@ -148,184 +154,222 @@ function TodoItem({
   );
 }
 
-export default function TodoCard({navigation}) {
+function Chevron({isOpen, color}) {
+  return (
+    // <AppText variant="M600" style={{color, fontSize: 16, lineHeight: 16}}>
+    //   {isOpen ? "˄" : "˅"}
+    // </AppText>
+    <ChevronIcon
+      direction={isOpen ? "up" : "down"}
+      size={14}
+      color={color}
+      strokeWidth={2}
+    />
+  );
+}
+
+export default function TodoCard({
+  navigation,
+  onPressInput,
+  categories = [],
+  onDoToday,
+}) {
   const [todos, setTodos] = useState(MOCK_TODOS);
-  const [selectedCategoryId, setSelectedCategoryId] = useState(0);
   const [swipedTodoId, setSwipedTodoId] = useState(null);
 
-  const filteredTodos =
-    selectedCategoryId === 0
-      ? todos
-      : todos.filter((todo) => todo.categoryId === selectedCategoryId);
+  // ✅ 기본: 첫 카테고리만 펼쳐진 상태로 시작
+  const [openMap, setOpenMap] = useState(() => {
+    const first = categories?.[0]?.categoryId;
+    return first ? {[first]: true} : {};
+  });
 
-  const toggleTodoDone = (id) => {
+  const grouped = useMemo(() => {
+    const by = {};
+    for (const c of categories) by[c.categoryId] = [];
+    for (const t of todos) {
+      if (!by[t.categoryId]) by[t.categoryId] = [];
+      by[t.categoryId].push(t);
+    }
+    return by;
+  }, [todos, categories]);
+
+  const toggleTodoDone = useCallback((id) => {
     setTodos((prev) =>
       prev.map((todo) => (todo.id === id ? {...todo, done: !todo.done} : todo))
     );
-  };
+  }, []);
 
-  const handleDragEnd = ({data}) => {
-    if (selectedCategoryId === 0) {
-      setTodos(data);
-      return;
-    }
-    setTodos((prev) => {
-      const others = prev.filter(
-        (todo) => todo.categoryId !== selectedCategoryId
-      );
-      return [...others, ...data];
-    });
-  };
-
-  const handleDeleteTodo = (id) => {
+  const handleDeleteTodo = useCallback((id) => {
     setTodos((prev) => prev.filter((todo) => todo.id !== id));
-  };
+  }, []);
 
-  const renderTodo = ({item, drag, isActive}) => {
+  const handleToggleSection = useCallback((categoryId) => {
+    setOpenMap((prev) => ({...prev, [categoryId]: !prev?.[categoryId]}));
+  }, []);
+
+  const handlePressAddTodo = useCallback(
+    (categoryId) => {
+      onPressInput?.({id: null, title: "", categoryId, mode: "create"}); // ✅ 바텀시트 열기 + 카테고리 힌트 전달(원하면 사용)
+    },
+    [onPressInput]
+  );
+
+  const handleDragEnd = useCallback((categoryId, data) => {
+    setTodos((prev) => {
+      const others = prev.filter((t) => t.categoryId !== categoryId);
+      return [...others, ...data.map((x) => ({...x, categoryId}))];
+    });
+  }, []);
+
+  const renderSection = (category) => {
+    const isOpen = !!openMap?.[category.categoryId];
+    const sectionTodos = grouped?.[category.categoryId] ?? [];
+    const color = category.color ?? colors.or;
+
     return (
-      <TodoItem
-        item={item}
-        isActive={isActive}
-        isOpen={swipedTodoId === item.id}
-        onToggleDone={toggleTodoDone}
-        onDelete={handleDeleteTodo}
-        onSwipeOpen={(id) => setSwipedTodoId(id)}
-        onSwipeClose={(id) =>
-          setSwipedTodoId((prev) => (prev === id ? null : prev))
-        }
-        onLongPressDrag={drag}
-      />
-    );
-  };
-
-  return (
-    <View style={styles.card}>
-      <View style={styles.topContainer}>
-        {/* 탭 영역 */}
-        <View style={styles.tabRow}>
-          <ScrollView
-            horizontal
-            showsHorizontalScrollIndicator={false}
-            style={styles.tabScroll}
-            contentContainerStyle={styles.tabScrollContent}
-          >
-            {TAB_CATEGORIES.map((tab) => {
-              const isActive = tab.categoryId === selectedCategoryId;
-              return (
-                <TouchableOpacity
-                  key={tab.categoryId}
-                  style={[styles.tab, isActive && styles.tabActive]}
-                  activeOpacity={0.7}
-                  onPress={() => setSelectedCategoryId(tab.categoryId)}
-                >
-                  <AppText
-                    variant="M600"
-                    className={isActive ? "text-wt" : "text-gr300"}
-                  >
-                    {tab.label}
-                  </AppText>
-                </TouchableOpacity>
-              );
-            })}
-          </ScrollView>
-
-          {/* 오른쪽: ＋ 새 카테고리 버튼 */}
+      <View key={category.categoryId} style={styles.section}>
+        <View style={styles.sectionHeaderRow}>
           <TouchableOpacity
-            style={styles.tabNew}
-            activeOpacity={0.7}
-            onPress={() => navigation.navigate("CategoryCreate")}
+            activeOpacity={0.8}
+            onPress={() => handleToggleSection(category.categoryId)}
+            style={[styles.categoryChip, {backgroundColor: color}]}
           >
-            <AppText variant="M600" className="text-gr300">
-              ＋ 새 카테고리
+            <AppText variant="M600" style={{color: colors.wt}}>
+              {category.label}
+            </AppText>
+            <View style={{width: 4}} />
+            <Chevron isOpen={isOpen} color="#FFFFFF" />
+          </TouchableOpacity>
+
+          <TouchableOpacity
+            activeOpacity={0.7}
+            onPress={() => handlePressAddTodo(category.categoryId)}
+            style={styles.addTodoButton}
+          >
+            <AppText variant="M600" style={{color}}>
+              새 투두 튀기기 +
             </AppText>
           </TouchableOpacity>
         </View>
 
-        {/* 투두 리스트 */}
-        <View style={styles.flatListContainer}>
-          <DraggableFlatList
-            data={filteredTodos}
-            keyExtractor={(item) => item.id}
-            renderItem={renderTodo}
-            onDragEnd={handleDragEnd}
-            style={{flexGrow: 1}}
-            ItemSeparatorComponent={() => <View style={{height: 6}} />}
-          />
-        </View>
+        {isOpen && (
+          <View style={styles.listArea}>
+            <DraggableFlatList
+              data={sectionTodos}
+              keyExtractor={(item) => item.id}
+              onDragEnd={({data}) => handleDragEnd(category.categoryId, data)}
+              ItemSeparatorComponent={() => <View style={{height: 8}} />}
+              renderItem={({item, drag, isActive}) => (
+                <TodoItem
+                  item={item}
+                  isActive={isActive}
+                  isOpen={swipedTodoId === item.id}
+                  onToggleDone={toggleTodoDone}
+                  onDelete={handleDeleteTodo}
+                  onDoToday={onDoToday}
+                  onSwipeOpen={(id) => setSwipedTodoId(id)}
+                  onSwipeClose={(id) =>
+                    setSwipedTodoId((prev) => (prev === id ? null : prev))
+                  }
+                  onLongPressDrag={drag}
+                  onPressItem={(todo) =>
+                    onPressInput?.({...todo, mode: "edit"})
+                  } // ✅ 추가
+                />
+              )}
+              scrollEnabled={false} // ✅ 섹션 안에서 스크롤 안 하고, Home 전체 스크롤로(원하면 부모에 ScrollView)
+            />
+          </View>
+        )}
       </View>
+    );
+  };
 
-      {/* 인풋 */}
-      <View style={styles.inputWrapper}>
-        <TextInput
-          placeholder="두근두근, 무엇을 튀겨볼까요?"
-          placeholderTextColor="#B0B0B0"
-          className="text-gr500"
-          style={styles.textInput}
-          underlineColorAndroid="transparent"
-        />
-        <View className="bg-gr200" style={styles.inputLine} />
-      </View>
+  return (
+    <View style={styles.container}>
+      <View style={styles.todoSection}>{categories.map(renderSection)}</View>
+
+      <View style={styles.dashedDivider} />
+
+      <TouchableOpacity
+        activeOpacity={0.8}
+        onPress={() =>
+          navigation.navigate("Category", {
+            screen: "CategEdit",
+          })
+        }
+        style={styles.newCategoryButton}
+      >
+        <AppText variant="M600" style={{color: "#FF5B22"}}>
+          새 카테고리 +
+        </AppText>
+      </TouchableOpacity>
     </View>
   );
 }
 
 const styles = StyleSheet.create({
-  /* 카드 */
-  card: {
-    justifyContent: "space-between",
-    height: "44%",
-    backgroundColor: "#FFFFFF",
-    borderRadius: 12,
-    paddingTop: 16,
-    paddingBottom: 12,
-    paddingHorizontal: 15,
-    shadowColor: "rgba(20, 19, 18, 0.2)",
-    shadowOffset: {width: 0, height: 0},
-    shadowOpacity: 1,
-    shadowRadius: 12,
-    elevation: 4,
+  container: {
+    paddingTop: 18,
+    // borderWidth: 1,
   },
-  topContainer: {
-    flex: 1,
-    justifyContent: "space-between",
-    gap: "5%",
+  // contentContainer: {
+  //   paddingBottom: 36, // ✅ 스크롤 끝에서 버튼/여백 확보
+  // },
+  todoSection: {
+    gap: 24,
+    // borderWidth: 1,
   },
-  /* 탭 */
-  tabRow: {
-    flexDirection: "row",
-    alignItems: "center",
-    height: "18.3%",
-    gap: 8,
-  },
-  tabScroll: {
-    width: "70%",
-  },
-  tabScrollContent: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 6,
-  },
-  tab: {
-    paddingHorizontal: 12,
-    paddingVertical: 8,
-    borderRadius: 999,
-    backgroundColor: "#F5F5F5",
-  },
-  tabActive: {
-    backgroundColor: "#FF5B22",
-  },
-  tabNew: {
-    paddingHorizontal: 3,
-    paddingVertical: 8,
-    backgroundColor: "transparent",
-    borderColor: "#F0F0F0",
-  },
-  flatListContainer: {
-    flex: 1,
-    overflow: "hidden",
+  section: {
+    // paddingTop: 14,
+    // borderWidth: 1,
   },
 
-  /* 투두 */
+  sectionHeaderRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+    paddingHorizontal: 2,
+  },
+
+  categoryChip: {
+    flexDirection: "row",
+    alignItems: "center",
+    borderRadius: 999,
+    paddingHorizontal: 12,
+    paddingVertical: 8,
+  },
+
+  addTodoButton: {
+    paddingHorizontal: 6,
+    paddingVertical: 8,
+  },
+
+  listArea: {
+    paddingTop: 10,
+    paddingHorizontal: 4,
+    // borderWidth: 1,
+  },
+
+  dashedDivider: {
+    // marginTop: 14,
+    marginVertical: 18,
+    borderBottomWidth: 1,
+    borderBottomColor: "#E6E6E6",
+    borderStyle: "dashed",
+  },
+
+  newCategoryButton: {
+    // marginTop: 22,
+    alignSelf: "flex-start",
+    borderWidth: 1,
+    borderColor: "#FF5B22",
+    borderRadius: 24,
+    paddingHorizontal: 12,
+    paddingVertical: 8,
+  },
+
+  /** TodoItem styles */
   todoRowWrapper: {
     height: 36,
     justifyContent: "center",
@@ -334,13 +378,13 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     alignItems: "center",
     height: 36,
-    paddingHorizontal: 4,
-    paddingVertical: 10,
-    borderRadius: 16,
-    backgroundColor: "#FFFFFF",
+    // paddingHorizontal: 6,
+    borderRadius: 12,
+    backgroundColor: "#FAFAFA",
+    // borderWidth: 1,
   },
   dragHandleButton: {
-    paddingHorizontal: 4,
+    paddingHorizontal: 6,
     justifyContent: "center",
     alignItems: "center",
     marginRight: 6,
@@ -355,34 +399,31 @@ const styles = StyleSheet.create({
     right: 0,
     top: 0,
     bottom: 0,
-    justifyContent: "center",
-    alignItems: "flex-end",
-    paddingRight: 4,
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "flex-end",
+    gap: 10,
+    paddingRight: 6,
   },
   todoDeleteButton: {
     paddingHorizontal: 12,
     paddingVertical: 8,
     borderRadius: 12,
+    // width: 56,
+    // height: 44,
+    // borderRadius: 14,
     backgroundColor: "#FF5B22",
     alignItems: "center",
     justifyContent: "center",
   },
-
-  /* 입력 */
-  inputWrapper: {
-    height: "18.9%",
+  todoTodayButton: {
+    paddingHorizontal: 10,
+    paddingVertical: 6,
+    borderRadius: 12,
+    backgroundColor: "#FFFFFF",
+    borderWidth: 2,
+    borderColor: "#FF5B22",
+    alignItems: "center",
     justifyContent: "center",
-  },
-  textInput: {
-    fontFamily: "Pretendard-Medium",
-    fontSize: 12,
-    backgroundColor: "transparent",
-    borderRadius: 0,
-    paddingHorizontal: 0,
-  },
-  inputLine: {
-    position: "relative",
-    width: "100%",
-    height: 1,
   },
 });
