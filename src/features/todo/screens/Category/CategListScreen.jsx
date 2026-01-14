@@ -127,6 +127,7 @@ export default function CategListScreen({navigation}) {
                   navigation.navigate("CategEdit", {
                     mode: "edit",
                     category: item, // ✅ { id, label, color } 형태로 전달 (edit 초기값에 맞춤)
+                    categoryCount: categories.length, // ✅ 현재 전체 카테고리 개수 전달
                   })
                 }
               >

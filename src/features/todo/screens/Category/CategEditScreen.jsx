@@ -54,6 +54,7 @@ const COLOR_CODE_MAP = {
 export default function CategEditScreen({navigation, route}) {
   const mode = route?.params?.mode ?? "create"; // "create" | "edit"
   const editingCategory = route?.params?.category ?? null;
+  const categoryCount = route?.params?.categoryCount ?? 0;
 
   const isEdit = mode === "edit";
 
@@ -169,6 +170,25 @@ export default function CategEditScreen({navigation, route}) {
         variant: "outline",
         onPress: () => {
           if (isDeleting) return;
+
+          // ✅ 카테고리는 최소 3개 유지
+          if (categoryCount <= 3) {
+            console.log("categorycount: ", categoryCount);
+            setTimeout(() => {
+              openModal({
+                title: "알림",
+                description: "카테고리는 최소 3개를 유지해야 해요!",
+                closeOnBackdrop: true,
+                showClose: true,
+                primary: {
+                  label: "확인했어요",
+                  variant: "primary",
+                  onPress: () => {},
+                },
+              });
+            }, 0);
+            return;
+          }
 
           deleteCategory({
             categoryId: editingCategory?.id, // ✅ path variable
