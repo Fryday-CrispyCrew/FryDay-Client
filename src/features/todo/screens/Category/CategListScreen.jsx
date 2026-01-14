@@ -9,6 +9,7 @@ import CategoryItem from "../../components/Category/CategoryItem";
 import colors from "../../../../shared/styles/colors";
 import CategoryHeader from "../../components/Category/CategoryHeader";
 import {useCategoriesQuery} from "../../queries/category/useCategoriesQuery";
+import {useReorderCategoriesMutation} from "../../queries/category/useReorderCategoriesMutation";
 import {toast} from "../../../../shared/components/toast/CenterToast";
 
 // const MOCK_CATEGORIES = [
@@ -27,6 +28,8 @@ export default function CategListScreen({navigation}) {
     isError,
     error,
   } = useCategoriesQuery();
+
+  const [listData, setListData] = useState([]);
 
   useEffect(() => {
     console.log("data: ", serverCategories);
@@ -52,6 +55,20 @@ export default function CategListScreen({navigation}) {
         raw: c,
       }));
   }, [serverCategories]);
+
+  useEffect(() => {
+    setListData(categories);
+  }, [categories]);
+
+  const {mutate: reorderCategories, isPending: isReordering} =
+    useReorderCategoriesMutation({
+      onError: (err) => {
+        console.log("[reorderCategories] error:", err);
+        console.log("[reorderCategories] message:", err?.message);
+        console.log("[reorderCategories] status:", err?.response?.status);
+        console.log("[reorderCategories] data:", err?.response?.data);
+      },
+    });
 
   return (
     <SafeAreaView style={styles.safe} edges={["top"]}>
@@ -87,18 +104,29 @@ export default function CategListScreen({navigation}) {
         //List
         <View style={styles.listWrap}>
           <DraggableFlatList
-            data={categories}
+            scrollEnabled={!isReordering}
+            data={listData}
             keyExtractor={(item) => item.id}
-            // onDragEnd={handleDragEnd}
+            onDragEnd={({data}) => {
+              // 1) UI 즉시 반영
+              setListData(data);
+
+              // 2) 명세서대로 ids 배열 생성 (Number 배열)
+              const ids = data.map((item) => Number(item.id));
+
+              // 3) 서버에 순서 변경 요청
+              reorderCategories({ids});
+            }}
             contentContainerStyle={styles.listContent}
             ItemSeparatorComponent={() => <View style={styles.separator} />}
             renderItem={({item, drag, isActive}) => (
               <TouchableOpacity
+                disabled={isReordering}
                 activeOpacity={0.8}
                 onPress={() =>
                   navigation.navigate("CategEdit", {
                     mode: "edit",
-                    category: item.raw ?? item, // ✅ edit 화면에서 원본 응답을 쓰고 싶을 때
+                    category: item, // ✅ { id, label, color } 형태로 전달 (edit 초기값에 맞춤)
                   })
                 }
               >

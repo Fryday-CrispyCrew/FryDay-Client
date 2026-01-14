@@ -7,6 +7,7 @@ import {
   TouchableOpacity,
   KeyboardAvoidingView,
   Platform,
+  ActivityIndicator,
 } from "react-native";
 import {SafeAreaView} from "react-native-safe-area-context";
 
@@ -18,6 +19,10 @@ import colors from "../../../../shared/styles/colors";
 
 import {useModalStore} from "../../../../shared/stores/modal/modalStore";
 import {useCreateCategoryMutation} from "../../queries/category/useCreateCategoryMutation";
+import {useUpdateCategoryMutation} from "../../queries/category/useUpdateCategoryMutation";
+import {useDeleteCategoryMutation} from "../../queries/category/useDeleteCategoryMutation";
+import {queryClient} from "../../../../shared/lib/queryClient";
+import {categoryKeys} from "../../queries/category/categoryKeys";
 
 const MAX_NAME_LEN = 8;
 
@@ -28,8 +33,8 @@ const COLOR_OPTIONS = [
   colors.vl, // purple
   colors.dp, // pink
   colors.cb, // blue
-  colors.mb2, // beige/brown
-  colors.mb, // mint
+  colors.mb, // beige/brown
+  colors.mt, // mint
   colors.pk, // light pink
 ];
 
@@ -41,8 +46,8 @@ const COLOR_CODE_MAP = {
   [colors.vl]: "VL",
   [colors.dp]: "DP",
   [colors.cb]: "CB",
-  [colors.mb2]: "MB2",
   [colors.mb]: "MB",
+  [colors.mt]: "MT",
   [colors.pk]: "PK",
 };
 
@@ -54,10 +59,12 @@ export default function CategEditScreen({navigation, route}) {
 
   // ✅ edit이면 기존 값으로 초기화, create면 빈 값
   const [name, setName] = useState(
-    isEdit ? (editingCategory?.label ?? "") : ""
+    isEdit ? (editingCategory?.label ?? editingCategory?.name ?? "") : ""
   );
   const [selectedColor, setSelectedColor] = useState(
-    isEdit ? (editingCategory?.color ?? null) : null
+    isEdit
+      ? (editingCategory?.color ?? editingCategory?.colorHex ?? null)
+      : null
   );
 
   const [isColorOpen, setIsColorOpen] = useState(false);
@@ -66,8 +73,11 @@ export default function CategEditScreen({navigation, route}) {
 
   const {mutate: createCategory, isPending: isCreating} =
     useCreateCategoryMutation({
-      onSuccess: () => {
+      onSuccess: async () => {
         // ✅ 생성 성공 → 목록 화면으로 이동
+        // navigation?.navigate?.("CategList");
+        // await queryClient.invalidateQueries({queryKey: categoryKeys.list()});
+        await queryClient.refetchQueries({queryKey: categoryKeys.list()});
         navigation?.navigate?.("CategList");
       },
       onError: (err) => {
@@ -75,6 +85,36 @@ export default function CategEditScreen({navigation, route}) {
         console.log("[createCategory] message:", err?.message);
         console.log("[createCategory] status:", err?.response?.status);
         console.log("[createCategory] data:", err?.response?.data);
+      },
+    });
+
+  const {mutate: updateCategory, isPending: isUpdating} =
+    useUpdateCategoryMutation({
+      onSuccess: async () => {
+        // ✅ 수정 성공 → 목록으로 복귀(또는 navigate("CategList")도 가능)
+        await queryClient.refetchQueries({queryKey: categoryKeys.list()});
+        navigation?.navigate?.("CategList");
+      },
+      onError: (err) => {
+        console.log("[updateCategory] error:", err);
+        console.log("[updateCategory] message:", err?.message);
+        console.log("[updateCategory] status:", err?.response?.status);
+        console.log("[updateCategory] data:", err?.response?.data);
+      },
+    });
+
+  const {mutate: deleteCategory, isPending: isDeleting} =
+    useDeleteCategoryMutation({
+      onSuccess: async () => {
+        // ✅ 삭제 성공 → 목록으로 이동(혹은 goBack)
+        await queryClient.refetchQueries({queryKey: categoryKeys.list()});
+        navigation?.navigate?.("CategList");
+      },
+      onError: (err) => {
+        console.log("[deleteCategory] error:", err);
+        console.log("[deleteCategory] message:", err?.message);
+        console.log("[deleteCategory] status:", err?.response?.status);
+        console.log("[deleteCategory] data:", err?.response?.data);
       },
     });
 
@@ -94,11 +134,15 @@ export default function CategEditScreen({navigation, route}) {
   };
 
   const onPressSave = () => {
-    if (!isSubmitEnabled) return;
+    if (!isSubmitEnabled || isUpdating) return;
 
-    // TODO: edit API 연결
-    // updateCategory({ id: editingCategory.id, name: name.trim(), color: selectedColor })
-    navigation?.goBack?.();
+    const colorCode = COLOR_CODE_MAP[selectedColor]; // ✅ "BR", "OR", ...
+
+    updateCategory({
+      categoryId: editingCategory?.id, // ✅ path variable
+      name: name.trim(),
+      color: colorCode, // ✅ 명세서: color는 코드 문자열
+    });
   };
 
   const onPressCreate = () => {
@@ -124,10 +168,11 @@ export default function CategEditScreen({navigation, route}) {
         label: "네, 삭제할래요",
         variant: "outline",
         onPress: () => {
-          // TODO: delete API 연결
-          // deleteCategory({ id: editingCategory.id })
+          if (isDeleting) return;
 
-          navigation?.goBack?.();
+          deleteCategory({
+            categoryId: editingCategory?.id, // ✅ path variable
+          });
         },
         // closeAfterPress: false, // ✅ API 완료 후 닫고 싶으면 false로 바꾸고 store.close()를 직접 호출
       },
@@ -265,21 +310,26 @@ export default function CategEditScreen({navigation, route}) {
               <TouchableOpacity
                 activeOpacity={0.8}
                 onPress={onPressSave}
-                disabled={!isSubmitEnabled}
+                disabled={!isSubmitEnabled || isUpdating}
                 style={[
                   styles.submitBtn,
                   !isSubmitEnabled && styles.submitBtnDisabled,
+                  (!isSubmitEnabled || isUpdating) && styles.submitBtnDisabled,
                 ]}
               >
-                <AppText
-                  variant="L600"
-                  style={[
-                    styles.submitText,
-                    !isSubmitEnabled && styles.submitTextDisabled,
-                  ]}
-                >
-                  변경사항 저장하기
-                </AppText>
+                {isUpdating ? (
+                  <ActivityIndicator />
+                ) : (
+                  <AppText
+                    variant="L600"
+                    style={[
+                      styles.submitText,
+                      !isSubmitEnabled && styles.submitTextDisabled,
+                    ]}
+                  >
+                    변경사항 저장하기
+                  </AppText>
+                )}
               </TouchableOpacity>
 
               <View style={{height: 12}} />
@@ -287,6 +337,7 @@ export default function CategEditScreen({navigation, route}) {
               <TouchableOpacity
                 activeOpacity={0.8}
                 onPress={onPressDelete}
+                disabled={isDeleting}
                 style={styles.deleteBtn}
               >
                 <AppText variant="L600" style={styles.deleteText}>

@@ -19,7 +19,7 @@ module.exports = {
   vl: "#9351A1",
   pk: "#F06B9C",
   mb: "#AA7459",
-  yl: "#FFA100",
+  // yl: "#FFA100",
 
   // Gray Scale
   bk: "#282424",
