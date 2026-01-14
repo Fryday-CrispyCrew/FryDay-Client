@@ -23,7 +23,6 @@ function nextRoute(status) {
 
 export async function loginWithAccessToken(provider, accessToken, navigation) {
   const deviceId = await getDeviceId();
-  console.log("API BASE URL =", process.env.EXPO_PUBLIC_BACKEND_URL);
   console.log("provider", provider);
   console.log("tokenLen", accessToken?.length);
   console.log("deviceId", deviceId);

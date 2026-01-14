@@ -34,8 +34,6 @@ export default function LoginScreen({navigation}) {
   // };
   const onPressKakao = async () => {
     try {
-      // const keyHash = await KakaoLogins.getKeyHash();
-      // console.log("KAKAO_KEY_HASH:", keyHash);
       const token = await kakaoGetAccessToken();
       await loginWithAccessToken("KAKAO", token, navigation);
     } catch (e) {
@@ -43,7 +41,6 @@ export default function LoginScreen({navigation}) {
       console.log("ERR data", e?.response?.data);
       console.log("ERR headers", e?.response?.headers);
       console.log("ERR message", e?.message);
-      console.log("err:", e);
     }
   };
 
