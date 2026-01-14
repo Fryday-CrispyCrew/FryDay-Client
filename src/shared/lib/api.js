@@ -5,7 +5,7 @@ import {TOAST_MESSAGES} from "../constants/toastMessages";
 import {getAccessToken} from "./storage/tokenStorage";
 
 const api = axios.create({
-  baseURL: process.env.EXPO_PUBLIC_API_URL,
+  baseURL: process.env.EXPO_PUBLIC_BACKEND_URL,
   timeout: 10000,
 });
 

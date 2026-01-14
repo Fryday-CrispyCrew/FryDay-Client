@@ -45,6 +45,24 @@
             }
           }
         }
+      ],
+      [
+        "@react-native-seoul/kakao-login",
+        {
+          "kakaoAppKey": "c2eaa0f8dae4116f5ee998144c4aa122",
+          "overrideKakaoSDKVersion": "2.11.2",
+          "kotlinVersion": "2.1.20"
+        }
+      ],
+      [
+        "expo-build-properties",
+        {
+          "android": {
+            "extraMavenRepos": [
+              "https://devrepo.kakao.com/nexus/content/groups/public/"
+            ]
+          }
+        }
       ]
     ],
     "extra": {

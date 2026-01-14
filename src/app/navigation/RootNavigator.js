@@ -16,7 +16,7 @@ export default function RootNavigator() {
     <Stack.Navigator
       id="root"
       screenOptions={{headerShown: false}}
-      initialRouteName="Main"
+      initialRouteName="Auth"
     >
       <Stack.Screen name="Auth" component={AuthStack} />
       <Stack.Screen name="Naming" component={NamingStack} />
