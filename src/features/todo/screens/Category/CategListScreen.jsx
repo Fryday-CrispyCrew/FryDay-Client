@@ -1,5 +1,5 @@
 // src/features/todo/screens/Category/CategListScreen.jsx
-import React, {useCallback, useMemo, useState} from "react";
+import React, {useCallback, useEffect, useMemo, useState} from "react";
 import {View, StyleSheet, TouchableOpacity} from "react-native";
 import {SafeAreaView} from "react-native-safe-area-context";
 import DraggableFlatList from "react-native-draggable-flatlist";
@@ -9,6 +9,7 @@ import CategoryItem from "../../components/Category/CategoryItem";
 import colors from "../../../../shared/styles/colors";
 import CategoryHeader from "../../components/Category/CategoryHeader";
 import {useCategoriesQuery} from "../../queries/category/useCategoriesQuery";
+import {toast} from "../../../../shared/components/toast/CenterToast";
 
 // const MOCK_CATEGORIES = [
 //   {id: "1", label: "카테고리 이름 1", color: colors.br},
@@ -26,6 +27,10 @@ export default function CategListScreen({navigation}) {
     isError,
     error,
   } = useCategoriesQuery();
+
+  useEffect(() => {
+    console.log("data: ", serverCategories);
+  }, [serverCategories]);
 
   if (isError) {
     // TanStack Query error는 보통 axios error일 가능성이 높음
@@ -54,7 +59,16 @@ export default function CategListScreen({navigation}) {
       <CategoryHeader
         variant="list"
         onPressBack={() => navigation.goBack()}
-        onPressPlus={() => navigation.navigate("CategEdit", {mode: "create"})}
+        onPressPlus={() => {
+          if (categories.length >= 6) {
+            toast.show("카테고리 개수는 최대 6개까지 생성할 수 있어요", {
+              position: "center",
+            });
+            return;
+          }
+
+          navigation.navigate("CategEdit", {mode: "create"});
+        }}
       />
 
       {isLoading ? (

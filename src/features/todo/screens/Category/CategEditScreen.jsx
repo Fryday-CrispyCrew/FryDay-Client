@@ -17,6 +17,7 @@ import ClearIcon from "../../../../shared/assets/svg/Clear.svg"; // ✅ 경로�
 import colors from "../../../../shared/styles/colors";
 
 import {useModalStore} from "../../../../shared/stores/modal/modalStore";
+import {useCreateCategoryMutation} from "../../queries/category/useCreateCategoryMutation";
 
 const MAX_NAME_LEN = 8;
 
@@ -31,6 +32,19 @@ const COLOR_OPTIONS = [
   colors.mb, // mint
   colors.pk, // light pink
 ];
+
+// ✅ hex → colorCode 매핑 (명세서용)
+const COLOR_CODE_MAP = {
+  [colors.or]: "OR",
+  [colors.br]: "BR",
+  [colors.lg]: "LG",
+  [colors.vl]: "VL",
+  [colors.dp]: "DP",
+  [colors.cb]: "CB",
+  [colors.mb2]: "MB2",
+  [colors.mb]: "MB",
+  [colors.pk]: "PK",
+};
 
 export default function CategEditScreen({navigation, route}) {
   const mode = route?.params?.mode ?? "create"; // "create" | "edit"
@@ -49,6 +63,20 @@ export default function CategEditScreen({navigation, route}) {
   const [isColorOpen, setIsColorOpen] = useState(false);
 
   const openModal = useModalStore((s) => s.open);
+
+  const {mutate: createCategory, isPending: isCreating} =
+    useCreateCategoryMutation({
+      onSuccess: () => {
+        // ✅ 생성 성공 → 목록 화면으로 이동
+        navigation?.navigate?.("CategList");
+      },
+      onError: (err) => {
+        console.log("[createCategory] error:", err);
+        console.log("[createCategory] message:", err?.message);
+        console.log("[createCategory] status:", err?.response?.status);
+        console.log("[createCategory] data:", err?.response?.data);
+      },
+    });
 
   const helperText = useMemo(
     () => `카테고리 이름은 ${MAX_NAME_LEN}자까지 입력할 수 있어요`,
@@ -74,11 +102,14 @@ export default function CategEditScreen({navigation, route}) {
   };
 
   const onPressCreate = () => {
-    if (!isSubmitEnabled) return;
+    if (!isSubmitEnabled || isCreating) return;
 
-    // TODO: create API 연결
-    // createCategory({ name: name.trim(), color: selectedColor })
-    navigation?.goBack?.();
+    const colorCode = COLOR_CODE_MAP[selectedColor];
+
+    createCategory({
+      name: name.trim(),
+      color: colorCode, // ✅ "BR", "OR", "LG" 형태로 전송
+    });
   };
 
   const onPressDelete = () => {
@@ -267,21 +298,25 @@ export default function CategEditScreen({navigation, route}) {
             <TouchableOpacity
               activeOpacity={0.8}
               onPress={onPressCreate}
-              disabled={!isSubmitEnabled}
+              disabled={!isSubmitEnabled || isCreating}
               style={[
                 styles.submitBtn,
-                !isSubmitEnabled && styles.submitBtnDisabled,
+                (!isSubmitEnabled || isCreating) && styles.submitBtnDisabled,
               ]}
             >
-              <AppText
-                variant="L600"
-                style={[
-                  styles.submitText,
-                  !isSubmitEnabled && styles.submitTextDisabled,
-                ]}
-              >
-                추가하기
-              </AppText>
+              {isCreating ? (
+                <ActivityIndicator />
+              ) : (
+                <AppText
+                  variant="L600"
+                  style={[
+                    styles.submitText,
+                    !isSubmitEnabled && styles.submitTextDisabled,
+                  ]}
+                >
+                  추가하기
+                </AppText>
+              )}
             </TouchableOpacity>
           )}
         </View>
