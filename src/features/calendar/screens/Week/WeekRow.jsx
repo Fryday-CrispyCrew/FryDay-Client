@@ -1,9 +1,9 @@
 import { View, TouchableOpacity, Image, useWindowDimensions } from "react-native";
 import dayjs from "dayjs";
 import AppText from "../../../../shared/components/AppText";
-import { getCalendarIconType, CALENDAR_ICONS, TEMP_TODO_MAP } from "../../components/CalendarIcon";
+import { getCalendarIconType, CALENDAR_ICONS} from "../../components/CalendarIcon";
 
-export default function WeekRow({ days, selectedDate, onSelectDate }) {
+export default function WeekRow({ days, selectedDate, onSelectDate, bowlMap }) {
     const { width } = useWindowDimensions();
     const todayStr = dayjs().format("YYYY-MM-DD");
 
@@ -15,8 +15,8 @@ export default function WeekRow({ days, selectedDate, onSelectDate }) {
                     const isToday = dStr === todayStr;
                     const isSelected = dStr === selectedDate.format("YYYY-MM-DD");
 
-                    const todo = TEMP_TODO_MAP[dStr];
-                    const iconType = getCalendarIconType(d, todo);
+                    const bowlType = bowlMap?.[dStr];
+                    const iconType = getCalendarIconType(dStr, bowlType);
                     const Icon = iconType ? CALENDAR_ICONS[iconType] : null;
 
                     return (

@@ -1,8 +1,8 @@
 import { View, Image, useWindowDimensions } from "react-native";
 import AppText from "../../../../shared/components/AppText";
-import { getCalendarIconType, CALENDAR_ICONS, TEMP_TODO_MAP } from "../../components/CalendarIcon";
+import { getCalendarIconType, CALENDAR_ICONS} from "../../components/CalendarIcon";
 
-export default function MonthRow({ days, isLast }) {
+export default function MonthRow({ days, isLast, bowlMap }) {
     const { width } = useWindowDimensions();
 
     return (
@@ -12,8 +12,8 @@ export default function MonthRow({ days, isLast }) {
                     if (!day) return <View key={idx} className="flex-1" />;
 
                     const dStr = day.format("YYYY-MM-DD");
-                    const todo = TEMP_TODO_MAP[dStr];
-                    const iconType = getCalendarIconType(day, todo);
+                    const bowlType = bowlMap?.[dStr];
+                    const iconType = getCalendarIconType(dStr, bowlType);
                     const Icon = iconType ? CALENDAR_ICONS[iconType] : null;
 
                     return (

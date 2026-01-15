@@ -11,10 +11,14 @@ import AppText from "../../../shared/components/AppText";
 import Dotted from "../assets/svg/Dotted.svg";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 
+import { getDailyResults } from "../api/dailyResultsApi";
+
 export default function CalendarScreen() {
     const [mode, setMode] = useState("month"); // 'week' | 'month'
     const [currentDate, setCurrentDate] = useState(dayjs());
     const [selectedDate, setSelectedDate] = useState(dayjs());
+
+    const [bowlMap, setBowlMap] = useState([]);
 
     const handlePressToday = useCallback(() => {
         const today = dayjs();
@@ -41,6 +45,19 @@ export default function CalendarScreen() {
         });
     }, []);
 
+    useEffect(() => {
+        const startDate = currentDate.startOf("month").format("YYYY-MM-DD");
+        const endDate = currentDate.endOf("month").format("YYYY-MM-DD");
+
+        (async () => {
+            try {
+                const map = await getDailyResults(startDate, endDate);
+                setBowlMap(map);
+            } catch (e) {
+            }
+        })();
+    }, [currentDate]);
+
     return (
         <SafeAreaView className="flex-1 bg-wt" edges={["top", "bottom"]}>
             <CalendarHeader
@@ -61,6 +78,7 @@ export default function CalendarScreen() {
                                 selectedDate={selectedDate}
                                 onSelectDate={setSelectedDate}
                                 onChangeDate={setCurrentDate}
+                                bowlMap={bowlMap}
                             />
                         </View>
                         {/* 구분선 */}
@@ -79,6 +97,7 @@ export default function CalendarScreen() {
                     <MonthView
                         currentDate={currentDate}
                         onChangeDate={setCurrentDate}
+                        bowlMap={bowlMap}
                     />
                 )}
             </View>
