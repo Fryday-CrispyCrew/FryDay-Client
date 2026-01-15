@@ -79,7 +79,8 @@ export default function CategEditScreen({navigation, route}) {
         // navigation?.navigate?.("CategList");
         // await queryClient.invalidateQueries({queryKey: categoryKeys.list()});
         await queryClient.refetchQueries({queryKey: categoryKeys.list()});
-        navigation?.navigate?.("CategList");
+        // navigation?.navigate?.("CategList");
+        navigation.goBack();
       },
       onError: (err) => {
         console.log("[createCategory] error:", err);
@@ -94,7 +95,8 @@ export default function CategEditScreen({navigation, route}) {
       onSuccess: async () => {
         // ✅ 수정 성공 → 목록으로 복귀(또는 navigate("CategList")도 가능)
         await queryClient.refetchQueries({queryKey: categoryKeys.list()});
-        navigation?.navigate?.("CategList");
+        // navigation?.navigate?.("CategList");
+        navigation.goBack();
       },
       onError: (err) => {
         console.log("[updateCategory] error:", err);
@@ -109,7 +111,8 @@ export default function CategEditScreen({navigation, route}) {
       onSuccess: async () => {
         // ✅ 삭제 성공 → 목록으로 이동(혹은 goBack)
         await queryClient.refetchQueries({queryKey: categoryKeys.list()});
-        navigation?.navigate?.("CategList");
+        // navigation?.navigate?.("CategList");
+        navigation.goBack();
       },
       onError: (err) => {
         console.log("[deleteCategory] error:", err);

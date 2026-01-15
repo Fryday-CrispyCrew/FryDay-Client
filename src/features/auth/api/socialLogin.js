@@ -48,8 +48,8 @@ export async function loginWithAccessToken(provider, accessToken, navigation) {
   //   index: 0,
   //   routes: [{name: nextRoute(data.onboardingStatus)}],
   // });
-  navigation.navigate("Category", {
-    screen: "CategList",
+  navigation.navigate("Main", {
+    screen: "Home",
   });
 }
 
