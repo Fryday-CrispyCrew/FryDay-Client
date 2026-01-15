@@ -10,13 +10,10 @@ export default function ReportHeader({ currentDate, onChangeMonth, joinedAt }) {
     const yearText = date.format('YYYY년');
     const monthText = date.format('M월 리포트');
 
-    // joinedAt = "YYYY-MM" (예: "2026-01")
     const joinedMonth = joinedAt ? dayjs(joinedAt, 'YYYY-MM').startOf('month') : null;
 
-    // 기본: 지난달까지만 허용
     const lastMonth = dayjs().subtract(1, 'month').startOf('month');
 
-    // ✅ 가입월이 지난달보다 미래(=이번달 가입)면 가입월을 max로 허용
     const maxMonth = joinedMonth && joinedMonth.isAfter(lastMonth, 'month')
         ? joinedMonth
         : lastMonth;
