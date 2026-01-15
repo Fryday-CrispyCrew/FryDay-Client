@@ -1,68 +1,158 @@
-import React, { useMemo, useState } from 'react';
+import React, { useMemo, useState, useEffect, useCallback } from 'react';
 import { ScrollView } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import dayjs from 'dayjs';
+import AsyncStorage from '@react-native-async-storage/async-storage';
+import * as SecureStore from "expo-secure-store";
 
 import ReportHeader from '../components/ReportHeader';
 import ReportHeroCard from '../components/ReportHeroCard';
 import ReportTotalSection from '../components/ReportTotalSection';
 import ReportCategoryCard from '../components/ReportCategoryCard';
 
-const REPORT_DUMMY = {
-    '2025-11': {
-        caseType: 'A',
-        categories: [
-            { name: '카테고리', success: 90, total: 100, fail: 10 },
-            { name: '운동', success: 40, total: 100, fail: 60 },
-            { name: '공부', success: 50, total: 100, fail: 50 },
-            { name: '카테고리0000', success: 90, total: 100, fail: 10 },
-            { name: '생활', success: 30, total: 100, fail: 70 },
-        ],
-    },
-    '2025-12': {
-        caseType: 'B',
-        categories: [
-            { name: '운동', success: 20, total: 50, fail: 30 },
-            { name: '불닭', success: 1000, total: 12340, fail: 10 },
-            { name: '졸려', success: 50, total: 100, fail: 50 },
-        ],
-    },
-};
+import { getReport } from '../api/reportApi';
+
+function mapAttendanceIconToCaseType(attendanceIcon) {
+    if (attendanceIcon === 'EXCELLENT') return 'A';
+    if (attendanceIcon === 'GOOD') return 'B';
+    return 'C';
+}
+
+const ZERO_REPORT = { attendanceIcon: 'POOR', categories: [] };
 
 export default function ReportScreen() {
-    const [currentDate, setCurrentDate] = useState(dayjs());
+    const [currentDate, setCurrentDate] = useState(dayjs().startOf('month'));
+    const [reportData, setReportData] = useState(null);
 
-    const key = useMemo(() => currentDate.format('YYYY-MM'), [currentDate]);
+    const [nickname, setNickname] = useState('');
+    const [joinedMonth, setJoinedMonth] = useState(null); // "YYYY-MM"
 
-    const report = useMemo(
-        () =>
-            REPORT_DUMMY[key] ?? {
-                caseType: 'C',
-                categories: [],
+    const lastMonth = useMemo(() => dayjs().subtract(1, 'month').startOf('month'), []);
+
+    useEffect(() => {
+        let alive = true;
+
+        (async () => {
+            const jm = await AsyncStorage.getItem("joinedMonth");
+            if (alive && jm) setJoinedMonth(jm);
+
+            const nick = await SecureStore.getItemAsync("nickname");
+            if (alive && nick) setNickname(nick);
+        })();
+
+        return () => {
+            alive = false;
+        };
+    }, []);
+
+
+    const joinedMonthDate = useMemo(() => {
+        return joinedMonth ? dayjs(joinedMonth, 'YYYY-MM').startOf('month') : null;
+    }, [joinedMonth]);
+
+    const maxMonth = useMemo(() => {
+        if (!joinedMonthDate) return lastMonth;
+        return joinedMonthDate.isAfter(lastMonth, 'month') ? joinedMonthDate : lastMonth;
+    }, [joinedMonthDate, lastMonth]);
+
+    const year = useMemo(() => dayjs(currentDate).year(), [currentDate]);
+    const month = useMemo(() => dayjs(currentDate).month() + 1, [currentDate]);
+    const viewingYM = useMemo(() => dayjs(currentDate).format('YYYY-MM'), [currentDate]);
+
+    const isJoinedMonthView = useMemo(() => {
+        return joinedMonth ? viewingYM === joinedMonth : false;
+    }, [viewingYM, joinedMonth]);
+
+    const handleChangeMonth = useCallback(
+        (nextDate) => {
+            const next = dayjs(nextDate).startOf('month');
+
+            if (next.isAfter(maxMonth, 'month')) return;
+            if (joinedMonthDate && next.isBefore(joinedMonthDate, 'month')) return;
+
+            setCurrentDate(next);
+        },
+        [maxMonth, joinedMonthDate]
+    );
+
+    useEffect(() => {
+        let alive = true;
+
+        (async () => {
+            if (!joinedMonthDate) return;
+
+            if (isJoinedMonthView) {
+                if (!alive) return;
+                setReportData(ZERO_REPORT);
+                return;
+            }
+
+            if (dayjs(currentDate).isAfter(maxMonth, 'month')) {
+                if (!alive) return;
+                setReportData(null);
+                return;
+            }
+
+            try {
+                const data = await getReport(year, month);
+                if (!alive) return;
+                setReportData(data);
+            } catch {
+                if (!alive) return;
+                setReportData(null);
+            }
+        })();
+
+        return () => { alive = false; };
+    }, [joinedMonthDate, isJoinedMonthView, currentDate, maxMonth, year, month]);
+
+    const report = useMemo(() => {
+        const payload = reportData?.data ?? reportData;
+        if (!payload) return { caseType: 'C', categories: [] };
+
+        const caseType = mapAttendanceIconToCaseType(payload.attendanceIcon);
+
+        const categories = Array.isArray(payload.categories)
+            ? payload.categories
+                .filter(Boolean)
+                .map((c) => {
+                    const total = Number(c?.['totalTodos'] ?? 0);
+                    const success = Number(c?.['completedTodos'] ?? 0);
+                    const fail =
+                        c?.['incompleteTodos'] != null
+                            ? Number(c?.['incompleteTodos'])
+                            : Math.max(0, total - success);
+
+                    return {
+                        name: c?.['categoryName'] ?? '카테고리',
+                        total,
+                        success,
+                        fail,
+                    };
+                })
+            : [];
+
+        return { caseType, categories };
+    }, [reportData]);
+
+    const totals = useMemo(() => {
+        return report.categories.reduce(
+            (acc, cur) => {
+                acc.total += cur.total;
+                acc.completed += cur.success;
+                acc.failed += cur.fail;
+                return acc;
             },
-        [key]
-    );
-
-    const totals = useMemo(
-        () =>
-            report.categories.reduce(
-                (acc, cur) => {
-                    acc.total += cur.total;
-                    acc.completed += cur.success;
-                    acc.failed += cur.fail;
-                    return acc;
-                },
-                { total: 0, completed: 0, failed: 0 }
-            ),
-        [report.categories]
-    );
+            { total: 0, completed: 0, failed: 0 }
+        );
+    }, [report.categories]);
 
     return (
         <SafeAreaView className="flex-1 bg-wt" edges={['top', 'bottom']}>
             <ReportHeader
                 currentDate={currentDate}
-                onChangeMonth={setCurrentDate}
-                joinedAt="2025-10-03"
+                onChangeMonth={handleChangeMonth}
+                joinedAt={joinedMonth ?? ''}
             />
 
             <ScrollView
@@ -70,15 +160,15 @@ export default function ReportScreen() {
                 contentContainerStyle={{ paddingBottom: 32 }}
                 showsVerticalScrollIndicator={false}
             >
+                <ReportHeroCard caseType={report.caseType} nickname={nickname} />
 
-            <ReportHeroCard caseType={report.caseType} nickname="연우" />
+                <ReportTotalSection
+                    total={totals.total}
+                    completed={totals.completed}
+                    failed={totals.failed}
+                />
 
-            <ReportTotalSection
-                total={totals.total}
-                completed={totals.completed}
-                failed={totals.failed}
-            />
-            <ReportCategoryCard data={report.categories} />
+                <ReportCategoryCard data={report.categories} />
             </ScrollView>
         </SafeAreaView>
     );

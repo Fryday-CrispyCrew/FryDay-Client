@@ -5,6 +5,8 @@ import {
   saveAccessToken,
   saveRefreshToken,
 } from "../../../shared/lib/storage/tokenStorage";
+import dayjs from "dayjs";
+import AsyncStorage from "@react-native-async-storage/async-storage";
 
 function nextRoute(status) {
   switch (status) {
@@ -44,6 +46,10 @@ export async function loginWithAccessToken(provider, accessToken, navigation) {
     saveRefreshToken(String(data.refreshToken ?? "")),
   ]);
 
+  const existed = await AsyncStorage.getItem("joinedMonth");
+  if (!existed) {
+    await AsyncStorage.setItem("joinedMonth", dayjs().format("YYYY-MM"));
+  }
   // navigation.reset({
   //   index: 0,
   //   routes: [{name: nextRoute(data.onboardingStatus)}],
