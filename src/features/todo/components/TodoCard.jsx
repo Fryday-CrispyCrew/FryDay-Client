@@ -18,6 +18,7 @@ import Animated, {
   runOnJS,
 } from "react-native-reanimated";
 import ChevronIcon from "../../../shared/components/ChevronIcon";
+import PlusIcon from "../assets/svg/Plus.svg";
 import colors from "../../../shared/styles/colors";
 
 /** ✅ 목업 투두 (규칙: 현재는 mock) */
@@ -246,9 +247,12 @@ export default function TodoCard({
             onPress={() => handlePressAddTodo(category.categoryId)}
             style={styles.addTodoButton}
           >
-            <AppText variant="M600" style={{color}}>
-              새 투두 튀기기 +
-            </AppText>
+            <View style={styles.addTodoContent}>
+              <AppText variant="M600" style={{color}}>
+                새 투두 튀기기
+              </AppText>
+              <PlusIcon width={14} height={14} color={color} />
+            </View>
           </TouchableOpacity>
         </View>
 
@@ -343,6 +347,11 @@ const styles = StyleSheet.create({
   addTodoButton: {
     paddingHorizontal: 6,
     paddingVertical: 8,
+  },
+  addTodoContent: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 4, // 텍스트와   아이콘 간격
   },
 
   listArea: {

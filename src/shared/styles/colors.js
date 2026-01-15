@@ -11,15 +11,15 @@ module.exports = {
   bl75: "rgba(51, 121, 182, 0.75)",
 
   // Secondary / Category
-  br: "#85302A",
+  br: "#693838",
   lg: "#82B236",
-  cb: "#367BAE",
-  dp: "#D05D90",
-  mb: "#3CB492",
+  cb: "#3E78AE",
+  dp: "#D0509D",
+  mt: "#3CB492",
   vl: "#9351A1",
   pk: "#F06B9C",
-  mb2: "#AA7459",
-  yl: "#FFA100",
+  mb: "#AA7459",
+  // yl: "#FFA100",
 
   // Gray Scale
   bk: "#282424",

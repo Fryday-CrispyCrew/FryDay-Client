@@ -15,7 +15,10 @@
     },
     "ios": {
       "supportsTablet": true,
-      "bundleIdentifier": "com.hamsj2413.fryday"
+      "bundleIdentifier": "com.hamsj2413.fryday",
+      "infoPlist": {
+        "ITSAppUsesNonExemptEncryption": false
+      }
     },
     "android": {
       "adaptiveIcon": {
@@ -38,10 +41,22 @@
         {
           "android": {
             "timePicker": {
-              "headerBackground": {"light": "#FF5B22", "dark": "#555555"},
-              "numbersSelectorColor": {"light": "#FF5B22", "dark": "#80CBC4"},
-              "background": {"light": "#FFFFFF", "dark": "#383838"},
-              "numbersBackgroundColor": {"light": "#EEEEEE", "dark": "#555555"}
+              "headerBackground": {
+                "light": "#FF5B22",
+                "dark": "#555555"
+              },
+              "numbersSelectorColor": {
+                "light": "#FF5B22",
+                "dark": "#80CBC4"
+              },
+              "background": {
+                "light": "#FFFFFF",
+                "dark": "#383838"
+              },
+              "numbersBackgroundColor": {
+                "light": "#EEEEEE",
+                "dark": "#555555"
+              }
             }
           }
         }
