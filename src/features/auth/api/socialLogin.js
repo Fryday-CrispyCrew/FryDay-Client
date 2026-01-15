@@ -44,9 +44,12 @@ export async function loginWithAccessToken(provider, accessToken, navigation) {
     saveRefreshToken(String(data.refreshToken ?? "")),
   ]);
 
-  navigation.reset({
-    index: 0,
-    routes: [{name: nextRoute(data.onboardingStatus)}],
+  // navigation.reset({
+  //   index: 0,
+  //   routes: [{name: nextRoute(data.onboardingStatus)}],
+  // });
+  navigation.navigate("Main", {
+    screen: "Home",
   });
 }
 
@@ -65,8 +68,11 @@ export async function loginWithCode(provider, code, navigation) {
     saveRefreshToken(String(data.refreshToken ?? "")),
   ]);
 
-  navigation.reset({
-    index: 0,
-    routes: [{name: nextRoute(data.onboardingStatus)}],
+  // navigation.reset({
+  //   index: 0,
+  //   routes: [{name: nextRoute(data.onboardingStatus)}],
+  // });
+  navigation.navigate("Category", {
+    screen: "CategList",
   });
 }

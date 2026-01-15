@@ -28,6 +28,7 @@ import AlarmTimeSettingSection from "./AlarmTimeSettingsSection";
 import ChevronIcon from "../../../../shared/components/ChevronIcon";
 import YearMonthWheelModal from "../RepeatSettingsSection/wheel/YearMonthWheelModal";
 import {toast} from "../../../../shared/components/toast/CenterToast";
+import ClearIcon from "../../../../shared/assets/svg/Clear.svg";
 /**
  * ✅ BottomSheetTextInput만 분리 (IME-safe 로직 포함)
  * - 기존 로직 유지하면서 multiline 등 확장 props 추가
@@ -568,7 +569,7 @@ const TodoEditorSheet = React.forwardRef(function TodoEditorSheet(
                     style={styles.clearButton}
                     hitSlop={8}
                   >
-                    <Text style={styles.clearIcon}>×</Text>
+                    <ClearIcon width={16} height={16} color={colors.gr300} />
                   </TouchableOpacity>
                 )}
               </View>
@@ -636,7 +637,7 @@ const TodoEditorSheet = React.forwardRef(function TodoEditorSheet(
                     style={styles.clearButton}
                     hitSlop={8}
                   >
-                    <Text style={styles.clearIcon}>×</Text>
+                    <ClearIcon width={16} height={16} color={colors.gr300} />
                   </TouchableOpacity>
                 )}
               </View>
@@ -1002,11 +1003,11 @@ const styles = StyleSheet.create({
     width: 24,
     // borderWidth: 1,
   },
-  clearIcon: {
-    fontSize: 16,
-    lineHeight: 16,
-    color: "#B0B0B0",
-  },
+  // clearIcon: {
+  //   fontSize: 16,
+  //   lineHeight: 16,
+  //   color: "#B0B0B0",
+  // },
 
   // ===== edit tools row =====
   toolsRow: {
