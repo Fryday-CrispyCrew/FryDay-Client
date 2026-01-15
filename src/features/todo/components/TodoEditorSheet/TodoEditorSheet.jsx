@@ -930,7 +930,7 @@ const styles = StyleSheet.create({
     borderRadius: 16,
     backgroundColor: "#FAFAFA",
     paddingHorizontal: 16,
-    paddingVertical: 6,
+    paddingVertical: 12,
     position: "relative",
     borderWidth: 1,
     borderColor: colors.gr100,
@@ -941,8 +941,11 @@ const styles = StyleSheet.create({
   input: {
     fontFamily: "Pretendard-Medium",
     fontSize: 12,
-    color: "#333333",
+    color: colors.gr900,
     paddingRight: 26,
+    // borderWidth: 1,
+    paddingVertical: 0,
+    lineHeight: 12 * 1.5,
   },
 
   // ===== edit =====

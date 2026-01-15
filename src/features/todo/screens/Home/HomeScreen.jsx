@@ -23,19 +23,76 @@ import TodoCard from "../../components/TodoCard";
 import TodoEditorSheet from "../../components/TodoEditorSheet/TodoEditorSheet";
 import {useTodoEditorController} from "../../hooks/useTodoEditorController";
 
+import {useHomeTodosQuery} from "../../queries/home/useHomeTodosQuery";
+import {useCategoriesQuery} from "../../queries/category/useCategoriesQuery";
+
 const {width, height} = Dimensions.get("window");
 
-const TAB_CATEGORIES = [
-  {categoryId: 1, label: "운동하기", color: "#FF5B22"}, // 주황
-  {categoryId: 2, label: "공부하기", color: "#693838"}, // 브라운
-  {categoryId: 3, label: "완전놀기", color: "#3CB492"}, // 연두
-];
+// const TAB_CATEGORIES = [
+//   {categoryId: 1, label: "운동하기", color: "#FF5B22"}, // 주황
+//   {categoryId: 2, label: "공부하기", color: "#693838"}, // 브라운
+//   {categoryId: 3, label: "완전놀기", color: "#3CB492"}, // 연두
+// ];
 
-const canAddCategory = TAB_CATEGORIES.length < 6;
+// const canAddCategory = TAB_CATEGORIES.length < 6;
+
+// ✅ 오늘 날짜(로컬 기준) YYYY-MM-DD
+function formatYYYYMMDD(dateObj) {
+  const y = dateObj.getFullYear();
+  const m = String(dateObj.getMonth() + 1).padStart(2, "0");
+  const d = String(dateObj.getDate()).padStart(2, "0");
+  return `${y}-${m}-${d}`;
+}
 
 export default function HomeScreen({navigation}) {
+  const date = useMemo(() => formatYYYYMMDD(new Date()), []);
+
+  // ✅ 카테고리 조회 (서버)
+  const {data: rawCategories = []} = useCategoriesQuery();
+
+  // ✅ TodoCard가 기대하는 형태로 매핑 + displayOrder 정렬
+  const categories = useMemo(() => {
+    const arr = Array.isArray(rawCategories) ? rawCategories : [];
+    return arr
+      .slice()
+      .sort((a, b) => (a?.displayOrder ?? 0) - (b?.displayOrder ?? 0))
+      .map((c) => ({
+        categoryId: c.id,
+        label: c.name,
+        color: c.colorHex, // 화면 표시용 hex
+      }));
+  }, [rawCategories]);
+
+  // ✅ 홈 투두 조회 (categoryId 생략 = 전체)
+  const {data: rawTodos = []} = useHomeTodosQuery({
+    date,
+    categoryId: undefined,
+  });
+
+  useEffect(() => {
+    console.log("Data: ", rawTodos);
+  }, [rawTodos]);
+
+  // ✅ TodoCard가 쓰는 형태로 변환 + displayOrder 정렬
+  const todos = useMemo(() => {
+    const arr = Array.isArray(rawTodos) ? rawTodos : [];
+    return arr
+      .slice()
+      .sort((a, b) => (a?.displayOrder ?? 0) - (b?.displayOrder ?? 0))
+      .map((t) => ({
+        id: String(t.id), // DraggableFlatList keyExtractor용 string
+        title: t.description ?? "",
+        done: t.status === "COMPLETED",
+        categoryId: t.categoryId,
+        displayOrder: t.displayOrder,
+        date: t.date,
+        recurrenceId: t.recurrenceId,
+        occurrenceDate: t.occurrenceDate,
+      }));
+  }, [rawTodos]);
+
   const editor = useTodoEditorController({
-    categories: TAB_CATEGORIES,
+    categories, // ✅ 서버 카테고리로 교체
     // 나중에 react-query mutation 연결하는 자리
     onSubmitTodo: async ({todo, text, categoryId}) => {
       // todo?.id 있으면 update, 없으면 create
@@ -101,7 +158,8 @@ export default function HomeScreen({navigation}) {
         <TodoCard
           navigation={navigation}
           onPressInput={editor.openEditor}
-          categories={TAB_CATEGORIES}
+          categories={categories} // ✅ 서버 카테고리로 교체
+          todos={todos} // ✅ 서버에서 가져온 투두를 TodoCard에 연결
           onDoToday={(todoId) => {
             console.log("오늘하기:", todoId);
           }}

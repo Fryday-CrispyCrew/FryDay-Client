@@ -1,5 +1,5 @@
 // src/features/todo/components/TodoCard.jsx
-import React, {useMemo, useState, useCallback} from "react";
+import React, {useMemo, useState, useCallback, useEffect} from "react";
 import {View, StyleSheet, TouchableOpacity} from "react-native";
 import DraggableFlatList from "react-native-draggable-flatlist";
 
@@ -22,12 +22,12 @@ import PlusIcon from "../assets/svg/Plus.svg";
 import colors from "../../../shared/styles/colors";
 
 /** ✅ 목업 투두 (규칙: 현재는 mock) */
-const MOCK_TODOS = [
-  {id: "1", title: "연우님 기획 차력쇼 감상", done: false, categoryId: 1},
-  {id: "2", title: "기찬님의 프로젝트 관리 전략", done: false, categoryId: 1},
-  {id: "3", title: "토익 공부", done: true, categoryId: 2},
-  {id: "4", title: "알고리즘 공부", done: true, categoryId: 2},
-];
+// const MOCK_TODOS = [
+//   {id: "1", title: "연우님 기획 차력쇼 감상", done: false, categoryId: 1},
+//   {id: "2", title: "기찬님의 프로젝트 관리 전략", done: false, categoryId: 1},
+//   {id: "3", title: "토익 공부", done: true, categoryId: 2},
+//   {id: "4", title: "알고리즘 공부", done: true, categoryId: 2},
+// ];
 
 const ACTION_BTN_W = 56; // 버튼 하나 너비(원하는 값으로)
 const ACTION_GAP = 10; // 버튼 간격
@@ -174,9 +174,15 @@ export default function TodoCard({
   onPressInput,
   categories = [],
   onDoToday,
+  todos: todosProp = [], // ✅ 추가 (HomeScreen에서 내려줌)
 }) {
-  const [todos, setTodos] = useState(MOCK_TODOS);
+  const [todos, setTodos] = useState(todosProp);
   const [swipedTodoId, setSwipedTodoId] = useState(null);
+
+  // ✅ 서버/쿼리 결과가 바뀌면 화면도 동기화
+  useEffect(() => {
+    setTodos(Array.isArray(todosProp) ? todosProp : []);
+  }, [todosProp]);
 
   // ✅ 기본: 첫 카테고리만 펼쳐진 상태로 시작
   const [openMap, setOpenMap] = useState(() => {
