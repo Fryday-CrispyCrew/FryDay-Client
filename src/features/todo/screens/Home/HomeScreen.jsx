@@ -29,6 +29,9 @@ import {useCategoriesQuery} from "../../queries/category/useCategoriesQuery";
 import {useCreateTodoMutation} from "../../queries/sheet/useCreateTodoMutation";
 import {useMoveTodoTomorrowMutation} from "../../queries/home/useMoveTodoTomorrowMutation";
 import {useMoveTodoTodayMutation} from "../../queries/home/useMoveTodoTodayMutation";
+import {useDeleteTodoMutation} from "../../queries/home/useDeleteTodoMutation";
+import {useToggleTodoCompletionMutation} from "../../queries/home/useToggleTodoCompletionMutation";
+import {useReorderHomeTodosMutation} from "../../queries/home/useReorderHomeTodosMutation";
 
 import {useModalStore} from "../../../../shared/stores/modal/modalStore";
 
@@ -142,15 +145,15 @@ export default function HomeScreen({navigation}) {
 
   // ✅ 투두 생성 mutation 연결
   const {mutateAsync: createTodoMutateAsync} = useCreateTodoMutation();
-
   // ✅ "내일하기" mutation 연결
   const {mutateAsync: moveTodoTomorrowMutateAsync} =
     useMoveTodoTomorrowMutation();
-
   // ✅ "오늘하기" mutation 연결
   const {mutateAsync: moveTodoTodayMutateAsync} = useMoveTodoTodayMutation();
-
-  useMoveTodoTodayMutation;
+  const {mutateAsync: deleteTodoMutateAsync} = useDeleteTodoMutation();
+  const {mutateAsync: toggleCompletionMutateAsync} =
+    useToggleTodoCompletionMutation();
+  const {mutateAsync: reorderTodosMutateAsync} = useReorderHomeTodosMutation();
 
   const editor = useTodoEditorController({
     categories, // ✅ 서버 카테고리로 교체
@@ -310,6 +313,32 @@ export default function HomeScreen({navigation}) {
                 },
               });
             });
+          }}
+          onDeleteTodo={async (todo) => {
+            // ✅ 반복 설정 없는 투두만 여기서 삭제
+            // 서버 응답 예시상 일반 투두는 recurrenceId가 0 또는 null로 올 수 있음
+            const recurrenceId = todo?.recurrenceId;
+            const isNonRecurring =
+              recurrenceId == null ||
+              recurrenceId === 0 ||
+              recurrenceId === "0";
+
+            if (!isNonRecurring) {
+              // 반복 투두 삭제는 다른 API(예: /api/todos/recurrence/{recurrenceId})로 처리 예정
+              return;
+            }
+
+            // ✅ DELETE /api/todos/{todoId}
+            // homeApi.deleteTodo가 {todoId} 형태를 받는 패턴(다른 mutation들과 동일)이라고 가정
+            await deleteTodoMutateAsync({todoId: Number(todo.id)});
+          }}
+          onToggleTodoCompletion={async (todoId) => {
+            // ✅ POST /api/todos/{todoId}/completion
+            await toggleCompletionMutateAsync({todoId: Number(todoId)});
+          }}
+          onReorderTodos={async ({ids}) => {
+            // ✅ date는 HomeScreen의 현재 date를 사용 (필수 쿼리)
+            await reorderTodosMutateAsync({date, ids});
           }}
         />
       </ScrollView>

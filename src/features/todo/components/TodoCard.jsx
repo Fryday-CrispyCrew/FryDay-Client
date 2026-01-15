@@ -94,7 +94,7 @@ function TodoItem({
         <TouchableOpacity
           style={styles.todoDeleteButton}
           activeOpacity={0.7}
-          onPress={() => onDelete(item.id)}
+          onPress={() => onDelete(item)}
         >
           <DeleteIcon width={20} height={20} />
         </TouchableOpacity>
@@ -184,6 +184,9 @@ export default function TodoCard({
   categories = [],
   onDoToday,
   onDoTomorrow,
+  onDeleteTodo,
+  onToggleTodoCompletion, // ✅ 추가
+  onReorderTodos, // ✅ 추가
   isViewingToday = false,
   todos: todosProp = [], // ✅ 추가 (HomeScreen에서 내려줌)
 }) {
@@ -237,15 +240,51 @@ export default function TodoCard({
     return by;
   }, [todos, categories]);
 
-  const toggleTodoDone = useCallback((id) => {
-    setTodos((prev) =>
-      prev.map((todo) => (todo.id === id ? {...todo, done: !todo.done} : todo))
-    );
-  }, []);
+  const toggleTodoDone = useCallback(
+    async (id) => {
+      // ✅ 1) optimistic 업데이트
+      let prevDone = false;
+      setTodos((prev) =>
+        prev.map((todo) => {
+          if (todo.id !== id) return todo;
+          prevDone = !!todo.done;
+          return {...todo, done: !todo.done};
+        })
+      );
 
-  const handleDeleteTodo = useCallback((id) => {
-    setTodos((prev) => prev.filter((todo) => todo.id !== id));
-  }, []);
+      try {
+        // ✅ 2) 서버 토글 (POST /api/todos/{todoId}/completion)
+        await onToggleTodoCompletion?.(id);
+      } catch (e) {
+        // ✅ 3) 실패 시 롤백
+        setTodos((prev) =>
+          prev.map((todo) =>
+            todo.id === id ? {...todo, done: prevDone} : todo
+          )
+        );
+        console.log("toggle completion failed:", e);
+      }
+    },
+    [onToggleTodoCompletion]
+  );
+
+  const handleDeleteTodo = useCallback(
+    async (todo) => {
+      // ✅ 즉시 UI에서 제거(옵션: optimistic)
+      setTodos((prev) => prev.filter((t) => t.id !== todo?.id));
+
+      try {
+        await onDeleteTodo?.(todo); // ✅ HomeScreen에서 실제 mutation 처리
+      } catch (e) {
+        // (옵션) 실패 시 롤백하고 싶으면 여기서 prev 복구 로직을 추가
+        // 지금은 invalidate로 다시 동기화되므로 생략 가능
+        console.log("delete todo failed:", e);
+      } finally {
+        closeAnySwipe();
+      }
+    },
+    [onDeleteTodo, closeAnySwipe]
+  );
 
   const handleToggleSection = useCallback((categoryId) => {
     setOpenMap((prev) => ({...prev, [categoryId]: !prev?.[categoryId]}));
@@ -258,12 +297,57 @@ export default function TodoCard({
     [onPressInput]
   );
 
-  const handleDragEnd = useCallback((categoryId, data) => {
-    setTodos((prev) => {
-      const others = prev.filter((t) => t.categoryId !== categoryId);
-      return [...others, ...data.map((x) => ({...x, categoryId}))];
-    });
-  }, []);
+  const handleDragEnd = useCallback(
+    async (categoryId, data) => {
+      // ✅ 1) 로컬 상태 먼저 반영(optimistic)
+      setTodos((prev) => {
+        const others = prev.filter((t) => t.categoryId !== categoryId);
+        return [...others, ...data.map((x) => ({...x, categoryId}))];
+      });
+
+      // ✅ 2) 서버에 순서 저장 (해당 날짜 전체 ids 순서)
+      // 서버 스펙: { ids: [3,1,2] } (Number 배열) :contentReference[oaicite:5]{index=5}
+      // ⚠️ "날짜 전체"의 순서를 저장하는 API라서,
+      // category 섹션 하나만의 data가 아니라 "현재 화면 전체 todos"를 기준으로 ids를 만들어야 안전함.
+
+      // 로컬 반영된 최신 배열을 즉시 얻기 어렵기 때문에,
+      // "data(해당 카테고리)"   "기타 todos"로 새 전체 배열을 구성해서 ids를 만들자.
+      const nextAll = (() => {
+        // 현재 todos 상태를 기반으로 계산해야 하므로, data로 섹션만 교체한 결과를 만들기
+        const current = Array.isArray(todos) ? todos : [];
+        const others = current.filter((t) => t.categoryId !== categoryId);
+        const updatedSection = data.map((x) => ({...x, categoryId}));
+        // ✅ 기존 구현이 others 뒤에 섹션을 붙였는데, 이러면 카테고리별 섞일 수 있음.
+        // "전체 order"를 서버에 저장하려면, 원래 화면에 보이는 순서 정책을 정해야 함.
+        // 현재 화면은 category별로 분리되어 보이므로,
+        // ✅ 서버 ids는 "카테고리 순서대로, 각 카테고리 내부 순서대로"로 만드는 게 일반적.
+        // 따라서 categories 순서를 기준으로 그룹을 다시 합친다.
+        const by = {};
+        for (const t of [...others, ...updatedSection]) {
+          if (!by[t.categoryId]) by[t.categoryId] = [];
+          by[t.categoryId].push(t);
+        }
+        const merged = [];
+        for (const c of categories) {
+          const list = by[c.categoryId] ?? [];
+          merged.push(...list);
+        }
+        return merged;
+      })();
+
+      const ids = nextAll
+        .map((t) => Number(t.id))
+        .filter((n) => Number.isFinite(n));
+
+      try {
+        await onReorderTodos?.({ids});
+      } catch (e) {
+        console.log("reorder todos failed:", e);
+        // 실패 시 invalidate로 서버 데이터 다시 끌어오게 두는 전략이면 여기서 롤백 생략 가능
+      }
+    },
+    [onReorderTodos, todos, categories]
+  );
 
   const renderSection = (category) => {
     const isOpen = !!openMap?.[category.categoryId];
@@ -340,19 +424,21 @@ export default function TodoCard({
 
       <View style={styles.dashedDivider} />
 
-      <TouchableOpacity
-        activeOpacity={0.8}
-        onPress={() =>
-          navigation.navigate("Category", {
-            screen: "CategEdit",
-          })
-        }
-        style={styles.newCategoryButton}
-      >
-        <AppText variant="M600" style={{color: "#FF5B22"}}>
-          새 카테고리 +
-        </AppText>
-      </TouchableOpacity>
+      {categories.length < 6 && (
+        <TouchableOpacity
+          activeOpacity={0.8}
+          onPress={() =>
+            navigation.navigate("Category", {
+              screen: "CategEdit",
+            })
+          }
+          style={styles.newCategoryButton}
+        >
+          <AppText variant="M600" style={{color: "#FF5B22"}}>
+            새 카테고리 +
+          </AppText>
+        </TouchableOpacity>
+      )}
     </View>
   );
 }
