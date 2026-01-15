@@ -57,8 +57,6 @@ export default function CommonModal({
         </AppText>
       )}
 
-      {!!footerSlot && <View style={{marginTop: 12}}>{footerSlot}</View>}
-
       <View style={styles.btnStack}>
         {primary && (
           <Button
@@ -75,6 +73,8 @@ export default function CommonModal({
           />
         )}
       </View>
+
+      {!!footerSlot && <View style={styles.footer}>{footerSlot}</View>}
     </BaseModal>
   );
 }
@@ -88,6 +88,7 @@ const styles = StyleSheet.create({
     // borderWidth: 1,
   },
   btnStack: {marginTop: 24, gap: 12},
+  footer: {marginTop: 12, alignItems: "flex-end"},
   btn: {
     height: 48,
     borderRadius: 16,

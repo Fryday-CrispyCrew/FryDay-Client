@@ -7,6 +7,7 @@ import AppText from "../../../shared/components/AppText";
 import DragHandleIcon from "../assets/svg/DragHandle.svg";
 import DeleteIcon from "../assets/svg/Delete.svg";
 import StartDateIcon from "../assets/svg/StartDate.svg";
+import TomorrowIcon from "../assets/svg/Tomorrow.svg";
 import TodoRadioOnIcon from "../assets/svg/RadioOn.svg";
 import TodoRadioOffIcon from "../assets/svg/RadioOff.svg";
 
@@ -46,6 +47,8 @@ function TodoItem({
   onLongPressDrag,
   onPressItem, // ✅ 추가
   onDoToday,
+  onDoTomorrow,
+  isViewingToday,
 }) {
   const translateX = useSharedValue(0);
   const startX = useSharedValue(0);
@@ -96,17 +99,23 @@ function TodoItem({
           <DeleteIcon width={20} height={20} />
         </TouchableOpacity>
 
-        <TouchableOpacity
-          style={styles.todoTodayButton}
-          activeOpacity={0.7}
-          onPress={() => onDoToday?.(item.id)}
-        >
-          <StartDateIcon width={20} height={20} />
-          {/* 아이콘 있으면 아이콘으로, 없으면 텍스트로 */}
-          {/* <AppText variant="M600" style={{color: "#FF5B22"}}>
-            오늘
-          </AppText> */}
-        </TouchableOpacity>
+        {isViewingToday ? (
+          <TouchableOpacity
+            style={styles.todoTodayButton} // ✅ 스타일 그대로 재사용
+            activeOpacity={0.7}
+            onPress={() => onDoTomorrow?.(item.id)}
+          >
+            <TomorrowIcon width={20} height={20} />
+          </TouchableOpacity>
+        ) : (
+          <TouchableOpacity
+            style={styles.todoTodayButton}
+            activeOpacity={0.7}
+            onPress={() => onDoToday?.(item.id)}
+          >
+            <StartDateIcon width={20} height={20} />
+          </TouchableOpacity>
+        )}
       </View>
 
       {/* 앞에서 좌우로 움직이는 투두 row */}
@@ -174,6 +183,8 @@ export default function TodoCard({
   onPressInput,
   categories = [],
   onDoToday,
+  onDoTomorrow,
+  isViewingToday = false,
   todos: todosProp = [], // ✅ 추가 (HomeScreen에서 내려줌)
 }) {
   const [todos, setTodos] = useState(todosProp);
@@ -183,6 +194,32 @@ export default function TodoCard({
   useEffect(() => {
     setTodos(Array.isArray(todosProp) ? todosProp : []);
   }, [todosProp]);
+
+  const closeAnySwipe = useCallback(() => {
+    setSwipedTodoId(null);
+  }, []);
+
+  const handleDoTomorrow = useCallback(
+    async (id) => {
+      try {
+        await onDoTomorrow?.(id);
+      } finally {
+        closeAnySwipe(); // ✅ 동작 완료 후 스와이프 닫기
+      }
+    },
+    [onDoTomorrow, closeAnySwipe]
+  );
+
+  const handleDoToday = useCallback(
+    async (id) => {
+      try {
+        await onDoToday?.(id);
+      } finally {
+        closeAnySwipe(); // ✅ 동작 완료 후 스와이프 닫기
+      }
+    },
+    [onDoToday, closeAnySwipe]
+  );
 
   // ✅ 기본: 첫 카테고리만 펼쳐진 상태로 시작
   const [openMap, setOpenMap] = useState(() => {
@@ -276,7 +313,9 @@ export default function TodoCard({
                   isOpen={swipedTodoId === item.id}
                   onToggleDone={toggleTodoDone}
                   onDelete={handleDeleteTodo}
-                  onDoToday={onDoToday}
+                  onDoToday={handleDoToday}
+                  onDoTomorrow={handleDoTomorrow}
+                  isViewingToday={isViewingToday}
                   onSwipeOpen={(id) => setSwipedTodoId(id)}
                   onSwipeClose={(id) =>
                     setSwipedTodoId((prev) => (prev === id ? null : prev))

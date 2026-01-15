@@ -13,28 +13,26 @@ import {
   Pressable,
   Keyboard,
 } from "react-native";
+import {Gesture, GestureDetector} from "react-native-gesture-handler";
 import {SafeAreaView} from "react-native-safe-area-context";
 import AppText from "../../../../shared/components/AppText";
 import TodayIcon from "../../assets/svg/Today.svg";
 import CategoryIcon from "../../assets/svg/Category.svg";
 
 import TodoCard from "../../components/TodoCard";
-
 import TodoEditorSheet from "../../components/TodoEditorSheet/TodoEditorSheet";
 import {useTodoEditorController} from "../../hooks/useTodoEditorController";
 
 import {useHomeTodosQuery} from "../../queries/home/useHomeTodosQuery";
 import {useCategoriesQuery} from "../../queries/category/useCategoriesQuery";
 
+import {useCreateTodoMutation} from "../../queries/sheet/useCreateTodoMutation";
+import {useMoveTodoTomorrowMutation} from "../../queries/home/useMoveTodoTomorrowMutation";
+import {useMoveTodoTodayMutation} from "../../queries/home/useMoveTodoTodayMutation";
+
+import {useModalStore} from "../../../../shared/stores/modal/modalStore";
+
 const {width, height} = Dimensions.get("window");
-
-// const TAB_CATEGORIES = [
-//   {categoryId: 1, label: "운동하기", color: "#FF5B22"}, // 주황
-//   {categoryId: 2, label: "공부하기", color: "#693838"}, // 브라운
-//   {categoryId: 3, label: "완전놀기", color: "#3CB492"}, // 연두
-// ];
-
-// const canAddCategory = TAB_CATEGORIES.length < 6;
 
 // ✅ 오늘 날짜(로컬 기준) YYYY-MM-DD
 function formatYYYYMMDD(dateObj) {
@@ -44,8 +42,55 @@ function formatYYYYMMDD(dateObj) {
   return `${y}-${m}-${d}`;
 }
 
+function addDays(dateObj, delta) {
+  const d = new Date(dateObj);
+  d.setDate(d.getDate() + delta);
+  return d;
+}
+
+function formatKoreanHeader(dateObj) {
+  return {
+    yearText: `${dateObj.getFullYear()}년`,
+    dateText: `${dateObj.getMonth() + 1}월 ${dateObj.getDate()}일`,
+  };
+}
+
 export default function HomeScreen({navigation}) {
-  const date = useMemo(() => formatYYYYMMDD(new Date()), []);
+  const {open, close} = useModalStore();
+
+  const [currentDate, setCurrentDate] = useState(() => new Date());
+  const date = useMemo(() => formatYYYYMMDD(currentDate), [currentDate]);
+  const header = useMemo(() => formatKoreanHeader(currentDate), [currentDate]);
+
+  const isViewingToday = useMemo(() => {
+    return date === formatYYYYMMDD(new Date());
+  }, [date]);
+
+  const SWIPE_THRESHOLD = 50;
+  const onSwipeChangeDate = useCallback(
+    (dx) => {
+      // ✅ 요청대로: 우로 스와이프(음수) = 전날, 좌로 스와이프(양수) = 다음날
+      if (dx >= SWIPE_THRESHOLD) {
+        setCurrentDate((prev) => addDays(prev, -1));
+      } else if (dx <= -SWIPE_THRESHOLD) {
+        setCurrentDate((prev) => addDays(prev, +1));
+      }
+    },
+    [setCurrentDate]
+  );
+
+  const panGesture = useMemo(() => {
+    return (
+      Gesture.Pan()
+        .runOnJS(true) // ✅ 추가
+        // ✅ 가로 스와이프 잡기
+        .activeOffsetX([-12, 12])
+        .failOffsetY([-10, 10])
+        .onEnd((e) => {
+          onSwipeChangeDate(e.translationX);
+        })
+    );
+  }, [onSwipeChangeDate]);
 
   // ✅ 카테고리 조회 (서버)
   const {data: rawCategories = []} = useCategoriesQuery();
@@ -70,7 +115,11 @@ export default function HomeScreen({navigation}) {
   });
 
   useEffect(() => {
-    console.log("Data: ", rawTodos);
+    console.log("Categories: ", rawCategories);
+  }, [rawCategories]);
+
+  useEffect(() => {
+    console.log("Home todos: ", rawTodos);
   }, [rawTodos]);
 
   // ✅ TodoCard가 쓰는 형태로 변환 + displayOrder 정렬
@@ -91,12 +140,33 @@ export default function HomeScreen({navigation}) {
       }));
   }, [rawTodos]);
 
+  // ✅ 투두 생성 mutation 연결
+  const {mutateAsync: createTodoMutateAsync} = useCreateTodoMutation();
+
+  // ✅ "내일하기" mutation 연결
+  const {mutateAsync: moveTodoTomorrowMutateAsync} =
+    useMoveTodoTomorrowMutation();
+
+  // ✅ "오늘하기" mutation 연결
+  const {mutateAsync: moveTodoTodayMutateAsync} = useMoveTodoTodayMutation();
+
+  useMoveTodoTodayMutation;
+
   const editor = useTodoEditorController({
     categories, // ✅ 서버 카테고리로 교체
-    // 나중에 react-query mutation 연결하는 자리
     onSubmitTodo: async ({todo, text, categoryId}) => {
-      // todo?.id 있으면 update, 없으면 create
-      // await mutateAsync(...)
+      // ✅ create 모드
+      if (!todo?.id) {
+        // 바텀시트 투두 생성 API: description, categoryId로 생성
+        await createTodoMutateAsync({
+          description: text,
+          categoryId,
+        });
+        return;
+      }
+
+      // ✅ edit 모드(추후 update mutation 연결 자리)
+      // await updateTodoMutateAsync({ todoId: todo.id, ... })
     },
   });
 
@@ -107,10 +177,10 @@ export default function HomeScreen({navigation}) {
       <View style={styles.topBar}>
         <View>
           <AppText variant="M500" className="text-gr500">
-            2025년
+            {header.yearText}
           </AppText>
           <AppText variant="H3" className="text-bk">
-            10월 28일
+            {header.dateText}
           </AppText>
         </View>
 
@@ -118,7 +188,7 @@ export default function HomeScreen({navigation}) {
           <TouchableOpacity
             activeOpacity={0.5}
             style={styles.iconButton}
-            onPress={() => {}}
+            onPress={() => setCurrentDate(new Date())}
           >
             <TodayIcon width={24} height={24} />
           </TouchableOpacity>
@@ -137,31 +207,109 @@ export default function HomeScreen({navigation}) {
         </View>
       </View>
 
-      {/* ✅ illustrationWrapper + TodoCard 포함 영역 전체 스크롤 */}
-      <ScrollView
-        style={styles.bodyScroll}
-        contentContainerStyle={styles.bodyContent}
-        showsVerticalScrollIndicator={false}
-        keyboardShouldPersistTaps="handled"
-      >
-        {/* 새우 일러스트 + 배경 */}
+      {/* ✅ (고정) illustrationWrapper: 여기서는 스크롤 안 됨 */}
+      <GestureDetector gesture={panGesture}>
         <View style={styles.illustrationWrapper}>
           <View style={styles.sunburst} />
           <View style={styles.shrimp}>
             <Text style={{fontSize: 32}}>🦐</Text>
           </View>
         </View>
+      </GestureDetector>
 
-        <View style={styles.dashedDivider} />
+      {/* ✅ (고정) 구분선 */}
+      <View style={styles.dashedDivider} />
 
-        {/* ✅ TodoCard에서 인풋 누르면 openEditor 호출 */}
+      {/* ✅ (스크롤) TodoCard 영역만 스크롤 */}
+      <ScrollView
+        style={styles.todoScroll}
+        contentContainerStyle={styles.todoScrollContent}
+        showsVerticalScrollIndicator={false}
+        keyboardShouldPersistTaps="handled"
+      >
         <TodoCard
           navigation={navigation}
           onPressInput={editor.openEditor}
-          categories={categories} // ✅ 서버 카테고리로 교체
-          todos={todos} // ✅ 서버에서 가져온 투두를 TodoCard에 연결
-          onDoToday={(todoId) => {
-            console.log("오늘하기:", todoId);
+          categories={categories}
+          todos={todos}
+          isViewingToday={isViewingToday}
+          onDoToday={async (todoId) => {
+            // ✅ "오늘하기" 눌렀을 때 확인 모달 띄우기
+            return new Promise((resolve) => {
+              open({
+                title: "확인",
+                description:
+                  "투두가 오늘 날짜로 이동하며,\n기존 날짜의 투두는 삭제돼요. 오늘 하기로 설정할까요?",
+                closeOnBackdrop: true,
+                showClose: true,
+
+                primary: {
+                  label: "네, 설정할래요",
+                  variant: "outline",
+                  closeAfterPress: false, // ✅ async 끝나기 전에 ModalHost가 닫지 않게
+                  onPress: async () => {
+                    try {
+                      await moveTodoTodayMutateAsync({todoId});
+                      resolve(true);
+                    } finally {
+                      close(); // ✅ 처리 후 모달 닫기
+                    }
+                  },
+                },
+
+                secondary: {
+                  label: "아니요, 그만둘래요",
+                  variant: "outline",
+                  closeAfterPress: true,
+                  onPress: () => resolve(false),
+                },
+
+                onClose: () => resolve(false),
+              });
+            });
+          }}
+          onDoTomorrow={async (todoId) => {
+            // ✅ "내일하기" 눌렀을 때 확인 모달 띄우기
+            return new Promise((resolve) => {
+              open({
+                title: "확인",
+                description:
+                  "투두가 내일 날짜로 이동하며,\n기존 날짜의 투두는 삭제돼요. 내일 하기로 설정할까요?",
+
+                // (선택) 배경 클릭 시 닫히게 할지
+                closeOnBackdrop: true,
+                showClose: true,
+
+                primary: {
+                  label: "네, 설정할래요",
+                  // 스샷은 두 버튼 다 아웃라인 느낌이라 outline로 통일(원하면 primary로 변경)
+                  variant: "outline",
+                  closeAfterPress: false, // ✅ 중요: async 끝나기 전에 ModalHost가 닫지 않게
+                  onPress: async () => {
+                    try {
+                      await moveTodoTomorrowMutateAsync({todoId});
+                      resolve(true);
+                    } finally {
+                      close(); // ✅ 성공/실패 상관없이 모달 닫기
+                    }
+                  },
+                },
+
+                secondary: {
+                  label: "아니요, 그만둘래요",
+                  variant: "outline",
+                  closeAfterPress: true, // 기본 true라 close() 자동
+                  onPress: () => {
+                    resolve(false);
+                  },
+                },
+
+                // X 버튼/백버튼/배경 클릭으로 닫힐 때도 resolve 처리
+                onClose: () => {
+                  resolve(false);
+                },
+              });
+            });
           }}
         />
       </ScrollView>
@@ -184,11 +332,11 @@ const styles = StyleSheet.create({
     justifyContent: "space-between",
     height: "11%",
   },
-  bodyScroll: {
-    flex: 1, // ✅ topBar 아래 남은 영역을 스크롤이 차지
+  todoScroll: {
+    flex: 1, // ✅ 남은 영역을 TodoCard 스크롤이 차지
   },
-  bodyContent: {
-    paddingBottom: 36, // ✅ 맨 아래 여백(탭바/홈바 겹침 방지용)
+  todoScrollContent: {
+    paddingBottom: 36, // ✅ 맨 아래 여백(탭바/홈바 겹침 방지)
   },
   iconRow: {
     flexDirection: "row",
