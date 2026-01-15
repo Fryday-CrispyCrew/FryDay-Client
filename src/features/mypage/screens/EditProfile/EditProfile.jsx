@@ -144,7 +144,7 @@ export default function EditProfile() {
                             style={{
                                 width: containerWidth,
                                 borderWidth: 1,
-                                borderColor: isEditing && isError ? '#F97316' : 'transparent', // ✅ 색만 바꿈
+                                borderColor: isEditing && isError ? '#F97316' : 'transparent',
                             }}
                         >
 
@@ -220,14 +220,14 @@ export default function EditProfile() {
                                     </AppText>
                                 </View>
 
-                                <View className="flex-row gap-1">
-                                    <AppText variant="M400" className="text-bk50">
-                                        생년월일
-                                    </AppText>
-                                    <AppText variant="M400" className="text-bk75">
-                                        {formattedBirth}
-                                    </AppText>
-                                </View>
+                                {/*<View className="flex-row gap-1">*/}
+                                {/*    <AppText variant="M400" className="text-bk50">*/}
+                                {/*        생년월일*/}
+                                {/*    </AppText>*/}
+                                {/*    <AppText variant="M400" className="text-bk75">*/}
+                                {/*        {formattedBirth}*/}
+                                {/*    </AppText>*/}
+                                {/*</View>*/}
                             </View>
                         </View>
                     </View>
