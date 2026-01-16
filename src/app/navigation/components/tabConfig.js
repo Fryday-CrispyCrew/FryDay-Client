@@ -17,6 +17,4 @@ export const TAB_CONFIG = {
 };
 
 // 탭바를 숨길 라우트 (Stack 내부 포함)
-export const HIDDEN_ROUTES = [
-  // 예: 'DetailScreen', 'EditScreen', 'CameraScreen'
-];
+export const HIDDEN_ROUTES = ["EditProfile", "Notice", "Use", "Qna"];
