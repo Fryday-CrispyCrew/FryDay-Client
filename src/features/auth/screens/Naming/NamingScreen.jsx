@@ -77,8 +77,16 @@ export default function NamingScreen({ navigation }) {
         try {
             await setMyNickname(trimmed);
 
-            await SecureStore.setItemAsync("nickname", trimmed);
-            await AsyncStorage.setItem(STEP_KEY, ONBOARDING_STEP.NEEDS_AGREEMENT);
+            const r = await Promise.allSettled([
+                SecureStore.setItemAsync("nickname", trimmed),
+                AsyncStorage.setItem("nickname", trimmed),
+            ]);
+
+            const [s1, s2] = await Promise.all([
+                SecureStore.getItemAsync("nickname"),
+                AsyncStorage.getItem("nickname"),
+            ]);
+
 
             const rootNav = navigation.getParent("root") ?? navigation.getParent();
             rootNav?.reset({ index: 0, routes: [{ name: "Main" }] });

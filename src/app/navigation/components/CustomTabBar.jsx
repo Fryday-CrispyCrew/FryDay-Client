@@ -6,29 +6,34 @@ import {TAB_CONFIG, HIDDEN_ROUTES} from "./tabConfig";
 import {getDeepActiveRouteName} from "./navigationHelper";
 import colors from "../../../shared/styles/colors";
 
-export default function CustomTabBar({state, navigation}) {
+export default function CustomTabBar({ state, navigation }) {
   const insets = useSafeAreaInsets();
 
   const activeTabRoute = state.routes[state.index];
   const activeNestedRouteName = getDeepActiveRouteName(activeTabRoute);
 
-  // 숨김 조건
-  if (activeNestedRouteName && HIDDEN_ROUTES.includes(activeNestedRouteName)) {
-    return null;
-  }
+  const shouldHide =
+      activeTabRoute?.name === "MyPage" &&
+      !!activeNestedRouteName &&
+      HIDDEN_ROUTES.includes(activeNestedRouteName);
 
-  const isMyPage =
-      activeTabRoute.name === 'MyPage' ||
-      activeNestedRouteName === 'MyPage';
+  if (shouldHide) return null;
 
+  const isMyPageTab = activeTabRoute?.name === "MyPage";
+  const bgColor = isMyPageTab ? colors.gr : colors.wt;
 
   return (
-    <View style={[styles.tabBar, {paddingBottom: insets.bottom}]}>
-      {state.routes.map((route, index) => {
-        const focused = state.index === index;
-        const {label, active, inactive} = TAB_CONFIG[route.name];
-        const Icon = focused ? active : inactive;
-        const color = focused ? "#141312" : "rgba(20, 19, 18, 0.25)";
+      <View
+          style={[
+            styles.tabBar,
+            { paddingBottom: insets.bottom, backgroundColor: bgColor },
+          ]}
+      >
+        {state.routes.map((route, index) => {
+          const focused = state.index === index;
+          const { label, active, inactive } = TAB_CONFIG[route.name];
+          const Icon = focused ? active : inactive;
+          const color = focused ? "#141312" : "rgba(20, 19, 18, 0.25)";
 
         const onPress = () => {
           const event = navigation.emit({
@@ -61,7 +66,6 @@ const styles = StyleSheet.create({
   tabBar: {
     flexDirection: "row",
     justifyContent: "space-around",
-    backgroundColor: colors.wt,
     borderTopWidth: 0,
     elevation: 10,
   },

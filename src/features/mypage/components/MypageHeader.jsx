@@ -13,7 +13,7 @@ export default function MyPageHeader({
         <View className="h-20 px-5 py-4 flex-row items-center">
             {showBackButton ? (
                 <TouchableOpacity onPress={() => navigation.goBack()} className="mr-2">
-                    <Arrow width={16} height={16} />
+                    <Arrow width={14} height={14} />
                 </TouchableOpacity>
             ) : (
                 <View />
