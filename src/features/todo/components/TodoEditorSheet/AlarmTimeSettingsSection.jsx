@@ -26,13 +26,18 @@ export default function AlarmTimeSettingSection({
   // parent control
   onClosePanel, // 예: () => setSelectedToolKey(null)
 }) {
-  const formattedDraftTime = useMemo(() => {
+  const hhmm = useMemo(() => {
     const h = String(alarmDraftDate.getHours()).padStart(2, "0");
     const m = String(alarmDraftDate.getMinutes()).padStart(2, "0");
-    return `${h}   :   ${m}`;
+    return `${h}:${m}`; // ✅ 저장/전송용
   }, [alarmDraftDate]);
 
-  const displayText = hasPickedAlarmTime ? formattedDraftTime : "--   :   --";
+  const displayHHmm = useMemo(() => {
+    const [h, m] = hhmm.split(":");
+    return `${h}   :   ${m}`; // ✅ 화면 표시용 (기존 UI 유지)
+  }, [hhmm]);
+
+  const displayText = hasPickedAlarmTime ? displayHHmm : "--   :   --";
 
   const openAndroidAlarmPicker = useCallback(() => {
     DateTimePickerAndroid.open({
@@ -64,16 +69,26 @@ export default function AlarmTimeSettingSection({
   }, [setHasPickedAlarmTime, setAlarmTime, setIsIosInlineAlarmPickerOpen]);
 
   const handleApply = useCallback(() => {
-    setAlarmTime(formattedDraftTime);
+    // ✅ clear를 눌러서 "미설정" 상태면, 적용하기는 '삭제/미설정 적용'으로 동작
+    if (!hasPickedAlarmTime) {
+      setAlarmTime(null);
+      setIsIosInlineAlarmPickerOpen(false);
+      onClosePanel?.();
+      return;
+    }
+
+    // ✅ 실제로 시간을 고른 상태면 그 값 적용
+    setAlarmTime(hhmm);
     setHasPickedAlarmTime(true);
     setIsIosInlineAlarmPickerOpen(false);
     onClosePanel?.();
   }, [
-    formattedDraftTime,
+    hhmm,
     setAlarmTime,
     setHasPickedAlarmTime,
     setIsIosInlineAlarmPickerOpen,
     onClosePanel,
+    hasPickedAlarmTime,
   ]);
 
   return (

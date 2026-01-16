@@ -1,4 +1,4 @@
-// src/features/todo/queries/sheet/useUpdateTodoDescriptionMutation.js
+// src/features/todo/queries/sheet/content/useUpdateTodoDescriptionMutation.js
 import {useMutation, useQueryClient} from "@tanstack/react-query";
 import {sheetApi} from "../sheetApi";
 import {sheetKeys} from "../sheetKeys";

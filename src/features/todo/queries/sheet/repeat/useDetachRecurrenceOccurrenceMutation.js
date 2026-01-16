@@ -1,4 +1,4 @@
-// src/features/todo/queries/sheet/useDetachRecurrenceOccurrenceMutation.js
+// src/features/todo/queries/sheet/repeat/useDetachRecurrenceOccurrenceMutation.js
 import {useMutation, useQueryClient} from "@tanstack/react-query";
 import {sheetApi} from "../sheetApi";
 

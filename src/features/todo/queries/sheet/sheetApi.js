@@ -43,12 +43,14 @@ export const sheetApi = {
 
   // 개별 투두 알림 설정: POST /api/todos/{todoId}/alarm
   setAlarm: async ({todoId, notifyAt}) => {
+    console.log("notifyAt: ", notifyAt);
     const res = await api.post(`/api/todos/${todoId}/alarm`, {notifyAt});
     return res.data;
   },
 
   // 개별 투두 알림 삭제: DELETE /api/todos/{todoId}/alarm
   deleteAlarm: async ({todoId}) => {
+    console.log("/api/todos/${todoId}/alarm");
     const res = await api.delete(`/api/todos/${todoId}/alarm`);
     return res.data;
   },

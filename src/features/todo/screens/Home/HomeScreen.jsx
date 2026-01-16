@@ -155,6 +155,9 @@ export default function HomeScreen({navigation}) {
     useToggleTodoCompletionMutation();
   const {mutateAsync: reorderTodosMutateAsync} = useReorderHomeTodosMutation();
 
+  // ✅ 추가: 현재 편집 중인 todoId
+  const [selectedTodoId, setSelectedTodoId] = useState(null);
+
   const editor = useTodoEditorController({
     categories, // ✅ 서버 카테고리로 교체
     onSubmitTodo: async ({todo, text, categoryId}) => {
@@ -172,6 +175,18 @@ export default function HomeScreen({navigation}) {
       // await updateTodoMutateAsync({ todoId: todo.id, ... })
     },
   });
+
+  // ✅ TodoCard에서 투두 눌렀을 때 호출될 핸들러로 감싸기
+  const handlePressTodoInput = useCallback(
+    (payload) => {
+      // payload는 TodoCard에서 넘기는 { ...todo, mode: "edit" } or {id:null,...}
+      const id = payload?.id ? Number(payload.id) : null;
+
+      setSelectedTodoId(id); // ✅ edit면 todoId 세팅, create면 null
+      editor.openEditor?.(payload);
+    },
+    [editor]
+  );
 
   return (
     <SafeAreaView style={styles.safe} edges={["top"]} mode={"margin"}>
@@ -232,7 +247,7 @@ export default function HomeScreen({navigation}) {
       >
         <TodoCard
           navigation={navigation}
-          onPressInput={editor.openEditor}
+          onPressInput={handlePressTodoInput}
           categories={categories}
           todos={todos}
           isViewingToday={isViewingToday}
@@ -344,7 +359,14 @@ export default function HomeScreen({navigation}) {
       </ScrollView>
 
       {/* ✅ @gorhom/bottom-sheet 기반 입력 시트 */}
-      <TodoEditorSheet {...editor.sheetProps} />
+      <TodoEditorSheet
+        {...editor.sheetProps}
+        todoId={selectedTodoId}
+        onDismiss={() => {
+          setSelectedTodoId(null);
+          editor.sheetProps?.onDismiss?.();
+        }}
+      />
     </SafeAreaView>
   );
 }

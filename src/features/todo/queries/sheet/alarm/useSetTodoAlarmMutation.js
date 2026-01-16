@@ -1,4 +1,4 @@
-// src/features/todo/queries/sheet/useSetTodoAlarmMutation.js
+// src/features/todo/queries/sheet/alarm/useSetTodoAlarmMutation.js
 import {useMutation, useQueryClient} from "@tanstack/react-query";
 import {sheetApi} from "../sheetApi";
 import {sheetKeys} from "../sheetKeys";
@@ -14,6 +14,10 @@ export function useSetTodoAlarmMutation(options = {}) {
         queryClient.invalidateQueries({queryKey: sheetKeys.todoDetail(todoId)});
       queryClient.invalidateQueries({queryKey: ["home"]});
       options?.onSuccess?.(data, variables, context);
+      console.log("set alarm success: ", data);
+    },
+    onError: (error) => {
+      console.log("set alarm error: ", error);
     },
     ...options,
   });

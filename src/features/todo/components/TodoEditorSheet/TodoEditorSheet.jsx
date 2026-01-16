@@ -29,6 +29,14 @@ import ChevronIcon from "../../../../shared/components/ChevronIcon";
 import YearMonthWheelModal from "../RepeatSettingsSection/wheel/YearMonthWheelModal";
 import {toast} from "../../../../shared/components/toast/CenterToast";
 import ClearIcon from "../../../../shared/assets/svg/Clear.svg";
+
+import {useTodoDetailQuery} from "../../queries/sheet/useTodoDetailQuery";
+
+import {useUpdateTodoCategoryMutation} from "../../queries/sheet/content/useUpdateTodoCategoryMutation";
+import {useUpdateTodoDescriptionMutation} from "../../queries/sheet/content/useUpdateTodoDescriptionMutation";
+import {useUpdateTodoMemoMutation} from "../../queries/sheet/content/useUpdateTodoMemoMutation";
+import {useSetTodoAlarmMutation} from "../../queries/sheet/alarm/useSetTodoAlarmMutation";
+import {useDeleteTodoAlarmMutation} from "../../queries/sheet/alarm/useDeleteTodoAlarmMutation";
 /**
  * ✅ BottomSheetTextInput만 분리 (IME-safe 로직 포함)
  * - 기존 로직 유지하면서 multiline 등 확장 props 추가
@@ -142,6 +150,7 @@ const TodoEditorSheet = React.forwardRef(function TodoEditorSheet(
     categoryLabel = "카테고리",
     categories = [],
     initialCategoryId = 0,
+    todoId = null, // ✅ 추가
   },
   ref
 ) {
@@ -200,6 +209,87 @@ const TodoEditorSheet = React.forwardRef(function TodoEditorSheet(
   const [todoWheelInitialMonth, setTodoWheelInitialMonth] = useState(
     todoMonthCursor.getMonth() + 1
   );
+
+  // todoId가 string일 수 있으니 숫자로 보정
+  const numericTodoId = useMemo(() => {
+    const n = Number(todoId);
+    return Number.isFinite(n) ? n : null;
+  }, [todoId]);
+
+  // ✅ 단건 조회
+  const {
+    data: todoDetail,
+    isLoading: isTodoDetailLoading,
+    isFetching: isTodoDetailFetching,
+  } = useTodoDetailQuery(
+    {todoId: numericTodoId},
+    {enabled: mode === "edit" && !!numericTodoId}
+  );
+
+  const hasInitializedMemoRef = useRef(false);
+  useEffect(() => {
+    if (mode !== "edit") return;
+    if (!numericTodoId) return;
+    if (!todoDetail) return;
+
+    if (hasInitializedMemoRef.current) return;
+    const memo = todoDetail?.memo ?? "";
+    setMemoText(memo);
+    hasInitializedMemoRef.current = true;
+  }, [mode, numericTodoId, todoDetail]);
+
+  useEffect(() => {
+    console.log("투두 단건 정보: ", todoDetail);
+  }, [todoDetail]);
+
+  // ✅ 초기값 스냅샷 (단건조회 기준)
+  const initialRef = useRef({
+    description: "",
+    categoryId: null,
+    memo: "",
+    notifyAt: null, // "2026-01-08T14:30:00" 같은 문자열
+    todoId: null,
+  });
+
+  // notifyAt -> "HH:mm" 추출 helper
+  const toHHmm = (notifyAtStr) => {
+    if (!notifyAtStr) return null;
+    // "2026-01-08T14:30:00"
+    const timePart = String(notifyAtStr).split("T")[1] ?? "";
+    const hhmm = timePart.slice(0, 5); // "14:30"
+    return hhmm.length === 5 ? hhmm : null;
+  };
+
+  // ✅ todoDetail이 들어오면: (1) 초기값 저장 (2) 화면 상태 주입
+  useEffect(() => {
+    if (mode !== "edit" || !numericTodoId || !todoDetail) return;
+
+    // 이미 같은 todoId로 초기화했으면 중복 주입 방지(원하면 제거 가능)
+    if (initialRef.current.todoId === numericTodoId) return;
+
+    const description = todoDetail?.description ?? "";
+    const categoryId =
+      typeof todoDetail?.categoryId === "number" ? todoDetail.categoryId : null;
+    const memo = todoDetail?.memo ?? "";
+    const notifyAt = todoDetail?.alarm?.notifyAt ?? null;
+
+    initialRef.current = {
+      description,
+      categoryId,
+      memo,
+      notifyAt,
+      todoId: numericTodoId,
+    };
+
+    // ✅ 화면 값 주입
+    onChangeText?.(description);
+    if (categoryId != null) setDraftCategoryId(categoryId);
+    setMemoText(memo);
+
+    const hhmm = toHHmm(notifyAt);
+    setAlarmTime(hhmm); // 화면 표시용
+    setHasPickedAlarmTime(!!hhmm); // “알림 설정됨” 상태
+  }, [mode, numericTodoId, todoDetail, onChangeText]);
 
   const isMemoOpen = mode === "edit" && selectedToolKey === "memo";
   const isAlarmOpen = mode === "edit" && selectedToolKey === "alarm";
@@ -367,22 +457,131 @@ const TodoEditorSheet = React.forwardRef(function TodoEditorSheet(
     requestAnimationFrame(() => inputRef.current?.focus?.());
   }, []);
 
-  const handleSubmitInternal = useCallback(() => {
-    const payload = {
-      // 기존 title, memo, icon 등등...
-      ...repeatPayload,
-    };
+  const {mutateAsync: updateCategory} = useUpdateTodoCategoryMutation();
+  const {mutateAsync: updateDescription} = useUpdateTodoDescriptionMutation();
+  const {mutateAsync: updateMemo} = useUpdateTodoMemoMutation();
+  const {mutateAsync: setAlarm} = useSetTodoAlarmMutation();
+  const {mutateAsync: deleteAlarm} = useDeleteTodoAlarmMutation();
 
-    // ✅ 추후 서버에 memo도 저장하려면 payload로 확장
-    // onSubmit?.({ categoryId: draftCategoryId, title: value, memo: memoText })
-    onSubmit?.(draftCategoryId);
-  }, [onSubmit, draftCategoryId]);
+  const normalizeHHmm = (timeStr) => {
+    if (!timeStr) return null;
+    const parts = String(timeStr).split(":");
+    if (parts.length < 2) return null;
+
+    const hh = parts[0].trim().padStart(2, "0"); // ✅ trim 추가
+    const mm = parts[1].trim().padStart(2, "0"); // ✅ trim 추가
+    return `${hh}:${mm}`;
+  };
+
+  const buildNotifyAt = ({dateStr, timeStr}) => {
+    // dateStr: "2026-01-08"
+    // timeStr: "07:30" or "07:30:00"
+    if (!dateStr) return null;
+    const hhmm = normalizeHHmm(timeStr);
+    if (!hhmm) return null;
+    return `${dateStr}T${hhmm}:00`; // ✅ "2026-01-08T07:30:00"
+  };
+
+  const normalizeMemo = (m) => (m ?? "").trim();
+  const normalizeDesc = (d) => (d ?? "").trim();
+
+  const handleSubmitInternal = useCallback(async () => {
+    // create 모드는 기존 흐름 유지(필요하면 create mutation 연결)
+    if (mode !== "edit") {
+      onSubmit?.(draftCategoryId);
+      return;
+    }
+
+    if (!numericTodoId) return;
+
+    const initial = initialRef.current;
+
+    const currentDescription = normalizeDesc(value);
+    const currentCategoryId = draftCategoryId;
+    const currentMemo = normalizeMemo(memoText);
+
+    // ✅ 초기 알림/현재 알림 비교를 위해 둘 다 "notifyAt" 문자열로 통일
+    const initialNotifyAt = initial.notifyAt; // ex) "2026-01-08T14:30:00" or null
+    const todoDateStr = todoDetail?.date; // 단건조회 응답의 date 사용
+    const currentNotifyAt = hasPickedAlarmTime
+      ? buildNotifyAt({dateStr: todoDateStr, timeStr: alarmTime})
+      : null;
+
+    const tasks = [];
+
+    // 1) 제목 변경
+    if (
+      normalizeDesc(initial.description) !== currentDescription &&
+      currentDescription.length > 0
+    ) {
+      tasks.push(
+        updateDescription({
+          todoId: numericTodoId,
+          description: currentDescription,
+        })
+      );
+    }
+
+    // 2) 카테고리 변경
+    if (
+      initial.categoryId != null &&
+      initial.categoryId !== currentCategoryId
+    ) {
+      tasks.push(
+        updateCategory({todoId: numericTodoId, categoryId: currentCategoryId})
+      );
+    }
+
+    // 3) 메모 변경 (null/"" 처리 포함)
+    if (normalizeMemo(initial.memo) !== currentMemo) {
+      tasks.push(updateMemo({todoId: numericTodoId, memo: currentMemo}));
+    }
+
+    // ✅ 기존에 알림이 있었는데, clear 적용으로 현재 알림이 null이면 삭제 호출
+    if (initialNotifyAt && !currentNotifyAt) {
+      tasks.push(deleteAlarm({todoId: numericTodoId}));
+    }
+    // ✅ 알림 신규 설정/시간 변경
+    else if (initialNotifyAt !== currentNotifyAt && currentNotifyAt) {
+      tasks.push(setAlarm({todoId: numericTodoId, notifyAt: currentNotifyAt}));
+    }
+
+    // ✅ 변경된 게 없으면 그냥 닫기
+    if (tasks.length === 0) {
+      onCloseTogether?.();
+      return;
+    }
+
+    try {
+      await Promise.all(tasks);
+      onCloseTogether?.(); // 성공하면 닫기
+    } catch (e) {
+      // axios interceptor에서 토스트 처리 중이면 여기서는 조용히
+      // 필요하면 추가 toast 가능
+    }
+  }, [
+    mode,
+    numericTodoId,
+    value,
+    draftCategoryId,
+    memoText,
+    hasPickedAlarmTime,
+    alarmTime,
+    todoDetail?.date,
+    updateDescription,
+    updateCategory,
+    updateMemo,
+    setAlarm,
+    onSubmit,
+    onCloseTogether,
+  ]);
 
   const handleDismiss = useCallback(() => {
     setIsCategoryOpen(false);
     setDraftCategoryId(initialCategoryId);
     setSelectedToolKey(null);
     setMemoText(""); // ✅ 닫을 때 메모 입력 초기화
+    hasInitializedMemoRef.current = false; // ✅ 다음 오픈 때 다시 주입되게
     onDismiss?.();
   }, [onDismiss, initialCategoryId]);
 
@@ -493,6 +692,13 @@ const TodoEditorSheet = React.forwardRef(function TodoEditorSheet(
     >
       <BottomSheetView>
         <View style={styles.container}>
+          {/* (선택) 로딩 표시 */}
+          {mode === "edit" && (isTodoDetailLoading || isTodoDetailFetching) ? (
+            <Text style={{fontSize: 12, color: "#B0B0B0", marginBottom: 8}}>
+              투두 정보를 불러오는 중...
+            </Text>
+          ) : null}
+
           {/* 카테고리 row */}
           <View style={styles.categoryInlineRow}>
             <View style={styles.categoryChipSelected}>
