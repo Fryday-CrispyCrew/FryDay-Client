@@ -17,6 +17,7 @@ export const sheetApi = {
 
   // 투두 내용 수정: PATCH /api/todos/{todoId}/description
   updateDescription: async ({todoId, description}) => {
+    console.log("제목 수정");
     const res = await api.patch(`/api/todos/${todoId}/description`, {
       description,
     });
@@ -25,32 +26,35 @@ export const sheetApi = {
 
   // 투두 메모: PATCH /api/todos/{todoId}/memo
   updateMemo: async ({todoId, memo}) => {
+    console.log("메모 수정");
     const res = await api.patch(`/api/todos/${todoId}/memo`, {memo});
     return res.data;
   },
 
   // 투두 날짜 변경: PATCH /api/todos/{todoId}/date
   updateDate: async ({todoId, date}) => {
+    console.log("날짜 수정");
     const res = await api.patch(`/api/todos/${todoId}/date`, {date});
     return res.data;
   },
 
   // 투두 카테고리 변경: PATCH /api/todos/{todoId}/category
   updateCategory: async ({todoId, categoryId}) => {
+    console.log("카테고리 수정");
     const res = await api.patch(`/api/todos/${todoId}/category`, {categoryId});
     return res.data;
   },
 
   // 개별 투두 알림 설정: POST /api/todos/{todoId}/alarm
   setAlarm: async ({todoId, notifyAt}) => {
-    console.log("notifyAt: ", notifyAt);
+    console.log("알림 설정");
     const res = await api.post(`/api/todos/${todoId}/alarm`, {notifyAt});
     return res.data;
   },
 
   // 개별 투두 알림 삭제: DELETE /api/todos/{todoId}/alarm
   deleteAlarm: async ({todoId}) => {
-    console.log("/api/todos/${todoId}/alarm");
+    console.log("알림 삭제");
     const res = await api.delete(`/api/todos/${todoId}/alarm`);
     return res.data;
   },

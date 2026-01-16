@@ -376,15 +376,18 @@ const TodoEditorSheet = React.forwardRef(function TodoEditorSheet(
     setIsMemoFocused(false);
   }, []);
 
-  const closeToolAndFocusTitle = useCallback(
+  const closePanelAndFocusTitle = useCallback(
     (closingKey) => {
-      // ✅ 메모 입력이 열려있었으면 메모만 내리기
+      // 패널 닫기
+      setSelectedToolKey(null);
+
+      // 메모 input이 열려있던 상태면 정리
       blurMemoOnly();
 
-      // ✅ 알림 인라인 picker도 같이 닫기
+      // 알림이면 iOS 인라인 피커도 닫기
       if (closingKey === "alarm") setIsIosInlineAlarmPickerOpen(false);
 
-      // ✅ 키보드는 내리지 않고, 제목 input으로 포커스 이동
+      // 제목 input 포커스
       setIsTitleFocused(true);
       focusTitleInput();
     },
@@ -626,8 +629,8 @@ const TodoEditorSheet = React.forwardRef(function TodoEditorSheet(
     setTodoDate(draftTodoDate);
 
     // 적용 후 패널 닫기 (원하면 유지로 바꿔도 됨)
-    setSelectedToolKey(null);
-  }, [draftTodoDate]);
+    closePanelAndFocusTitle("select");
+  }, [draftTodoDate, closePanelAndFocusTitle]);
 
   const renderEditTools = () => {
     return (
@@ -892,7 +895,7 @@ const TodoEditorSheet = React.forwardRef(function TodoEditorSheet(
                     setIsIosInlineAlarmPickerOpen={
                       setIsIosInlineAlarmPickerOpen
                     }
-                    onClosePanel={() => setSelectedToolKey(null)}
+                    onClosePanel={() => closePanelAndFocusTitle("alarm")}
                     styles={styles}
                   />
                 </View>
