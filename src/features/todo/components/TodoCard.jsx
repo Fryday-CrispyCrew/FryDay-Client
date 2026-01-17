@@ -30,8 +30,8 @@ import colors from "../../../shared/styles/colors";
 //   {id: "4", title: "알고리즘 공부", done: true, categoryId: 2},
 // ];
 
-const ACTION_BTN_W = 56; // 버튼 하나 너비(원하는 값으로)
-const ACTION_GAP = 10; // 버튼 간격
+const ACTION_BTN_W = 48; // 버튼 하나 너비(원하는 값으로)
+const ACTION_GAP = 6; // 버튼 간격
 const ACTIONS_TOTAL_W = ACTION_BTN_W * 2 + ACTION_GAP;
 const SWIPE_OPEN_OFFSET = -ACTIONS_TOTAL_W;
 const SWIPE_THRESHOLD = -(ACTIONS_TOTAL_W * 0.5);
@@ -210,7 +210,7 @@ export default function TodoCard({
         closeAnySwipe(); // ✅ 동작 완료 후 스와이프 닫기
       }
     },
-    [onDoTomorrow, closeAnySwipe]
+    [onDoTomorrow, closeAnySwipe],
   );
 
   const handleDoToday = useCallback(
@@ -221,7 +221,7 @@ export default function TodoCard({
         closeAnySwipe(); // ✅ 동작 완료 후 스와이프 닫기
       }
     },
-    [onDoToday, closeAnySwipe]
+    [onDoToday, closeAnySwipe],
   );
 
   // ✅ 기본: 첫 카테고리만 펼쳐진 상태로 시작
@@ -249,7 +249,7 @@ export default function TodoCard({
           if (todo.id !== id) return todo;
           prevDone = !!todo.done;
           return {...todo, done: !todo.done};
-        })
+        }),
       );
 
       try {
@@ -259,31 +259,24 @@ export default function TodoCard({
         // ✅ 3) 실패 시 롤백
         setTodos((prev) =>
           prev.map((todo) =>
-            todo.id === id ? {...todo, done: prevDone} : todo
-          )
+            todo.id === id ? {...todo, done: prevDone} : todo,
+          ),
         );
         console.log("toggle completion failed:", e);
       }
     },
-    [onToggleTodoCompletion]
+    [onToggleTodoCompletion],
   );
 
   const handleDeleteTodo = useCallback(
     async (todo) => {
-      // ✅ 즉시 UI에서 제거(옵션: optimistic)
-      setTodos((prev) => prev.filter((t) => t.id !== todo?.id));
-
       try {
-        await onDeleteTodo?.(todo); // ✅ HomeScreen에서 실제 mutation 처리
-      } catch (e) {
-        // (옵션) 실패 시 롤백하고 싶으면 여기서 prev 복구 로직을 추가
-        // 지금은 invalidate로 다시 동기화되므로 생략 가능
-        console.log("delete todo failed:", e);
+        await onDeleteTodo?.(todo); // ✅ HomeScreen에서 반복 여부 판단 + 모달/삭제 처리
       } finally {
-        closeAnySwipe();
+        closeAnySwipe(); // ✅ 삭제 후 스와이프 닫기
       }
     },
-    [onDeleteTodo, closeAnySwipe]
+    [onDeleteTodo, closeAnySwipe],
   );
 
   const handleToggleSection = useCallback((categoryId) => {
@@ -294,7 +287,7 @@ export default function TodoCard({
     (categoryId) => {
       onPressInput?.({id: null, title: "", categoryId, mode: "create"}); // ✅ 바텀시트 열기 + 카테고리 힌트 전달(원하면 사용)
     },
-    [onPressInput]
+    [onPressInput],
   );
 
   const handleDragEnd = useCallback(
@@ -346,7 +339,7 @@ export default function TodoCard({
         // 실패 시 invalidate로 서버 데이터 다시 끌어오게 두는 전략이면 여기서 롤백 생략 가능
       }
     },
-    [onReorderTodos, todos, categories]
+    [onReorderTodos, todos, categories],
   );
 
   const renderSection = (category) => {
@@ -464,15 +457,15 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "space-between",
-    paddingHorizontal: 2,
+    // paddingHorizontal: 2,
   },
 
   categoryChip: {
     flexDirection: "row",
     alignItems: "center",
     borderRadius: 999,
-    paddingHorizontal: 12,
-    paddingVertical: 8,
+    paddingHorizontal: 10,
+    paddingVertical: 6,
   },
 
   addTodoButton: {
@@ -486,8 +479,8 @@ const styles = StyleSheet.create({
   },
 
   listArea: {
-    paddingTop: 10,
-    paddingHorizontal: 4,
+    marginTop: 10,
+    // paddingHorizontal: 4,
     // borderWidth: 1,
   },
 
@@ -513,6 +506,7 @@ const styles = StyleSheet.create({
   todoRowWrapper: {
     height: 36,
     justifyContent: "center",
+    // borderWidth: 1,
   },
   todoRow: {
     flexDirection: "row",
@@ -520,7 +514,7 @@ const styles = StyleSheet.create({
     height: 36,
     // paddingHorizontal: 6,
     borderRadius: 12,
-    backgroundColor: "#FAFAFA",
+    backgroundColor: colors.wt,
     // borderWidth: 1,
   },
   dragHandleButton: {
@@ -542,8 +536,8 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "flex-end",
-    gap: 10,
-    paddingRight: 6,
+    gap: 6,
+    // paddingRight: 6,
   },
   todoDeleteButton: {
     paddingHorizontal: 12,

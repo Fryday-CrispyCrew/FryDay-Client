@@ -13,6 +13,9 @@ export function useDeleteTodoMutation(options = {}) {
       queryClient.invalidateQueries({queryKey: homeKeys.characterStatus()});
       options?.onSuccess?.(data, variables, context);
     },
+    onError: (error) => {
+      console.log("error: ", error);
+    },
     ...options,
   });
 }

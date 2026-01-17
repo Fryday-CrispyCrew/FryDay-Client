@@ -32,6 +32,7 @@ import {useMoveTodoTodayMutation} from "../../queries/home/useMoveTodoTodayMutat
 import {useDeleteTodoMutation} from "../../queries/home/useDeleteTodoMutation";
 import {useToggleTodoCompletionMutation} from "../../queries/home/useToggleTodoCompletionMutation";
 import {useReorderHomeTodosMutation} from "../../queries/home/useReorderHomeTodosMutation";
+import {useDeleteRecurrenceTodosMutation} from "../../queries/home/useDeleteRecurrenceTodosMutation";
 
 import {useModalStore} from "../../../../shared/stores/modal/modalStore";
 
@@ -79,7 +80,7 @@ export default function HomeScreen({navigation}) {
         setCurrentDate((prev) => addDays(prev, +1));
       }
     },
-    [setCurrentDate]
+    [setCurrentDate],
   );
 
   const panGesture = useMemo(() => {
@@ -151,6 +152,8 @@ export default function HomeScreen({navigation}) {
   // ✅ "오늘하기" mutation 연결
   const {mutateAsync: moveTodoTodayMutateAsync} = useMoveTodoTodayMutation();
   const {mutateAsync: deleteTodoMutateAsync} = useDeleteTodoMutation();
+  const {mutateAsync: deleteRecurrenceTodosMutateAsync} =
+    useDeleteRecurrenceTodosMutation();
   const {mutateAsync: toggleCompletionMutateAsync} =
     useToggleTodoCompletionMutation();
   const {mutateAsync: reorderTodosMutateAsync} = useReorderHomeTodosMutation();
@@ -176,6 +179,55 @@ export default function HomeScreen({navigation}) {
     },
   });
 
+  const isRecurringTodo = (todo) => {
+    const rid = todo?.recurrenceId;
+    return rid !== null && rid !== undefined && Number(rid) !== 0;
+  };
+
+  const handleRequestDeleteTodo = useCallback(
+    async (todo) => {
+      const todoId = Number(todo?.id);
+      if (!todoId) return;
+
+      // ✅ 반복 투두면: 모달
+      if (isRecurringTodo(todo)) {
+        const recurrenceId = Number(todo.recurrenceId);
+
+        open({
+          title: "반복 일정 삭제",
+          showClose: true,
+          closeOnBackdrop: true,
+
+          // 스샷처럼 둘 다 “아웃라인 버튼” 느낌이면 variant를 outline로 통일
+          primary: {
+            label: "이번 투두만 삭제할래요",
+            variant: "outline",
+            closeAfterPress: false,
+            onPress: async () => {
+              await deleteTodoMutateAsync({todoId});
+              close();
+            },
+          },
+          secondary: {
+            label: "모든 반복 투두를 삭제할래요",
+            variant: "outline",
+            closeAfterPress: false,
+            onPress: async () => {
+              await deleteRecurrenceTodosMutateAsync({recurrenceId});
+              close();
+            },
+          },
+        });
+
+        return;
+      }
+
+      // ✅ 반복 투두 아니면: 바로 삭제
+      await deleteTodoMutateAsync({todoId});
+    },
+    [open, close, deleteTodoMutateAsync, deleteRecurrenceTodosMutateAsync],
+  );
+
   // ✅ TodoCard에서 투두 눌렀을 때 호출될 핸들러로 감싸기
   const handlePressTodoInput = useCallback(
     (payload) => {
@@ -185,7 +237,7 @@ export default function HomeScreen({navigation}) {
       setSelectedTodoId(id); // ✅ edit면 todoId 세팅, create면 null
       editor.openEditor?.(payload);
     },
-    [editor]
+    [editor],
   );
 
   return (
@@ -329,24 +381,7 @@ export default function HomeScreen({navigation}) {
               });
             });
           }}
-          onDeleteTodo={async (todo) => {
-            // ✅ 반복 설정 없는 투두만 여기서 삭제
-            // 서버 응답 예시상 일반 투두는 recurrenceId가 0 또는 null로 올 수 있음
-            const recurrenceId = todo?.recurrenceId;
-            const isNonRecurring =
-              recurrenceId == null ||
-              recurrenceId === 0 ||
-              recurrenceId === "0";
-
-            if (!isNonRecurring) {
-              // 반복 투두 삭제는 다른 API(예: /api/todos/recurrence/{recurrenceId})로 처리 예정
-              return;
-            }
-
-            // ✅ DELETE /api/todos/{todoId}
-            // homeApi.deleteTodo가 {todoId} 형태를 받는 패턴(다른 mutation들과 동일)이라고 가정
-            await deleteTodoMutateAsync({todoId: Number(todo.id)});
-          }}
+          onDeleteTodo={handleRequestDeleteTodo}
           onToggleTodoCompletion={async (todoId) => {
             // ✅ POST /api/todos/{todoId}/completion
             await toggleCompletionMutateAsync({todoId: Number(todoId)});

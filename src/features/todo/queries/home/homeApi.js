@@ -30,6 +30,7 @@ export const homeApi = {
 
   // DELETE /api/todos/{todoId}
   deleteTodo: async ({todoId}) => {
+    console.log("투두 삭제 todoId: ", todoId);
     const res = await api.delete(`/api/todos/${todoId}`);
     return res.data;
   },

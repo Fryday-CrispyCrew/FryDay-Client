@@ -141,6 +141,137 @@ const buildMonthGrid = (monthDate) => {
   return cells;
 };
 
+const API_TO_WEEKDAY = {
+  MONDAY: "mon",
+  TUESDAY: "tue",
+  WEDNESDAY: "wed",
+  THURSDAY: "thu",
+  FRIDAY: "fri",
+  SATURDAY: "sat",
+  SUNDAY: "sun",
+};
+
+const recurrenceTypeToCycle = (type) => {
+  switch (type) {
+    case "DAILY":
+      return "daily";
+    case "WEEKLY":
+      return "weekly";
+    case "MONTHLY":
+      return "monthly";
+    case "YEARLY":
+      return "yearly";
+    default:
+      return "unset";
+  }
+};
+
+// "2026-01-30" -> Date
+const ymdToDate = (ymd) => {
+  if (!ymd) return null;
+  // ✅ 로컬 00:00으로 맞추기
+  const [y, m, d] = String(ymd).split("-").map(Number);
+  if (!y || !m || !d) return null;
+  return new Date(y, m - 1, d);
+};
+
+// "09:00:00" -> "09:00"
+const hhmmssToHHmm = (t) => {
+  if (!t) return null;
+  return String(t).slice(0, 5);
+};
+
+// recurrence.frequencyValues: "MONDAY,WEDNESDAY" / "25" / "1,15" / "03-30,12-25"
+const parseFrequencyValues = ({type, frequencyValues}) => {
+  const raw = (frequencyValues ?? "").trim();
+  if (!raw) return {weekdays: [], monthDays: [], yearMonths: [], yearDays: []};
+
+  const parts = raw
+    .split(",")
+    .map((s) => s.trim())
+    .filter(Boolean);
+
+  if (type === "WEEKLY") {
+    const weekdays = parts.map((p) => API_TO_WEEKDAY[p]).filter(Boolean);
+    return {weekdays, monthDays: [], yearMonths: [], yearDays: []};
+  }
+
+  if (type === "MONTHLY") {
+    const monthDays = parts
+      .map((p) => Number(p))
+      .filter((n) => Number.isFinite(n) && n >= 1 && n <= 31);
+    return {weekdays: [], monthDays, yearMonths: [], yearDays: []};
+  }
+
+  if (type === "YEARLY") {
+    // "MM-dd" 들에서 month/day를 각각 뽑아 store 구조(월 배열 + 일 배열)에 맞춰 저장
+    const months = [];
+    const days = [];
+    parts.forEach((p) => {
+      const [mm, dd] = p.split("-").map((x) => Number(x));
+      if (Number.isFinite(mm) && mm >= 1 && mm <= 12) months.push(mm);
+      if (Number.isFinite(dd) && dd >= 1 && dd <= 31) days.push(dd);
+    });
+
+    // ✅ 중복 제거
+    const yearMonths = Array.from(new Set(months));
+    const yearDays = Array.from(new Set(days));
+
+    return {weekdays: [], monthDays: [], yearMonths, yearDays};
+  }
+
+  // DAILY: 값이 없거나 의미 없음
+  return {weekdays: [], monthDays: [], yearMonths: [], yearDays: []};
+};
+
+const mapRecurrenceToRepeatStore = (recurrence) => {
+  if (!recurrence) return null;
+
+  const type = recurrence?.type ?? null; // "WEEKLY" 등
+  const cycle = recurrenceTypeToCycle(type);
+
+  const repeatStartDate = ymdToDate(recurrence?.startDate);
+  const endDate = recurrence?.endDate ?? null;
+  const repeatEndType = endDate ? "date" : "none";
+  const repeatEndDate = endDate ? ymdToDate(endDate) : null;
+
+  const freqParsed = parseFrequencyValues({
+    type,
+    frequencyValues: recurrence?.frequencyValues,
+  });
+
+  // notificationTime: "HH:mm:ss"
+  const nt = recurrence?.notificationTime ?? null;
+
+  let repeatAlarm = "unset";
+  let repeatAlarmTime = null;
+
+  if (nt) {
+    if (nt === "09:00:00") {
+      repeatAlarm = "morning9";
+      repeatAlarmTime = null;
+    } else {
+      repeatAlarm = "custom";
+      repeatAlarmTime = hhmmssToHHmm(nt); // store는 "HH:mm"
+    }
+  }
+
+  return {
+    repeatStartDate,
+    repeatEndType,
+    repeatEndDate,
+    repeatCycle: cycle,
+
+    repeatWeekdays: freqParsed.weekdays,
+    repeatMonthDays: freqParsed.monthDays,
+    repeatYearMonths: freqParsed.yearMonths,
+    repeatYearDays: freqParsed.yearDays,
+
+    repeatAlarm,
+    repeatAlarmTime,
+  };
+};
+
 const TodoEditorSheet = React.forwardRef(function TodoEditorSheet(
   {
     mode = "create", // ✅ "create" | "edit"
@@ -154,7 +285,7 @@ const TodoEditorSheet = React.forwardRef(function TodoEditorSheet(
     initialCategoryId = 0,
     todoId = null, // ✅ 추가
   },
-  ref
+  ref,
 ) {
   const insets = useSafeAreaInsets();
   const repeatPayload = useRepeatEditorStore.getState().getRepeatPayload();
@@ -206,10 +337,10 @@ const TodoEditorSheet = React.forwardRef(function TodoEditorSheet(
   const [isTodoYearMonthWheelOpen, setIsTodoYearMonthWheelOpen] =
     useState(false);
   const [todoWheelInitialYear, setTodoWheelInitialYear] = useState(
-    todoMonthCursor.getFullYear()
+    todoMonthCursor.getFullYear(),
   );
   const [todoWheelInitialMonth, setTodoWheelInitialMonth] = useState(
-    todoMonthCursor.getMonth() + 1
+    todoMonthCursor.getMonth() + 1,
   );
 
   // todoId가 string일 수 있으니 숫자로 보정
@@ -225,7 +356,7 @@ const TodoEditorSheet = React.forwardRef(function TodoEditorSheet(
     isFetching: isTodoDetailFetching,
   } = useTodoDetailQuery(
     {todoId: numericTodoId},
-    {enabled: mode === "edit" && !!numericTodoId}
+    {enabled: mode === "edit" && !!numericTodoId},
   );
 
   const hasInitializedMemoRef = useRef(false);
@@ -295,6 +426,16 @@ const TodoEditorSheet = React.forwardRef(function TodoEditorSheet(
     const hhmm = toHHmm(notifyAt);
     setAlarmTime(hhmm); // 화면 표시용
     setHasPickedAlarmTime(!!hhmm); // “알림 설정됨” 상태
+
+    // ✅ 반복 설정 주입 (recurrence가 있으면 store 채우기 / 없으면 초기화)
+    const recurrence = todoDetail?.recurrence ?? null;
+    const repeatStore = useRepeatEditorStore.getState();
+    if (recurrence) {
+      const mapped = mapRecurrenceToRepeatStore(recurrence);
+      repeatStore.setRepeatAll(mapped);
+    } else {
+      repeatStore.resetRepeat();
+    }
   }, [mode, numericTodoId, todoDetail, onChangeText]);
 
   const isMemoOpen = mode === "edit" && selectedToolKey === "memo";
@@ -397,7 +538,7 @@ const TodoEditorSheet = React.forwardRef(function TodoEditorSheet(
       setIsTitleFocused(true);
       focusTitleInput();
     },
-    [blurMemoOnly, focusTitleInput]
+    [blurMemoOnly, focusTitleInput],
   );
 
   const onSelectTool = useCallback(
@@ -423,7 +564,7 @@ const TodoEditorSheet = React.forwardRef(function TodoEditorSheet(
       if (key === "alarm") setIsIosInlineAlarmPickerOpen(false);
       openToolAfterKeyboardDismiss(key);
     },
-    [focusTitleInput, openToolAfterKeyboardDismiss]
+    [focusTitleInput, openToolAfterKeyboardDismiss],
   );
 
   const focusInput = useCallback(() => {
@@ -438,7 +579,7 @@ const TodoEditorSheet = React.forwardRef(function TodoEditorSheet(
     (fromIndex, toIndex) => {
       if (fromIndex === -1 && toIndex >= 0) focusInput();
     },
-    [focusInput]
+    [focusInput],
   );
 
   const renderBackdrop = useCallback(
@@ -453,7 +594,7 @@ const TodoEditorSheet = React.forwardRef(function TodoEditorSheet(
         />
       </Pressable>
     ),
-    [onCloseTogether]
+    [onCloseTogether],
   );
 
   useEffect(() => {
@@ -483,6 +624,12 @@ const TodoEditorSheet = React.forwardRef(function TodoEditorSheet(
     return `${hh}:${mm}`;
   };
 
+  const toHHmmss = (timeStr) => {
+    const hhmm = normalizeHHmm(timeStr); // "07:30"
+    if (!hhmm) return null;
+    return `${hhmm}:00`; // ✅ "07:30:00"
+  };
+
   const buildNotifyAt = ({dateStr, timeStr}) => {
     // dateStr: "2026-01-08"
     // timeStr: "07:30" or "07:30:00"
@@ -495,10 +642,17 @@ const TodoEditorSheet = React.forwardRef(function TodoEditorSheet(
   const normalizeMemo = (m) => (m ?? "").trim();
   const normalizeDesc = (d) => (d ?? "").trim();
 
-  const toYYYYMMDD = (isoOrNull) => {
-    if (!isoOrNull) return null;
-    // iso string -> "YYYY-MM-DD"
-    return String(isoOrNull).slice(0, 10);
+  const toYYYYMMDD = (v) => {
+    if (!v) return null;
+
+    if (v instanceof Date) {
+      const y = v.getFullYear();
+      const m = String(v.getMonth() + 1).padStart(2, "0");
+      const d = String(v.getDate()).padStart(2, "0");
+      return `${y}-${m}-${d}`;
+    }
+
+    return String(v).slice(0, 10);
   };
 
   const WEEKDAY_TO_API = {
@@ -517,48 +671,57 @@ const TodoEditorSheet = React.forwardRef(function TodoEditorSheet(
 
     const type = String(draft.repeatCycle).toUpperCase(); // DAILY/WEEKLY/MONTHLY/YEARLY
     const startDate = toYYYYMMDD(draft.repeatStartDate);
+
+    // endDate: null이면 무한 반복 (명세)
     const endDate =
       draft.repeatEndType === "date" ? toYYYYMMDD(draft.repeatEndDate) : null;
 
-    // frequencyValues 구성
-    let frequencyValues = [];
+    // ✅ frequencyValues: 케이스별 명세 반영
+    let frequencyValues = null;
+
     if (draft.repeatCycle === "daily") {
-      frequencyValues = []; // 서버가 DAILY에서 빈 배열 허용하는지 확인 필요. (안되면 ["EVERYDAY"] 같은 규칙으로 맞춰야 함)
+      // DAILY는 null 또는 빈 배열 (선택) → 안전하게 null
+      frequencyValues = null;
     }
+
     if (draft.repeatCycle === "weekly") {
+      // WEEKLY는 배열 필수
       frequencyValues = (draft.repeatWeekdays ?? [])
         .map((k) => WEEKDAY_TO_API[k])
         .filter(Boolean);
     }
+
     if (draft.repeatCycle === "monthly") {
+      // MONTHLY는 날짜 "문자열" 배열 필수 (예: ["7","15"])
       frequencyValues = (draft.repeatMonthDays ?? [])
-        .map((n) => Number(n))
-        .filter((n) => Number.isFinite(n));
-    }
-    if (draft.repeatCycle === "yearly") {
-      // ⚠️ 명세서에 yearly의 frequencyValues 표현이 정확히 안 나와서
-      // 일단 "MM-DD" 문자열 배열로 보냄(백엔드 스펙에 맞게 조정 필요)
-      const months = (draft.repeatYearMonths ?? []).map((n) => Number(n));
-      const days = (draft.repeatYearDays ?? []).map((n) => Number(n));
-      frequencyValues = [];
-      months.forEach((m) => {
-        days.forEach((d) => {
-          if (Number.isFinite(m) && Number.isFinite(d)) {
-            const mm = String(m).padStart(2, "0");
-            const dd = String(d).padStart(2, "0");
-            frequencyValues.push(`${mm}-${dd}`);
-          }
-        });
-      });
+        .map((n) => String(Number(n))) // ✅ 문자열로
+        .filter((s) => s !== "NaN");
     }
 
-    // notificationTime (명세: "HH:mm"):contentReference[oaicite:4]{index=4}
+    if (draft.repeatCycle === "yearly") {
+      // YEARLY는 "MM-dd" 문자열 배열 필수
+      const months = (draft.repeatYearMonths ?? []).map((n) => Number(n));
+      const days = (draft.repeatYearDays ?? []).map((n) => Number(n));
+
+      const out = [];
+      months.forEach((m) => {
+        days.forEach((d) => {
+          if (!Number.isFinite(m) || !Number.isFinite(d)) return;
+          const mm = String(m).padStart(2, "0");
+          const dd = String(d).padStart(2, "0");
+          out.push(`${mm}-${dd}`); // ✅ "MM-dd"
+        });
+      });
+      frequencyValues = out;
+    }
+
+    // ✅ notificationTime: "HH:mm:ss" (POST /recurrence)
     let notificationTime = null;
-    if (draft.repeatAlarm === "morning9") notificationTime = "09:00";
+    if (draft.repeatAlarm === "morning9") notificationTime = "09:00:00";
     if (draft.repeatAlarm === "custom")
-      notificationTime = normalizeHHmm(draft.repeatAlarmTime);
+      notificationTime = toHHmmss(draft.repeatAlarmTime);
     if (draft.repeatAlarm === "sameTime")
-      notificationTime = normalizeHHmm(alarmTimeHHmm); // 투두 알림 시간과 동일 UX라면
+      notificationTime = toHHmmss(alarmTimeHHmm);
 
     return {type, frequencyValues, startDate, endDate, notificationTime};
   };
@@ -596,7 +759,7 @@ const TodoEditorSheet = React.forwardRef(function TodoEditorSheet(
         updateDescription({
           todoId: numericTodoId,
           description: currentDescription,
-        })
+        }),
       );
     }
 
@@ -606,7 +769,7 @@ const TodoEditorSheet = React.forwardRef(function TodoEditorSheet(
       initial.categoryId !== currentCategoryId
     ) {
       tasks.push(
-        updateCategory({todoId: numericTodoId, categoryId: currentCategoryId})
+        updateCategory({todoId: numericTodoId, categoryId: currentCategoryId}),
       );
     }
 
@@ -642,13 +805,16 @@ const TodoEditorSheet = React.forwardRef(function TodoEditorSheet(
       // API 필수값 가드(명세 기준)
       const hasRequired =
         repeatPayload?.type &&
-        Array.isArray(repeatPayload?.frequencyValues) &&
-        repeatPayload?.startDate;
+        repeatPayload?.startDate &&
+        (repeatPayload.type === "DAILY"
+          ? true // ✅ DAILY는 frequencyValues 없어도 됨(null 가능)
+          : Array.isArray(repeatPayload?.frequencyValues) &&
+            repeatPayload.frequencyValues.length > 0);
 
       console.log("repeatPayload.type: ", repeatPayload?.type);
       console.log(
         "Array.isArray(repeatPayload?.frequencyValues): ",
-        Array.isArray(repeatPayload?.frequencyValues)
+        Array.isArray(repeatPayload?.frequencyValues),
       );
       console.log("repeatPayload.startDate: ", repeatPayload?.startDate);
       if (!hasRequired) {
@@ -660,7 +826,7 @@ const TodoEditorSheet = React.forwardRef(function TodoEditorSheet(
         createRecurrence({
           todoId: numericTodoId,
           ...repeatPayload,
-        })
+        }),
       );
     }
 
@@ -717,7 +883,7 @@ const TodoEditorSheet = React.forwardRef(function TodoEditorSheet(
 
   const todoMonthGrid = useMemo(
     () => buildMonthGrid(todoMonthCursor),
-    [todoMonthCursor]
+    [todoMonthCursor],
   );
 
   const today = useMemo(() => new Date(), []);
@@ -737,7 +903,7 @@ const TodoEditorSheet = React.forwardRef(function TodoEditorSheet(
 
       setDraftTodoDate(date);
     },
-    [toast]
+    [toast],
   );
 
   const handleApplyTodoDate = useCallback(() => {
@@ -1051,10 +1217,10 @@ const TodoEditorSheet = React.forwardRef(function TodoEditorSheet(
                         activeOpacity={0.7}
                         onPress={() => {
                           setTodoWheelInitialYear(
-                            todoMonthCursor.getFullYear()
+                            todoMonthCursor.getFullYear(),
                           );
                           setTodoWheelInitialMonth(
-                            todoMonthCursor.getMonth() + 1
+                            todoMonthCursor.getMonth() + 1,
                           );
                           setIsTodoYearMonthWheelOpen(true);
                         }}
@@ -1177,7 +1343,7 @@ const TodoEditorSheet = React.forwardRef(function TodoEditorSheet(
                         return new Date(
                           year,
                           month - 1,
-                          Math.min(day, lastDay)
+                          Math.min(day, lastDay),
                         );
                       });
 
