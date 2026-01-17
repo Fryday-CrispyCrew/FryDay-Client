@@ -15,6 +15,8 @@ import {
 } from "react-native";
 import {Gesture, GestureDetector} from "react-native-gesture-handler";
 import {SafeAreaView} from "react-native-safe-area-context";
+import LottieView from "lottie-react-native";
+import {TodoLottie} from "../../assets/lottie"; // HomeScreen 기준 상대경로 유지
 import AppText from "../../../../shared/components/AppText";
 import TodayIcon from "../../assets/svg/Today.svg";
 import CategoryIcon from "../../assets/svg/Category.svg";
@@ -25,6 +27,7 @@ import {useTodoEditorController} from "../../hooks/useTodoEditorController";
 
 import {useHomeTodosQuery} from "../../queries/home/useHomeTodosQuery";
 import {useCategoriesQuery} from "../../queries/category/useCategoriesQuery";
+import {useTodoCharacterStatusQuery} from "../../queries/home/useTodoCharacterStatusQuery";
 
 import {useCreateTodoMutation} from "../../queries/sheet/useCreateTodoMutation";
 import {useMoveTodoTomorrowMutation} from "../../queries/home/useMoveTodoTomorrowMutation";
@@ -57,6 +60,27 @@ function formatKoreanHeader(dateObj) {
     yearText: `${dateObj.getFullYear()}년`,
     dateText: `${dateObj.getMonth() + 1}월 ${dateObj.getDate()}일`,
   };
+}
+
+function getLottieKeyFromStatus(status) {
+  switch (status) {
+    case "CASE_A":
+      return "caseA";
+    case "CASE_B":
+      return "caseB";
+    case "CASE_C":
+      return "caseC";
+    case "CASE_D":
+      return "caseD";
+    case "CASE_E":
+      return "caseE1"; // ✅ 너의 파일명 규칙
+    case "CASE_F":
+      return "caseE2"; // ✅ 너의 파일명 규칙
+    case "CASE_G":
+      return "caseG";
+    default:
+      return "caseA"; // fallback
+  }
 }
 
 export default function HomeScreen({navigation}) {
@@ -95,6 +119,14 @@ export default function HomeScreen({navigation}) {
         })
     );
   }, [onSwipeChangeDate]);
+
+  const {data: characterStatus} = useTodoCharacterStatusQuery({date});
+
+  const lottieKey = useMemo(() => {
+    return getLottieKeyFromStatus(characterStatus?.status);
+  }, [characterStatus?.status]);
+
+  const shouldRenderBack = lottieKey === "caseE1" || lottieKey === "caseE2";
 
   // ✅ 카테고리 조회 (서버)
   const {data: rawCategories = []} = useCategoriesQuery();
@@ -281,9 +313,28 @@ export default function HomeScreen({navigation}) {
       {/* ✅ (고정) illustrationWrapper: 여기서는 스크롤 안 됨 */}
       <GestureDetector gesture={panGesture}>
         <View style={styles.illustrationWrapper}>
-          <View style={styles.sunburst} />
-          <View style={styles.shrimp}>
-            <Text style={{fontSize: 32}}>🦐</Text>
+          <View style={styles.lottieWrapper}>
+            {/* ✅ caseE1 / caseE2일 때만 back 레이어 추가 */}
+            {shouldRenderBack && (
+              <LottieView
+                source={
+                  lottieKey === "caseE1"
+                    ? TodoLottie.caseE1Back
+                    : TodoLottie.caseE2Back
+                }
+                autoPlay
+                loop
+                style={styles.lottie}
+              />
+            )}
+
+            {/* ✅ 메인 캐릭터 */}
+            <LottieView
+              source={TodoLottie[lottieKey] ?? TodoLottie.caseA}
+              autoPlay
+              loop
+              style={styles.lottie}
+            />
           </View>
         </View>
       </GestureDetector>
@@ -438,10 +489,21 @@ const styles = StyleSheet.create({
     justifyContent: "center",
   },
   illustrationWrapper: {
-    // height: "42%",
     height: height * 0.377,
     alignItems: "center",
     justifyContent: "center",
+  },
+  lottieWrapper: {
+    // height: "42%",
+    position: "absolute",
+    width: "100%",
+    height: "100%",
+    // borderWidth: 1,
+  },
+  lottie: {
+    position: "absolute",
+    width: "100%",
+    height: "100%",
   },
   sunburst: {
     width: width * 0.7,
