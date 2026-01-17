@@ -68,6 +68,12 @@ export const sheetApi = {
     endDate = null,
     notificationTime = null,
   }) => {
+    console.log("todoId: ", todoId);
+    console.log("type: ", type);
+    console.log("frequencyValues: ", frequencyValues);
+    console.log("startDate: ", startDate);
+    console.log("endDate: ", endDate);
+    console.log("notificationTime: ", notificationTime);
     const res = await api.post("/api/todos/recurrence", {
       todoId,
       type,

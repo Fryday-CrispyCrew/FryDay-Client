@@ -37,6 +37,8 @@ import {useUpdateTodoDescriptionMutation} from "../../queries/sheet/content/useU
 import {useUpdateTodoMemoMutation} from "../../queries/sheet/content/useUpdateTodoMemoMutation";
 import {useSetTodoAlarmMutation} from "../../queries/sheet/alarm/useSetTodoAlarmMutation";
 import {useDeleteTodoAlarmMutation} from "../../queries/sheet/alarm/useDeleteTodoAlarmMutation";
+import {useCreateTodoRecurrenceMutation} from "../../queries/sheet/repeat/useCreateTodoRecurrenceMutation";
+
 /**
  * ✅ BottomSheetTextInput만 분리 (IME-safe 로직 포함)
  * - 기존 로직 유지하면서 multiline 등 확장 props 추가
@@ -248,6 +250,7 @@ const TodoEditorSheet = React.forwardRef(function TodoEditorSheet(
     categoryId: null,
     memo: "",
     notifyAt: null, // "2026-01-08T14:30:00" 같은 문자열
+    recurrenceId: null, // ✅ 추가
     todoId: null,
   });
 
@@ -273,11 +276,14 @@ const TodoEditorSheet = React.forwardRef(function TodoEditorSheet(
     const memo = todoDetail?.memo ?? "";
     const notifyAt = todoDetail?.alarm?.notifyAt ?? null;
 
+    const recurrenceId = todoDetail?.recurrence?.recurrenceId ?? null;
+
     initialRef.current = {
       description,
       categoryId,
       memo,
       notifyAt,
+      recurrenceId: todoDetail?.recurrence?.recurrenceId ?? null,
       todoId: numericTodoId,
     };
 
@@ -465,6 +471,7 @@ const TodoEditorSheet = React.forwardRef(function TodoEditorSheet(
   const {mutateAsync: updateMemo} = useUpdateTodoMemoMutation();
   const {mutateAsync: setAlarm} = useSetTodoAlarmMutation();
   const {mutateAsync: deleteAlarm} = useDeleteTodoAlarmMutation();
+  const {mutateAsync: createRecurrence} = useCreateTodoRecurrenceMutation();
 
   const normalizeHHmm = (timeStr) => {
     if (!timeStr) return null;
@@ -487,6 +494,74 @@ const TodoEditorSheet = React.forwardRef(function TodoEditorSheet(
 
   const normalizeMemo = (m) => (m ?? "").trim();
   const normalizeDesc = (d) => (d ?? "").trim();
+
+  const toYYYYMMDD = (isoOrNull) => {
+    if (!isoOrNull) return null;
+    // iso string -> "YYYY-MM-DD"
+    return String(isoOrNull).slice(0, 10);
+  };
+
+  const WEEKDAY_TO_API = {
+    mon: "MONDAY",
+    tue: "TUESDAY",
+    wed: "WEDNESDAY",
+    thu: "THURSDAY",
+    fri: "FRIDAY",
+    sat: "SATURDAY",
+    sun: "SUNDAY",
+  };
+
+  const buildCreateRecurrencePayload = (draft, {alarmTimeHHmm} = {}) => {
+    if (!draft) return null;
+    if (!draft.repeatCycle || draft.repeatCycle === "unset") return null;
+
+    const type = String(draft.repeatCycle).toUpperCase(); // DAILY/WEEKLY/MONTHLY/YEARLY
+    const startDate = toYYYYMMDD(draft.repeatStartDate);
+    const endDate =
+      draft.repeatEndType === "date" ? toYYYYMMDD(draft.repeatEndDate) : null;
+
+    // frequencyValues 구성
+    let frequencyValues = [];
+    if (draft.repeatCycle === "daily") {
+      frequencyValues = []; // 서버가 DAILY에서 빈 배열 허용하는지 확인 필요. (안되면 ["EVERYDAY"] 같은 규칙으로 맞춰야 함)
+    }
+    if (draft.repeatCycle === "weekly") {
+      frequencyValues = (draft.repeatWeekdays ?? [])
+        .map((k) => WEEKDAY_TO_API[k])
+        .filter(Boolean);
+    }
+    if (draft.repeatCycle === "monthly") {
+      frequencyValues = (draft.repeatMonthDays ?? [])
+        .map((n) => Number(n))
+        .filter((n) => Number.isFinite(n));
+    }
+    if (draft.repeatCycle === "yearly") {
+      // ⚠️ 명세서에 yearly의 frequencyValues 표현이 정확히 안 나와서
+      // 일단 "MM-DD" 문자열 배열로 보냄(백엔드 스펙에 맞게 조정 필요)
+      const months = (draft.repeatYearMonths ?? []).map((n) => Number(n));
+      const days = (draft.repeatYearDays ?? []).map((n) => Number(n));
+      frequencyValues = [];
+      months.forEach((m) => {
+        days.forEach((d) => {
+          if (Number.isFinite(m) && Number.isFinite(d)) {
+            const mm = String(m).padStart(2, "0");
+            const dd = String(d).padStart(2, "0");
+            frequencyValues.push(`${mm}-${dd}`);
+          }
+        });
+      });
+    }
+
+    // notificationTime (명세: "HH:mm"):contentReference[oaicite:4]{index=4}
+    let notificationTime = null;
+    if (draft.repeatAlarm === "morning9") notificationTime = "09:00";
+    if (draft.repeatAlarm === "custom")
+      notificationTime = normalizeHHmm(draft.repeatAlarmTime);
+    if (draft.repeatAlarm === "sameTime")
+      notificationTime = normalizeHHmm(alarmTimeHHmm); // 투두 알림 시간과 동일 UX라면
+
+    return {type, frequencyValues, startDate, endDate, notificationTime};
+  };
 
   const handleSubmitInternal = useCallback(async () => {
     // create 모드는 기존 흐름 유지(필요하면 create mutation 연결)
@@ -549,6 +624,46 @@ const TodoEditorSheet = React.forwardRef(function TodoEditorSheet(
       tasks.push(setAlarm({todoId: numericTodoId, notifyAt: currentNotifyAt}));
     }
 
+    // ✅ 반복(Recurrence) - "초기엔 없음" → "지금 설정됨"일 때만 생성 호출
+    const initialRecurrenceId = initial.recurrenceId; // null이면 초기 반복 없음
+
+    // store의 최신 상태에서 payload를 꺼내야 함(상단의 repeatPayload 변수 쓰면 stale 될 수 있음)
+    const repeatDraft = useRepeatEditorStore.getState().getRepeatPayload?.();
+
+    // ✅ 스냅샷을 API payload로 변환
+    const repeatPayload = buildCreateRecurrencePayload(repeatDraft, {
+      alarmTimeHHmm: hasPickedAlarmTime ? alarmTime : null,
+    });
+
+    // getRepeatPayload가 "미설정"이면 null을 반환하도록 되어있는 전제(없으면 아래 조건에서 추가 가드 가능)
+    const shouldCreateRecurrence = !initialRecurrenceId && !!repeatPayload;
+
+    if (shouldCreateRecurrence) {
+      // API 필수값 가드(명세 기준)
+      const hasRequired =
+        repeatPayload?.type &&
+        Array.isArray(repeatPayload?.frequencyValues) &&
+        repeatPayload?.startDate;
+
+      console.log("repeatPayload.type: ", repeatPayload?.type);
+      console.log(
+        "Array.isArray(repeatPayload?.frequencyValues): ",
+        Array.isArray(repeatPayload?.frequencyValues)
+      );
+      console.log("repeatPayload.startDate: ", repeatPayload?.startDate);
+      if (!hasRequired) {
+        toast.show("반복 설정 정보를 다시 확인해주세요.");
+        return;
+      }
+
+      tasks.push(
+        createRecurrence({
+          todoId: numericTodoId,
+          ...repeatPayload,
+        })
+      );
+    }
+
     // ✅ 변경된 게 없으면 그냥 닫기
     if (tasks.length === 0) {
       onCloseTogether?.();
@@ -577,6 +692,7 @@ const TodoEditorSheet = React.forwardRef(function TodoEditorSheet(
     setAlarm,
     onSubmit,
     onCloseTogether,
+    createRecurrence,
   ]);
 
   const handleDismiss = useCallback(() => {
