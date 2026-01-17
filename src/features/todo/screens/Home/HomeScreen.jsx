@@ -170,6 +170,7 @@ export default function HomeScreen({navigation}) {
         await createTodoMutateAsync({
           description: text,
           categoryId,
+          date, // ✅ 홈에서 보고 있는 날짜로 생성 (YYYY-MM-DD)
         });
         return;
       }

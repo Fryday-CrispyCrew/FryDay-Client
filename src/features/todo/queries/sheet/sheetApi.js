@@ -4,8 +4,11 @@ import api from "../../../../shared/lib/api";
 
 export const sheetApi = {
   // 투두 생성: POST /api/todos
-  createTodo: async ({description, categoryId}) => {
-    const res = await api.post("/api/todos", {description, categoryId});
+  createTodo: async ({description, categoryId, date}) => {
+    const body = {description, categoryId};
+    // date는 optional (없으면 서버가 "오늘"로 생성) :contentReference[oaicite:1]{index=1}
+    if (date) body.date = date; // "YYYY-MM-DD"
+    const res = await api.post("/api/todos", body);
     return res.data;
   },
 
