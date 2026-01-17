@@ -38,6 +38,7 @@ import {useUpdateTodoMemoMutation} from "../../queries/sheet/content/useUpdateTo
 import {useSetTodoAlarmMutation} from "../../queries/sheet/alarm/useSetTodoAlarmMutation";
 import {useDeleteTodoAlarmMutation} from "../../queries/sheet/alarm/useDeleteTodoAlarmMutation";
 import {useCreateTodoRecurrenceMutation} from "../../queries/sheet/repeat/useCreateTodoRecurrenceMutation";
+import {useUpdateRecurrenceRuleMutation} from "../../queries/sheet/repeat/useUpdateRecurrenceRuleMutation";
 
 /**
  * ✅ BottomSheetTextInput만 분리 (IME-safe 로직 포함)
@@ -385,6 +386,16 @@ const TodoEditorSheet = React.forwardRef(function TodoEditorSheet(
     todoId: null,
   });
 
+  const initialRecurrencePayloadRef = useRef(null);
+
+  const resetEditHydrationRefs = () => {
+    initialRef.current.todoId = null;
+    initialRef.current.recurrenceId = null;
+
+    hasInitializedMemoRef.current = false;
+    initialRecurrencePayloadRef.current = null;
+  };
+
   // notifyAt -> "HH:mm" 추출 helper
   const toHHmm = (notifyAtStr) => {
     if (!notifyAtStr) return null;
@@ -399,7 +410,12 @@ const TodoEditorSheet = React.forwardRef(function TodoEditorSheet(
     if (mode !== "edit" || !numericTodoId || !todoDetail) return;
 
     // 이미 같은 todoId로 초기화했으면 중복 주입 방지(원하면 제거 가능)
-    if (initialRef.current.todoId === numericTodoId) return;
+    const currentRecurrenceId = todoDetail?.recurrence?.recurrenceId ?? null;
+    if (
+      initialRef.current.todoId === numericTodoId &&
+      initialRef.current.recurrenceId === currentRecurrenceId
+    )
+      return;
 
     const description = todoDetail?.description ?? "";
     const categoryId =
@@ -433,8 +449,13 @@ const TodoEditorSheet = React.forwardRef(function TodoEditorSheet(
     if (recurrence) {
       const mapped = mapRecurrenceToRepeatStore(recurrence);
       repeatStore.setRepeatAll(mapped);
+
+      // ✅ "초기 recurrence"를 update/create payload 규격으로 스냅샷 저장
+      const initialBody = buildInitialRecurrenceBodyFromDetail(recurrence);
+      initialRecurrencePayloadRef.current = stableRecurrenceBody(initialBody);
     } else {
       repeatStore.resetRepeat();
+      initialRecurrencePayloadRef.current = null;
     }
   }, [mode, numericTodoId, todoDetail, onChangeText]);
 
@@ -613,6 +634,7 @@ const TodoEditorSheet = React.forwardRef(function TodoEditorSheet(
   const {mutateAsync: setAlarm} = useSetTodoAlarmMutation();
   const {mutateAsync: deleteAlarm} = useDeleteTodoAlarmMutation();
   const {mutateAsync: createRecurrence} = useCreateTodoRecurrenceMutation();
+  const {mutateAsync: updateRecurrenceRule} = useUpdateRecurrenceRuleMutation();
 
   const normalizeHHmm = (timeStr) => {
     if (!timeStr) return null;
@@ -726,6 +748,64 @@ const TodoEditorSheet = React.forwardRef(function TodoEditorSheet(
     return {type, frequencyValues, startDate, endDate, notificationTime};
   };
 
+  // ✅ recurrence 응답(string csv) -> update/create payload(body) 형태로 정규화
+  const buildInitialRecurrenceBodyFromDetail = (recurrence) => {
+    if (!recurrence) return null;
+
+    const type = recurrence?.type ?? null; // "DAILY" | "WEEKLY" | ...
+    if (!type) return null;
+
+    // 서버 응답은 string "TUESDAY,THURSDAY" / "25,15" / "03-30,12-25" 형태
+    const raw = (recurrence?.frequencyValues ?? "").trim();
+    const parts = raw
+      ? raw
+          .split(",")
+          .map((s) => s.trim())
+          .filter(Boolean)
+      : [];
+
+    let frequencyValues = null;
+
+    if (type === "DAILY") {
+      // create builder가 DAILY는 null로 보내고 있어서 동일하게 맞춤
+      frequencyValues = null;
+    } else {
+      frequencyValues = parts; // WEEKLY/MONTHLY/YEARLY는 배열로
+    }
+
+    const startDate = recurrence?.startDate ?? null; // "YYYY-MM-DD"
+    const endDate = recurrence?.endDate ?? null; // 없으면 null
+
+    // notificationTime은 "HH:mm:ss" or null
+    const notificationTime = recurrence?.notificationTime ?? null;
+
+    return {type, frequencyValues, startDate, endDate, notificationTime};
+  };
+
+  // ✅ 비교를 위한 안정화 (frequencyValues 정렬, DAILY null 통일)
+  const stableRecurrenceBody = (body) => {
+    if (!body) return null;
+
+    const isDaily = body.type === "DAILY";
+    const fv = isDaily
+      ? null
+      : Array.isArray(body.frequencyValues)
+        ? [...body.frequencyValues].sort()
+        : [];
+
+    return {
+      type: body.type ?? null,
+      frequencyValues: fv,
+      startDate: body.startDate ?? null,
+      endDate: body.endDate ?? null,
+      notificationTime: body.notificationTime ?? null,
+    };
+  };
+
+  const isSameRecurrenceBody = (a, b) =>
+    JSON.stringify(stableRecurrenceBody(a)) ===
+    JSON.stringify(stableRecurrenceBody(b));
+
   const handleSubmitInternal = useCallback(async () => {
     // create 모드는 기존 흐름 유지(필요하면 create mutation 연결)
     if (mode !== "edit") {
@@ -830,6 +910,22 @@ const TodoEditorSheet = React.forwardRef(function TodoEditorSheet(
       );
     }
 
+    // ✅ 반복(Recurrence) - "초기에 있었음" + "현재 payload 있음" + "서로 다름" => 규칙 수정 호출
+    const shouldUpdateRecurrence =
+      !!initialRecurrenceId &&
+      !!repeatPayload &&
+      !isSameRecurrenceBody(initialRecurrencePayloadRef.current, repeatPayload);
+
+    if (shouldUpdateRecurrence) {
+      // 명세상 PATCH /api/todos/recurrence/{recurrenceId}
+      tasks.push(
+        updateRecurrenceRule({
+          recurrenceId: initialRecurrenceId,
+          ...repeatPayload,
+        }),
+      );
+    }
+
     // ✅ 변경된 게 없으면 그냥 닫기
     if (tasks.length === 0) {
       onCloseTogether?.();
@@ -859,6 +955,7 @@ const TodoEditorSheet = React.forwardRef(function TodoEditorSheet(
     onSubmit,
     onCloseTogether,
     createRecurrence,
+    updateRecurrenceRule,
   ]);
 
   const handleDismiss = useCallback(() => {
@@ -866,7 +963,7 @@ const TodoEditorSheet = React.forwardRef(function TodoEditorSheet(
     setDraftCategoryId(initialCategoryId);
     setSelectedToolKey(null);
     setMemoText(""); // ✅ 닫을 때 메모 입력 초기화
-    hasInitializedMemoRef.current = false; // ✅ 다음 오픈 때 다시 주입되게
+    resetEditHydrationRefs(); // ✅ 주입 가드 전체 리셋
     onDismiss?.();
   }, [onDismiss, initialCategoryId]);
 

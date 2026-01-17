@@ -68,6 +68,7 @@ export const sheetApi = {
     endDate = null,
     notificationTime = null,
   }) => {
+    console.log("반복 설정 생성");
     console.log("todoId: ", todoId);
     console.log("type: ", type);
     console.log("frequencyValues: ", frequencyValues);
@@ -94,6 +95,14 @@ export const sheetApi = {
     endDate = null,
     notificationTime = null,
   }) => {
+    console.log("반복 설정 수정");
+    console.log("recurrenceId: ", recurrenceId);
+    console.log("type: ", type);
+    console.log("frequencyValues: ", frequencyValues);
+    console.log("startDate: ", startDate);
+    console.log("endDate: ", endDate);
+    console.log("notificationTime: ", notificationTime);
+
     const res = await api.patch(`/api/todos/recurrence/${recurrenceId}`, {
       type,
       ...(frequencyValues ? {frequencyValues} : {}),
