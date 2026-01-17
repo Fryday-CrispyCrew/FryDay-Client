@@ -33,7 +33,7 @@ export const sheetApi = {
 
   // 투두 날짜 변경: PATCH /api/todos/{todoId}/date
   updateDate: async ({todoId, date}) => {
-    console.log("날짜 수정");
+    console.log("날짜 수정: ", date);
     const res = await api.patch(`/api/todos/${todoId}/date`, {date});
     return res.data;
   },

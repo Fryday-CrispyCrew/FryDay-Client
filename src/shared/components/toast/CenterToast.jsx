@@ -1,6 +1,7 @@
 // src/shared/components/toast/CenterToast.jsx
 import React, {useCallback, useEffect, useRef, useState} from "react";
 import {Animated, StyleSheet, Text, View} from "react-native";
+import colors from "../../styles/colors";
 
 /**
  * ✅ 전역 toast API
@@ -130,12 +131,12 @@ const styles = StyleSheet.create({
     paddingHorizontal: 14,
     paddingVertical: 10,
     borderRadius: 999,
-    backgroundColor: "rgba(0,0,0,0.85)",
+    backgroundColor: colors.bk,
   },
   text: {
     fontFamily: "Pretendard-Medium",
     fontSize: 12,
     lineHeight: 12 * 1.5,
-    color: "#FFFFFF",
+    color: colors.wt,
   },
 });

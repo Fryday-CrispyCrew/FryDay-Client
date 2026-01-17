@@ -15,6 +15,9 @@ export function useUpdateTodoDateMutation(options = {}) {
       queryClient.invalidateQueries({queryKey: ["home"]});
       options?.onSuccess?.(data, variables, context);
     },
+    onError: (error) => {
+      console.log("error: ", error?.response.data);
+    },
     ...options,
   });
 }

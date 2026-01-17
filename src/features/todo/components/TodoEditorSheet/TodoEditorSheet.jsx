@@ -39,6 +39,7 @@ import {useSetTodoAlarmMutation} from "../../queries/sheet/alarm/useSetTodoAlarm
 import {useDeleteTodoAlarmMutation} from "../../queries/sheet/alarm/useDeleteTodoAlarmMutation";
 import {useCreateTodoRecurrenceMutation} from "../../queries/sheet/repeat/useCreateTodoRecurrenceMutation";
 import {useUpdateRecurrenceRuleMutation} from "../../queries/sheet/repeat/useUpdateRecurrenceRuleMutation";
+import {useUpdateTodoDateMutation} from "../../queries/sheet/date/useUpdateTodoDateMutation";
 
 /**
  * ✅ BottomSheetTextInput만 분리 (IME-safe 로직 포함)
@@ -330,6 +331,7 @@ const TodoEditorSheet = React.forwardRef(function TodoEditorSheet(
   // ===== 투두 날짜 변경(SelectDateIcon) =====
   const [todoDate, setTodoDate] = useState(new Date()); // ✅ 실제 적용된 값(추후 서버 저장용)
   const [draftTodoDate, setDraftTodoDate] = useState(new Date()); // ✅ 캘린더에서 임시 선택
+  const [hasAppliedTodoDate, setHasAppliedTodoDate] = useState(false); // ✅ '적용하기'로 임시저장 했는지
   const [todoMonthCursor, setTodoMonthCursor] = useState(() => {
     const base = new Date();
     return new Date(base.getFullYear(), base.getMonth(), 1);
@@ -422,6 +424,7 @@ const TodoEditorSheet = React.forwardRef(function TodoEditorSheet(
       typeof todoDetail?.categoryId === "number" ? todoDetail.categoryId : null;
     const memo = todoDetail?.memo ?? "";
     const notifyAt = todoDetail?.alarm?.notifyAt ?? null;
+    const dateStr = todoDetail?.date ?? null;
 
     const recurrenceId = todoDetail?.recurrence?.recurrenceId ?? null;
 
@@ -438,6 +441,20 @@ const TodoEditorSheet = React.forwardRef(function TodoEditorSheet(
     onChangeText?.(description);
     if (categoryId != null) setDraftCategoryId(categoryId);
     setMemoText(memo);
+
+    // ✅ 날짜 주입 (단건조회 date 기반)
+    if (dateStr) {
+      const injectedDate = ymdToDate(dateStr); // 이미 파일에 있는 helper
+      if (injectedDate) {
+        setTodoDate(injectedDate);
+        setDraftTodoDate(injectedDate);
+        setTodoMonthCursor(
+          new Date(injectedDate.getFullYear(), injectedDate.getMonth(), 1),
+        );
+      }
+    }
+    // ✅ 새로 열 때는 "적용하기" 임시저장 플래그 초기화
+    setHasAppliedTodoDate(false);
 
     const hhmm = toHHmm(notifyAt);
     setAlarmTime(hhmm); // 화면 표시용
@@ -635,6 +652,7 @@ const TodoEditorSheet = React.forwardRef(function TodoEditorSheet(
   const {mutateAsync: deleteAlarm} = useDeleteTodoAlarmMutation();
   const {mutateAsync: createRecurrence} = useCreateTodoRecurrenceMutation();
   const {mutateAsync: updateRecurrenceRule} = useUpdateRecurrenceRuleMutation();
+  const {mutateAsync: updateTodoDate} = useUpdateTodoDateMutation();
 
   const normalizeHHmm = (timeStr) => {
     if (!timeStr) return null;
@@ -926,6 +944,18 @@ const TodoEditorSheet = React.forwardRef(function TodoEditorSheet(
       );
     }
 
+    // ✅ 날짜 변경: 사용자가 날짜 탭에서 '적용하기'로 임시저장한 경우에만 호출
+    // API: PATCH /api/todos/{todoId}/date  body: { date: "YYYY-MM-DD" } :contentReference[oaicite:5]{index=5}
+    if (hasAppliedTodoDate) {
+      const initialDateStr = todoDetail?.date ?? null; // "YYYY-MM-DD"
+      const nextDateStr = toYYYYMMDD(todoDate); // Date -> "YYYY-MM-DD"
+
+      // (선택) 실제로 날짜가 다를 때만 호출 (불필요 호출 방지)
+      if (nextDateStr && nextDateStr !== initialDateStr) {
+        tasks.push(updateTodoDate({todoId: numericTodoId, date: nextDateStr}));
+      }
+    }
+
     // ✅ 변경된 게 없으면 그냥 닫기
     if (tasks.length === 0) {
       onCloseTogether?.();
@@ -947,11 +977,14 @@ const TodoEditorSheet = React.forwardRef(function TodoEditorSheet(
     memoText,
     hasPickedAlarmTime,
     alarmTime,
+    hasAppliedTodoDate,
+    todoDate,
     todoDetail?.date,
     updateDescription,
     updateCategory,
     updateMemo,
     setAlarm,
+    updateTodoDate,
     onSubmit,
     onCloseTogether,
     createRecurrence,
@@ -963,6 +996,7 @@ const TodoEditorSheet = React.forwardRef(function TodoEditorSheet(
     setDraftCategoryId(initialCategoryId);
     setSelectedToolKey(null);
     setMemoText(""); // ✅ 닫을 때 메모 입력 초기화
+    setHasAppliedTodoDate(false);
     resetEditHydrationRefs(); // ✅ 주입 가드 전체 리셋
     onDismiss?.();
   }, [onDismiss, initialCategoryId]);
@@ -1006,6 +1040,7 @@ const TodoEditorSheet = React.forwardRef(function TodoEditorSheet(
   const handleApplyTodoDate = useCallback(() => {
     if (!draftTodoDate) return;
     setTodoDate(draftTodoDate);
+    setHasAppliedTodoDate(true); // ✅ '적용하기'로 임시저장 표시
 
     // 적용 후 패널 닫기 (원하면 유지로 바꿔도 됨)
     closePanelAndFocusTitle("select");
@@ -1793,24 +1828,5 @@ const styles = StyleSheet.create({
     fontFamily: "Pretendard-SemiBold",
     color: colors.wt,
     fontSize: 14,
-  },
-  toastOverlay: {
-    ...StyleSheet.absoluteFillObject,
-    alignItems: "center",
-    justifyContent: "center",
-    zIndex: 999,
-  },
-  toastBubble: {
-    maxWidth: "80%",
-    paddingHorizontal: 14,
-    paddingVertical: 10,
-    borderRadius: 999,
-    backgroundColor: "rgba(0,0,0,0.85)",
-  },
-  toastText: {
-    fontFamily: "Pretendard-Medium",
-    fontSize: 12,
-    lineHeight: 12 * 1.5,
-    color: "#FFFFFF",
   },
 });
