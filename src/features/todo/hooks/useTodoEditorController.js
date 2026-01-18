@@ -17,6 +17,7 @@ export function useTodoEditorController({
   categories = [],
   onSubmitTodo,
   defaultCategoryId,
+  selectedDate, // ✅ 추가: 홈/달력에서 선택된 날짜(YYYY-MM-DD)
 } = {}) {
   const bottomSheetRef = useRef(null);
   const {open, close} = useModalStore();
@@ -36,19 +37,6 @@ export function useTodoEditorController({
   }, [bottomSheetRef]);
 
   const [isSheetOpen, setIsSheetOpen] = useState(false);
-
-  useEffect(() => {
-    const sub = BackHandler.addEventListener("hardwareBackPress", () => {
-      // ✅ 바텀시트가 열려있을 때만 가로채기
-      if (!isSheetOpen) return false;
-
-      // ✅ 여기서 바로 dismiss 하지 말고, "그만둘까요?" 모달 띄우기
-      requestCloseEditorTogether();
-      return true; // ✅ 시스템 back 동작 막기
-    });
-
-    return () => sub.remove();
-  }, [isSheetOpen, requestCloseEditorTogether]);
 
   // 편집 대상 todo / 입력 텍스트
   const [editingTodo, setEditingTodo] = useState(null); // { id, title, categoryId } or null
@@ -72,6 +60,54 @@ export function useTodoEditorController({
 
   // create / edit 모드
   const sheetMode = editingTodo?.id ? "edit" : "create";
+
+  // Editor 닫기(키보드 + 시트 동시에)
+  const closeEditorTogether = useCallback(() => {
+    Keyboard.dismiss();
+    bottomSheetRef.current?.dismiss?.();
+    // 상태 초기화는 onDismiss에서 통일
+  }, []);
+
+  // ✅ "닫으려 할 때" 항상 호출할 함수(모달 먼저)
+  const requestCloseEditorTogether = useCallback(() => {
+    open({
+      title: "투두 설정 그만두기",
+      description:
+        "아직 투두가 저장되지 않았어요!\n정말 작성을 그만두시겠어요?",
+      showClose: true,
+      closeOnBackdrop: true,
+
+      primary: {
+        label: "네, 그만둘래요",
+        variant: "outline",
+        closeAfterPress: false,
+        onPress: () => {
+          closeEditorTogether(); // ✅ 여기서만 실제 dismiss
+          close(); // ✅ 모달 닫기
+        },
+      },
+
+      secondary: {
+        label: "아니요, 계속 쓸래요",
+        variant: "outline",
+        closeAfterPress: true, // ModalHost가 자동 close
+        onPress: () => {},
+      },
+    });
+  }, [open, close, closeEditorTogether]);
+
+  useEffect(() => {
+    const sub = BackHandler.addEventListener("hardwareBackPress", () => {
+      // ✅ 바텀시트가 열려있을 때만 가로채기
+      if (!isSheetOpen) return false;
+
+      // ✅ 여기서 바로 dismiss 하지 말고, "그만둘까요?" 모달 띄우기
+      requestCloseEditorTogether();
+      return true; // ✅ 시스템 back 동작 막기
+    });
+
+    return () => sub.remove();
+  }, [isSheetOpen, requestCloseEditorTogether]);
 
   // Editor 열기 (TodoCard에서 호출)
   const openEditor = useCallback(
@@ -116,41 +152,6 @@ export function useTodoEditorController({
     [categories, initialFallbackCategoryId],
   );
 
-  // Editor 닫기(키보드 + 시트 동시에)
-  const closeEditorTogether = useCallback(() => {
-    Keyboard.dismiss();
-    bottomSheetRef.current?.dismiss?.();
-    // 상태 초기화는 onDismiss에서 통일
-  }, []);
-
-  // ✅ "닫으려 할 때" 항상 호출할 함수(모달 먼저)
-  const requestCloseEditorTogether = useCallback(() => {
-    open({
-      title: "투두 설정 그만두기",
-      description:
-        "아직 투두가 저장되지 않았어요!\n정말 작성을 그만두시겠어요?",
-      showClose: true,
-      closeOnBackdrop: true,
-
-      primary: {
-        label: "네, 그만둘래요",
-        variant: "outline",
-        closeAfterPress: false,
-        onPress: () => {
-          closeEditorTogether(); // ✅ 여기서만 실제 dismiss
-          close(); // ✅ 모달 닫기
-        },
-      },
-
-      secondary: {
-        label: "아니요, 계속 쓸래요",
-        variant: "outline",
-        closeAfterPress: true, // ModalHost가 자동 close
-        onPress: () => {},
-      },
-    });
-  }, [open, close, closeEditorTogether]);
-
   // 시트 dismiss 되었을 때 상태 초기화
   const onDismiss = useCallback(() => {
     setEditingTodo(null);
@@ -181,6 +182,7 @@ export function useTodoEditorController({
           todo: editingTodo, // null이면 create
           text: trimmed,
           categoryId: resolvedCategoryId,
+          date: selectedDate, // ✅ 핵심: 선택 날짜도 같이 넘김
         });
       }
 

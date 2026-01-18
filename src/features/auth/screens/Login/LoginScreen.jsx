@@ -16,7 +16,7 @@ export default function LoginScreen({navigation}) {
   const {width, height} = useWindowDimensions();
   const iconSize = useMemo(
     () => Math.max(48, Math.min(56, width * 0.14)),
-    [width]
+    [width],
   );
 
   // const login = async () => {
@@ -48,7 +48,7 @@ export default function LoginScreen({navigation}) {
   const onPressNaver = async () => {
     try {
       const token = await naverGetAccessToken();
-      console.log("NAVER token =", token);
+      // console.log("NAVER token =", token);
       await loginWithAccessToken("NAVER", token, navigation);
     } catch (e) {
       console.log(e);

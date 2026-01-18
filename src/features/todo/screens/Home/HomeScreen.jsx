@@ -41,6 +41,7 @@ import {useDeleteRecurrenceTodosMutation} from "../../queries/home/useDeleteRecu
 
 import {useModalStore} from "../../../../shared/stores/modal/modalStore";
 import colors from "../../../../shared/styles/colors";
+import TodoBoardSection from "../../components/TodoBoardSection";
 
 const {width, height} = Dimensions.get("window");
 
@@ -449,7 +450,6 @@ export default function HomeScreen({navigation}) {
           </TouchableOpacity>
         </View>
       </View>
-
       {/* ✅ (고정) illustrationWrapper: 여기서는 스크롤 안 됨 */}
       <GestureDetector gesture={panGesture}>
         <View style={styles.illustrationWrapper}>
@@ -496,12 +496,10 @@ export default function HomeScreen({navigation}) {
           </View>
         </View>
       </GestureDetector>
-
       {/* ✅ (고정) 구분선 */}
       <View style={styles.dashedDivider} />
-
       {/* ✅ (스크롤) TodoCard 영역만 스크롤 */}
-      <ScrollView
+      {/* <ScrollView
         style={styles.todoScroll}
         contentContainerStyle={styles.todoScrollContent}
         showsVerticalScrollIndicator={false}
@@ -601,16 +599,22 @@ export default function HomeScreen({navigation}) {
             await reorderTodosMutateAsync({date, ids});
           }}
         />
-      </ScrollView>
+      </ScrollView>*/}
 
       {/* ✅ @gorhom/bottom-sheet 기반 입력 시트 */}
-      <TodoEditorSheet
+      {/* <TodoEditorSheet
         {...editor.sheetProps}
         todoId={selectedTodoId}
         onDismiss={() => {
           setSelectedTodoId(null);
           editor.sheetProps?.onDismiss?.();
         }}
+      /> */}
+
+      <TodoBoardSection
+        navigation={navigation}
+        date={date}
+        isViewingToday={isViewingToday}
       />
     </SafeAreaView>
   );
