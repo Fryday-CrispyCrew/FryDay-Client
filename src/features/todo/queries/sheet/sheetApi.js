@@ -116,16 +116,11 @@ export const sheetApi = {
     return res.data;
   },
 
-  // 반복 설정된 투두 회차 분리: POST /api/todos/recurrence/{recurrenceId}/detach
-  detachRecurrenceOccurrence: async ({
-    recurrenceId,
-    occurrenceDate,
-    newDate,
-  }) => {
-    const res = await api.post(`/api/todos/recurrence/${recurrenceId}/detach`, {
-      occurrenceDate,
-      newDate,
-    });
+  // 반복 해제: DELETE /api/todos/{todoId}/recurrence
+  // 해당 투두만 남고, 원본 포함 나머지 반복 투두는 삭제되며 단건 투두로 유지
+  deleteTodoRecurrence: async ({todoId}) => {
+    console.log("반복 설정 해제");
+    const res = await api.delete(`/api/todos/${todoId}/recurrence`);
     return res.data;
   },
 };

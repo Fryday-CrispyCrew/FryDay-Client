@@ -40,6 +40,7 @@ import {useDeleteTodoAlarmMutation} from "../../queries/sheet/alarm/useDeleteTod
 import {useCreateTodoRecurrenceMutation} from "../../queries/sheet/repeat/useCreateTodoRecurrenceMutation";
 import {useUpdateRecurrenceRuleMutation} from "../../queries/sheet/repeat/useUpdateRecurrenceRuleMutation";
 import {useUpdateTodoDateMutation} from "../../queries/sheet/date/useUpdateTodoDateMutation";
+import {useDeleteTodoRecurrenceMutation} from "../../queries/sheet/repeat/useDeleteTodoRecurrenceMutation";
 
 /**
  * ✅ BottomSheetTextInput만 분리 (IME-safe 로직 포함)
@@ -653,6 +654,7 @@ const TodoEditorSheet = React.forwardRef(function TodoEditorSheet(
   const {mutateAsync: createRecurrence} = useCreateTodoRecurrenceMutation();
   const {mutateAsync: updateRecurrenceRule} = useUpdateRecurrenceRuleMutation();
   const {mutateAsync: updateTodoDate} = useUpdateTodoDateMutation();
+  const {mutateAsync: deleteTodoRecurrence} = useDeleteTodoRecurrenceMutation();
 
   const normalizeHHmm = (timeStr) => {
     if (!timeStr) return null;
@@ -896,37 +898,15 @@ const TodoEditorSheet = React.forwardRef(function TodoEditorSheet(
       alarmTimeHHmm: hasPickedAlarmTime ? alarmTime : null,
     });
 
+    // ✅ 초기 recurrence 존재 여부 (단건조회에서 온 값)
+    const initialHasRecurrence = !!initialRecurrenceId;
+
+    // ✅ 사용자가 "모두 미설정"으로 만든 상태 판별
+    // - 너희 store 기준으로 repeatCycle이 unset이면 반복 자체가 미설정 상태로 보는 게 가장 안전함
+    const isRepeatCleared = repeatDraft?.repeatCycle === "unset";
+
     // getRepeatPayload가 "미설정"이면 null을 반환하도록 되어있는 전제(없으면 아래 조건에서 추가 가드 가능)
     const shouldCreateRecurrence = !initialRecurrenceId && !!repeatPayload;
-
-    if (shouldCreateRecurrence) {
-      // API 필수값 가드(명세 기준)
-      const hasRequired =
-        repeatPayload?.type &&
-        repeatPayload?.startDate &&
-        (repeatPayload.type === "DAILY"
-          ? true // ✅ DAILY는 frequencyValues 없어도 됨(null 가능)
-          : Array.isArray(repeatPayload?.frequencyValues) &&
-            repeatPayload.frequencyValues.length > 0);
-
-      console.log("repeatPayload.type: ", repeatPayload?.type);
-      console.log(
-        "Array.isArray(repeatPayload?.frequencyValues): ",
-        Array.isArray(repeatPayload?.frequencyValues),
-      );
-      console.log("repeatPayload.startDate: ", repeatPayload?.startDate);
-      if (!hasRequired) {
-        toast.show("반복 설정 정보를 다시 확인해주세요.");
-        return;
-      }
-
-      tasks.push(
-        createRecurrence({
-          todoId: numericTodoId,
-          ...repeatPayload,
-        }),
-      );
-    }
 
     // ✅ 반복(Recurrence) - "초기에 있었음" + "현재 payload 있음" + "서로 다름" => 규칙 수정 호출
     const shouldUpdateRecurrence =
@@ -934,14 +914,49 @@ const TodoEditorSheet = React.forwardRef(function TodoEditorSheet(
       !!repeatPayload &&
       !isSameRecurrenceBody(initialRecurrencePayloadRef.current, repeatPayload);
 
-    if (shouldUpdateRecurrence) {
-      // 명세상 PATCH /api/todos/recurrence/{recurrenceId}
-      tasks.push(
-        updateRecurrenceRule({
-          recurrenceId: initialRecurrenceId,
-          ...repeatPayload,
-        }),
-      );
+    // ✅ (최우선) 기존에 반복이 있었는데, 사용자가 반복을 전부 미설정으로 만들었다면 "반복 해제" API가 우선
+    if (initialHasRecurrence && isRepeatCleared) {
+      tasks.push(deleteTodoRecurrence({todoId: Number(todoId)}));
+      // delete가 우선이므로 update/create는 절대 타면 안 됨
+    } else {
+      if (shouldCreateRecurrence) {
+        // API 필수값 가드(명세 기준)
+        const hasRequired =
+          repeatPayload?.type &&
+          repeatPayload?.startDate &&
+          (repeatPayload.type === "DAILY"
+            ? true // ✅ DAILY는 frequencyValues 없어도 됨(null 가능)
+            : Array.isArray(repeatPayload?.frequencyValues) &&
+              repeatPayload.frequencyValues.length > 0);
+
+        console.log("repeatPayload.type: ", repeatPayload?.type);
+        console.log(
+          "Array.isArray(repeatPayload?.frequencyValues): ",
+          Array.isArray(repeatPayload?.frequencyValues),
+        );
+        console.log("repeatPayload.startDate: ", repeatPayload?.startDate);
+        if (!hasRequired) {
+          toast.show("반복 설정 정보를 다시 확인해주세요.");
+          return;
+        }
+
+        tasks.push(
+          createRecurrence({
+            todoId: numericTodoId,
+            ...repeatPayload,
+          }),
+        );
+      }
+
+      if (shouldUpdateRecurrence) {
+        // 명세상 PATCH /api/todos/recurrence/{recurrenceId}
+        tasks.push(
+          updateRecurrenceRule({
+            recurrenceId: initialRecurrenceId,
+            ...repeatPayload,
+          }),
+        );
+      }
     }
 
     // ✅ 날짜 변경: 사용자가 날짜 탭에서 '적용하기'로 임시저장한 경우에만 호출
