@@ -5,8 +5,9 @@ import {SafeAreaView} from "react-native-safe-area-context";
 
 import {kakaoGetAccessToken} from "../../lib/kakao";
 import {naverGetAccessToken} from "../../lib/naver";
-import {loginWithAccessToken} from "../../api/socialLogin";
+import {loginWithAccessToken, loginWithCode} from "../../api/socialLogin";
 import KakaoLogins from "@react-native-seoul/kakao-login";
+import {appleGetIdToken} from "../../lib/apple";
 
 const LOGGED_IN_KEY = "hasLoggedIn";
 const STEP_KEY = "onboardingStep";
@@ -52,6 +53,11 @@ export default function LoginScreen({navigation}) {
     } catch (e) {
       console.log(e);
     }
+  };
+
+  const onPressApple = async () => {
+    const idToken = await appleGetIdToken();
+    await loginWithCode(idToken, navigation);
   };
 
   return (
@@ -112,7 +118,7 @@ export default function LoginScreen({navigation}) {
               {
                 label: "Apple",
                 img: require("../../assets/png/login-apple.png"),
-                onPress: () => {},
+                onPress: onPressApple,
               },
             ].map((it) => (
               <View key={it.label} className="items-center">

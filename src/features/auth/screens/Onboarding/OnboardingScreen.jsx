@@ -5,6 +5,8 @@ import AppText from "../../../../shared/components/AppText";
 import SkipIcon from "../../assets/svg/skip-arrow.svg";
 import {completeOnboarding} from "../../api/onboarding";
 import { SafeAreaView } from "react-native-safe-area-context";
+import {ONBOARDING_STEP, STEP_KEY} from "../../../../shared/constants/onboardingStep";
+import AsyncStorage from "@react-native-async-storage/async-storage";
 
 const PAGES = [
     { id: "1", title: "할 일을 미루면 발등에 불이 떨어지죠.", desc: "FryDay에서는 그 불을 튀김기의 열기로 바꿉니다.", image: require("../../assets/png/onboarding-1.png") },
@@ -30,8 +32,15 @@ export default function OnboardingScreen({ navigation }) {
         } catch (e) {
             console.log("[completeOnboarding] ERR", e?.status, e?.code, e?.message);
         }
-        await SecureStore.setItemAsync("hasOnboarded", "true");
-        navigation.reset({ index: 0, routes: [{ name: "Main" }] });
+
+        await Promise.allSettled([
+            SecureStore.setItemAsync("hasOnboarded", "true"),
+            AsyncStorage.setItem("hasOnboarded", "true"),
+            AsyncStorage.setItem(STEP_KEY, ONBOARDING_STEP.COMPLETED), // 필요하면
+        ]);
+
+        const rootNav = navigation.getParent("root") ?? navigation.getParent();
+        rootNav?.reset({ index: 0, routes: [{ name: "Main" }] });
     };
 
 

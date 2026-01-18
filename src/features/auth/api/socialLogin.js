@@ -8,13 +8,14 @@ import {
 import dayjs from "dayjs";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import * as SecureStore from "expo-secure-store";
+import {STEP_KEY} from "../../../shared/constants/onboardingStep";
 
 function nextRoute(status) {
   switch (status) {
     case "NEEDS_NICKNAME":
       return "Naming";
     case "NEEDS_AGREEMENT":
-      return "Agreement";
+      return "Main";
     case "NEEDS_ONBOARDING":
       return "Onboarding";
     case "COMPLETED":
@@ -22,11 +23,6 @@ function nextRoute(status) {
     default:
       return "Naming";
   }
-}
-
-function nextRouteByToken(data) {
-  const refresh = String(data?.refreshToken ?? "").trim();
-  return refresh ? "Main" : "Naming";
 }
 
 export async function loginWithAccessToken(provider, accessToken, navigation) {
@@ -57,9 +53,11 @@ export async function loginWithAccessToken(provider, accessToken, navigation) {
     ]);
   }
 
+  await AsyncStorage.setItem(STEP_KEY, String(data?.onboardingStatus ?? ""));
+  const target = nextRoute(data?.onboardingStatus);
   navigation.reset({
     index: 0,
-    routes: [{ name: nextRouteByToken(data) }],
+    routes: [{ name: target }],
   });
 
 
@@ -68,26 +66,27 @@ export async function loginWithAccessToken(provider, accessToken, navigation) {
   // });
 }
 
-export async function loginWithCode(provider, code, navigation) {
+export async function loginWithCode(idToken, navigation) {
   const deviceId = await getDeviceId();
 
-  const {data} = await api.post("/api/users/social/login", {
-    provider,
-    code,
+  const { data } = await api.post("/api/users/apple/login", {
+    idToken,
     deviceId,
     deviceType: Platform.OS === "ios" ? "iOS" : "Android",
+    deviceName: "FryDay",
   });
 
   await Promise.all([
-    saveAccessToken(String(data.accessToken ?? "")),
-    saveRefreshToken(String(data.refreshToken ?? "")),
+    saveAccessToken(String(data?.accessToken ?? "")),
+    saveRefreshToken(String(data?.refreshToken ?? "")),
   ]);
 
-  // navigation.reset({
-  //   index: 0,
-  //   routes: [{name: nextRoute(data.onboardingStatus)}],
-  // });
-  navigation.navigate("Category", {
-    screen: "CategList",
+  await AsyncStorage.setItem(STEP_KEY, String(data?.onboardingStatus ?? ""));
+
+  const target = nextRoute(data?.onboardingStatus);
+  navigation.reset({
+    index: 0,
+    routes: [{ name: target }],
   });
 }
+
