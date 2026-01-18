@@ -29,7 +29,7 @@ export async function completeOnboarding(options = {}) {
 
   const {data} = await api.post("/api/users/me/onboarding", null, {
     headers: {Authorization: `Bearer ${token}`},
-    meta: {skipErrorToast: !!options.skipErrorToast},
+    meta: {skipErrorToast: true},
   });
 
   return data;

@@ -1,10 +1,15 @@
-// src/shared/stores/modal/modalStore.js
-import {create} from "zustand";
+import { create } from "zustand";
 
-export const useModalStore = create((set, get) => ({
-  visible: false,
-  props: null,
+export const useModalStore = create((set) => ({
+  loadingVisible: false,
+  errorVisible: false,
+  errorMessage: "",
 
-  open: (props) => set({visible: true, props}),
-  close: () => set({visible: false, props: null}),
+  openLoading: () => set({ loadingVisible: true }),
+  closeLoading: () => set({ loadingVisible: false }),
+
+  openError: (message) =>
+      set({ errorVisible: true, errorMessage: message }),
+  closeError: () =>
+      set({ errorVisible: false, errorMessage: "" }),
 }));
