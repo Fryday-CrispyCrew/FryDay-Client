@@ -415,7 +415,7 @@ export default function HomeScreen({navigation}) {
   );
 
   return (
-    <SafeAreaView style={styles.safe} edges={["top"]} mode={"margin"}>
+    <SafeAreaView style={styles.safe} edges={["top"]}>
       <StatusBar barStyle="dark-content" />
       {/* topBar: 날짜 + 우측 SVG 아이콘들 */}
       <View style={styles.topBar}>
@@ -610,12 +610,13 @@ export default function HomeScreen({navigation}) {
           editor.sheetProps?.onDismiss?.();
         }}
       /> */}
-
-      <TodoBoardSection
-        navigation={navigation}
-        date={date}
-        isViewingToday={isViewingToday}
-      />
+      <View style={{flex: 1}}>
+        <TodoBoardSection
+          navigation={navigation}
+          date={date}
+          isViewingToday={isViewingToday}
+        />
+      </View>
     </SafeAreaView>
   );
 }
@@ -624,7 +625,7 @@ const styles = StyleSheet.create({
   safe: {
     flex: 1,
     backgroundColor: "#FAFAFA",
-    paddingHorizontal: "5%",
+    paddingHorizontal: 20,
   },
   topBar: {
     flexDirection: "row",

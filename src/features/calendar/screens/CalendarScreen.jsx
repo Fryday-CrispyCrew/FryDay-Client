@@ -1,6 +1,6 @@
-import React, { useState, useEffect, useCallback } from "react";
-import { View } from "react-native";
-import { SafeAreaView } from "react-native-safe-area-context";
+import React, {useState, useEffect, useCallback} from "react";
+import {View} from "react-native";
+import {SafeAreaView} from "react-native-safe-area-context";
 import dayjs from "dayjs";
 
 import CalendarHeader from "../components/CalendarHeader";
@@ -11,96 +11,109 @@ import AppText from "../../../shared/components/AppText";
 import Dotted from "../assets/svg/Dotted.svg";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 
-import { getDailyResults } from "../api/dailyResultsApi";
+import TodoBoardSection from "../../todo/components/TodoBoardSection";
 
-export default function CalendarScreen() {
-    const [mode, setMode] = useState("month"); // 'week' | 'month'
-    const [currentDate, setCurrentDate] = useState(dayjs());
-    const [selectedDate, setSelectedDate] = useState(dayjs());
+import {getDailyResults} from "../api/dailyResultsApi";
 
-    const [bowlMap, setBowlMap] = useState([]);
+export default function CalendarScreen({navigation}) {
+  const [mode, setMode] = useState("month"); // 'week' | 'month'
+  const [currentDate, setCurrentDate] = useState(dayjs());
+  const [selectedDate, setSelectedDate] = useState(dayjs());
 
-    const handlePressToday = useCallback(() => {
-        const today = dayjs();
-        if (mode === "week") {
-            setCurrentDate(today);
-            setSelectedDate(today);
-        } else {
-            setCurrentDate(today.startOf("month"));
-        }
-    }, [mode]);
+  const selectedDateStr = selectedDate.format("YYYY-MM-DD"); // ✅ TodoBoardSection이 기대하는 포맷
+  const isViewingToday = selectedDate.isSame(dayjs(), "day");
 
-    useEffect(() => {
-        (async () => {
-            const saved = await AsyncStorage.getItem("calendarMode");
-            if (saved === "week" || saved === "month") setMode(saved);
-        })();
-    }, []);
+  const [bowlMap, setBowlMap] = useState([]);
 
-    const toggleMode = useCallback(() => {
-        setMode((m) => {
-            const next = m === "week" ? "month" : "week";
-            AsyncStorage.setItem("calendarMode", next);
-            return next;
-        });
-    }, []);
+  const handlePressToday = useCallback(() => {
+    const today = dayjs();
+    if (mode === "week") {
+      setCurrentDate(today);
+      setSelectedDate(today);
+    } else {
+      setCurrentDate(today.startOf("month"));
+    }
+  }, [mode]);
 
-    useEffect(() => {
-        const startDate = currentDate.startOf("month").format("YYYY-MM-DD");
-        const endDate = currentDate.endOf("month").format("YYYY-MM-DD");
+  useEffect(() => {
+    (async () => {
+      const saved = await AsyncStorage.getItem("calendarMode");
+      if (saved === "week" || saved === "month") setMode(saved);
+    })();
+  }, []);
 
-        (async () => {
-            try {
-                const map = await getDailyResults(startDate, endDate);
-                setBowlMap(map);
-            } catch (e) {
-            }
-        })();
-    }, [currentDate]);
+  const toggleMode = useCallback(() => {
+    setMode((m) => {
+      const next = m === "week" ? "month" : "week";
+      AsyncStorage.setItem("calendarMode", next);
+      return next;
+    });
+  }, []);
 
-    return (
-        <SafeAreaView className="flex-1 bg-wt" edges={["top", "bottom"]}>
-            <CalendarHeader
-                date={currentDate}
-                mode={mode}
-                onPressButton={toggleMode}
-                onPressToday={handlePressToday}
-            />
+  useEffect(() => {
+    const startDate = currentDate.startOf("month").format("YYYY-MM-DD");
+    const endDate = currentDate.endOf("month").format("YYYY-MM-DD");
 
-            <WeekdayHeader />
+    (async () => {
+      try {
+        const map = await getDailyResults(startDate, endDate);
+        setBowlMap(map);
+      } catch (e) {}
+    })();
+  }, [currentDate]);
 
-            <View className="flex-1">
-                {mode === "week" ? (
-                    <>
-                        <View className="shrink-0">
-                            <WeekSlider
-                                currentDate={currentDate}
-                                selectedDate={selectedDate}
-                                onSelectDate={setSelectedDate}
-                                onChangeDate={setCurrentDate}
-                                bowlMap={bowlMap}
-                            />
-                        </View>
-                        {/* 구분선 */}
-                        <View className="mt-3 mx-5 shrink-0">
-                            <Dotted style={{ width: "100%" }} height={1} />
-                        </View>
+  return (
+    <SafeAreaView className="flex-1 bg-wt" edges={["top", "bottom"]}>
+      <CalendarHeader
+        date={currentDate}
+        mode={mode}
+        onPressButton={toggleMode}
+        onPressToday={handlePressToday}
+      />
 
-                        {/* 임시 */}
-                        <View className="mt-[18px] items-center shrink-0">
-                            <AppText variant="M500" className="text-bk">
-                                {selectedDate.format('M월 D일')}
-                            </AppText>
-                        </View>
-                    </>
-                ) : (
-                    <MonthView
-                        currentDate={currentDate}
-                        onChangeDate={setCurrentDate}
-                        bowlMap={bowlMap}
-                    />
-                )}
+      <WeekdayHeader />
+
+      <View className="flex-1">
+        {mode === "week" ? (
+          <>
+            <View className="shrink-0">
+              <WeekSlider
+                currentDate={currentDate}
+                selectedDate={selectedDate}
+                onSelectDate={setSelectedDate}
+                onChangeDate={setCurrentDate}
+                bowlMap={bowlMap}
+              />
             </View>
-        </SafeAreaView>
-    );
+            {/* 구분선 */}
+            <View className="mt-3 mx-5 shrink-0">
+              <Dotted style={{width: "100%"}} height={1} />
+            </View>
+
+            {/* 임시 */}
+            {/* <View className="mt-[18px] items-center shrink-0">
+              <AppText variant="M500" className="text-bk">
+                {selectedDate.format("M월 D일")}
+              </AppText>
+            </View> */}
+
+            {/* ✅ 남은 영역: TodoBoardSection (Home과 동일 UI) */}
+            <View style={{flex: 1, paddingHorizontal: 20}}>
+              <TodoBoardSection
+                navigation={navigation}
+                date={selectedDateStr}
+                isViewingToday={isViewingToday}
+              />
+            </View>
+          </>
+        ) : (
+          <MonthView
+            currentDate={currentDate}
+            onChangeDate={setCurrentDate}
+            bowlMap={bowlMap}
+          />
+        )}
+      </View>
+    </SafeAreaView>
+  );
 }

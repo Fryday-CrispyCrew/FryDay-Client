@@ -282,6 +282,7 @@ const TodoEditorSheet = React.forwardRef(function TodoEditorSheet(
     onChangeText,
     onSubmit,
     onCloseTogether,
+    onCloseAfterSubmit, // ✅ 추가
     onDismiss,
     categoryLabel = "카테고리",
     categories = [],
@@ -973,13 +974,13 @@ const TodoEditorSheet = React.forwardRef(function TodoEditorSheet(
 
     // ✅ 변경된 게 없으면 그냥 닫기
     if (tasks.length === 0) {
-      onCloseTogether?.();
+      onCloseAfterSubmit?.(); // ✅ 모달 없이 즉시 닫기
       return;
     }
 
     try {
       await Promise.all(tasks);
-      onCloseTogether?.(); // 성공하면 닫기
+      onCloseAfterSubmit?.(); // ✅ 모달 없이 즉시 닫기
     } catch (e) {
       // axios interceptor에서 토스트 처리 중이면 여기서는 조용히
       // 필요하면 추가 toast 가능
@@ -1513,7 +1514,7 @@ export default TodoEditorSheet;
 
 const styles = StyleSheet.create({
   container: {
-    flex: 1,
+    // flex: 1,
     paddingHorizontal: 20,
     paddingTop: 8,
     // paddingBottom: 16,

@@ -206,6 +206,7 @@ export function useTodoEditorController({
       value: editingText,
       onChangeText: setEditingText,
       onCloseTogether: requestCloseEditorTogether, // ✅ 항상 모달 먼저
+      onCloseAfterSubmit: closeEditorTogether, // ✅ 제출 성공 시 즉시 닫기
       onDismiss,
       categoryLabel: sheetCategory?.label ?? "카테고리",
       categories,
@@ -215,6 +216,7 @@ export function useTodoEditorController({
     [
       categories,
       requestCloseEditorTogether,
+      closeEditorTogether,
       editingText,
       handleSubmit,
       onDismiss,
