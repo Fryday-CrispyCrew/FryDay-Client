@@ -15,6 +15,8 @@ import NamingArrow from "../../assets/svg/naming-arrow.svg";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { STEP_KEY, ONBOARDING_STEP } from "../../../../shared/constants/onboardingStep";
 import { checkNickname, setMyNickname } from "../../api/nickname";
+import { deleteTokens } from "../../../../shared/lib/storage/tokenStorage";
+
 
 export default function NamingScreen({ navigation }) {
     const { width, height } = useWindowDimensions();
@@ -115,14 +117,30 @@ export default function NamingScreen({ navigation }) {
 
     const iconSize = Math.min(120, Math.max(96, width * 0.28));
 
+
+    const isNewUser = true;
+
+    const goBackToAuth = async () => {
+        if (isNewUser) {
+            await deleteTokens();
+        }
+
+        const rootNav = navigation.getParent("root") ?? navigation.getParent();
+        rootNav?.reset({ index: 0, routes: [{ name: "Auth" }] });
+    };
+
     return (
         <SafeAreaView className="flex-1 bg-wt">
             <View className="px-5 pt-4">
                 <TouchableOpacity activeOpacity={0.5} className="flex-row items-center gap-2 self-start">
-                    <NamingArrow />
-                    <AppText variant="H3" className="text-bk">
-                        가입하기
-                    </AppText>
+                    <TouchableOpacity
+                        activeOpacity={0.5}
+                        onPress={goBackToAuth}
+                        className="flex-row items-center gap-2 self-start"
+                    >
+                        <NamingArrow />
+                        <AppText variant="H3" className="text-bk">가입하기</AppText>
+                    </TouchableOpacity>
                 </TouchableOpacity>
             </View>
 

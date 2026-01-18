@@ -49,7 +49,7 @@ export default function EditProfile({ navigation, route }) {
 
     const [nickName, setNickName] = useState("");
     const [draftNickName, setDraftNickName] = useState("");
-    const [email] = useState("hamsj2413@naver.com"); // 임시
+    const [email] = useState(" "); // 임시
 
     const [isEditing, setIsEditing] = useState(false);
     const inputRef = useRef(null);
