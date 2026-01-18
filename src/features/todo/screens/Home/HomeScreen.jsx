@@ -84,8 +84,8 @@ function getLottieKeyFromStatus(status) {
     case "CASE_G":
       return "caseG";
     default:
-      // return "caseA"; // fallback
-      return null;
+      return "caseB"; // fallback
+    // return null;
   }
 }
 
@@ -202,7 +202,7 @@ function pickRandomDifferent(list, prev, fallback = "") {
 export default function HomeScreen({navigation}) {
   const {open, close} = useModalStore();
 
-  const [bubbleText, setBubbleText] = useState("대충 응원하는 문구");
+  const [bubbleText, setBubbleText] = useState("");
 
   const [currentDate, setCurrentDate] = useState(() => new Date());
   const date = useMemo(() => formatYYYYMMDD(currentDate), [currentDate]);
@@ -263,7 +263,7 @@ export default function HomeScreen({navigation}) {
     const pool = BUBBLE_MENTS[status] ?? null;
 
     // ✅ 쿼리가 호출(갱신)될 때마다 새로운 랜덤 멘트로 갱신
-    setBubbleText(pickRandom(pool, "대충 응원하는 문구"));
+    setBubbleText(pickRandom(pool, ""));
   }, [characterStatus?.status, characterUpdatedAt]);
 
   const shouldRenderBack = lottieKey === "caseE1" || lottieKey === "caseE2";
