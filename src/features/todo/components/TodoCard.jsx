@@ -1,5 +1,5 @@
 // src/features/todo/components/TodoCard.jsx
-import React, {useMemo, useState, useCallback} from "react";
+import React, {useMemo, useState, useCallback, useEffect} from "react";
 import {View, StyleSheet, TouchableOpacity} from "react-native";
 import DraggableFlatList from "react-native-draggable-flatlist";
 
@@ -7,6 +7,7 @@ import AppText from "../../../shared/components/AppText";
 import DragHandleIcon from "../assets/svg/DragHandle.svg";
 import DeleteIcon from "../assets/svg/Delete.svg";
 import StartDateIcon from "../assets/svg/StartDate.svg";
+import TomorrowIcon from "../assets/svg/Tomorrow.svg";
 import TodoRadioOnIcon from "../assets/svg/RadioOn.svg";
 import TodoRadioOffIcon from "../assets/svg/RadioOff.svg";
 
@@ -22,15 +23,15 @@ import PlusIcon from "../assets/svg/Plus.svg";
 import colors from "../../../shared/styles/colors";
 
 /** ✅ 목업 투두 (규칙: 현재는 mock) */
-const MOCK_TODOS = [
-  {id: "1", title: "연우님 기획 차력쇼 감상", done: false, categoryId: 1},
-  {id: "2", title: "기찬님의 프로젝트 관리 전략", done: false, categoryId: 1},
-  {id: "3", title: "토익 공부", done: true, categoryId: 2},
-  {id: "4", title: "알고리즘 공부", done: true, categoryId: 2},
-];
+// const MOCK_TODOS = [
+//   {id: "1", title: "연우님 기획 차력쇼 감상", done: false, categoryId: 1},
+//   {id: "2", title: "기찬님의 프로젝트 관리 전략", done: false, categoryId: 1},
+//   {id: "3", title: "토익 공부", done: true, categoryId: 2},
+//   {id: "4", title: "알고리즘 공부", done: true, categoryId: 2},
+// ];
 
-const ACTION_BTN_W = 56; // 버튼 하나 너비(원하는 값으로)
-const ACTION_GAP = 10; // 버튼 간격
+const ACTION_BTN_W = 48; // 버튼 하나 너비(원하는 값으로)
+const ACTION_GAP = 6; // 버튼 간격
 const ACTIONS_TOTAL_W = ACTION_BTN_W * 2 + ACTION_GAP;
 const SWIPE_OPEN_OFFSET = -ACTIONS_TOTAL_W;
 const SWIPE_THRESHOLD = -(ACTIONS_TOTAL_W * 0.5);
@@ -46,6 +47,8 @@ function TodoItem({
   onLongPressDrag,
   onPressItem, // ✅ 추가
   onDoToday,
+  onDoTomorrow,
+  isViewingToday,
 }) {
   const translateX = useSharedValue(0);
   const startX = useSharedValue(0);
@@ -91,22 +94,28 @@ function TodoItem({
         <TouchableOpacity
           style={styles.todoDeleteButton}
           activeOpacity={0.7}
-          onPress={() => onDelete(item.id)}
+          onPress={() => onDelete(item)}
         >
           <DeleteIcon width={20} height={20} />
         </TouchableOpacity>
 
-        <TouchableOpacity
-          style={styles.todoTodayButton}
-          activeOpacity={0.7}
-          onPress={() => onDoToday?.(item.id)}
-        >
-          <StartDateIcon width={20} height={20} />
-          {/* 아이콘 있으면 아이콘으로, 없으면 텍스트로 */}
-          {/* <AppText variant="M600" style={{color: "#FF5B22"}}>
-            오늘
-          </AppText> */}
-        </TouchableOpacity>
+        {isViewingToday ? (
+          <TouchableOpacity
+            style={styles.todoTodayButton} // ✅ 스타일 그대로 재사용
+            activeOpacity={0.7}
+            onPress={() => onDoTomorrow?.(item.id)}
+          >
+            <TomorrowIcon width={20} height={20} />
+          </TouchableOpacity>
+        ) : (
+          <TouchableOpacity
+            style={styles.todoTodayButton}
+            activeOpacity={0.7}
+            onPress={() => onDoToday?.(item.id)}
+          >
+            <StartDateIcon width={20} height={20} />
+          </TouchableOpacity>
+        )}
       </View>
 
       {/* 앞에서 좌우로 움직이는 투두 row */}
@@ -174,9 +183,46 @@ export default function TodoCard({
   onPressInput,
   categories = [],
   onDoToday,
+  onDoTomorrow,
+  onDeleteTodo,
+  onToggleTodoCompletion, // ✅ 추가
+  onReorderTodos, // ✅ 추가
+  isViewingToday = false,
+  todos: todosProp = [], // ✅ 추가 (HomeScreen에서 내려줌)
 }) {
-  const [todos, setTodos] = useState(MOCK_TODOS);
+  const [todos, setTodos] = useState(todosProp);
   const [swipedTodoId, setSwipedTodoId] = useState(null);
+
+  // ✅ 서버/쿼리 결과가 바뀌면 화면도 동기화
+  useEffect(() => {
+    setTodos(Array.isArray(todosProp) ? todosProp : []);
+  }, [todosProp]);
+
+  const closeAnySwipe = useCallback(() => {
+    setSwipedTodoId(null);
+  }, []);
+
+  const handleDoTomorrow = useCallback(
+    async (id) => {
+      try {
+        await onDoTomorrow?.(id);
+      } finally {
+        closeAnySwipe(); // ✅ 동작 완료 후 스와이프 닫기
+      }
+    },
+    [onDoTomorrow, closeAnySwipe],
+  );
+
+  const handleDoToday = useCallback(
+    async (id) => {
+      try {
+        await onDoToday?.(id);
+      } finally {
+        closeAnySwipe(); // ✅ 동작 완료 후 스와이프 닫기
+      }
+    },
+    [onDoToday, closeAnySwipe],
+  );
 
   // ✅ 기본: 첫 카테고리만 펼쳐진 상태로 시작
   const [openMap, setOpenMap] = useState(() => {
@@ -194,15 +240,44 @@ export default function TodoCard({
     return by;
   }, [todos, categories]);
 
-  const toggleTodoDone = useCallback((id) => {
-    setTodos((prev) =>
-      prev.map((todo) => (todo.id === id ? {...todo, done: !todo.done} : todo))
-    );
-  }, []);
+  const toggleTodoDone = useCallback(
+    async (id) => {
+      // ✅ 1) optimistic 업데이트
+      let prevDone = false;
+      setTodos((prev) =>
+        prev.map((todo) => {
+          if (todo.id !== id) return todo;
+          prevDone = !!todo.done;
+          return {...todo, done: !todo.done};
+        }),
+      );
 
-  const handleDeleteTodo = useCallback((id) => {
-    setTodos((prev) => prev.filter((todo) => todo.id !== id));
-  }, []);
+      try {
+        // ✅ 2) 서버 토글 (POST /api/todos/{todoId}/completion)
+        await onToggleTodoCompletion?.(id);
+      } catch (e) {
+        // ✅ 3) 실패 시 롤백
+        setTodos((prev) =>
+          prev.map((todo) =>
+            todo.id === id ? {...todo, done: prevDone} : todo,
+          ),
+        );
+        console.log("toggle completion failed:", e);
+      }
+    },
+    [onToggleTodoCompletion],
+  );
+
+  const handleDeleteTodo = useCallback(
+    async (todo) => {
+      try {
+        await onDeleteTodo?.(todo); // ✅ HomeScreen에서 반복 여부 판단 + 모달/삭제 처리
+      } finally {
+        closeAnySwipe(); // ✅ 삭제 후 스와이프 닫기
+      }
+    },
+    [onDeleteTodo, closeAnySwipe],
+  );
 
   const handleToggleSection = useCallback((categoryId) => {
     setOpenMap((prev) => ({...prev, [categoryId]: !prev?.[categoryId]}));
@@ -212,15 +287,60 @@ export default function TodoCard({
     (categoryId) => {
       onPressInput?.({id: null, title: "", categoryId, mode: "create"}); // ✅ 바텀시트 열기 + 카테고리 힌트 전달(원하면 사용)
     },
-    [onPressInput]
+    [onPressInput],
   );
 
-  const handleDragEnd = useCallback((categoryId, data) => {
-    setTodos((prev) => {
-      const others = prev.filter((t) => t.categoryId !== categoryId);
-      return [...others, ...data.map((x) => ({...x, categoryId}))];
-    });
-  }, []);
+  const handleDragEnd = useCallback(
+    async (categoryId, data) => {
+      // ✅ 1) 로컬 상태 먼저 반영(optimistic)
+      setTodos((prev) => {
+        const others = prev.filter((t) => t.categoryId !== categoryId);
+        return [...others, ...data.map((x) => ({...x, categoryId}))];
+      });
+
+      // ✅ 2) 서버에 순서 저장 (해당 날짜 전체 ids 순서)
+      // 서버 스펙: { ids: [3,1,2] } (Number 배열) :contentReference[oaicite:5]{index=5}
+      // ⚠️ "날짜 전체"의 순서를 저장하는 API라서,
+      // category 섹션 하나만의 data가 아니라 "현재 화면 전체 todos"를 기준으로 ids를 만들어야 안전함.
+
+      // 로컬 반영된 최신 배열을 즉시 얻기 어렵기 때문에,
+      // "data(해당 카테고리)"   "기타 todos"로 새 전체 배열을 구성해서 ids를 만들자.
+      const nextAll = (() => {
+        // 현재 todos 상태를 기반으로 계산해야 하므로, data로 섹션만 교체한 결과를 만들기
+        const current = Array.isArray(todos) ? todos : [];
+        const others = current.filter((t) => t.categoryId !== categoryId);
+        const updatedSection = data.map((x) => ({...x, categoryId}));
+        // ✅ 기존 구현이 others 뒤에 섹션을 붙였는데, 이러면 카테고리별 섞일 수 있음.
+        // "전체 order"를 서버에 저장하려면, 원래 화면에 보이는 순서 정책을 정해야 함.
+        // 현재 화면은 category별로 분리되어 보이므로,
+        // ✅ 서버 ids는 "카테고리 순서대로, 각 카테고리 내부 순서대로"로 만드는 게 일반적.
+        // 따라서 categories 순서를 기준으로 그룹을 다시 합친다.
+        const by = {};
+        for (const t of [...others, ...updatedSection]) {
+          if (!by[t.categoryId]) by[t.categoryId] = [];
+          by[t.categoryId].push(t);
+        }
+        const merged = [];
+        for (const c of categories) {
+          const list = by[c.categoryId] ?? [];
+          merged.push(...list);
+        }
+        return merged;
+      })();
+
+      const ids = nextAll
+        .map((t) => Number(t.id))
+        .filter((n) => Number.isFinite(n));
+
+      try {
+        await onReorderTodos?.({ids});
+      } catch (e) {
+        console.log("reorder todos failed:", e);
+        // 실패 시 invalidate로 서버 데이터 다시 끌어오게 두는 전략이면 여기서 롤백 생략 가능
+      }
+    },
+    [onReorderTodos, todos, categories],
+  );
 
   const renderSection = (category) => {
     const isOpen = !!openMap?.[category.categoryId];
@@ -270,7 +390,9 @@ export default function TodoCard({
                   isOpen={swipedTodoId === item.id}
                   onToggleDone={toggleTodoDone}
                   onDelete={handleDeleteTodo}
-                  onDoToday={onDoToday}
+                  onDoToday={handleDoToday}
+                  onDoTomorrow={handleDoTomorrow}
+                  isViewingToday={isViewingToday}
                   onSwipeOpen={(id) => setSwipedTodoId(id)}
                   onSwipeClose={(id) =>
                     setSwipedTodoId((prev) => (prev === id ? null : prev))
@@ -295,19 +417,21 @@ export default function TodoCard({
 
       <View style={styles.dashedDivider} />
 
-      <TouchableOpacity
-        activeOpacity={0.8}
-        onPress={() =>
-          navigation.navigate("Category", {
-            screen: "CategEdit",
-          })
-        }
-        style={styles.newCategoryButton}
-      >
-        <AppText variant="M600" style={{color: "#FF5B22"}}>
-          새 카테고리 +
-        </AppText>
-      </TouchableOpacity>
+      {categories.length < 6 && (
+        <TouchableOpacity
+          activeOpacity={0.8}
+          onPress={() =>
+            navigation.navigate("Category", {
+              screen: "CategEdit",
+            })
+          }
+          style={styles.newCategoryButton}
+        >
+          <AppText variant="M600" style={{color: "#FF5B22"}}>
+            새 카테고리 +
+          </AppText>
+        </TouchableOpacity>
+      )}
     </View>
   );
 }
@@ -333,15 +457,15 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "space-between",
-    paddingHorizontal: 2,
+    // paddingHorizontal: 2,
   },
 
   categoryChip: {
     flexDirection: "row",
     alignItems: "center",
     borderRadius: 999,
-    paddingHorizontal: 12,
-    paddingVertical: 8,
+    paddingHorizontal: 10,
+    paddingVertical: 6,
   },
 
   addTodoButton: {
@@ -355,8 +479,8 @@ const styles = StyleSheet.create({
   },
 
   listArea: {
-    paddingTop: 10,
-    paddingHorizontal: 4,
+    marginTop: 10,
+    // paddingHorizontal: 4,
     // borderWidth: 1,
   },
 
@@ -382,6 +506,7 @@ const styles = StyleSheet.create({
   todoRowWrapper: {
     height: 36,
     justifyContent: "center",
+    // borderWidth: 1,
   },
   todoRow: {
     flexDirection: "row",
@@ -389,7 +514,7 @@ const styles = StyleSheet.create({
     height: 36,
     // paddingHorizontal: 6,
     borderRadius: 12,
-    backgroundColor: "#FAFAFA",
+    backgroundColor: colors.wt,
     // borderWidth: 1,
   },
   dragHandleButton: {
@@ -411,8 +536,8 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "flex-end",
-    gap: 10,
-    paddingRight: 6,
+    gap: 6,
+    // paddingRight: 6,
   },
   todoDeleteButton: {
     paddingHorizontal: 12,

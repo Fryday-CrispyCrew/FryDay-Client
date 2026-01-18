@@ -57,12 +57,10 @@ export const useRepeatEditorStore = create((set, get) => ({
     }
 
     return {
-      repeatStartDate: s.repeatStartDate?.toISOString?.() ?? null,
+      repeatStartDate: s.repeatStartDate ?? null,
       repeatEndType: s.repeatEndType === "unset" ? "none" : s.repeatEndType,
       repeatEndDate:
-        s.repeatEndType === "date"
-          ? (s.repeatEndDate?.toISOString?.() ?? null)
-          : null,
+        s.repeatEndType === "date" ? (s.repeatEndDate ?? null) : null,
       repeatCycle: s.repeatCycle,
       repeatAlarm: s.repeatAlarm,
       repeatAlarmTime: s.repeatAlarmTime,

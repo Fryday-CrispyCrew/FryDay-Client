@@ -1,7 +1,8 @@
 // src/features/todo/hooks/useTodoEditorController.js
 import {useCallback, useEffect, useMemo, useRef, useState} from "react";
-import {Keyboard} from "react-native";
+import {Keyboard, BackHandler} from "react-native";
 import {useRepeatEditorStore} from "../stores/repeatEditorStore";
+import {useModalStore} from "../../../shared/stores/modal/modalStore";
 
 /**
  * TodoEditor(BottomSheet) 제어 훅
@@ -18,6 +19,7 @@ export function useTodoEditorController({
   defaultCategoryId,
 } = {}) {
   const bottomSheetRef = useRef(null);
+  const {open, close} = useModalStore();
 
   useEffect(() => {
     const subHide = Keyboard.addListener("keyboardDidHide", () => {
@@ -33,6 +35,21 @@ export function useTodoEditorController({
     };
   }, [bottomSheetRef]);
 
+  const [isSheetOpen, setIsSheetOpen] = useState(false);
+
+  useEffect(() => {
+    const sub = BackHandler.addEventListener("hardwareBackPress", () => {
+      // ✅ 바텀시트가 열려있을 때만 가로채기
+      if (!isSheetOpen) return false;
+
+      // ✅ 여기서 바로 dismiss 하지 말고, "그만둘까요?" 모달 띄우기
+      requestCloseEditorTogether();
+      return true; // ✅ 시스템 back 동작 막기
+    });
+
+    return () => sub.remove();
+  }, [isSheetOpen, requestCloseEditorTogether]);
+
   // 편집 대상 todo / 입력 텍스트
   const [editingTodo, setEditingTodo] = useState(null); // { id, title, categoryId } or null
   const [editingText, setEditingText] = useState("");
@@ -42,13 +59,13 @@ export function useTodoEditorController({
     defaultCategoryId ?? categories?.[0]?.categoryId ?? 0;
 
   const [sheetInitialCategoryId, setSheetInitialCategoryId] = useState(
-    initialFallbackCategoryId
+    initialFallbackCategoryId,
   );
 
   // 현재 sheet에서 보여줄 카테고리(라벨/색)
   const sheetCategory = useMemo(() => {
     const found = categories.find(
-      (c) => c.categoryId === sheetInitialCategoryId
+      (c) => c.categoryId === sheetInitialCategoryId,
     );
     return found ?? categories[0] ?? {categoryId: 0, label: "카테고리"};
   }, [categories, sheetInitialCategoryId]);
@@ -94,8 +111,9 @@ export function useTodoEditorController({
       }
 
       bottomSheetRef.current?.present?.();
+      setIsSheetOpen(true);
     },
-    [categories, initialFallbackCategoryId]
+    [categories, initialFallbackCategoryId],
   );
 
   // Editor 닫기(키보드 + 시트 동시에)
@@ -105,10 +123,39 @@ export function useTodoEditorController({
     // 상태 초기화는 onDismiss에서 통일
   }, []);
 
+  // ✅ "닫으려 할 때" 항상 호출할 함수(모달 먼저)
+  const requestCloseEditorTogether = useCallback(() => {
+    open({
+      title: "투두 설정 그만두기",
+      description:
+        "아직 투두가 저장되지 않았어요!\n정말 작성을 그만두시겠어요?",
+      showClose: true,
+      closeOnBackdrop: true,
+
+      primary: {
+        label: "네, 그만둘래요",
+        variant: "outline",
+        closeAfterPress: false,
+        onPress: () => {
+          closeEditorTogether(); // ✅ 여기서만 실제 dismiss
+          close(); // ✅ 모달 닫기
+        },
+      },
+
+      secondary: {
+        label: "아니요, 계속 쓸래요",
+        variant: "outline",
+        closeAfterPress: true, // ModalHost가 자동 close
+        onPress: () => {},
+      },
+    });
+  }, [open, close, closeEditorTogether]);
+
   // 시트 dismiss 되었을 때 상태 초기화
   const onDismiss = useCallback(() => {
     setEditingTodo(null);
     setEditingText("");
+    setIsSheetOpen(false);
   }, []);
 
   // submit
@@ -146,7 +193,7 @@ export function useTodoEditorController({
       closeEditorTogether,
       sheetCategory,
       sheetInitialCategoryId,
-    ]
+    ],
   );
 
   // TodoEditorSheet에 바로 꽂을 props 패키지
@@ -156,7 +203,7 @@ export function useTodoEditorController({
       mode: sheetMode,
       value: editingText,
       onChangeText: setEditingText,
-      onCloseTogether: closeEditorTogether,
+      onCloseTogether: requestCloseEditorTogether, // ✅ 항상 모달 먼저
       onDismiss,
       categoryLabel: sheetCategory?.label ?? "카테고리",
       categories,
@@ -165,13 +212,13 @@ export function useTodoEditorController({
     }),
     [
       categories,
-      closeEditorTogether,
+      requestCloseEditorTogether,
       editingText,
       handleSubmit,
       onDismiss,
       sheetCategory,
       sheetMode,
-    ]
+    ],
   );
 
   return {
@@ -192,7 +239,8 @@ export function useTodoEditorController({
 
     // actions
     openEditor,
-    closeEditorTogether,
+    closeEditorTogether, // (확정 닫기)
+    requestCloseEditorTogether, // (모달 띄우는 닫기 요청)
     handleSubmit,
 
     // pre-bundled props
