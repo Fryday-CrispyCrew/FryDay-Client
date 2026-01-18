@@ -66,26 +66,27 @@ export async function loginWithAccessToken(provider, accessToken, navigation) {
   // });
 }
 
-export async function loginWithCode(provider, code, navigation) {
+export async function loginWithCode(idToken, navigation) {
   const deviceId = await getDeviceId();
 
-  const {data} = await api.post("/api/users/social/login", {
-    provider,
-    code,
+  const { data } = await api.post("/api/users/apple/login", {
+    idToken,
     deviceId,
     deviceType: Platform.OS === "ios" ? "iOS" : "Android",
+    deviceName: "FryDay",
   });
 
   await Promise.all([
-    saveAccessToken(String(data.accessToken ?? "")),
-    saveRefreshToken(String(data.refreshToken ?? "")),
+    saveAccessToken(String(data?.accessToken ?? "")),
+    saveRefreshToken(String(data?.refreshToken ?? "")),
   ]);
 
-  // navigation.reset({
-  //   index: 0,
-  //   routes: [{name: nextRoute(data.onboardingStatus)}],
-  // });
-  navigation.navigate("Category", {
-    screen: "CategList",
+  await AsyncStorage.setItem(STEP_KEY, String(data?.onboardingStatus ?? ""));
+
+  const target = nextRoute(data?.onboardingStatus);
+  navigation.reset({
+    index: 0,
+    routes: [{ name: target }],
   });
 }
+
