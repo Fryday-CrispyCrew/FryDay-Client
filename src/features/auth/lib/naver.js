@@ -1,15 +1,34 @@
 import NaverLogin from "@react-native-seoul/naver-login";
 
+const NAVER_CONSUMER_KEY = process.env.EXPO_PUBLIC_NAVER_CLIENT_ID;
+const NAVER_CONSUMER_SECRET = process.env.EXPO_PUBLIC_NAVER_CLIENT_SECRET;
+const NAVER_APP_NAME = "FryDay";
+
+let inited = false;
+
 export async function naverGetAccessToken() {
-    console.log("NAVER CLICKED");
-    console.log("NaverLogin =", NaverLogin);
+    if (!NAVER_CONSUMER_KEY || !NAVER_CONSUMER_SECRET) {
+        throw new Error("NAVER env 누락 (EXPO_PUBLIC_NAVER_CLIENT_ID / SECRET)");
+    }
 
-    const res = await NaverLogin.login();
-    const token = res?.successResponse?.accessToken;
+    const scheme = `frydaynaver`;
 
-    console.log("NAVER RES =", res);
-    console.log("NAVER token =", token);
+    if (!inited) {
+        NaverLogin.initialize({
+            consumerKey: NAVER_CONSUMER_KEY,
+            consumerSecret: NAVER_CONSUMER_SECRET,
+            appName: NAVER_APP_NAME,
+            serviceUrlSchemeIOS: scheme,
+        });
+        inited = true;
+    }
 
-    if (!token) throw new Error("Naver accessToken 없음");
+    const result = await NaverLogin.login();
+    const token = result?.successResponse?.accessToken;
+
+    if (!token) {
+        throw new Error(`NAVER token 없음: ${JSON.stringify(result)}`);
+    }
+
     return token;
 }
