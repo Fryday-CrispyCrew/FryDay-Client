@@ -9,6 +9,7 @@ import api from "../../../shared/lib/api";
 export async function getReport(year, month) {
     const res = await api.get("/api/reports/monthly", {
         params: { year, month },
+        meta: {skipErrorToast: true},
     });
     return res.data;
 }

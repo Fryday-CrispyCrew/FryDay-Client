@@ -44,6 +44,11 @@ async function clearLocalAuth() {
     ]);
 }
 
+// ✅ 저장 직전만 자모 분리 금지
+const HAS_KOREAN_JAMO = /[\u3131-\u318E\u1100-\u11FF\uA960-\uA97F\uD7B0-\uD7FF]/;
+// ✅ 저장 직전 최종 허용(완성형 한글 + 영문/숫자)
+const FINAL_ALLOWED_REGEX = /^[가-힣a-zA-Z0-9]+$/;
+
 export default function EditProfile({ navigation, route }) {
     const { width, height } = useWindowDimensions();
 
@@ -61,7 +66,6 @@ export default function EditProfile({ navigation, route }) {
     const safeNick = (typeof nickName === "string" ? nickName : "").trim();
     const safeDraft = typeof draftNickName === "string" ? draftNickName : "";
 
-
     const trimmed = safeDraft.trim();
     const isChanged = trimmed && trimmed !== safeNick;
 
@@ -73,16 +77,9 @@ export default function EditProfile({ navigation, route }) {
         if (nicknameError === "duplicate") return "이미 사용중인 닉네임이에요";
         if (nicknameError === "tooLong" || nicknameError === "invalid")
             return "닉네임은 한/영문/숫자 10자까지 입력 가능해요";
-        if (nicknameError === "network")
-            return "잠시 후 다시 시도해주세요.";
+        if (nicknameError === "network") return "잠시 후 다시 시도해주세요.";
         return "";
     }, [nicknameError]);
-
-    const ALLOWED_NICKNAME_REGEX = /^[\uAC00-\uD7A3\u3131-\u318E\u1100-\u11FFa-zA-Z0-9]*$/;
-
-    const sanitizeNickname = (text) =>
-        (text ?? "").replace(/[^\uAC00-\uD7A3\u3131-\u318E\u1100-\u11FFa-zA-Z0-9]/g, "");
-
 
     const validateNicknameLocal = (raw) => {
         const v = (raw ?? "").trim();
@@ -90,7 +87,6 @@ export default function EditProfile({ navigation, route }) {
         if (v.length > NICKNAME_MAX) return "tooLong";
         return null;
     };
-
 
     const containerWidth = Math.min(width - 40, 520);
     const errorWidth = Math.min(Math.max(180, containerWidth * 0.55), 280);
@@ -124,8 +120,6 @@ export default function EditProfile({ navigation, route }) {
         };
     }, []);
 
-
-
     const startEdit = () => {
         setDraftNickName(safeNick);
         setNicknameError(null);
@@ -136,40 +130,22 @@ export default function EditProfile({ navigation, route }) {
         });
     };
 
-
-    const onChangeNickname = async (text) => {
+    // ✅ 핵심 수정: 입력 중에는 절대 sanitize/검사하지 말고 그대로 입력 받기
+    const onChangeNickname = (text) => {
         const raw = typeof text === "string" ? text : "";
-        const next = sanitizeNickname(raw);
-
-        setDraftNickName(next);
-        if (raw !== next) setNicknameError("invalid");
-        else if (nicknameError === "invalid") setNicknameError(null);
-
-        const localErr = validateNicknameLocal(next);
-        if (localErr) {
-            setNicknameError(localErr);
-            return;
-        }
-
-        const v = next.trim();
-        if (!v || v === safeNick || v.length < 2) {
-            setNicknameError(null);
-            return;
-        }
-
-        try {
-            const res = await checkNickname(v, { skipErrorToast: true });
-            setNicknameError(res?.available === false ? "duplicate" : null);
-        } catch {
-            setNicknameError("network");
-        }
+        setDraftNickName(raw);
+        if (nicknameError) setNicknameError(null); // 입력 중엔 오류 뜨지 않게
     };
 
     const finishEdit = async () => {
-        const sanitized = sanitizeNickname(draftNickName);
-        const v = sanitized.trim();
+        const raw = (draftNickName ?? "");
+        const v = raw.trim();
 
-        setDraftNickName(sanitized);
+        // ✅ 저장 직전: 자모 분리 있으면 막기
+        if (HAS_KOREAN_JAMO.test(v)) {
+            setNicknameError("invalid");
+            return;
+        }
 
         if (!v || v === safeNick || v.length < 2) {
             setDraftNickName(safeNick);
@@ -188,6 +164,13 @@ export default function EditProfile({ navigation, route }) {
             return;
         }
 
+        // ✅ 저장 직전: 완성형 한글/영문/숫자만 허용 (그 외 있으면 막기)
+        if (!FINAL_ALLOWED_REGEX.test(v)) {
+            setNicknameError("invalid");
+            return;
+        }
+
+        // ✅ 저장 직전: 중복 체크
         try {
             const res = await checkNickname(v, { skipErrorToast: true });
             if (res?.available === false) {
@@ -217,7 +200,6 @@ export default function EditProfile({ navigation, route }) {
             setNicknameError("network");
         }
     };
-
 
     const onConfirmLogout = async () => {
         setModalType(null);
@@ -378,15 +360,6 @@ export default function EditProfile({ navigation, route }) {
                                             {email}
                                         </AppText>
                                     </View>
-
-                                    {/*<View className="flex-row gap-1">*/}
-                                    {/*    <AppText variant="M400" className="text-bk50">*/}
-                                    {/*        생년월일*/}
-                                    {/*    </AppText>*/}
-                                    {/*    <AppText variant="M400" className="text-bk75">*/}
-                                    {/*        {formattedBirth}*/}
-                                    {/*    </AppText>*/}
-                                    {/*</View>*/}
                                 </View>
                             </View>
                         </View>

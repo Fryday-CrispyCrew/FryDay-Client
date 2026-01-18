@@ -5,7 +5,7 @@ export async function checkNickname(nickname, options = {}) {
         "/api/users/nickname/check",
         {
             params: { nickname },
-            meta: { skipErrorToast: !!options.skipErrorToast },
+            meta: { skipErrorToast: true },
         }
     );
 
