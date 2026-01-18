@@ -69,6 +69,7 @@ export default function CalendarScreen({navigation}) {
         mode={mode}
         onPressButton={toggleMode}
         onPressToday={handlePressToday}
+        navigation={navigation}
       />
 
       <WeekdayHeader />
