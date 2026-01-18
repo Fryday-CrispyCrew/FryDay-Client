@@ -20,7 +20,8 @@ import {TodoLottie} from "../../assets/lottie"; // HomeScreen 기준 상대경�
 import AppText from "../../../../shared/components/AppText";
 import TodayIcon from "../../assets/svg/Today.svg";
 import CategoryIcon from "../../assets/svg/Category.svg";
-import ShadowIcon from "../../assets/svg/shadow/shadowGR.svg";
+import ShadowGRIcon from "../../assets/svg/shadow/shadowGR.svg";
+import ShadowORIcon from "../../assets/svg/shadow/shadowOR.svg";
 
 import TodoCard from "../../components/TodoCard";
 import TodoEditorSheet from "../../components/TodoEditorSheet/TodoEditorSheet";
@@ -248,6 +249,13 @@ export default function HomeScreen({navigation}) {
 
   const lottieKey = useMemo(() => {
     return getLottieKeyFromStatus(characterStatus?.status);
+  }, [characterStatus?.status]);
+
+  const isShadowGR = useMemo(() => {
+    return (
+      characterStatus?.status === "CASE_A" ||
+      characterStatus?.status === "CASE_F"
+    );
   }, [characterStatus?.status]);
 
   useEffect(() => {
@@ -480,7 +488,11 @@ export default function HomeScreen({navigation}) {
             />
           </Pressable>
           <View style={styles.shadowWrapper}>
-            <ShadowIcon height="100%" width="100%" />
+            {isShadowGR ? (
+              <ShadowGRIcon height="100%" width="100%" />
+            ) : (
+              <ShadowORIcon height="100%" width="100%" />
+            )}
           </View>
         </View>
       </GestureDetector>
