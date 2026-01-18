@@ -1013,6 +1013,7 @@ const TodoEditorSheet = React.forwardRef(function TodoEditorSheet(
     setMemoText(""); // ✅ 닫을 때 메모 입력 초기화
     setHasAppliedTodoDate(false);
     resetEditHydrationRefs(); // ✅ 주입 가드 전체 리셋
+    Keyboard.dismiss();
     onDismiss?.();
   }, [onDismiss, initialCategoryId]);
 
@@ -1120,6 +1121,7 @@ const TodoEditorSheet = React.forwardRef(function TodoEditorSheet(
       handleIndicatorStyle={{backgroundColor: "#D0D0D0", width: "38.4%"}}
       enableContentPanningGesture={false} // ✅ content로는 시트 이동 X (고정)
       bottomInset={insets.bottom}
+      enablePanDownToClose={false}
       // detached={true}
     >
       <BottomSheetView>
