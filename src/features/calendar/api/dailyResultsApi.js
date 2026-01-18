@@ -9,6 +9,7 @@ import api from "../../../shared/lib/api";
 export async function getDailyResults(startDate, endDate) {
     const res = await api.get("/api/daily-results", {
         params: { startDate, endDate },
+        meta: {skipErrorToast: true},
     });
     return res.data;
 }
