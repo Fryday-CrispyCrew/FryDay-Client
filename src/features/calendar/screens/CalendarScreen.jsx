@@ -63,7 +63,7 @@ export default function CalendarScreen({navigation}) {
   }, [currentDate]);
 
   return (
-    <SafeAreaView className="flex-1 bg-wt" edges={["top", "bottom"]}>
+    <SafeAreaView className="flex-1 bg-wt" edges={["top"]}>
       <CalendarHeader
         date={currentDate}
         mode={mode}

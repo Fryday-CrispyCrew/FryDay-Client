@@ -148,7 +148,7 @@ export default function ReportScreen() {
     }, [report.categories]);
 
     return (
-        <SafeAreaView className="flex-1 bg-wt" edges={['top', 'bottom']}>
+        <SafeAreaView className="flex-1 bg-wt" edges={['top']}>
             <ReportHeader
                 currentDate={currentDate}
                 onChangeMonth={handleChangeMonth}

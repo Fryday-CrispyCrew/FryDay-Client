@@ -67,7 +67,7 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     justifyContent: "space-around",
     borderTopWidth: 0,
-    elevation: 10,
+    elevation: 0,
   },
   tabButton: {
     flex: 1,
