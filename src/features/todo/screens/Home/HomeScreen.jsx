@@ -116,8 +116,9 @@ function SpeechBubble({text}) {
         </AppText>
 
         {/* 꼬리 */}
-        <View style={bubbleStyles.tail} />
+        {/* <View style={bubbleStyles.tail} /> */}
       </View>
+      <View style={bubbleStyles.tail} />
     </View>
   );
 }
@@ -142,7 +143,7 @@ const BUBBLE_MENTS = {
     "지금 튀기면 딱 맛있을 거 같지 않아?",
     "오늘은 네가 새우튀김 요리사~",
     "미지근한 하루에 새우튀김의 등장이라…",
-    "오늘도 바삭한 하루 보내!ㅗ",
+    "오늘도 바삭한 하루 보내!",
   ],
   CASE_D: [
     "바삭바삭 튀겨지는 중~",
@@ -453,6 +454,7 @@ export default function HomeScreen({navigation}) {
       {/* ✅ (고정) illustrationWrapper: 여기서는 스크롤 안 됨 */}
       <GestureDetector gesture={panGesture}>
         <View style={styles.illustrationWrapper}>
+          <SpeechBubble text={bubbleText} />
           <Pressable
             style={styles.lottieWrapper}
             onPress={() => {
@@ -465,7 +467,6 @@ export default function HomeScreen({navigation}) {
             }}
           >
             {/* ✅ caseE1 / caseE2일 때만 back 레이어 추가 */}
-            <SpeechBubble text={bubbleText} />
             {shouldRenderBack && (
               <LottieView
                 source={
@@ -745,11 +746,12 @@ const sheetStyles = StyleSheet.create({
 const bubbleStyles = StyleSheet.create({
   wrap: {
     position: "absolute",
-    top: "-16%", // 🔥 튀김 위에 얹고 싶으면 여기 조절
+    top: "5%", // 🔥 튀김 위에 얹고 싶으면 여기 조절
     left: 0,
     right: 0,
     alignItems: "center",
     zIndex: 10,
+    // borderWidth: 1,
   },
   bubble: {
     backgroundColor: colors.wt,
@@ -760,7 +762,7 @@ const bubbleStyles = StyleSheet.create({
     paddingVertical: 10,
 
     // ✅ 텍스트 길면 자동으로 넓어지다가, maxWidth에서 줄바꿈
-    maxWidth: "78%",
+    // maxWidth: "100%",
   },
   text: {
     textAlign: "center",
@@ -768,6 +770,7 @@ const bubbleStyles = StyleSheet.create({
     fontSize: 12,
     lineHeight: 12 * 1.5,
     color: "#3A3A3A",
+    // borderWidth: 1,
   },
   tail: {
     position: "absolute",
@@ -779,6 +782,6 @@ const bubbleStyles = StyleSheet.create({
     borderRightWidth: 1,
     borderBottomWidth: 1,
     borderColor: colors.gr200,
-    transform: [{translateX: -6}, {rotate: "45deg"}],
+    transform: [{translateX: -20}, {rotate: "45deg"}],
   },
 });
