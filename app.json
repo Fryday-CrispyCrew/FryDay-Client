@@ -17,9 +17,14 @@
       "supportsTablet": true,
       "bundleIdentifier": "com.hamsj2413.fryday",
       "infoPlist": {
-        "ITSAppUsesNonExemptEncryption": false
+        "ITSAppUsesNonExemptEncryption": false,
+        "LSApplicationQueriesSchemes": [
+          "naversearchapp",
+          "naversearchthirdlogin"
+        ]
       },
-      "appleTeamId": "7SUTV2YMW6"
+      "appleTeamId": "7SUTV2YMW6",
+      "buildNumber": "2"
     },
     "android": {
       "adaptiveIcon": {
