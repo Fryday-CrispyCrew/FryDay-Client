@@ -8,12 +8,19 @@ export default function MonthView({ currentDate, onChangeDate }) {
     const listRef = useRef(null);
 
     const months = useMemo(
-        () => [currentDate.subtract(1, "month"), currentDate, currentDate.add(1, "month")],
+        () => [
+            currentDate.subtract(1, "month"),
+            currentDate,
+            currentDate.add(1, "month"),
+        ],
         [currentDate]
     );
 
+    const lastHandledPageRef = useRef(1);
+
     useEffect(() => {
         requestAnimationFrame(() => {
+            lastHandledPageRef.current = 1;
             listRef.current?.scrollToIndex({ index: 1, animated: false });
         });
     }, [months, width]);
@@ -29,6 +36,10 @@ export default function MonthView({ currentDate, onChangeDate }) {
             getItemLayout={(_, i) => ({ length: width, offset: width * i, index: i })}
             onMomentumScrollEnd={(e) => {
                 const page = Math.round(e.nativeEvent.contentOffset.x / width);
+
+                if (page === lastHandledPageRef.current) return;
+                lastHandledPageRef.current = page;
+
                 if (page === 0) onChangeDate((d) => d.subtract(1, "month"));
                 if (page === 2) onChangeDate((d) => d.add(1, "month"));
             }}

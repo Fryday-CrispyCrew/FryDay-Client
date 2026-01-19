@@ -10,28 +10,31 @@ export default function ReportHeader({ currentDate, onChangeMonth, joinedAt }) {
     const yearText = date.format('YYYY년');
     const monthText = date.format('M월 리포트');
 
-    const joinedMonth = joinedAt ? dayjs(joinedAt, 'YYYY-MM').startOf('month') : null;
+    const joinedMonth = joinedAt
+        ? dayjs(joinedAt, "YYYY-MM").startOf("month")
+        : null;
 
-    const lastMonth = dayjs().subtract(1, 'month').startOf('month');
+    const maxMonth = dayjs().startOf("month");
 
-    const maxMonth = joinedMonth && joinedMonth.isAfter(lastMonth, 'month')
-        ? joinedMonth
-        : lastMonth;
+    const isPrevHidden = joinedMonth ? date.isSame(joinedMonth, "month") : true;
 
-    const isPrevHidden = joinedMonth ? date.isSame(joinedMonth, 'month') : true;
-    const isNextHidden = date.isSame(maxMonth, 'month');
+    const isNextHidden = date.isSame(maxMonth, "month");
 
     const handlePrev = () => {
         if (isPrevHidden) return;
-        const prev = date.subtract(1, 'month');
-        if (joinedMonth && prev.isBefore(joinedMonth, 'month')) return;
+
+        const prev = date.subtract(1, "month");
+        if (joinedMonth && prev.isBefore(joinedMonth, "month")) return;
+
         onChangeMonth(prev);
     };
 
     const handleNext = () => {
         if (isNextHidden) return;
-        const next = date.add(1, 'month');
-        if (next.isAfter(maxMonth, 'month')) return;
+
+        const next = date.add(1, "month");
+        if (next.isAfter(maxMonth, "month")) return;
+
         onChangeMonth(next);
     };
 
@@ -47,14 +50,22 @@ export default function ReportHeader({ currentDate, onChangeMonth, joinedAt }) {
             </View>
 
             <View className="flex-row items-center gap-3">
-                <TouchableOpacity onPress={handlePrev} activeOpacity={0.5}>
-                    <View className={`w-8 h-8 rounded-full items-center justify-center ${isPrevHidden ? 'opacity-30' : ''}`}>
+                <TouchableOpacity onPress={handlePrev}>
+                    <View
+                        className={`w-8 h-8 rounded-full items-center justify-center ${
+                            isPrevHidden ? "opacity-30" : ""
+                        }`}
+                    >
                         {!isPrevHidden ? <ArrowLeft width={18} height={18} /> : null}
                     </View>
                 </TouchableOpacity>
 
-                <TouchableOpacity onPress={handleNext} activeOpacity={0.5}>
-                    <View className={`w-8 h-8 rounded-full items-center justify-center ${isNextHidden ? 'opacity-30' : ''}`}>
+                <TouchableOpacity onPress={handleNext}>
+                    <View
+                        className={`w-8 h-8 rounded-full items-center justify-center ${
+                            isNextHidden ? "opacity-30" : ""
+                        }`}
+                    >
                         {!isNextHidden ? <ArrowRight width={18} height={18} /> : null}
                     </View>
                 </TouchableOpacity>
