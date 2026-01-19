@@ -7,7 +7,7 @@
     "orientation": "portrait",
     "icon": "./assets/fryday-icon.png",
     "userInterfaceStyle": "light",
-    "newArchEnabled": true,
+    "newArchEnabled": false,
     "splash": {
       "image": "./assets/fryday-splash-logo2.png",
       "resizeMode": "contain",
