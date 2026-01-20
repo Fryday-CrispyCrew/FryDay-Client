@@ -18,6 +18,7 @@ import {SafeAreaProvider} from "react-native-safe-area-context";
 import {BottomSheetModalProvider} from "@gorhom/bottom-sheet";
 import {CenterToastHost} from "../shared/components/toast/CenterToast";
 import ModalHost from "../shared/components/modal/ModalHost";
+import FCMInitializer from "../notifications/FCMInitializer";
 
 export default function AppProviders({children}) {
   const [fontsLoaded] = useFonts({
@@ -28,6 +29,17 @@ export default function AppProviders({children}) {
   });
 
   useEffect(() => {
+    // //기기 FCM 토큰 표시
+    // useEffect(() => {
+    //   (async () => {
+    //     try {
+    //       await getFcmToken();
+    //     } catch (e) {
+    //       console.log("getFcmToken error:", e);
+    //     }
+    //   })();
+    // }, []);
+
     // 네트워크 상태 변화 감지
     const unsubscribeNet = NetInfo.addEventListener((state) => {
       onlineManager.setOnline(Boolean(state.isConnected));
@@ -62,6 +74,7 @@ export default function AppProviders({children}) {
         <BottomSheetModalProvider>
           {/* ⭐ SafeArea 컨텍스트 */}
           <QueryClientProvider client={queryClient}>
+            <FCMInitializer />
             <NavigationContainer>{children}</NavigationContainer>
             <CenterToastHost />
             <ModalHost />
