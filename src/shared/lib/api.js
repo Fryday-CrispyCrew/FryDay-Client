@@ -8,9 +8,14 @@ import {
     saveRefreshToken,
     deleteTokens,
 } from "./storage/tokenStorage";
+import Constants from "expo-constants";
+
+const baseURL =
+    Constants.expoConfig?.extra?.backendUrl ??
+    process.env.EXPO_PUBLIC_BACKEND_URL;
 
 const api = axios.create({
-    baseURL: process.env.EXPO_PUBLIC_BACKEND_URL,
+    baseURL,
     timeout: 10000,
 });
 

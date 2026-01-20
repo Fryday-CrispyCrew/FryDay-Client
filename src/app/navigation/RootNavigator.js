@@ -20,6 +20,7 @@ export default function RootNavigator() {
     >
       <Stack.Screen name="Auth" component={AuthStack} />
       <Stack.Screen name="Naming" component={NamingStack} />
+        <Stack.Screen name="Agreement" component={AgreementModal} />
       <Stack.Screen name="Onboarding" component={OnboardingStack} />
       <Stack.Screen name="Category" component={CategoryStack} />
       <Stack.Screen name="Main" component={MainTabs} />

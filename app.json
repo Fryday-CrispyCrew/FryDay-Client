@@ -29,7 +29,7 @@
         ]
       },
       "appleTeamId": "7SUTV2YMW6",
-      "buildNumber": "4"
+      "buildNumber": "5"
     },
     "android": {
       "adaptiveIcon": {
@@ -98,6 +98,7 @@
       ]
     ],
     "extra": {
+      "backendUrl": "https://fryday.co.kr",
       "eas": {
         "projectId": "0585f789-8134-49ad-b995-6b872f05c64c"
       }
