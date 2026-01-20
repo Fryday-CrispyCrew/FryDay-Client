@@ -2,28 +2,112 @@
   "expo": {
     "name": "FryDay",
     "slug": "FryDay",
+    "scheme": "fryday",
     "version": "1.0.0",
     "orientation": "portrait",
-    "icon": "./assets/icon.png",
+    "icon": "./assets/fryday-icon.png",
     "userInterfaceStyle": "light",
     "newArchEnabled": true,
     "splash": {
-      "image": "./assets/splash-icon.png",
+      "image": "./assets/fryday-splash-logo2.png",
       "resizeMode": "contain",
-      "backgroundColor": "#ffffff"
+      "backgroundColor": "#FF5B22"
     },
     "ios": {
-      "supportsTablet": true
+      "supportsTablet": true,
+      "bundleIdentifier": "com.hamsj2413.fryday",
+      "entitlements": {
+        "keychain-access-groups": [
+          "$(AppIdentifierPrefix)com.hamsj2413.fryday"
+        ]
+      },
+      "infoPlist": {
+        "ITSAppUsesNonExemptEncryption": false,
+        "LSApplicationQueriesSchemes": [
+          "naversearchapp",
+          "naversearchthirdlogin"
+        ]
+      },
+      "appleTeamId": "7SUTV2YMW6",
+      "buildNumber": "5"
     },
     "android": {
       "adaptiveIcon": {
-        "foregroundImage": "./assets/adaptive-icon.png",
+        "foregroundImage": "./assets/fryday-adaptive-icon.png",
         "backgroundColor": "#ffffff"
       },
-      "edgeToEdgeEnabled": true
+      "edgeToEdgeEnabled": true,
+      "package": "com.bmbx08.FryDay"
     },
     "web": {
-      "favicon": "./assets/favicon.png"
+      "favicon": "./assets/fryday-favicon.png",
+      "bundler": "metro"
+    },
+    "plugins": [
+      "expo-font",
+      "expo-build-properties",
+      "expo-secure-store",
+      [
+        "@react-native-community/datetimepicker",
+        {
+          "android": {
+            "timePicker": {
+              "headerBackground": {
+                "light": "#FF5B22",
+                "dark": "#555555"
+              },
+              "numbersSelectorColor": {
+                "light": "#FF5B22",
+                "dark": "#80CBC4"
+              },
+              "background": {
+                "light": "#FFFFFF",
+                "dark": "#383838"
+              },
+              "numbersBackgroundColor": {
+                "light": "#EEEEEE",
+                "dark": "#555555"
+              }
+            }
+          }
+        }
+      ],
+      [
+        "@react-native-seoul/kakao-login",
+        {
+          "kakaoAppKey": "c2eaa0f8dae4116f5ee998144c4aa122",
+          "overrideKakaoSDKVersion": "2.11.2",
+          "kotlinVersion": "2.1.20"
+        }
+      ],
+      [
+        "@react-native-seoul/naver-login",
+        {
+          "urlScheme": "frydaynaver"
+        }
+      ],
+      [
+        "expo-build-properties",
+        {
+          "android": {
+            "extraMavenRepos": [
+              "https://devrepo.kakao.com/nexus/content/groups/public/"
+            ]
+          }
+        }
+      ]
+    ],
+    "extra": {
+      "backendUrl": "https://fryday.co.kr",
+      "eas": {
+        "projectId": "0585f789-8134-49ad-b995-6b872f05c64c"
+      }
+    },
+    "runtimeVersion": {
+      "policy": "appVersion"
+    },
+    "updates": {
+      "url": "https://u.expo.dev/0585f789-8134-49ad-b995-6b872f05c64c"
     }
   }
 }
