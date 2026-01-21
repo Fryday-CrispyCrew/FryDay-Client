@@ -1,14 +1,14 @@
 // src/notifications/FCMInitializer.jsx
 import React, {useEffect} from "react";
 
-import {initNotifeeChannel} from "./notificationInit";
+import {initNotifeeChannel} from "../notificationInit";
 import {
   ensureFcmPermissionAndGetToken,
   subscribeTokenRefresh,
-} from "./fcmToken";
-import {registerForegroundMessageListener} from "./listeners";
-import {useRegisterFcmTokenMutation} from "./queries/useRegisterFcmTokenMutation";
-import {getDeviceId} from "./lib/getDeviceId";
+} from "../fcmToken";
+import {registerForegroundMessageListener} from "../listeners";
+import {useRegisterFcmTokenMutation} from "../queries/useRegisterFcmTokenMutation";
+import {getDeviceId} from "../lib/getDeviceId";
 
 export default function FCMInitializer() {
   const registerFcmTokenMutation = useRegisterFcmTokenMutation();
