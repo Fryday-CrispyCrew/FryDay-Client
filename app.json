@@ -15,7 +15,7 @@
     },
     "ios": {
       "supportsTablet": true,
-      "bundleIdentifier": "com.hamsj2413.fryday",
+      "bundleIdentifier": "com.crispycrew.fryday.qa",
       "infoPlist": {
         "ITSAppUsesNonExemptEncryption": false,
         "LSApplicationQueriesSchemes": [
@@ -23,8 +23,8 @@
           "naversearchthirdlogin"
         ]
       },
-      "appleTeamId": "7SUTV2YMW6",
-      "buildNumber": "6"
+      "appleTeamId": "4378PR9BBA",
+      "buildNumber": "1"
     },
     "android": {
       "adaptiveIcon": {
@@ -93,7 +93,7 @@
       ]
     ],
     "extra": {
-      "backendUrl": "https://fryday.co.kr",
+      "backendUrl": "https://dev,fryday.co.kr",
       "eas": {
         "projectId": "0585f789-8134-49ad-b995-6b872f05c64c"
       }
