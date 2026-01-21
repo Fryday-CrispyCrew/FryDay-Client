@@ -16,11 +16,6 @@
     "ios": {
       "supportsTablet": true,
       "bundleIdentifier": "com.hamsj2413.fryday",
-      "entitlements": {
-        "keychain-access-groups": [
-          "$(AppIdentifierPrefix)com.hamsj2413.fryday"
-        ]
-      },
       "infoPlist": {
         "ITSAppUsesNonExemptEncryption": false,
         "LSApplicationQueriesSchemes": [
