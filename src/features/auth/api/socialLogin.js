@@ -15,7 +15,7 @@ function nextRoute(status) {
     case "NEEDS_NICKNAME":
       return "Naming";
     case "NEEDS_AGREEMENT":
-      return "Main";
+      return "Agreement";
     case "NEEDS_ONBOARDING":
       return "Onboarding";
     case "COMPLETED":
