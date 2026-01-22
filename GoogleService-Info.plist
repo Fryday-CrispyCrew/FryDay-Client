@@ -9,7 +9,7 @@
 	<key>PLIST_VERSION</key>
 	<string>1</string>
 	<key>BUNDLE_ID</key>
-	<string>com.hamsj2413.fryday</string>
+	<string>com.crispycrew.fryday.qa</string>
 	<key>PROJECT_ID</key>
 	<string>fryday-b387b</string>
 	<key>STORAGE_BUCKET</key>
@@ -25,6 +25,6 @@
 	<key>IS_SIGNIN_ENABLED</key>
 	<true></true>
 	<key>GOOGLE_APP_ID</key>
-	<string>1:703145263808:ios:677a62760d6224fe38a325</string>
+	<string>1:703145263808:ios:028edca7a735b12f38a325</string>
 </dict>
 </plist>
