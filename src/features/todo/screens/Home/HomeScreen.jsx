@@ -42,6 +42,7 @@ import {useDeleteRecurrenceTodosMutation} from "../../queries/home/useDeleteRecu
 import {useModalStore} from "../../../../shared/stores/modal/modalStore";
 import colors from "../../../../shared/styles/colors";
 import TodoBoardSection from "../../components/TodoBoardSection";
+import FCMInitializer from "../../../../notifications/components/FCMInitializer";
 
 const {width, height} = Dimensions.get("window");
 
@@ -203,6 +204,12 @@ function pickRandomDifferent(list, prev, fallback = "") {
 
 export default function HomeScreen({navigation}) {
   const {open, close} = useModalStore();
+
+  const [shouldInitNotifications, setShouldInitNotifications] = useState(false);
+  useEffect(() => {
+    // 홈 화면이 처음 마운트될 때만 true로 바꿔서 초기화 1회 실행
+    setShouldInitNotifications(true);
+  }, []);
 
   const [bubbleText, setBubbleText] = useState("");
 
@@ -418,6 +425,7 @@ export default function HomeScreen({navigation}) {
   return (
     <SafeAreaView style={styles.safe} edges={["top"]}>
       <StatusBar barStyle="dark-content" />
+      {shouldInitNotifications && <FCMInitializer />}
       {/* topBar: 날짜 + 우측 SVG 아이콘들 */}
       <View style={styles.topBar}>
         <View>

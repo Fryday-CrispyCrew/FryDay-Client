@@ -17,7 +17,7 @@ export function useSetTodoAlarmMutation(options = {}) {
       console.log("set alarm success: ", data);
     },
     onError: (error) => {
-      console.log("set alarm error: ", error);
+      console.log("set alarm error: ", error?.response.data);
     },
     ...options,
   });

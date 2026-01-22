@@ -28,6 +28,17 @@ export default function AppProviders({children}) {
   });
 
   useEffect(() => {
+    // //기기 FCM 토큰 표시
+    // useEffect(() => {
+    //   (async () => {
+    //     try {
+    //       await getFcmToken();
+    //     } catch (e) {
+    //       console.log("getFcmToken error:", e);
+    //     }
+    //   })();
+    // }, []);
+
     // 네트워크 상태 변화 감지
     const unsubscribeNet = NetInfo.addEventListener((state) => {
       onlineManager.setOnline(Boolean(state.isConnected));

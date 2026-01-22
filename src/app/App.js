@@ -1,5 +1,5 @@
 // src/app/App.js
-import React from "react";
+import React, {useEffect} from "react";
 import * as SplashScreen from "expo-splash-screen";
 import "react-native-gesture-handler";
 import "../../global.css";
