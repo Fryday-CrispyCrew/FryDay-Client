@@ -10,10 +10,15 @@ import {registerForegroundMessageListener} from "../listeners";
 import {useRegisterFcmTokenMutation} from "../queries/useRegisterFcmTokenMutation";
 import {getDeviceId} from "../lib/getDeviceId";
 
+let didInit = false;
+
 export default function FCMInitializer() {
   const registerFcmTokenMutation = useRegisterFcmTokenMutation();
 
   useEffect(() => {
+    if (didInit) return;
+    didInit = true;
+
     let unsubscribeOnMessage;
     let unsubscribeTokenRefresh;
 
