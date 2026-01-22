@@ -17,7 +17,10 @@
       "ios": {"resourceClass": "m-medium"}
     },
     "production": {
-      "channel": "production"
+      "channel": "production",
+      "env": {
+        "EXPO_PUBLIC_BACKEND_URL": "https://dev.fryday.co.kr"
+      }
     }
   },
   "submit": {
