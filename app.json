@@ -97,7 +97,6 @@
       "@react-native-firebase/messaging"
     ],
     "extra": {
-      "backendUrl": "https://dev,fryday.co.kr",
       "eas": {
         "projectId": "0585f789-8134-49ad-b995-6b872f05c64c"
       }
