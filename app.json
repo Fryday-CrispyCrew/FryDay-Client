@@ -42,7 +42,6 @@
     },
     "plugins": [
       "expo-font",
-      "expo-build-properties",
       "expo-secure-store",
       [
         "@react-native-community/datetimepicker",
@@ -86,6 +85,27 @@
       [
         "expo-build-properties",
         {
+          "ios": {
+            "useModularHeaders": true,
+            "extraPods": [
+              {
+                "name": "GoogleUtilities",
+                "modular_headers": true
+              },
+              {
+                "name": "GoogleDataTransport",
+                "modular_headers": true
+              },
+              {
+                "name": "nanopb",
+                "modular_headers": true
+              },
+              {
+                "name": "FirebaseCoreInternal",
+                "modular_headers": true
+              }
+            ]
+          },
           "android": {
             "extraMavenRepos": [
               "https://devrepo.kakao.com/nexus/content/groups/public/"
@@ -95,19 +115,7 @@
       ],
       "@react-native-firebase/app",
       "@react-native-firebase/messaging",
-      "@react-native-firebase/crashlytics",
-      [
-        "expo-build-properties",
-        {
-          "ios": {
-            "useFrameworks": "static",
-            "extraPods": [
-              {"name": "GoogleUtilities", "modular_headers": true},
-              {"name": "FirebaseCoreInternal", "modular_headers": true}
-            ]
-          }
-        }
-      ]
+      "@react-native-firebase/crashlytics"
     ],
     "extra": {
       "eas": {
@@ -119,6 +127,7 @@
     },
     "updates": {
       "url": "https://u.expo.dev/0585f789-8134-49ad-b995-6b872f05c64c"
-    }
+    },
+    "owner": "frydayapp"
   }
 }
