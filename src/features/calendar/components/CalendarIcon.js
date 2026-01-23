@@ -2,15 +2,15 @@ import dayjs from 'dayjs';
 
 export const CALENDAR_ICONS = {
     EMPTY: require('../assets/png/Empty.png'),
-    LITTLE: require('../assets/png/Little.png'),
-    MANY: require('../assets/png/Many.png'),
+    LESS: require('../assets/png/Little.png'),
+    MORE: require('../assets/png/Many.png'),
     FULL: require('../assets/png/Full.png'),
     BURNT: require('../assets/png/Burn.png'),
 };
 
 /**
  * @param {string} date YYYY-MM-DD
- * @param {string | undefined} bowlType  // 서버 값: EMPTY | LITTLE | MANY | FULL | BURNT
+ * @param {string | undefined} bowlType
  * @returns {keyof CALENDAR_ICONS | null}
  */
 export function getCalendarIconType(date, bowlType) {
