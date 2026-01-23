@@ -14,7 +14,11 @@
       "distribution": "internal",
       "channel": "preview",
       "android": {"buildType": "apk"},
-      "ios": {"resourceClass": "m-medium"}
+      "ios": {"resourceClass": "m-medium"},
+      "env": {
+        "EXPO_PUBLIC_BACKEND_URL_DEV": "https://dev.fryday.co.kr",
+        "EXPO_PUBLIC_BACKEND_URL_PROD": "https://fryday.co.kr"
+      }
     },
     "production": {
       "channel": "production",
