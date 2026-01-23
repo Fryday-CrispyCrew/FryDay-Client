@@ -9,7 +9,7 @@
     "userInterfaceStyle": "light",
     "newArchEnabled": true,
     "splash": {
-      "image": "./assets/fryday-splash-logo .png",
+      "image": "./assets/fryday-splash-logo.png",
       "resizeMode": "contain",
       "backgroundColor": "#FF5B22"
     },
