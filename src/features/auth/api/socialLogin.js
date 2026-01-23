@@ -12,18 +12,21 @@ import {STEP_KEY} from "../../../shared/constants/onboardingStep";
 
 function nextRoute(status) {
   switch (status) {
+    case "NEEDS_AGREEMENT":
+      return "Naming";
     case "NEEDS_NICKNAME":
       return "Naming";
-    case "NEEDS_AGREEMENT":
-      return "Agreement";
     case "NEEDS_ONBOARDING":
       return "Onboarding";
+    case "NEEDS_MARKETING":
+      return "Marketing";
     case "COMPLETED":
       return "Main";
     default:
       return "Naming";
   }
 }
+
 
 export async function loginWithAccessToken(provider, accessToken, navigation) {
   const deviceId = await getDeviceId();
