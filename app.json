@@ -9,7 +9,7 @@
     "userInterfaceStyle": "light",
     "newArchEnabled": true,
     "splash": {
-      "image": "./assets/fryday-splash-logo.png",
+      "image": "./assets/fryday-splash-logo4.png",
       "resizeMode": "contain",
       "backgroundColor": "#FF5B22"
     },
@@ -29,7 +29,7 @@
     },
     "android": {
       "adaptiveIcon": {
-        "foregroundImage": "./assets/fryday-adaptive-icon.png",
+        "foregroundImage": "./assets/fryday-adaptive-icon3.png",
         "backgroundColor": "#ffffff"
       },
       "edgeToEdgeEnabled": true,
