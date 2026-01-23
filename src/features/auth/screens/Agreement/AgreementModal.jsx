@@ -6,8 +6,8 @@ import { STEP_KEY, ONBOARDING_STEP } from "../../../../shared/constants/onboardi
 
 export default function AgreementModal({ navigation }) {
     const goOnboarding = useCallback(async () => {
-        await AsyncStorage.setItem(STEP_KEY, ONBOARDING_STEP.NEEDS_ONBOARDING);
-        navigation.reset({ index: 0, routes: [{ name: "Onboarding" }] });
+        await AsyncStorage.setItem(STEP_KEY, ONBOARDING_STEP.COMPLETED);
+        navigation.reset({ index: 0, routes: [{ name: "Main" }] });
     }, [navigation]);
 
     const close = useCallback(() => {

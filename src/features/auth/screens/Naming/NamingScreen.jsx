@@ -91,11 +91,9 @@ export default function NamingScreen({ navigation }) {
 
 
             const rootNav = navigation.getParent("root") ?? navigation.getParent();
-            rootNav?.reset({ index: 0, routes: [{ name: "Main" }] });
+            await AsyncStorage.setItem(STEP_KEY, ONBOARDING_STEP.NEEDS_ONBOARDING);
+            rootNav?.reset({ index: 0, routes: [{ name: "Onboarding" }] });
 
-            requestAnimationFrame(() => {
-                rootNav?.navigate("Agreement");
-            });
         } catch (e) {
             console.log("[onSubmit] ERR", e?.status, e?.code, e?.message);
             if (e?.status === 409 && e?.code === "DUPLICATE_NICKNAME") {

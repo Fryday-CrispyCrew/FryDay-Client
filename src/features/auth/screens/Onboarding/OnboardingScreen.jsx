@@ -36,11 +36,11 @@ export default function OnboardingScreen({ navigation }) {
         await Promise.allSettled([
             SecureStore.setItemAsync("hasOnboarded", "true"),
             AsyncStorage.setItem("hasOnboarded", "true"),
-            AsyncStorage.setItem(STEP_KEY, ONBOARDING_STEP.COMPLETED), // 필요하면
+            AsyncStorage.setItem(STEP_KEY, ONBOARDING_STEP.NEEDS_MARKETING),
         ]);
 
         const rootNav = navigation.getParent("root") ?? navigation.getParent();
-        rootNav?.reset({ index: 0, routes: [{ name: "Main" }] });
+        rootNav?.reset({ index: 0, routes: [{ name: "Marketing" }] });
     };
 
 
