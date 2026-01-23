@@ -19,7 +19,8 @@
     "production": {
       "channel": "production",
       "env": {
-        "EXPO_PUBLIC_BACKEND_URL": "https://dev.fryday.co.kr"
+        "EXPO_PUBLIC_BACKEND_URL_DEV": "https://dev.fryday.co.kr",
+        "EXPO_PUBLIC_BACKEND_URL_PROD": "https://fryday.co.kr"
       }
     }
   },
