@@ -1,7 +1,7 @@
 {
   "expo": {
     "name": "FryDay",
-    "slug": "FryDay",
+    "slug": "frydaybackup",
     "scheme": "fryday",
     "version": "1.0.0",
     "orientation": "portrait",
@@ -98,7 +98,7 @@
     ],
     "extra": {
       "eas": {
-        "projectId": "0585f789-8134-49ad-b995-6b872f05c64c"
+        "projectId": "513ac8a7-e857-4b48-9b48-014b2045481f"
       }
     },
     "runtimeVersion": {
@@ -106,6 +106,7 @@
     },
     "updates": {
       "url": "https://u.expo.dev/0585f789-8134-49ad-b995-6b872f05c64c"
-    }
+    },
+    "owner": "frydaybackup"
   }
 }
