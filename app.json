@@ -1,7 +1,7 @@
 {
   "expo": {
     "name": "FryDay",
-    "slug": "frydaybackup",
+    "slug": "FryDay",
     "scheme": "fryday",
     "version": "1.0.0",
     "orientation": "portrait",
@@ -9,7 +9,7 @@
     "userInterfaceStyle": "light",
     "newArchEnabled": true,
     "splash": {
-      "image": "./assets/fryday-splash-logo2.png",
+      "image": "./assets/fryday-splash-logo3.png",
       "resizeMode": "contain",
       "backgroundColor": "#FF5B22"
     },
@@ -98,7 +98,7 @@
     ],
     "extra": {
       "eas": {
-        "projectId": "513ac8a7-e857-4b48-9b48-014b2045481f"
+        "projectId": "0585f789-8134-49ad-b995-6b872f05c64c"
       }
     },
     "runtimeVersion": {
@@ -107,6 +107,6 @@
     "updates": {
       "url": "https://u.expo.dev/0585f789-8134-49ad-b995-6b872f05c64c"
     },
-    "owner": "frydaybackup"
+    "owner": "frydayapp"
   }
 }
