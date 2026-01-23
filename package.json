@@ -17,6 +17,7 @@
     "@react-native-community/datetimepicker": "^8.4.4",
     "@react-native-community/netinfo": "^11.4.1",
     "@react-native-firebase/app": "^23.8.3",
+    "@react-native-firebase/crashlytics": "^23.8.3",
     "@react-native-firebase/messaging": "^23.8.3",
     "@react-native-seoul/kakao-login": "^5.4.2",
     "@react-native-seoul/naver-login": "^4.2.3",

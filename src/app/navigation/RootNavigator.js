@@ -23,15 +23,16 @@ export default function RootNavigator() {
       <Stack.Screen name="Onboarding" component={OnboardingStack} />
       <Stack.Screen name="Category" component={CategoryStack} />
       <Stack.Screen name="Main" component={MainTabs} />
-      <Stack.Screen
-        name="Agreement"
-        component={AgreementModal}
-        options={{
-          presentation: "transparentModal",
-          contentStyle: {backgroundColor: "transparent"},
-          animation: "fade",
-        }}
-      />
+        <Stack.Screen
+            name="Marketing"
+            component={AgreementModal}
+            options={{
+                presentation: "transparentModal",
+                contentStyle: { backgroundColor: "transparent" },
+                animation: "fade",
+            }}
+        />
+
     </Stack.Navigator>
   );
 }
