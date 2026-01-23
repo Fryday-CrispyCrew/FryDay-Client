@@ -13,7 +13,7 @@ import AsyncStorage from "@react-native-async-storage/async-storage";
 
 import TodoBoardSection from "../../todo/components/TodoBoardSection";
 
-import {getDailyResults} from "../api/dailyResultsApi";
+import {getDailyResultsMap} from "../api/dailyResultsApi";
 
 export default function CalendarScreen({navigation}) {
   const [mode, setMode] = useState("month"); // 'week' | 'month'
@@ -23,7 +23,7 @@ export default function CalendarScreen({navigation}) {
   const selectedDateStr = selectedDate.format("YYYY-MM-DD"); // ✅ TodoBoardSection이 기대하는 포맷
   const isViewingToday = selectedDate.isSame(dayjs(), "day");
 
-  const [bowlMap, setBowlMap] = useState([]);
+  const [bowlMap, setBowlMap] = useState({});
 
   const handlePressToday = useCallback(() => {
     const today = dayjs();
@@ -56,7 +56,7 @@ export default function CalendarScreen({navigation}) {
 
     (async () => {
       try {
-        const map = await getDailyResults(startDate, endDate);
+        const map = await getDailyResultsMap(startDate, endDate);
         setBowlMap(map);
       } catch (e) {}
     })();
