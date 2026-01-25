@@ -22,7 +22,7 @@ import CheckIcon from "../../assets/svg/Check.svg";
 import ErrorIcon from "../../assets/svg/Error.svg";
 import CloseIcon from "../../assets/svg/Close.svg";
 
-import { checkNickname } from "../../../auth/api/nickname";
+import { useCheckNicknameQuery } from "../../../auth/queries/nickname/useCheckNicknameQuery";
 import { updateMyNickname } from "../../api/profileApi";
 import { deleteMyAccount } from "../../api/accountApi";
 
@@ -44,9 +44,7 @@ async function clearLocalAuth() {
     ]);
 }
 
-// ✅ 저장 직전만 자모 분리 금지
 const HAS_KOREAN_JAMO = /[\u3131-\u318E\u1100-\u11FF\uA960-\uA97F\uD7B0-\uD7FF]/;
-// ✅ 저장 직전 최종 허용(완성형 한글 + 영문/숫자)
 const FINAL_ALLOWED_REGEX = /^[가-힣a-zA-Z0-9]+$/;
 
 export default function EditProfile({ navigation, route }) {
@@ -68,6 +66,14 @@ export default function EditProfile({ navigation, route }) {
 
     const trimmed = safeDraft.trim();
     const isChanged = trimmed && trimmed !== safeNick;
+
+    const [debouncedCheck, setDebouncedCheck] = useState("");
+
+    const checkQuery = useCheckNicknameQuery(debouncedCheck, {
+        enabled: false,
+    });
+
+
 
     const isNeutral = !isChanged || trimmed.length < 2;
     const isError = !isNeutral && !!nicknameError;
@@ -130,7 +136,6 @@ export default function EditProfile({ navigation, route }) {
         });
     };
 
-    // ✅ 핵심 수정: 입력 중에는 절대 sanitize/검사하지 말고 그대로 입력 받기
     const onChangeNickname = (text) => {
         const raw = typeof text === "string" ? text : "";
         setDraftNickName(raw);
@@ -141,7 +146,6 @@ export default function EditProfile({ navigation, route }) {
         const raw = (draftNickName ?? "");
         const v = raw.trim();
 
-        // ✅ 저장 직전: 자모 분리 있으면 막기
         if (HAS_KOREAN_JAMO.test(v)) {
             setNicknameError("invalid");
             return;
@@ -164,23 +168,33 @@ export default function EditProfile({ navigation, route }) {
             return;
         }
 
-        // ✅ 저장 직전: 완성형 한글/영문/숫자만 허용 (그 외 있으면 막기)
         if (!FINAL_ALLOWED_REGEX.test(v)) {
             setNicknameError("invalid");
             return;
         }
 
-        // ✅ 저장 직전: 중복 체크
         try {
-            const res = await checkNickname(v, { skipErrorToast: true });
-            if (res?.available === false) {
+            setDebouncedCheck(v);
+            const res = await checkQuery.refetch();
+
+            const available =
+                res?.data?.available ??
+                res?.data?.data?.available ??
+                null;
+
+            if (available === false) {
                 setNicknameError("duplicate");
+                return;
+            }
+            if (available === null) {
+                setNicknameError("network");
                 return;
             }
         } catch {
             setNicknameError("network");
             return;
         }
+
 
         try {
             await updateMyNickname(v, { skipErrorToast: true });

@@ -1,4 +1,4 @@
-import React, { useEffect, useMemo, useRef, useState } from "react";
+import React, {useCallback, useEffect, useRef, useState} from "react";
 import {
     View,
     Image,
@@ -8,103 +8,152 @@ import {
 } from "react-native";
 import * as SecureStore from "expo-secure-store";
 import AppText from "../../../../shared/components/AppText";
-import { SafeAreaView } from "react-native-safe-area-context";
+import {SafeAreaView} from "react-native-safe-area-context";
 
 import Balloon from "../../assets/svg/naming-balloon.svg";
 import NamingArrow from "../../assets/svg/naming-arrow.svg";
 import AsyncStorage from "@react-native-async-storage/async-storage";
-import { STEP_KEY, ONBOARDING_STEP } from "../../../../shared/constants/onboardingStep";
-import { checkNickname, setMyNickname } from "../../api/nickname";
-import { deleteTokens } from "../../../../shared/lib/storage/tokenStorage";
+import {STEP_KEY, ONBOARDING_STEP} from "../../../../shared/constants/onboardingStep";
+import {deleteTokens} from "../../../../shared/lib/storage/tokenStorage";
 
+import {useCheckNicknameQuery} from "../../queries/nickname/useCheckNicknameQuery";
+import {useCreateMyNicknameMutation} from "../../queries/nickname/useCreateMyNicknameMutation";
 
-export default function NamingScreen({ navigation }) {
-    const { width, height } = useWindowDimensions();
+const HAS_KOREAN_JAMO = /[\u3131-\u318E\u1100-\u11FF\uA960-\uA97F\uD7B0-\uD7FF]/;
+const FINAL_ALLOWED_REGEX = /^[가-힣a-zA-Z0-9]+$/;
+
+export default function NamingScreen({navigation}) {
+    const {width, height} = useWindowDimensions();
 
     const [name, setName] = useState("");
     const trimmed = name.trim();
 
-    const [available, setAvailable] = useState(null); // true | false | null
-    const [checking, setChecking] = useState(false);
+    const NICKNAME_MAX = 10;
+    const isTooLong = trimmed.length > NICKNAME_MAX;
+    const isLengthValid = trimmed.length >= 2 && trimmed.length <= NICKNAME_MAX;
 
-    const reqIdRef = useRef(0);
+    // null | "duplicate" | "invalid" | "tooLong" | "network"
+    const [nicknameError, setNicknameError] = useState(null);
 
-    const isTooLong = trimmed.length > 10;
-    const isLengthValid = trimmed.length >= 2 && trimmed.length <= 10;
+    const onChangeName = (text) => {
+        setName(typeof text === "string" ? text : "");
+        if (nicknameError) setNicknameError(null);
+    };
 
-    const isDuplicate = available === false;
-    const isValid = isLengthValid && available === true;
+    const [debouncedNickname, setDebouncedNickname] = useState("");
+    const debounceRef = useRef(null);
 
     useEffect(() => {
+        if (debounceRef.current) clearTimeout(debounceRef.current);
+
         if (!trimmed || !isLengthValid) {
-            setAvailable(null);
+            setDebouncedNickname("");
             return;
         }
 
-        const myId = ++reqIdRef.current;
-        setChecking(true);
-
-        const t = setTimeout(async () => {
-            try {
-                const res = await checkNickname(trimmed);
-                if (reqIdRef.current !== myId) return;
-                setAvailable(res.available);
-            } catch {
-                if (reqIdRef.current !== myId) return;
-                setAvailable(null);
-            } finally {
-                if (reqIdRef.current === myId) setChecking(false);
-            }
+        debounceRef.current = setTimeout(() => {
+            setDebouncedNickname(trimmed);
         }, 300);
 
-        return () => clearTimeout(t);
+        return () => {
+            if (debounceRef.current) clearTimeout(debounceRef.current);
+        };
     }, [trimmed, isLengthValid]);
 
-    const balloonEmphasis = isTooLong || isDuplicate ? "error" : "default";
+    const checkQuery = useCheckNicknameQuery(debouncedNickname, {
+        enabled: !!debouncedNickname && isLengthValid,
+    });
 
-    const balloonText = useMemo(() => {
+    const checking = !!checkQuery?.isFetching;
+    const isCheckError = !!checkQuery?.isError;
+
+    const available = debouncedNickname ? (checkQuery?.data?.available ?? null) : null;
+
+    const isDuplicate = available === false;
+
+    const isValidForButton = isLengthValid && available === true;
+
+    const balloonText = (() => {
         if (!trimmed) return "이제 다 왔어요!\n마지막으로 당신의 이름을 알려주세요.";
+
+        if (nicknameError === "duplicate") return "아앗...\n이미 존재하는 닉네임이에요!";
+        if (nicknameError === "tooLong" || nicknameError === "invalid")
+            return "아차차...\n닉네임은 한/영문/숫자 10자까지 가능해요!";
+        if (nicknameError === "network") return "닉네임을 확인할 수 없어요.\n잠시 후 다시 시도해주세요.";
         if (isTooLong) return "아차차...\n닉네임은 10자까지 입력 가능해요!";
         if (isDuplicate) return "아앗...\n이미 존재하는 닉네임이에요!";
 
-        if (isLengthValid && available === null && !checking)
+        if (isLengthValid && debouncedNickname && isCheckError && !checking)
             return "닉네임을 확인할 수 없어요.\n잠시 후 다시 시도해주세요.";
+
         if (available === true) return "좋아요!\n가입하기 버튼을 눌러주세요.";
         return "닉네임을 2~10자로 입력해주세요.";
-    }, [trimmed, isTooLong, isDuplicate, isLengthValid, available, checking]);
+    })();
+
+    const {mutateAsync: createMyNickname, isPending: isSubmitting} =
+        useCreateMyNicknameMutation();
+
+    const validateBeforeSave = (v) => {
+        if (HAS_KOREAN_JAMO.test(v)) return "invalid";
+        if (!v || v.length < 2) return "invalid";
+        if (v.length > NICKNAME_MAX) return "tooLong";
+        if (!FINAL_ALLOWED_REGEX.test(v)) return "invalid";
+        return null;
+    };
 
     const onSubmit = async () => {
-        if (!isValid) return;
+        if (isSubmitting) return;
+
+        const v = (trimmed ?? "").trim();
+
+        const localErr = validateBeforeSave(v);
+        if (localErr) {
+            setNicknameError(localErr);
+            return;
+        }
 
         try {
-            await setMyNickname(trimmed);
+            const res = await checkQuery?.refetch?.();
+            // refetch 결과 형태에 안전하게 대응
+            const avail =
+                res?.data?.available ??
+                res?.data?.data?.available ??
+                null;
 
-            const r = await Promise.allSettled([
-                SecureStore.setItemAsync("nickname", trimmed),
-                AsyncStorage.setItem("nickname", trimmed),
+            if (avail === false) {
+                setNicknameError("duplicate");
+                return;
+            }
+            if (avail === null) {
+                setNicknameError("network");
+                return;
+            }
+        } catch {
+            setNicknameError("network");
+            return;
+        }
+
+        try {
+            await createMyNickname({nickname: v});
+
+            await Promise.allSettled([
+                SecureStore.setItemAsync("nickname", v),
+                AsyncStorage.setItem("nickname", v),
             ]);
-
-            const [s1, s2] = await Promise.all([
-                SecureStore.getItemAsync("nickname"),
-                AsyncStorage.getItem("nickname"),
-            ]);
-
 
             const rootNav = navigation.getParent("root") ?? navigation.getParent();
             await AsyncStorage.setItem(STEP_KEY, ONBOARDING_STEP.NEEDS_ONBOARDING);
-            rootNav?.reset({ index: 0, routes: [{ name: "Onboarding" }] });
-
+            rootNav?.reset({index: 0, routes: [{name: "Onboarding"}]});
         } catch (e) {
-            console.log("[onSubmit] ERR", e?.status, e?.code, e?.message);
             if (e?.status === 409 && e?.code === "DUPLICATE_NICKNAME") {
-                setAvailable(false);
+                setNicknameError("duplicate");
                 return;
             }
             if (e?.status === 400 && e?.code === "INVALID_NICKNAME_LENGTH") {
-                setAvailable(null);
+                setNicknameError("invalid");
                 return;
             }
-            setAvailable(null);
+            setNicknameError("network");
         }
     };
 
@@ -112,33 +161,38 @@ export default function NamingScreen({ navigation }) {
 
     const balloonW = Math.min(width - 40, 360);
     const balloonH = balloonW * (78 / 320);
-
     const iconSize = Math.min(120, Math.max(96, width * 0.28));
-
 
     const isNewUser = true;
 
-    const goBackToAuth = async () => {
-        if (isNewUser) {
-            await deleteTokens();
-        }
+    const goBackToAuth = useCallback(async () => {
+        if (isNewUser) await deleteTokens();
 
         const rootNav = navigation.getParent("root") ?? navigation.getParent();
-        rootNav?.reset({ index: 0, routes: [{ name: "Auth" }] });
-    };
+        rootNav?.reset({index: 0, routes: [{name: "Auth"}]});
+    }, [navigation]);
+
+    const balloonEmphasis =
+        nicknameError === "duplicate" ||
+        nicknameError === "invalid" ||
+        nicknameError === "tooLong" ||
+        isTooLong ||
+        isDuplicate
+            ? "error"
+            : "default";
 
     return (
         <SafeAreaView className="flex-1 bg-wt">
             <View className="px-5 pt-4">
-                <TouchableOpacity activeOpacity={0.5} className="flex-row items-center gap-2 self-start">
-                    <TouchableOpacity
-                        activeOpacity={0.5}
-                        onPress={goBackToAuth}
-                        className="flex-row items-center gap-2 self-start"
-                    >
-                        <NamingArrow />
-                        <AppText variant="H3" className="text-bk">가입하기</AppText>
-                    </TouchableOpacity>
+                <TouchableOpacity
+                    activeOpacity={0.5}
+                    onPress={goBackToAuth}
+                    className="flex-row items-center gap-2 self-start"
+                >
+                    <NamingArrow />
+                    <AppText variant="H3" className="text-bk">
+                        가입하기
+                    </AppText>
                 </TouchableOpacity>
             </View>
 
@@ -185,7 +239,7 @@ export default function NamingScreen({ navigation }) {
 
                     <TextInput
                         value={name}
-                        onChangeText={setName}
+                        onChangeText={onChangeName}
                         placeholder="닉네임을 10자 이내로 입력해 주세요"
                         placeholderTextColor="#BDBDBD"
                         maxLength={12}
@@ -195,10 +249,15 @@ export default function NamingScreen({ navigation }) {
                     <TouchableOpacity
                         activeOpacity={0.8}
                         onPress={onSubmit}
-                        disabled={!isValid}
-                        className={`mt-5 rounded-2xl py-4 items-center ${isValid ? "bg-bk" : "bg-gr200"}`}
+                        disabled={!isValidForButton || isSubmitting}
+                        className={`mt-5 rounded-2xl py-4 items-center ${
+                            isValidForButton && !isSubmitting ? "bg-bk" : "bg-gr200"
+                        }`}
                     >
-                        <AppText variant="L600" className={`${isValid ? "text-wt" : "text-gr300"}`}>
+                        <AppText
+                            variant="L600"
+                            className={`${isValidForButton && !isSubmitting ? "text-wt" : "text-gr300"}`}
+                        >
                             가입하기
                         </AppText>
                     </TouchableOpacity>

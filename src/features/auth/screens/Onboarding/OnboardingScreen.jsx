@@ -1,12 +1,15 @@
 import React, { useMemo, useState } from "react";
-import {View, Image, TouchableOpacity, Pressable, useWindowDimensions } from "react-native";
+import { View, Image, TouchableOpacity, Pressable, useWindowDimensions } from "react-native";
 import * as SecureStore from "expo-secure-store";
+import AsyncStorage from "@react-native-async-storage/async-storage";
+import { SafeAreaView } from "react-native-safe-area-context";
+
 import AppText from "../../../../shared/components/AppText";
 import SkipIcon from "../../assets/svg/skip-arrow.svg";
-import {completeOnboarding} from "../../api/onboarding";
-import { SafeAreaView } from "react-native-safe-area-context";
-import {ONBOARDING_STEP, STEP_KEY} from "../../../../shared/constants/onboardingStep";
-import AsyncStorage from "@react-native-async-storage/async-storage";
+import { ONBOARDING_STEP, STEP_KEY } from "../../../../shared/constants/onboardingStep";
+
+import { useCompleteOnboardingMutation } from "../../queries/onboarding/useCompleteOnboardingMutation";
+import { CommonActions } from "@react-navigation/native";
 
 const PAGES = [
     { id: "1", title: "할 일을 미루면 발등에 불이 떨어지죠.", desc: "FryDay에서는 그 불을 튀김기의 열기로 바꿉니다.", image: require("../../assets/png/onboarding-1.png") },
@@ -26,9 +29,17 @@ export default function OnboardingScreen({ navigation }) {
     const bottomPadding = useMemo(() => Math.max(20, height * 0.035), [height]);
     const overlayHeight = useMemo(() => Math.max(96, height * 0.14), [height]);
 
+    const { mutateAsync: completeOnboardingAsync } = useCompleteOnboardingMutation();
+
+    function getRootNav(navigation) {
+        let nav = navigation;
+        while (nav?.getParent?.()) nav = nav.getParent();
+        return nav;
+    }
+
     const onDone = async () => {
         try {
-            await completeOnboarding();
+            await completeOnboardingAsync();
         } catch (e) {
             console.log("[completeOnboarding] ERR", e?.status, e?.code, e?.message);
         }
@@ -39,8 +50,17 @@ export default function OnboardingScreen({ navigation }) {
             AsyncStorage.setItem(STEP_KEY, ONBOARDING_STEP.NEEDS_MARKETING),
         ]);
 
-        const rootNav = navigation.getParent("root") ?? navigation.getParent();
-        rootNav?.reset({ index: 0, routes: [{ name: "Marketing" }] });
+        const root = getRootNav(navigation);
+
+        root.dispatch(
+            CommonActions.reset({
+                index: 0,
+                routes: [
+                    { name: "Main" },
+                    { name: "Marketing" }, // Main 위에 모달
+                ],
+            })
+        );
     };
 
 
@@ -67,7 +87,6 @@ export default function OnboardingScreen({ navigation }) {
                 </View>
 
             <Pressable className="flex-1" onPress={onNext}>
-                {/* dots */}
                 <View
                     className="flex-row justify-center items-center gap-2"
                     style={{ marginTop: Math.max(12, height * 0.015) }}
@@ -80,7 +99,6 @@ export default function OnboardingScreen({ navigation }) {
                     ))}
                 </View>
 
-                {/* text */}
                 <View style={{ paddingTop: Math.max(18, height * 0.03), paddingHorizontal: Math.min(32, width * 0.08) }}>
                     <AppText variant="L500" className="text-gr900 text-center mb-2">
                         {page.title}
