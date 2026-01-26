@@ -9,11 +9,9 @@ export const consentApi = {
             "/api/users/me/consent",
             {
                 privacyRequired: Boolean(privacyRequired),
-                pushNotificationOptional: Boolean(pushNotificationOptional),
             },
             { meta: { skipErrorToast } },
         );
-
         return res.data;
     },
 };

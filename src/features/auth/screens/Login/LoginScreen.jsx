@@ -10,7 +10,6 @@ import { appleGetIdToken } from "../../lib/apple";
 
 import { useCreateAppleLoginMutation } from "../../queries/socialLogin/useCreateAppleLoginMutation";
 import { useCreateSocialLoginMutation } from "../../queries/socialLogin/useCreateSocialLoginMutation";
-
 import { useCreateConsentMutation } from "../../queries/consent/useCreateConsentMutation";
 
 function nextRoute(status) {
@@ -42,16 +41,29 @@ export default function LoginScreen({ navigation }) {
   const [loading, setLoading] = useState(false);
 
   const afterLogin = async (data) => {
+    // console.log("[login] status:", data?.onboardingStatus, "nickname:", data?.nickname ?? data?.user?.nickname);
+    //
+    // console.log("[login] raw", JSON.stringify(data, null, 2));
+
     try {
-      await createConsentAsync({
+      const c = await createConsentAsync({
         privacyRequired: true,
-        pushNotificationOptional: false,
         skipErrorToast: true,
       });
-    } catch (e) {}
+      console.log("[consent] OK", c);
+    } catch (e) {
+      console.log("[consent] ERR", e?.response?.status, e?.response?.data, e?.message);
+    }
 
-    const target = nextRoute(data?.onboardingStatus);
-    navigation.reset({ index: 0, routes: [{ name: target }] });
+    const nickname = (data?.user?.nickname ?? "").trim();
+    let status = data?.onboardingStatus;
+    if (status === "NEEDS_NICKNAME" && nickname.length >= 2) {
+      status = "COMPLETED";
+    }
+    const target = nextRoute(status);
+    const rootNav = navigation.getParent("root") ?? navigation.getParent();
+    rootNav?.reset({ index: 0, routes: [{ name: target }] });
+
   };
 
   const onPressKakao = async () => {

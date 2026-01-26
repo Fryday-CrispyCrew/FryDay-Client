@@ -19,9 +19,8 @@ export default function MarketingModal({ navigation }) {
             try {
                 await createMarketingConsent({
                     marketingOptional,
-                    skipErrorToast: true, // 토스트 끄고 직접 로그로 확인
+                    skipErrorToast: true,
                 });
-
                 await AsyncStorage.setItem(STEP_KEY, ONBOARDING_STEP.COMPLETED);
 
                 const rootNav = navigation.getParent("root") ?? navigation.getParent();
@@ -33,9 +32,6 @@ export default function MarketingModal({ navigation }) {
                     e?.response?.data,
                     e?.message,
                 );
-                const { status, data } = await createMarketingConsent({ marketingOptional, skipErrorToast: true });
-                console.log("[marketing] OK", status, data);
-                // 실패하면 모달을 닫지 말고 그대로 둬야 재시도/원인 확인 가능
             }
         },
         [createMarketingConsent, navigation],

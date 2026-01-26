@@ -3,9 +3,9 @@ import {consentApi} from "./consentApi";
 
 export function useCreateConsentMutation(options = {}) {
     return useMutation({
-        mutationFn: ({privacyRequired, pushNotificationOptional, skipErrorToast}) =>
+        mutationFn: ({privacyRequired, skipErrorToast}) =>
             consentApi.setConsent(
-                {privacyRequired, pushNotificationOptional},
+                {privacyRequired},
                 {skipErrorToast},
             ),
         ...options,

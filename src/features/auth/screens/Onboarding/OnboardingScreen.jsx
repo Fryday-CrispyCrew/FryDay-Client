@@ -39,7 +39,8 @@ export default function OnboardingScreen({ navigation }) {
 
     const onDone = async () => {
         try {
-            await completeOnboardingAsync();
+            const res = await completeOnboardingAsync();
+            console.log("[consent] OK", res);
         } catch (e) {
             console.log("[completeOnboarding] ERR", e?.status, e?.code, e?.message);
         }
