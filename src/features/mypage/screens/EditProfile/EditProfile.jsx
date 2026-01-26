@@ -1,4 +1,4 @@
-import React, { useEffect, useMemo, useRef, useState } from "react";
+import React, { useEffect, useMemo, useRef, useState, useCallback } from "react";
 import {
     TextInput,
     TouchableOpacity,
@@ -13,6 +13,7 @@ import {
 import { SafeAreaView } from "react-native-safe-area-context";
 import * as SecureStore from "expo-secure-store";
 import AsyncStorage from "@react-native-async-storage/async-storage";
+import { useQueryClient } from "@tanstack/react-query";
 
 import MyPageHeader from "../../components/MypageHeader";
 import AppText from "../../../../shared/components/AppText";
@@ -24,31 +25,38 @@ import CloseIcon from "../../assets/svg/Close.svg";
 
 import { useCheckNicknameQuery } from "../../../auth/queries/nickname/useCheckNicknameQuery";
 import { updateMyNickname } from "../../api/profileApi";
-import { deleteMyAccount } from "../../api/accountApi";
+import { useDeleteMyAccountMutation } from "../../queries/account/useDeleteMyAccountMutation";
+import { STEP_KEY } from "../../../../shared/constants/onboardingStep";
 
-const KEYS_TO_CLEAR = [
-    "accessToken",
-    "refreshToken",
-    "nickname",
-    "joinedMonth",
-    "onboardingStep",
-    "hasLoggedIn",
-];
+async function clearStorageAndSecure() {
+    try {
+        await AsyncStorage.clear();
+    } catch {}
 
-async function clearLocalAuth() {
-    await Promise.allSettled(KEYS_TO_CLEAR.map((k) => AsyncStorage.removeItem(k)));
     await Promise.allSettled([
         SecureStore.deleteItemAsync("accessToken"),
         SecureStore.deleteItemAsync("refreshToken"),
         SecureStore.deleteItemAsync("nickname"),
+        SecureStore.deleteItemAsync("hasOnboarded"),
+        SecureStore.deleteItemAsync(STEP_KEY),
     ]);
+}
+
+async function clearAuthAndCache(queryClient) {
+    try {
+        await queryClient.cancelQueries();
+        queryClient.clear();
+    } catch {}
+
+    await clearStorageAndSecure();
 }
 
 const HAS_KOREAN_JAMO = /[\u3131-\u318E\u1100-\u11FF\uA960-\uA97F\uD7B0-\uD7FF]/;
 const FINAL_ALLOWED_REGEX = /^[가-힣a-zA-Z0-9]+$/;
 
-export default function EditProfile({ navigation, route }) {
+export default function EditProfile({ navigation }) {
     const { width, height } = useWindowDimensions();
+    const queryClient = useQueryClient();
 
     const [nickName, setNickName] = useState("");
     const [draftNickName, setDraftNickName] = useState("");
@@ -73,7 +81,7 @@ export default function EditProfile({ navigation, route }) {
         enabled: false,
     });
 
-
+    const { mutateAsync: deleteMyAccountAsync } = useDeleteMyAccountMutation();
 
     const isNeutral = !isChanged || trimmed.length < 2;
     const isError = !isNeutral && !!nicknameError;
@@ -139,11 +147,11 @@ export default function EditProfile({ navigation, route }) {
     const onChangeNickname = (text) => {
         const raw = typeof text === "string" ? text : "";
         setDraftNickName(raw);
-        if (nicknameError) setNicknameError(null); // 입력 중엔 오류 뜨지 않게
+        if (nicknameError) setNicknameError(null);
     };
 
     const finishEdit = async () => {
-        const raw = (draftNickName ?? "");
+        const raw = draftNickName ?? "";
         const v = raw.trim();
 
         if (HAS_KOREAN_JAMO.test(v)) {
@@ -177,10 +185,7 @@ export default function EditProfile({ navigation, route }) {
             setDebouncedCheck(v);
             const res = await checkQuery.refetch();
 
-            const available =
-                res?.data?.available ??
-                res?.data?.data?.available ??
-                null;
+            const available = res?.data?.available ?? res?.data?.data?.available ?? null;
 
             if (available === false) {
                 setNicknameError("duplicate");
@@ -194,7 +199,6 @@ export default function EditProfile({ navigation, route }) {
             setNicknameError("network");
             return;
         }
-
 
         try {
             await updateMyNickname(v, { skipErrorToast: true });
@@ -215,36 +219,38 @@ export default function EditProfile({ navigation, route }) {
         }
     };
 
-    const onConfirmLogout = async () => {
-        setModalType(null);
-        await clearLocalAuth();
-
-        const rootNav =
-            navigation?.getParent?.()?.getParent?.() ?? navigation?.getParent?.();
-
-        rootNav?.reset({
-            index: 0,
-            routes: [{ name: "Auth", params: { screen: "Login" } }],
-        });
-    };
-
-    const onConfirmDelete = async () => {
-        try {
-            await deleteMyAccount();
-        } catch {}
-
-        setModalType(null);
-        await clearLocalAuth();
-
+    const goAuthLogin = useCallback(() => {
         const rootNav = navigation?.getParent?.("root") ?? navigation?.getParent?.();
-        const target = [{ name: "Auth", params: { screen: "Login" } }];
+        const routes = [{ name: "Auth", params: { screen: "Login" } }];
 
         if (rootNav?.reset) {
-            rootNav.reset({ index: 0, routes: target });
+            rootNav.reset({ index: 0, routes });
             return;
         }
-        navigation?.reset?.({ index: 0, routes: target });
-    };
+        navigation?.reset?.({ index: 0, routes });
+    }, [navigation]);
+
+    const onConfirmLogout = useCallback(async () => {
+        setModalType(null);
+
+        await clearAuthAndCache(queryClient);
+
+        goAuthLogin();
+    }, [queryClient, goAuthLogin]);
+
+    const onConfirmDelete = useCallback(async () => {
+        setModalType(null);
+
+        try {
+            await deleteMyAccountAsync({ skipErrorToast: true });
+        } catch (e) {
+            console.log("[delete] ERR", e?.response?.status, e?.response?.data, e?.message);
+        }
+
+        await clearAuthAndCache(queryClient);
+
+        goAuthLogin();
+    }, [deleteMyAccountAsync, queryClient, goAuthLogin]);
 
     return (
         <SafeAreaView className="bg-gr flex-1" edges={["top", "bottom"]}>
@@ -421,11 +427,15 @@ export default function EditProfile({ navigation, route }) {
 
                             <View className="h-px bg-gr100 mt-4" />
 
-                            <AppText variant="L500" className="text-gr700 text-center mt-6">
+                            <AppText variant="L500" className="text-gr700 text-center mt-6"
+                                     style={{ lineHeight: 20 }}>
                                 {modalType === "logout"
                                     ? "FryDay에서 로그아웃하시겠어요?"
                                     : modalType === "delete"
-                                        ? "모든 데이터가 삭제되며 복구할 수 없어요\n정말 계정을 삭제하시겠어요?"
+                                        ? "탈퇴시 모든 데이터가 삭제돼요.\n" +
+                                        "재가입은 7일 이후에 가능하며,\n" +
+                                        "재가입 시에도 삭제된 데이터는 복구되지 않아요!\n" +
+                                        "정말 계정을 삭제하시겠어요?"
                                         : ""}
                             </AppText>
 
