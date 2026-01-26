@@ -483,7 +483,7 @@ export default function HomeScreen({navigation}) {
                     : TodoLottie.caseE2Back
                 }
                 autoPlay
-                loop
+                loop={false}
                 style={styles.lottie}
               />
             )}
@@ -492,7 +492,7 @@ export default function HomeScreen({navigation}) {
             <LottieView
               source={TodoLottie[lottieKey] ?? TodoLottie.caseA}
               autoPlay
-              loop
+              loop={false}
               style={styles.lottie}
             />
           </Pressable>
