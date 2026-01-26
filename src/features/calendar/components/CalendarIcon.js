@@ -15,9 +15,10 @@ export const CALENDAR_ICONS = {
  */
 export function getCalendarIconType(date, bowlType) {
     const today = dayjs();
+    if (dayjs(date).isAfter(today, "day")) return null;
 
-    if (dayjs(date).isAfter(today, 'day')) return null;
-    if (!bowlType) return 'EMPTY';
-
-    return bowlType;
+    const key = (bowlType ?? "").trim().toUpperCase();
+    if (!key || !(key in CALENDAR_ICONS)) return "EMPTY";
+    return key;
 }
+
