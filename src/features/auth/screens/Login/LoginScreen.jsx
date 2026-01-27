@@ -43,22 +43,19 @@ export default function LoginScreen({ navigation }) {
   const afterLogin = async (data) => {
     // console.log("[login] status:", data?.onboardingStatus, "nickname:", data?.nickname ?? data?.user?.nickname);
     //
-    // console.log("[login] raw", JSON.stringify(data, null, 2));
-
-    try {
-      const c = await createConsentAsync({
-        privacyRequired: true,
-        skipErrorToast: true,
-      });
-      console.log("[consent] OK", c);
-    } catch (e) {
-      console.log("[consent] ERR", e?.response?.status, e?.response?.data, e?.message);
-    }
-
-    const nickname = (data?.user?.nickname ?? "").trim();
+    console.log("[login] raw", JSON.stringify(data, null, 2));
     let status = data?.onboardingStatus;
+
     if (status === "NEEDS_NICKNAME" && nickname.length >= 2) {
       status = "COMPLETED";
+    }
+
+    if (status === "NEEDS_AGREEMENT") {
+      try {
+        await createConsentAsync({ privacyRequired: true, skipErrorToast: true });
+      } catch (e) {
+        console.log("[consent] ERR", e?.response?.status, e?.response?.data, e?.message);
+      }
     }
     const target = nextRoute(status);
     const rootNav = navigation.getParent("root") ?? navigation.getParent();
