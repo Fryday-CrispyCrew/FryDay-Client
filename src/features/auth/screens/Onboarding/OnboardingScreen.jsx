@@ -1,5 +1,11 @@
 import React, { useMemo, useState } from "react";
-import { View, Image, TouchableOpacity, Pressable, useWindowDimensions } from "react-native";
+import {
+    View,
+    Image,
+    TouchableOpacity,
+    Pressable,
+    useWindowDimensions,
+} from "react-native";
 import * as SecureStore from "expo-secure-store";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { SafeAreaView } from "react-native-safe-area-context";
@@ -24,6 +30,7 @@ export default function OnboardingScreen({ navigation }) {
 
     const [idx, setIdx] = useState(0);
     const page = PAGES[idx];
+    const isFirst = idx === 0;
     const isLast = idx === PAGES.length - 1;
 
     const bottomPadding = useMemo(() => Math.max(20, height * 0.035), [height]);
@@ -40,7 +47,7 @@ export default function OnboardingScreen({ navigation }) {
     const onDone = async () => {
         try {
             const res = await completeOnboardingAsync();
-            console.log("[consent] OK", res);
+            console.log("[completeOnboarding] OK", res);
         } catch (e) {
             console.log("[completeOnboarding] ERR", e?.status, e?.code, e?.message);
         }
@@ -64,30 +71,42 @@ export default function OnboardingScreen({ navigation }) {
         );
     };
 
-
     const onNext = () => {
         if (isLast) return;
         setIdx((prev) => Math.min(prev + 1, PAGES.length - 1));
     };
 
+    const onPrev = () => {
+        if (isFirst) return;
+        setIdx((prev) => Math.max(prev - 1, 0));
+    };
+
+    const onPressSide = (e) => {
+        const x = e.nativeEvent.locationX;
+        const mid = width / 2;
+
+        if (x < mid) onPrev();
+        else onNext();
+    };
+
     return (
         <SafeAreaView className="flex-1 bg-wt">
             <View className="px-5 pt-4 items-end">
-                    <TouchableOpacity
-                        onPress={onDone}
-                        activeOpacity={0.5}
-                        disabled={isLast}
-                        className="flex-row items-center gap-1"
-                        style={{ opacity: isLast ? 0 : 1 }}
-                    >
-                        <AppText variant="H3" className="text-bk">
-                            Skip
-                        </AppText>
-                        <SkipIcon />
-                    </TouchableOpacity>
-                </View>
+                <TouchableOpacity
+                    onPress={onDone}
+                    activeOpacity={0.5}
+                    disabled={isLast}
+                    className="flex-row items-center gap-1"
+                    style={{ opacity: isLast ? 0 : 1 }}
+                >
+                    <AppText variant="H3" className="text-bk">
+                        Skip
+                    </AppText>
+                    <SkipIcon />
+                </TouchableOpacity>
+            </View>
 
-            <Pressable className="flex-1" onPress={onNext}>
+            <Pressable className="flex-1" onPress={onPressSide}>
                 <View
                     className="flex-row justify-center items-center gap-2"
                     style={{ marginTop: Math.max(12, height * 0.015) }}
@@ -100,7 +119,12 @@ export default function OnboardingScreen({ navigation }) {
                     ))}
                 </View>
 
-                <View style={{ paddingTop: Math.max(18, height * 0.03), paddingHorizontal: Math.min(32, width * 0.08) }}>
+                <View
+                    style={{
+                        paddingTop: Math.max(18, height * 0.03),
+                        paddingHorizontal: Math.min(32, width * 0.08),
+                    }}
+                >
                     <AppText variant="L500" className="text-gr900 text-center mb-2">
                         {page.title}
                     </AppText>
@@ -109,15 +133,30 @@ export default function OnboardingScreen({ navigation }) {
                     </AppText>
                 </View>
 
-                <View className="flex-1 justify-end items-center" style={{ paddingHorizontal: Math.min(32, width * 0.08), paddingBottom: 0 }}>
-                    <Image source={page.image} style={{ width: "100%", height: "100%" }} resizeMode="contain" />
+                <View
+                    className="flex-1 justify-end items-center"
+                    style={{
+                        paddingHorizontal: Math.min(32, width * 0.08),
+                        paddingBottom: 0,
+                    }}
+                >
+                    <Image
+                        source={page.image}
+                        style={{ width: "100%", height: "100%" }}
+                        resizeMode="contain"
+                    />
                 </View>
             </Pressable>
 
             {isLast ? (
                 <View
                     className="absolute left-0 right-0 bg-wt px-6"
-                    style={{ bottom: 0, height: overlayHeight, justifyContent: "center", paddingBottom: bottomPadding }}
+                    style={{
+                        bottom: 0,
+                        height: overlayHeight,
+                        justifyContent: "center",
+                        paddingBottom: bottomPadding,
+                    }}
                 >
                     <TouchableOpacity
                         activeOpacity={0.5}
