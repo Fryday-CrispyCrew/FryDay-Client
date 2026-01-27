@@ -26,7 +26,11 @@ export default function CustomTabBar({state, navigation}) {
     <View
       style={[
         styles.tabBar,
-        {paddingBottom: insets.bottom, backgroundColor: bgColor},
+        {
+          paddingBottom: insets.bottom,
+          backgroundColor: bgColor,
+          paddingTop: Platform.OS === "ios" ? 16 : 0, // ✅ iOS만 적용
+        },
       ]}
     >
       {state.routes.map((route, index) => {
@@ -68,7 +72,7 @@ const styles = StyleSheet.create({
     justifyContent: "space-around",
     borderTopWidth: 0,
     elevation: 0,
-    paddingTop: 16,
+    // paddingTop: 16,
     // borderWidth: 5,
   },
   tabButton: {
