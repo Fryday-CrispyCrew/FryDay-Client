@@ -51,7 +51,7 @@ export default function CategoryHeader({
             hitSlop={10}
             style={styles.plusBtn}
           >
-            <PlusIcon width={24} height={24} color={colors.gr900} />
+            <PlusIcon width={18} height={18} color={colors.gr900} />
           </TouchableOpacity>
         ) : (
           // ✅ 우측 레이아웃 흔들림 방지용 자리 유지
