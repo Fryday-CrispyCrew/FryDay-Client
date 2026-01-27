@@ -69,7 +69,7 @@ export default function ReportTotalCard({ type, count }) {
             }}
         >
             <View className="px-5 pt-4 z-10">
-                <AppText variant="M500" className={`${titleColor} leading-4`}>
+                <AppText variant="M600" className={`${titleColor} leading-4`}>
                     {title}
                 </AppText>
             </View>

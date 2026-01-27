@@ -15,13 +15,13 @@ export default function QnaBox({ title, content, defaultOpen = false }) {
                 hitSlop={10}
             >
                 <View className="flex-1 flex-row items-start gap-1 pr-2">
-                    <AppText variant="M500" className="text-or">
+                    <AppText variant="L500" className="text-or">
                         Q
                     </AppText>
 
                     <View className="flex-1">
                         <AppText
-                            variant="M500"
+                            variant="L400"
                             className="text-gr700 flex-1"
                             numberOfLines={2}
                             ellipsizeMode="tail"
@@ -41,7 +41,7 @@ export default function QnaBox({ title, content, defaultOpen = false }) {
 
             {open && (
                 <View className="self-stretch p-3 bg-wt rounded-lg">
-                    <AppText variant="M400" className="text-bk">
+                    <AppText variant="L500" className="text-bk">
                         {content}
                     </AppText>
                 </View>
