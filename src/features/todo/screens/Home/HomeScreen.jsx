@@ -671,7 +671,7 @@ const bubbleStyles = StyleSheet.create({
   tail: {
     position: "absolute",
     bottom: -6,
-    left: "48.4%",
+    left: "48.2%",
     // marginLeft: 20,
     // right: "0%",
     width: 12,
