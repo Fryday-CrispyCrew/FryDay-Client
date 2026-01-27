@@ -22,7 +22,7 @@ export default function MyProfileScreen() {
             >
                 <MyPageMenu menuTitle="공지 사항" to="Notice" />
                 <MyPageMenu menuTitle="계정 설정" to="EditProfile" />
-                <MyPageMenu menuTitle="알람 설정" to="EditProfile" />
+                <MyPageMenu menuTitle="알람 설정" to="Alarm" />
 
                 <MyPageMenu menuTitle="이용 정책" to="Use" />
                 <MyPageMenu menuTitle="자주 묻는 질문" to="Qna" />

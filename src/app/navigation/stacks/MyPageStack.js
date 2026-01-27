@@ -7,6 +7,7 @@ import EditProfile from '../../../features/mypage/screens/EditProfile/EditProfil
 import SystemNotice from "../../../features/mypage/screens/System/SystemNotice";
 import SystemUse from "../../../features/mypage/screens/System/SystemUse";
 import SystemQna from "../../../features/mypage/screens/System/SystemQna";
+import SystemAlarm from "../../../features/mypage/screens/System/SystemAlarm";
 
 const Stack = createNativeStackNavigator();
 
@@ -18,6 +19,7 @@ export default function MyPageStack() {
         <Stack.Screen name="Notice" component={SystemNotice} />
         <Stack.Screen name="Use" component={SystemUse} />
         <Stack.Screen name="Qna" component={SystemQna} />
+        <Stack.Screen name="Alarm" component={SystemAlarm} />
     </Stack.Navigator>
   );
 }
