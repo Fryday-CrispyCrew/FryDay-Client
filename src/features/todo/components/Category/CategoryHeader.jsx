@@ -2,7 +2,7 @@ import React, {useMemo} from "react";
 import {View, StyleSheet, TouchableOpacity} from "react-native";
 import AppText from "../../../../shared/components/AppText";
 import ChevronIcon from "../../../../shared/components/ChevronIcon";
-import PlusIcon from "../../assets/svg/Plus.svg";
+import PlusIcon from "../../assets/svg/PlusThick.svg";
 import colors from "../../../../shared/styles/colors";
 
 export default function CategoryHeader({

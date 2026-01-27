@@ -32,7 +32,7 @@ import colors from "../../../shared/styles/colors";
 
 const ACTION_BTN_W = 48; // 버튼 하나 너비(원하는 값으로)
 const ACTION_GAP = 6; // 버튼 간격
-const ACTIONS_TOTAL_W = ACTION_BTN_W * 2 + ACTION_GAP;
+const ACTIONS_TOTAL_W = ACTION_BTN_W * 2 + ACTION_GAP + 8;
 const SWIPE_OPEN_OFFSET = -ACTIONS_TOTAL_W;
 const SWIPE_THRESHOLD = -(ACTIONS_TOTAL_W * 0.5);
 
@@ -96,7 +96,7 @@ function TodoItem({
           activeOpacity={0.7}
           onPress={() => onDelete(item)}
         >
-          <DeleteIcon width={20} height={20} />
+          <DeleteIcon width={24} height={24} />
         </TouchableOpacity>
 
         {isViewingToday ? (
@@ -105,7 +105,7 @@ function TodoItem({
             activeOpacity={0.7}
             onPress={() => onDoTomorrow?.(item.id)}
           >
-            <TomorrowIcon width={20} height={20} />
+            <TomorrowIcon width={24} height={24} />
           </TouchableOpacity>
         ) : (
           <TouchableOpacity
@@ -113,7 +113,7 @@ function TodoItem({
             activeOpacity={0.7}
             onPress={() => onDoToday?.(item.id)}
           >
-            <StartDateIcon width={20} height={20} />
+            <StartDateIcon width={24} height={24} />
           </TouchableOpacity>
         )}
       </View>
@@ -442,9 +442,10 @@ export default function TodoCard({
           }
           style={styles.newCategoryButton}
         >
-          <AppText variant="M600" style={{color: "#FF5B22"}}>
-            새 카테고리 +
+          <AppText variant="M600" style={{color: colors?.or}}>
+            새 카테고리
           </AppText>
+          <PlusIcon width={14} height={14} color={colors?.or} />
         </TouchableOpacity>
       )}
     </View>
@@ -509,6 +510,10 @@ const styles = StyleSheet.create({
 
   newCategoryButton: {
     // marginTop: 22,
+    flexDirection: "row",
+    justifyContent: "center",
+    alignItems: "center",
+    gap: 4,
     alignSelf: "flex-start",
     borderWidth: 1,
     borderColor: "#FF5B22",
@@ -552,22 +557,22 @@ const styles = StyleSheet.create({
     alignItems: "center",
     justifyContent: "flex-end",
     gap: 6,
-    // paddingRight: 6,
+    paddingRight: 2,
   },
   todoDeleteButton: {
-    paddingHorizontal: 12,
-    paddingVertical: 8,
+    width: 48,
+    height: 36,
     borderRadius: 12,
-    // width: 56,
-    // height: 44,
+    // width: 48,
+    // height: 36,
     // borderRadius: 14,
     backgroundColor: "#FF5B22",
     alignItems: "center",
     justifyContent: "center",
   },
   todoTodayButton: {
-    paddingHorizontal: 10,
-    paddingVertical: 6,
+    width: 48,
+    height: 36,
     borderRadius: 12,
     backgroundColor: "#FFFFFF",
     borderWidth: 2,
