@@ -224,11 +224,26 @@ export default function TodoCard({
     [onDoToday, closeAnySwipe],
   );
 
-  // ✅ 기본: 첫 카테고리만 펼쳐진 상태로 시작
-  const [openMap, setOpenMap] = useState(() => {
-    const first = categories?.[0]?.categoryId;
-    return first ? {[first]: true} : {};
-  });
+  // // ✅ 기본: 첫 카테고리만 펼쳐진 상태로 시작
+  // const [openMap, setOpenMap] = useState(() => {
+  //   const first = categories?.[0]?.categoryId;
+  //   return first ? {[first]: true} : {};
+  // });
+
+  // ✅ 기본: 모든 카테고리 펼쳐진 상태로 시작
+  const [openMap, setOpenMap] = useState({});
+  const [didInitOpenMap, setDidInitOpenMap] = useState(false);
+
+  useEffect(() => {
+    if (didInitOpenMap) return;
+    if (!Array.isArray(categories) || categories.length === 0) return;
+
+    const initial = {};
+    for (const c of categories) initial[c.categoryId] = true;
+
+    setOpenMap(initial);
+    setDidInitOpenMap(true);
+  }, [categories, didInitOpenMap]);
 
   const grouped = useMemo(() => {
     const by = {};

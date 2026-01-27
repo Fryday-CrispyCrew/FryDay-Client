@@ -6,16 +6,16 @@ import {TAB_CONFIG, HIDDEN_ROUTES} from "./tabConfig";
 import {getDeepActiveRouteName} from "./navigationHelper";
 import colors from "../../../shared/styles/colors";
 
-export default function CustomTabBar({ state, navigation }) {
+export default function CustomTabBar({state, navigation}) {
   const insets = useSafeAreaInsets();
 
   const activeTabRoute = state.routes[state.index];
   const activeNestedRouteName = getDeepActiveRouteName(activeTabRoute);
 
   const shouldHide =
-      activeTabRoute?.name === "MyPage" &&
-      !!activeNestedRouteName &&
-      HIDDEN_ROUTES.includes(activeNestedRouteName);
+    activeTabRoute?.name === "MyPage" &&
+    !!activeNestedRouteName &&
+    HIDDEN_ROUTES.includes(activeNestedRouteName);
 
   if (shouldHide) return null;
 
@@ -23,17 +23,17 @@ export default function CustomTabBar({ state, navigation }) {
   const bgColor = isMyPageTab ? colors.gr : colors.wt;
 
   return (
-      <View
-          style={[
-            styles.tabBar,
-            { paddingBottom: insets.bottom, backgroundColor: bgColor },
-          ]}
-      >
-        {state.routes.map((route, index) => {
-          const focused = state.index === index;
-          const { label, active, inactive } = TAB_CONFIG[route.name];
-          const Icon = focused ? active : inactive;
-          const color = focused ? "#141312" : "rgba(20, 19, 18, 0.25)";
+    <View
+      style={[
+        styles.tabBar,
+        {paddingBottom: insets.bottom, backgroundColor: bgColor},
+      ]}
+    >
+      {state.routes.map((route, index) => {
+        const focused = state.index === index;
+        const {label, active, inactive} = TAB_CONFIG[route.name];
+        const Icon = focused ? active : inactive;
+        const color = focused ? "#141312" : "rgba(20, 19, 18, 0.25)";
 
         const onPress = () => {
           const event = navigation.emit({
@@ -68,6 +68,8 @@ const styles = StyleSheet.create({
     justifyContent: "space-around",
     borderTopWidth: 0,
     elevation: 0,
+    paddingTop: 16,
+    // borderWidth: 5,
   },
   tabButton: {
     flex: 1,
