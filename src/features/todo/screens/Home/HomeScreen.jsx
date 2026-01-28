@@ -424,15 +424,27 @@ export default function HomeScreen({navigation, route}) {
   );
 
   // 캘린더 연동
+  const appliedInitialDateRef = useRef(null); // 마지막으로 적용한 initialDate
+  const skipResetOnceRef = useRef(false);     // 캘린더에서 넘어온 직후 1회 리셋 방지
+
   useFocusEffect(
       useCallback(() => {
         const dateStr = route?.params?.initialDate;
-        if (!dateStr) return;
 
-        const [y, m, d] = String(dateStr).split("-").map(Number);
-        if (!y || !m || !d) return;
-
-        setCurrentDate(new Date(y, m - 1, d));
+        if (dateStr && appliedInitialDateRef.current !== dateStr) {
+          const [y, m, d] = String(dateStr).split("-").map(Number);
+          if (y && m && d) {
+            appliedInitialDateRef.current = dateStr;
+            skipResetOnceRef.current = true;
+            setCurrentDate(new Date(y, m - 1, d));
+          }
+          return;
+        }
+        if (skipResetOnceRef.current) {
+          skipResetOnceRef.current = false;
+          return;
+        }
+        setCurrentDate(new Date());
       }, [route?.params?.initialDate])
   );
 
