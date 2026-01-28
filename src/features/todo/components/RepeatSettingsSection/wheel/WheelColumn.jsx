@@ -15,7 +15,7 @@ export default function WheelColumn({
   visibleCount = VISIBLE,
   activeTextStyle,
   textStyle,
-  containerStyle,
+  containerStyle, isDisabled,
 }) {
   const ref = useRef(null);
   const padding = Math.floor(visibleCount / 2) * itemHeight;
@@ -32,12 +32,26 @@ export default function WheelColumn({
     (e) => {
       const y = e.nativeEvent.contentOffset.y;
       const idx = Math.round(y / itemHeight);
+
+        if (isDisabled?.(idx)) {
+            ref.current?.scrollToOffset({
+                offset: selectedIndex * itemHeight,
+                animated: true,
+            });
+            return;
+        }
+
       onChangeIndex?.(idx);
     },
-    [itemHeight, onChangeIndex]
+    [itemHeight, onChangeIndex, isDisabled, selectedIndex]
   );
 
-  return (
+  const handleSelect = (index) => {
+      if (isDisabled?.(index)) return;
+      onChangeIndex(index);
+  };
+
+    return (
     <View
       style={[
         styles.col,
@@ -62,20 +76,22 @@ export default function WheelColumn({
         })}
         renderItem={({item, index}) => {
           const isActive = index === selectedIndex;
-          return (
-            <View style={[styles.item, {height: itemHeight}]}>
-              <Text
-                style={[
-                  styles.text,
-                  textStyle,
-                  isActive && styles.textActive,
-                  isActive && activeTextStyle,
-                ]}
-              >
-                {renderLabel(item)}
-              </Text>
-            </View>
-          );
+          const disabled = isDisabled?.(index);
+            return (
+                <View style={[styles.item, {height: itemHeight}]}>
+                    <Text
+                        style={[
+                            styles.text,
+                            textStyle,
+                            isActive && styles.textActive,
+                            isActive && activeTextStyle,
+                            disabled && { color: "#C4C4C3" },
+                        ]}
+                    >
+                        {renderLabel(item)}
+                    </Text>
+                </View>
+            );
         }}
       />
 

@@ -1,34 +1,40 @@
-import React, {useState} from "react";
 import {View, Pressable} from "react-native";
 import AppText from "../../../shared/components/AppText";
 
-export default function ToggleMenu({title, content}) {
-    const [on, setOn] = useState(false);
-
+export default function ToggleMenu({
+                                       title,
+                                       content,
+                                       value,
+                                       onToggle,
+                                       disabled = false,
+                                   }) {
     return (
         <View className="py-3">
             <View className="flex-row justify-between items-center gap-2">
-            <View>
-                <AppText variant="L500" className="text-bk">
-                    {title}
-                </AppText>
-                <AppText variant="S500" className="text-gr500 py-1">
-                    {content}
-                </AppText>
-            </View>
+                <View>
+                    <AppText variant="L500" className="text-bk">
+                        {title}
+                    </AppText>
+                    <AppText variant="S500" className="text-gr500 py-1">
+                        {content}
+                    </AppText>
+                </View>
 
-            <Pressable
-                onPress={() => setOn(!on)}
-                className={`w-16 h-8 rounded-full px-1 justify-center ${
-                    on ? "bg-or" : "bg-gr300"
-                }`}
-            >
-                <View
-                    className={`w-5 h-5 rounded-full bg-white ${
-                        on ? "self-end" : "self-start"
-                    }`}
-                />
-            </Pressable>
+                <Pressable
+                    onPress={() => {
+                        if (disabled) return;
+                        onToggle?.(!value);
+                    }}
+                    className={`w-16 h-8 rounded-full px-1 justify-center ${
+                        value ? "bg-or" : "bg-gr300"
+                    } ${disabled ? "opacity-40" : ""}`}
+                >
+                    <View
+                        className={`w-5 h-5 rounded-full bg-white ${
+                            value ? "self-end" : "self-start"
+                        }`}
+                    />
+                </Pressable>
             </View>
         </View>
     );

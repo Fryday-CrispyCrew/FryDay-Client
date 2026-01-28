@@ -4,7 +4,7 @@ import AppText from '../../../shared/components/AppText';
 import ArrowLeft from '../assets/svg/ArrowLeft.svg';
 import ArrowRight from '../assets/svg/ArrowRight.svg';
 
-export default function ReportHeader({ currentDate, onChangeMonth, joinedAt }) {
+export default function ReportHeader({ currentDate, onChangeMonth, joinedAt, onPressYearMonth }) {
     const date = dayjs(currentDate).startOf('month');
 
     const yearText = date.format('YYYY년');
@@ -40,14 +40,12 @@ export default function ReportHeader({ currentDate, onChangeMonth, joinedAt }) {
 
     return (
         <View className="px-5 py-4 flex-row justify-between items-center">
-            <View>
-                <AppText variant="M500" className="text-gr500">
-                    {yearText}
-                </AppText>
-                <AppText variant="H3" className="mt-1 text-bk">
-                    {monthText}
-                </AppText>
-            </View>
+            <TouchableOpacity onPress={onPressYearMonth}>
+                <View>
+                    <AppText variant="M500" className="text-gr500">{yearText}</AppText>
+                    <AppText variant="H3" className="mt-1 text-bk">{monthText}</AppText>
+                </View>
+            </TouchableOpacity>
 
             <View className="flex-row items-center gap-3">
                 <TouchableOpacity onPress={handlePrev}>

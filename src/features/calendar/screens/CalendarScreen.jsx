@@ -13,6 +13,7 @@ import AsyncStorage from "@react-native-async-storage/async-storage";
 
 import TodoBoardSection from "../../todo/components/TodoBoardSection";
 import {getDailyResultsMap} from "../api/dailyResultsApi";
+import YearMonthWheelModal from "../../todo/components/RepeatSettingsSection/wheel/YearMonthWheelModal";
 
 export default function CalendarScreen({navigation}) {
   const [mode, setMode] = useState("month"); // 'week' | 'month'
@@ -22,7 +23,24 @@ export default function CalendarScreen({navigation}) {
   const selectedDateStr = selectedDate.format("YYYY-MM-DD");
   const isViewingToday = selectedDate.isSame(dayjs(), "day");
 
-  const [bowlMap, setBowlMap] = useState({});
+    const [isYMModalOpen, setIsYMModalOpen] = useState(false);
+
+    const openYMModal = useCallback(() => setIsYMModalOpen(true), []);
+    const closeYMModal = useCallback(() => setIsYMModalOpen(false), []);
+
+    const handleConfirmYM = useCallback((year, month) => {
+        // month: 1~12
+        const next = dayjs()
+            .year(year)
+            .month(month - 1)
+            .startOf("month");
+
+        setCurrentDate(next);
+        setIsYMModalOpen(false);
+    }, []);
+
+
+    const [bowlMap, setBowlMap] = useState({});
 
   const handlePressToday = useCallback(() => {
     const today = dayjs();
@@ -88,18 +106,37 @@ export default function CalendarScreen({navigation}) {
         }, [mode])
     );
 
+    const handleSelectMonthDate = useCallback(
+        (d) => {
+            setSelectedDate(d);
+            const dateStr = d.format("YYYY-MM-DD");
+
+            requestAnimationFrame(() => {
+                navigation.navigate("Main", {
+                    screen: "Todo",
+                    params: {
+                        screen: "Home",
+                        params: { initialDate: dateStr },
+                    },
+                });
+            });
+        },
+        [navigation]
+    );
+
 
     return (
       <SafeAreaView className="flex-1 bg-wt" edges={["top"]}>
-        <CalendarHeader
-            date={currentDate}
-            mode={mode}
-            onPressButton={toggleMode}
-            onPressToday={handlePressToday}
-            navigation={navigation}
-        />
+          <CalendarHeader
+              date={currentDate}
+              mode={mode}
+              onPressButton={toggleMode}
+              onPressToday={handlePressToday}
+              navigation={navigation}
+              onPressYearMonth={openYMModal}
+          />
 
-        <WeekdayHeader />
+          <WeekdayHeader />
 
         <View className="flex-1">
           {mode === "week" ? (
@@ -131,10 +168,18 @@ export default function CalendarScreen({navigation}) {
                   onChangeDate={setCurrentDate}
                   bowlMap={bowlMap}
                   selectedDate={selectedDate}
-                  onSelectDate={setSelectedDate}
+                  onSelectDate={handleSelectMonthDate}
               />
           )}
         </View>
+          <YearMonthWheelModal
+              visible={isYMModalOpen}
+              initialYear={currentDate.year()}
+              initialMonth={currentDate.month() + 1}
+              onCancel={closeYMModal}
+              onConfirm={handleConfirmYM}
+          />
+
       </SafeAreaView>
   );
 }
