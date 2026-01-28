@@ -4,7 +4,7 @@ import Svg, { Path, Circle } from 'react-native-svg';
 
 import AppText from '../../../shared/components/AppText';
 import CategoryBg from '../assets/svg/Category_bg.svg';
-import Tung from '../assets/png/T.png';
+import Tung from '../assets/png/Tung.png';
 import CategoryLine from '../assets/svg/Category_line.svg';
 
 const TICKS = [100, 80, 60, 40, 20];
