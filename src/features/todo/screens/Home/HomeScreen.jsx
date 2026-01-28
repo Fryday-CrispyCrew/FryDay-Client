@@ -2,17 +2,11 @@
 import React, {useCallback, useEffect, useMemo, useRef, useState} from "react";
 import {
   View,
-  Text,
   StyleSheet,
   Dimensions,
   StatusBar,
   TouchableOpacity,
-  ScrollView,
-  Platform,
-  InteractionManager,
   Pressable,
-  Keyboard,
-  ActivityIndicator,
 } from "react-native";
 import {Gesture, GestureDetector} from "react-native-gesture-handler";
 import {SafeAreaView} from "react-native-safe-area-context";
