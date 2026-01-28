@@ -38,7 +38,7 @@ export default function ReportTotalCard({ type, count }) {
 
     const cardW = useMemo(() => {
         const w = width * 0.38;
-        return Math.max(144, Math.min(160, w));
+        return Math.max(154, Math.min(170, w));
     }, [width]);
 
     const cardH = 140;
@@ -69,7 +69,7 @@ export default function ReportTotalCard({ type, count }) {
             }}
         >
             <View className="px-5 pt-4 z-10">
-                <AppText variant="M500" className={`${titleColor} leading-4`}>
+                <AppText variant="M600" className={`${titleColor} leading-4`}>
                     {title}
                 </AppText>
             </View>

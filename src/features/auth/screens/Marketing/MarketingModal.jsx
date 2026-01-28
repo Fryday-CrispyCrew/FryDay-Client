@@ -3,16 +3,40 @@ import { Pressable, TouchableOpacity, View } from "react-native";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import AppText from "../../../../shared/components/AppText";
 import { STEP_KEY, ONBOARDING_STEP } from "../../../../shared/constants/onboardingStep";
+import { useCreateMarketingConsentMutation } from "../../queries/marketing/useCreateMarketingConsentMutation";
 
-export default function AgreementModal({ navigation }) {
-    const goOnboarding = useCallback(async () => {
-        await AsyncStorage.setItem(STEP_KEY, ONBOARDING_STEP.COMPLETED);
-        navigation.reset({ index: 0, routes: [{ name: "Main" }] });
-    }, [navigation]);
+export default function MarketingModal({ navigation }) {
+    const { mutateAsync: createMarketingConsent, isPending } =
+        useCreateMarketingConsentMutation();
 
     const close = useCallback(() => {
-        navigation.goBack();
+        const rootNav = navigation.getParent("root") ?? navigation.getParent();
+        rootNav?.navigate("Main");
     }, [navigation]);
+
+    const submit = useCallback(
+        async (marketingOptional) => {
+            try {
+                await createMarketingConsent({
+                    marketingOptional,
+                    skipErrorToast: true,
+                });
+                await AsyncStorage.setItem(STEP_KEY, ONBOARDING_STEP.COMPLETED);
+
+                const rootNav = navigation.getParent("root") ?? navigation.getParent();
+                rootNav?.reset({ index: 0, routes: [{ name: "Main" }] });
+            } catch (e) {
+                console.log(
+                    "[marketing] ERR",
+                    e?.response?.status,
+                    e?.response?.data,
+                    e?.message,
+                );
+            }
+        },
+        [createMarketingConsent, navigation],
+    );
+
 
     return (
         <View style={{ flex: 1 }}>
@@ -39,7 +63,8 @@ export default function AgreementModal({ navigation }) {
 
                         <TouchableOpacity
                             activeOpacity={0.7}
-                            onPress={goOnboarding}
+                            disabled={isPending}
+                            onPress={() => submit(true)}
                             className="bg-bk rounded-2xl py-4 items-center mt-6"
                         >
                             <AppText variant="L600" className="text-wt">
@@ -49,7 +74,8 @@ export default function AgreementModal({ navigation }) {
 
                         <TouchableOpacity
                             activeOpacity={0.7}
-                            onPress={goOnboarding}
+                            disabled={isPending}
+                            onPress={() => submit(false)}
                             className="border border-bk rounded-2xl py-4 items-center mt-3"
                         >
                             <AppText variant="L600" className="text-bk">

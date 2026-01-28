@@ -1,4 +1,5 @@
 import api from "../../../shared/lib/api";
+import dayjs from "dayjs";
 
 /**
  * GET /api/daily-results
@@ -20,7 +21,8 @@ export async function getDailyResultsMap(startDate, endDate) {
     const list = Array.isArray(body?.data) ? body.data : [];
 
     return list.reduce((acc, cur) => {
-        if (cur?.date) acc[cur.date] = cur.bowlType;
+        const key = cur?.date ? dayjs(cur.date).format("YYYY-MM-DD") : null;
+        if (key) acc[key] = cur?.bowlType;
         return acc;
     }, {});
 }

@@ -26,13 +26,13 @@ export default function MyPageMenu({
             disabled={disabled}
         >
             <View className="h-12 py-3 flex-row justify-between items-center">
-                <AppText variant="M500" className="text-gr700">
+                <AppText variant="L500" className="text-gr700">
                     {menuTitle}
                 </AppText>
 
                 <View className="flex-row items-center">
                     {rightText ? (
-                        <AppText variant="M500" className="text-gr700">
+                        <AppText variant="L500" className="text-gr700">
                             {rightText}
                         </AppText>
                     ) : null}

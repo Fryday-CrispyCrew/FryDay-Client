@@ -68,7 +68,7 @@ export const HERO_CONTENT = {
                 },
             ],
         ],
-        image: require('../assets/png/Case-A2.png'),
+        image: require('../assets/png/Case-A.png'),
     },
 
     B: {
@@ -93,7 +93,7 @@ export const HERO_CONTENT = {
                 },
             ],
         ],
-        image: require('../assets/png/Case-B2.png'),
+        image: require('../assets/png/Case-B.png'),
     },
 
     C: {
@@ -113,7 +113,7 @@ export const HERO_CONTENT = {
                 },
             ],
         ],
-        image: require('../assets/png/Case-C2.png'),
+        image: require('../assets/png/Case-C.png'),
     },
 };
 

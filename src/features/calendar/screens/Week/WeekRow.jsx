@@ -21,7 +21,12 @@ export default function WeekRow({ days, selectedDate, onSelectDate, bowlMap }) {
 
                     return (
                         <View key={dStr} className="flex-1 items-center justify-center">
-                            <View className="items-center">
+                            <TouchableOpacity
+                                activeOpacity={0.7}
+                                onPress={() => onSelectDate(d)}
+                                className="items-center"
+                                hitSlop={6}
+                            >
                                 <View className="w-10 h-10 mb-3 items-center justify-center">
                                     {Icon && (
                                         <Image
@@ -32,14 +37,11 @@ export default function WeekRow({ days, selectedDate, onSelectDate, bowlMap }) {
                                     )}
                                 </View>
 
-                                <TouchableOpacity activeOpacity={0.7} onPress={() => onSelectDate(d)}>
-                                    <View className="w-4 h-4 items-center justify-center relative">
-                                        {isToday && (
-                                            <View className="absolute w-6 h-6 bg-or rounded-full" />
-                                        )}
-                                        {isSelected && !isToday && (
-                                            <View className="absolute w-6 h-6 rounded-full border border-or" />
-                                        )}
+                                <View className="w-4 h-4 items-center justify-center relative">
+                                    {isToday && <View className="absolute w-6 h-6 bg-or rounded-full" />}
+                                    {isSelected && !isToday && (
+                                        <View className="absolute w-6 h-6 rounded-full border border-or" />
+                                    )}
 
                                         <AppText
                                             variant="S500"
@@ -53,10 +55,9 @@ export default function WeekRow({ days, selectedDate, onSelectDate, bowlMap }) {
                                         >
                                             {d.date()}
                                         </AppText>
-                                    </View>
-                                </TouchableOpacity>
                             </View>
-                        </View>
+                        </TouchableOpacity>
+                    </View>
                     );
                 })}
             </View>

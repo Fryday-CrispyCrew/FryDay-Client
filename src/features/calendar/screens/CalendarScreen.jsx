@@ -2,17 +2,16 @@ import React, {useState, useEffect, useCallback} from "react";
 import {View} from "react-native";
 import {SafeAreaView} from "react-native-safe-area-context";
 import dayjs from "dayjs";
+import {useFocusEffect} from "@react-navigation/native";
 
 import CalendarHeader from "../components/CalendarHeader";
 import WeekdayHeader from "../components/WeekdayHeader";
 import MonthView from "./Month/MonthView";
 import WeekSlider from "./Week/WeekSlider";
-import AppText from "../../../shared/components/AppText";
 import Dotted from "../assets/svg/Dotted.svg";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 
 import TodoBoardSection from "../../todo/components/TodoBoardSection";
-
 import {getDailyResultsMap} from "../api/dailyResultsApi";
 
 export default function CalendarScreen({navigation}) {
@@ -20,7 +19,7 @@ export default function CalendarScreen({navigation}) {
   const [currentDate, setCurrentDate] = useState(dayjs());
   const [selectedDate, setSelectedDate] = useState(dayjs());
 
-  const selectedDateStr = selectedDate.format("YYYY-MM-DD"); // ✅ TodoBoardSection이 기대하는 포맷
+  const selectedDateStr = selectedDate.format("YYYY-MM-DD");
   const isViewingToday = selectedDate.isSame(dayjs(), "day");
 
   const [bowlMap, setBowlMap] = useState({});
@@ -50,71 +49,92 @@ export default function CalendarScreen({navigation}) {
     });
   }, []);
 
-  useEffect(() => {
-    const startDate = currentDate.startOf("month").format("YYYY-MM-DD");
-    const endDate = currentDate.endOf("month").format("YYYY-MM-DD");
+  useFocusEffect(
+      useCallback(() => {
+        const startDate = currentDate.startOf("month").format("YYYY-MM-DD");
 
-    (async () => {
-      try {
-        const map = await getDailyResultsMap(startDate, endDate);
-        setBowlMap(map);
-      } catch (e) {}
-    })();
-  }, [currentDate]);
+        const monthEnd = currentDate.endOf("month");
+        const today = dayjs();
+        const endDate = (monthEnd.isAfter(today, "day") ? today : monthEnd).format(
+            "YYYY-MM-DD"
+        );
 
-  return (
-    <SafeAreaView className="flex-1 bg-wt" edges={["top"]}>
-      <CalendarHeader
-        date={currentDate}
-        mode={mode}
-        onPressButton={toggleMode}
-        onPressToday={handlePressToday}
-        navigation={navigation}
-      />
+        let alive = true;
 
-      <WeekdayHeader />
+        (async () => {
+          try {
+            const map = await getDailyResultsMap(startDate, endDate);
+            if (alive) setBowlMap(map);
+          } catch (e) {
+            console.log(
+                "[dailyResults] ERR",
+                e?.response?.status,
+                JSON.stringify(e?.response?.data, null, 2),
+                e?.message
+            );
+          }
+        })();
 
-      <View className="flex-1">
-        {mode === "week" ? (
-          <>
-            <View className="shrink-0">
-              <WeekSlider
-                currentDate={currentDate}
-                selectedDate={selectedDate}
-                onSelectDate={setSelectedDate}
-                onChangeDate={setCurrentDate}
-                bowlMap={bowlMap}
+        return () => {
+          alive = false;
+        };
+      }, [currentDate])
+  );
+    useFocusEffect(
+        useCallback(() => {
+            const today = dayjs();
+            setSelectedDate(today);
+            setCurrentDate((prev) => (mode === "month" ? today.startOf("month") : today));
+        }, [mode])
+    );
+
+
+    return (
+      <SafeAreaView className="flex-1 bg-wt" edges={["top"]}>
+        <CalendarHeader
+            date={currentDate}
+            mode={mode}
+            onPressButton={toggleMode}
+            onPressToday={handlePressToday}
+            navigation={navigation}
+        />
+
+        <WeekdayHeader />
+
+        <View className="flex-1">
+          {mode === "week" ? (
+              <>
+                <View className="shrink-0">
+                  <WeekSlider
+                      currentDate={currentDate}
+                      selectedDate={selectedDate}
+                      onSelectDate={setSelectedDate}
+                      onChangeDate={setCurrentDate}
+                      bowlMap={bowlMap}
+                  />
+                </View>
+                <View className="mt-3 mx-5 shrink-0">
+                  <Dotted style={{width: "100%"}} height={1} />
+                </View>
+
+                <View style={{flex: 1, paddingHorizontal: 20}}>
+                  <TodoBoardSection
+                      navigation={navigation}
+                      date={selectedDateStr}
+                      isViewingToday={isViewingToday}
+                  />
+                </View>
+              </>
+          ) : (
+              <MonthView
+                  currentDate={currentDate}
+                  onChangeDate={setCurrentDate}
+                  bowlMap={bowlMap}
+                  selectedDate={selectedDate}
+                  onSelectDate={setSelectedDate}
               />
-            </View>
-            {/* 구분선 */}
-            <View className="mt-3 mx-5 shrink-0">
-              <Dotted style={{width: "100%"}} height={1} />
-            </View>
-
-            {/* 임시 */}
-            {/* <View className="mt-[18px] items-center shrink-0">
-              <AppText variant="M500" className="text-bk">
-                {selectedDate.format("M월 D일")}
-              </AppText>
-            </View> */}
-
-            {/* ✅ 남은 영역: TodoBoardSection (Home과 동일 UI) */}
-            <View style={{flex: 1, paddingHorizontal: 20}}>
-              <TodoBoardSection
-                navigation={navigation}
-                date={selectedDateStr}
-                isViewingToday={isViewingToday}
-              />
-            </View>
-          </>
-        ) : (
-          <MonthView
-            currentDate={currentDate}
-            onChangeDate={setCurrentDate}
-            bowlMap={bowlMap}
-          />
-        )}
-      </View>
-    </SafeAreaView>
+          )}
+        </View>
+      </SafeAreaView>
   );
 }

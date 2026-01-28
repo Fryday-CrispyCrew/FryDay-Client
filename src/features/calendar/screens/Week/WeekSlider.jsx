@@ -3,7 +3,7 @@ import { useRef, useEffect, useMemo } from "react";
 import { getWeekDays } from "../../components/date";
 import WeekRow from "./WeekRow";
 
-export default function WeekSlider({ currentDate, selectedDate, onSelectDate, onChangeDate }) {
+export default function WeekSlider({ currentDate, selectedDate, onSelectDate, onChangeDate, bowlMap }) {
     const { width } = useWindowDimensions();
     const listRef = useRef(null);
 
@@ -45,6 +45,7 @@ export default function WeekSlider({ currentDate, selectedDate, onSelectDate, on
                     days={item}
                     selectedDate={selectedDate}
                     onSelectDate={onSelectDate}
+                    bowlMap={bowlMap}
                 />
             )}
         />
