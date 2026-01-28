@@ -3,7 +3,13 @@ import { useMemo, useRef, useEffect } from "react";
 import MonthRow from "./MonthRow";
 import { getMonthMatrix } from "../../components/date";
 
-export default function MonthView({ currentDate, onChangeDate, bowlMap }) {
+export default function MonthView({
+                                      currentDate,
+                                      onChangeDate,
+                                      bowlMap,
+                                      selectedDate,
+                                      onSelectDate,
+                                  }) {
     const { width } = useWindowDimensions();
     const listRef = useRef(null);
 
@@ -52,7 +58,10 @@ export default function MonthView({ currentDate, onChangeDate, bowlMap }) {
                                 key={idx}
                                 days={days}
                                 isLast={idx === weeks.length - 1}
-                                bowlMap={bowlMap}/>
+                                bowlMap={bowlMap}
+                                selectedDate={selectedDate}
+                                onSelectDate={onSelectDate}
+                            />
                         ))}
                     </View>
                 );

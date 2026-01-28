@@ -64,7 +64,6 @@ export default function CalendarScreen({navigation}) {
         (async () => {
           try {
             const map = await getDailyResultsMap(startDate, endDate);
-            console.log("[dailyResults] response:", JSON.stringify(map, null, 2));
             if (alive) setBowlMap(map);
           } catch (e) {
             console.log(
@@ -81,8 +80,16 @@ export default function CalendarScreen({navigation}) {
         };
       }, [currentDate])
   );
+    useFocusEffect(
+        useCallback(() => {
+            const today = dayjs();
+            setSelectedDate(today);
+            setCurrentDate((prev) => (mode === "month" ? today.startOf("month") : today));
+        }, [mode])
+    );
 
-  return (
+
+    return (
       <SafeAreaView className="flex-1 bg-wt" edges={["top"]}>
         <CalendarHeader
             date={currentDate}
@@ -123,6 +130,8 @@ export default function CalendarScreen({navigation}) {
                   currentDate={currentDate}
                   onChangeDate={setCurrentDate}
                   bowlMap={bowlMap}
+                  selectedDate={selectedDate}
+                  onSelectDate={setSelectedDate}
               />
           )}
         </View>
