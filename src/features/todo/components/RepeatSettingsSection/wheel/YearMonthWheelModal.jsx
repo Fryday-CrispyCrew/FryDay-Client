@@ -33,7 +33,11 @@ export default function YearMonthWheelModal({
   const years = useMemo(() => {
     const from = yearFrom ?? baseYear - 50;
     const to = yearTo ?? baseYear + 50;
-    return range(from, to);
+
+    const a = Math.min(from, to);
+    const b = Math.max(from, to);
+
+    return range(a, b);
   }, [baseYear, yearFrom, yearTo]);
 
   const months = useMemo(() => range(1, 12), []);
@@ -43,8 +47,12 @@ export default function YearMonthWheelModal({
 
   useEffect(() => {
     if (!visible) return;
-    setYearIdx(Math.max(0, years.indexOf(initialYear)));
-    setMonthIdx(Math.max(0, months.indexOf(initialMonth)));
+
+    const yi = years.indexOf(initialYear);
+    const mi = months.indexOf(initialMonth);
+
+    setYearIdx(yi >= 0 ? yi : 0);
+    setMonthIdx(mi >= 0 ? mi : 0);
   }, [visible, initialYear, initialMonth, years, months]);
 
   const handleMove = useCallback(() => {
