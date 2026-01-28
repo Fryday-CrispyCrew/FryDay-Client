@@ -12,4 +12,19 @@ export const accountApi = {
         });
         return res.data;
     },
+
+    /**
+     * 로그아웃
+     * POST /api/users/me/logout
+     * body: { deviceId, refreshToken }
+     * 응답: { message: string }
+     */
+    logout: async ({ deviceId, refreshToken, skipErrorToast = false } = {}) => {
+        const res = await api.post(
+            "/api/users/me/logout",
+            { deviceId, refreshToken },
+            { meta: { skipErrorToast } }
+        );
+        return res.data;
+    },
 };

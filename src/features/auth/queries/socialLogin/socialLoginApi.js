@@ -6,10 +6,15 @@ import AsyncStorage from "@react-native-async-storage/async-storage";
 import * as SecureStore from "expo-secure-store";
 import { STEP_KEY } from "../../../../shared/constants/onboardingStep";
 
-async function persistLoginResult(data) {
+async function persistLoginResult(data, deviceId) {
     await Promise.all([
         saveAccessToken(String(data?.accessToken ?? "")),
         saveRefreshToken(String(data?.refreshToken ?? "")),
+    ]);
+
+    await Promise.allSettled([
+        AsyncStorage.setItem("deviceId", deviceId),
+        SecureStore.setItemAsync("deviceId", deviceId),
     ]);
 
     const nick = String(data?.user?.nickname ?? "").trim();
@@ -22,6 +27,7 @@ async function persistLoginResult(data) {
 
     await AsyncStorage.setItem(STEP_KEY, String(data?.onboardingStatus ?? ""));
 }
+
 
 export const socialLoginApi = {
     createSocialLogin: async ({ provider, accessToken }, options = {}) => {
@@ -43,7 +49,7 @@ export const socialLoginApi = {
         );
 
         const data = res.data;
-        await persistLoginResult(data);
+        await persistLoginResult(data, deviceId);
         return data;
     },
 
@@ -64,7 +70,7 @@ export const socialLoginApi = {
         );
 
         const data = res.data;
-        await persistLoginResult(data);
+        await persistLoginResult(data, deviceId);
         return data;
     },
 };

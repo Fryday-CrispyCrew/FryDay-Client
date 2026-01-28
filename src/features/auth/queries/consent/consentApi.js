@@ -2,7 +2,7 @@ import api from "../../../../shared/lib/api";
 
 export const consentApi = {
     setConsent: async (
-        { privacyRequired, pushNotificationOptional },
+        { privacyRequired},
         { skipErrorToast = false } = {},
     ) => {
         const res = await api.post(

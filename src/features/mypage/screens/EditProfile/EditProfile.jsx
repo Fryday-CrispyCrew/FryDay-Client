@@ -1,91 +1,64 @@
-import React, { useEffect, useMemo, useRef, useState, useCallback } from "react";
+import React, { useEffect, useMemo, useRef, useState } from "react";
 import {
     TextInput,
     TouchableOpacity,
     View,
     Pressable,
     Keyboard,
-    Modal,
     useWindowDimensions,
     Platform,
     ScrollView,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
-import * as SecureStore from "expo-secure-store";
-import AsyncStorage from "@react-native-async-storage/async-storage";
-import { useQueryClient } from "@tanstack/react-query";
 
-import MyPageHeader from "../../components/MypageHeader";
 import AppText from "../../../../shared/components/AppText";
-import EditIcon from "../../assets/svg/Edit.svg";
+import MyPageHeader from "../../components/MypageHeader";
 import MyPageMenu from "../../components/MypageMenu";
+import EditIcon from "../../assets/svg/Edit.svg";
 import CheckIcon from "../../assets/svg/Check.svg";
 import ErrorIcon from "../../assets/svg/Error.svg";
-import CloseIcon from "../../assets/svg/Close.svg";
+
+import AsyncStorage from "@react-native-async-storage/async-storage";
+import * as SecureStore from "expo-secure-store";
 
 import { useCheckNicknameQuery } from "../../../auth/queries/nickname/useCheckNicknameQuery";
 import { updateMyNickname } from "../../api/profileApi";
-import { useDeleteMyAccountMutation } from "../../queries/account/useDeleteMyAccountMutation";
-import { STEP_KEY } from "../../../../shared/constants/onboardingStep";
 
-async function clearStorageAndSecure() {
-    try {
-        await AsyncStorage.clear();
-    } catch {}
-
-    await Promise.allSettled([
-        SecureStore.deleteItemAsync("accessToken"),
-        SecureStore.deleteItemAsync("refreshToken"),
-        SecureStore.deleteItemAsync("nickname"),
-        SecureStore.deleteItemAsync("hasOnboarded"),
-        SecureStore.deleteItemAsync(STEP_KEY),
-    ]);
-}
-
-async function clearAuthAndCache(queryClient) {
-    try {
-        await queryClient.cancelQueries();
-        queryClient.clear();
-    } catch {}
-
-    await clearStorageAndSecure();
-}
+import ConfirmModal from "../../components/ConfirmModal";
+import { useAccountActions } from "../../hook/useAccountActions";
 
 const HAS_KOREAN_JAMO = /[\u3131-\u318E\u1100-\u11FF\uA960-\uA97F\uD7B0-\uD7FF]/;
 const FINAL_ALLOWED_REGEX = /^[가-힣a-zA-Z0-9]+$/;
+const NICKNAME_MAX = 10;
 
 export default function EditProfile({ navigation }) {
     const { width, height } = useWindowDimensions();
-    const queryClient = useQueryClient();
+    const { logout, deleteAccount } = useAccountActions(navigation);
 
     const [nickName, setNickName] = useState("");
     const [draftNickName, setDraftNickName] = useState("");
-    const [email] = useState(" "); // 임시
+    const [email] = useState("usermail@fry.com");
 
     const [isEditing, setIsEditing] = useState(false);
-    const inputRef = useRef(null);
     const [modalType, setModalType] = useState(null);
-
     const [nicknameError, setNicknameError] = useState(null);
-    const NICKNAME_MAX = 10;
 
-    const safeNick = (typeof nickName === "string" ? nickName : "").trim();
-    const safeDraft = typeof draftNickName === "string" ? draftNickName : "";
-
+    const inputRef = useRef(null);
+    const safeNick = (nickName ?? "").trim();
+    const safeDraft = draftNickName ?? "";
     const trimmed = safeDraft.trim();
+
     const isChanged = trimmed && trimmed !== safeNick;
-
-    const [debouncedCheck, setDebouncedCheck] = useState("");
-
-    const checkQuery = useCheckNicknameQuery(debouncedCheck, {
-        enabled: false,
-    });
-
-    const { mutateAsync: deleteMyAccountAsync } = useDeleteMyAccountMutation();
-
     const isNeutral = !isChanged || trimmed.length < 2;
     const isError = !isNeutral && !!nicknameError;
     const isValid = !isNeutral && !nicknameError;
+
+    const [debouncedCheck, setDebouncedCheck] = useState("");
+    const checkQuery = useCheckNicknameQuery(debouncedCheck, { enabled: false });
+
+    const containerWidth = Math.min(width - 40, 520);
+    const errorWidth = Math.min(Math.max(180, containerWidth * 0.55), 280);
+    const contentPaddingBottom = Math.max(24, Math.min(48, height * 0.04));
 
     const errorMessage = useMemo(() => {
         if (nicknameError === "duplicate") return "이미 사용중인 닉네임이에요";
@@ -95,40 +68,20 @@ export default function EditProfile({ navigation }) {
         return "";
     }, [nicknameError]);
 
-    const validateNicknameLocal = (raw) => {
-        const v = (raw ?? "").trim();
-        if (!v || v === safeNick || v.length < 2) return null;
-        if (v.length > NICKNAME_MAX) return "tooLong";
-        return null;
-    };
-
-    const containerWidth = Math.min(width - 40, 520);
-    const errorWidth = Math.min(Math.max(180, containerWidth * 0.55), 280);
-    const contentPaddingBottom = Math.max(24, Math.min(48, height * 0.04));
-
     useEffect(() => {
         let alive = true;
-
         (async () => {
-            try {
-                const [savedAsync, savedSecure] = await Promise.all([
-                    AsyncStorage.getItem("nickname"),
-                    SecureStore.getItemAsync("nickname"),
-                ]);
-
-                const saved = (savedAsync ?? savedSecure ?? "").trim();
-
-                if (!alive) return;
-
-                if (saved) {
-                    setNickName(saved);
-                    setDraftNickName(saved);
-                }
-            } catch (e) {
-                console.log("[LOAD] error", e);
+            const [a, s] = await Promise.all([
+                AsyncStorage.getItem("nickname"),
+                SecureStore.getItemAsync("nickname"),
+            ]);
+            if (!alive) return;
+            const saved = (a ?? s ?? "").trim();
+            if (saved) {
+                setNickName(saved);
+                setDraftNickName(saved);
             }
         })();
-
         return () => {
             alive = false;
         };
@@ -138,27 +91,27 @@ export default function EditProfile({ navigation }) {
         setDraftNickName(safeNick);
         setNicknameError(null);
         setIsEditing(true);
-
-        requestAnimationFrame(() => {
-            inputRef.current?.focus?.();
-        });
+        requestAnimationFrame(() => inputRef.current?.focus?.());
     };
 
     const onChangeNickname = (text) => {
-        const raw = typeof text === "string" ? text : "";
+        const raw = text ?? "";
         setDraftNickName(raw);
-        if (nicknameError) setNicknameError(null);
+
+        if (nicknameError && raw.trim().length <= NICKNAME_MAX) {
+            setNicknameError(null);
+        }
     };
 
     const finishEdit = async () => {
-        const raw = draftNickName ?? "";
-        const v = raw.trim();
+        const v = (draftNickName ?? "").trim();
 
-        if (HAS_KOREAN_JAMO.test(v)) {
-            setNicknameError("invalid");
+        if (v.length > NICKNAME_MAX) {
+            setNicknameError("tooLong");
             return;
         }
 
+        if (HAS_KOREAN_JAMO.test(v)) return setNicknameError("invalid");
         if (!v || v === safeNick || v.length < 2) {
             setDraftNickName(safeNick);
             setNicknameError(null);
@@ -166,91 +119,34 @@ export default function EditProfile({ navigation }) {
             Keyboard.dismiss();
             return;
         }
-
-        const localErr = validateNicknameLocal(v);
-        if (localErr) {
-            setNicknameError(localErr);
-            setDraftNickName(safeNick);
-            setIsEditing(false);
-            Keyboard.dismiss();
-            return;
-        }
-
-        if (!FINAL_ALLOWED_REGEX.test(v)) {
-            setNicknameError("invalid");
-            return;
-        }
+        if (v.length > NICKNAME_MAX) return setNicknameError("tooLong");
+        if (!FINAL_ALLOWED_REGEX.test(v)) return setNicknameError("invalid");
 
         try {
             setDebouncedCheck(v);
             const res = await checkQuery.refetch();
-
-            const available = res?.data?.available ?? res?.data?.data?.available ?? null;
-
-            if (available === false) {
-                setNicknameError("duplicate");
-                return;
-            }
-            if (available === null) {
-                setNicknameError("network");
-                return;
-            }
+            const available = res?.data?.available ?? res?.data?.data?.available;
+            if (available === false) return setNicknameError("duplicate");
+            if (available == null) return setNicknameError("network");
         } catch {
-            setNicknameError("network");
-            return;
+            return setNicknameError("network");
         }
 
         try {
             await updateMyNickname(v, { skipErrorToast: true });
             await Promise.allSettled([
-                SecureStore.setItemAsync("nickname", v),
                 AsyncStorage.setItem("nickname", v),
+                SecureStore.setItemAsync("nickname", v),
             ]);
-
             setNickName(v);
             setDraftNickName(v);
             setNicknameError(null);
             setIsEditing(false);
             Keyboard.dismiss();
-        } catch (e) {
-            const status = e?.response?.status;
-            if (status === 409) return setNicknameError("duplicate");
+        } catch {
             setNicknameError("network");
         }
     };
-
-    const goAuthLogin = useCallback(() => {
-        const rootNav = navigation?.getParent?.("root") ?? navigation?.getParent?.();
-        const routes = [{ name: "Auth", params: { screen: "Login" } }];
-
-        if (rootNav?.reset) {
-            rootNav.reset({ index: 0, routes });
-            return;
-        }
-        navigation?.reset?.({ index: 0, routes });
-    }, [navigation]);
-
-    const onConfirmLogout = useCallback(async () => {
-        setModalType(null);
-
-        await clearAuthAndCache(queryClient);
-
-        goAuthLogin();
-    }, [queryClient, goAuthLogin]);
-
-    const onConfirmDelete = useCallback(async () => {
-        setModalType(null);
-
-        try {
-            await deleteMyAccountAsync({ skipErrorToast: true });
-        } catch (e) {
-            console.log("[delete] ERR", e?.response?.status, e?.response?.data, e?.message);
-        }
-
-        await clearAuthAndCache(queryClient);
-
-        goAuthLogin();
-    }, [deleteMyAccountAsync, queryClient, goAuthLogin]);
 
     return (
         <SafeAreaView className="bg-gr flex-1" edges={["top", "bottom"]}>
@@ -274,7 +170,6 @@ export default function EditProfile({ navigation }) {
                                 <AppText variant="M500" className="text-gr500">
                                     사용자 정보
                                 </AppText>
-
                                 <View style={{ width: errorWidth, alignItems: "flex-end" }}>
                                     {isEditing && isError ? (
                                         <AppText
@@ -304,7 +199,7 @@ export default function EditProfile({ navigation }) {
                                             ref={inputRef}
                                             value={safeDraft}
                                             onChangeText={onChangeNickname}
-                                            maxLength={12}
+                                            maxLength={NICKNAME_MAX + 1}
                                             autoFocus
                                             onBlur={finishEdit}
                                             returnKeyType="done"
@@ -358,7 +253,6 @@ export default function EditProfile({ navigation }) {
                                                 {nickName} 님
                                             </AppText>
                                         </View>
-
                                         <TouchableOpacity activeOpacity={0.5} onPress={startEdit}>
                                             <EditIcon width={20} height={20} />
                                         </TouchableOpacity>
@@ -372,11 +266,7 @@ export default function EditProfile({ navigation }) {
                                         <AppText variant="M400" className="text-bk50">
                                             가입 메일
                                         </AppText>
-                                        <AppText
-                                            variant="M400"
-                                            className="text-bk75"
-                                            style={{ flexShrink: 1 }}
-                                        >
+                                        <AppText variant="M400" className="text-bk75">
                                             {email}
                                         </AppText>
                                     </View>
@@ -395,71 +285,30 @@ export default function EditProfile({ navigation }) {
                 </ScrollView>
             </Pressable>
 
-            <Modal
-                transparent
-                visible={modalType !== null}
-                animationType="fade"
-                onRequestClose={() => setModalType(null)}
-            >
-                <Pressable
-                    className="flex-1 items-center justify-center bg-bk/50 px-5"
-                    onPress={() => setModalType(null)}
-                >
-                    <Pressable
-                        onPress={() => {}}
-                        className="w-full bg-wt rounded-3xl overflow-hidden"
-                        style={{ maxWidth: 420 }}
-                    >
-                        <View className="px-6 pt-7 pb-6">
-                            <View className="flex-row items-center justify-between">
-                                <View style={{ width: 20, height: 20 }} />
-                                <AppText variant="H3" className="text-bk text-center">
-                                    확인
-                                </AppText>
-                                <TouchableOpacity
-                                    hitSlop={10}
-                                    activeOpacity={0.7}
-                                    onPress={() => setModalType(null)}
-                                >
-                                    <CloseIcon width={20} height={20} />
-                                </TouchableOpacity>
-                            </View>
+            <ConfirmModal
+                visible={modalType === "logout"}
+                onClose={() => setModalType(null)}
+                message="FryDay에서 로그아웃하시겠어요?"
+                primaryText="네, 로그아웃 할래요"
+                onPrimary={logout}
+                containerWidth={containerWidth}
+            />
 
-                            <View className="h-px bg-gr100 mt-4" />
-
-                            <AppText variant="L500" className="text-gr700 text-center mt-6"
-                                     style={{ lineHeight: 20 }}>
-                                {modalType === "logout"
-                                    ? "FryDay에서 로그아웃하시겠어요?"
-                                    : modalType === "delete"
-                                        ? "탈퇴시 모든 데이터가 삭제돼요.\n" +
-                                        "재가입은 7일 이후에 가능하며,\n" +
-                                        "재가입 시에도 삭제된 데이터는 복구되지 않아요!\n" +
-                                        "정말 계정을 삭제하시겠어요?"
-                                        : ""}
-                            </AppText>
-
-                            <TouchableOpacity
-                                activeOpacity={0.7}
-                                onPress={() => {
-                                    if (modalType === "logout") return onConfirmLogout();
-                                    if (modalType === "delete") return onConfirmDelete();
-                                }}
-                                className="bg-bk rounded-2xl px-20 py-4 self-center mt-6"
-                                style={{ maxWidth: Math.min(320, containerWidth) }}
-                            >
-                                <AppText variant="L500" className="text-wt">
-                                    {modalType === "logout"
-                                        ? "네, 로그아웃 할래요"
-                                        : modalType === "delete"
-                                            ? "네, 삭제할래요"
-                                            : ""}
-                                </AppText>
-                            </TouchableOpacity>
-                        </View>
-                    </Pressable>
-                </Pressable>
-            </Modal>
+            <ConfirmModal
+                visible={modalType === "delete"}
+                onClose={() => setModalType(null)}
+                message={
+                    "계정 삭제 시 모든 데이터가 삭제돼요.\n" +
+                    "재가입은 7일 이후에 가능하며,\n" +
+                    "재가입 시에도 삭제된 데이터는 복구되지 않아요!\n" +
+                    "정말 계정을 삭제하시겠어요?"
+                }
+                secondaryText="아니요, 계속 튀길래요!"
+                primaryText="네, 삭제할래요"
+                onSecondary={() => setModalType(null)}
+                onPrimary={deleteAccount}
+                containerWidth={containerWidth}
+            />
         </SafeAreaView>
     );
 }

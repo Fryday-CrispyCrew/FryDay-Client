@@ -6,20 +6,20 @@ export default function ToggleMenu({title, content}) {
     const [on, setOn] = useState(false);
 
     return (
-        <View className="py-3 gap-2">
-            <View className="flex-row justify-between items-center">
+        <View className="py-3">
+            <View className="flex-row justify-between items-center gap-2">
             <View>
                 <AppText variant="L500" className="text-bk">
                     {title}
                 </AppText>
-                <AppText variant="S500" className="text-gr500">
+                <AppText variant="S500" className="text-gr500 py-1">
                     {content}
                 </AppText>
             </View>
 
             <Pressable
                 onPress={() => setOn(!on)}
-                className={`w-12 h-7 rounded-full px-1 justify-center ${
+                className={`w-16 h-8 rounded-full px-1 justify-center ${
                     on ? "bg-or" : "bg-gr300"
                 }`}
             >

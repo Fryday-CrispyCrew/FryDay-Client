@@ -41,7 +41,7 @@ export default function QnaBox({ title, content, defaultOpen = false }) {
 
             {open && (
                 <View className="self-stretch p-3 bg-wt rounded-lg">
-                    <AppText variant="L500" className="text-bk">
+                    <AppText variant="L500" className="text-bk leading-5">
                         {content}
                     </AppText>
                 </View>

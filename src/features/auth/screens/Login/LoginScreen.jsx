@@ -41,10 +41,9 @@ export default function LoginScreen({ navigation }) {
   const [loading, setLoading] = useState(false);
 
   const afterLogin = async (data) => {
-    // console.log("[login] status:", data?.onboardingStatus, "nickname:", data?.nickname ?? data?.user?.nickname);
-    //
     console.log("[login] raw", JSON.stringify(data, null, 2));
     let status = data?.onboardingStatus;
+    const nickname = String(data?.user?.nickname ?? "").trim();
 
     if (status === "NEEDS_NICKNAME" && nickname.length >= 2) {
       status = "COMPLETED";
