@@ -38,7 +38,7 @@ export default function ReportTotalCard({ type, count }) {
 
     const cardW = useMemo(() => {
         const w = width * 0.38;
-        return Math.max(144, Math.min(160, w));
+        return Math.max(154, Math.min(170, w));
     }, [width]);
 
     const cardH = 140;
