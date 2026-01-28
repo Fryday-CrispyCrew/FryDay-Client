@@ -40,6 +40,7 @@ import TodoBoardSection from "../../components/TodoBoardSection";
 import FCMInitializer from "../../../../notifications/components/FCMInitializer";
 
 const {width, height} = Dimensions.get("window");
+import { useFocusEffect } from "@react-navigation/native";
 
 // ✅ 오늘 날짜(로컬 기준) YYYY-MM-DD
 function formatYYYYMMDD(dateObj) {
@@ -197,7 +198,7 @@ function pickRandomDifferent(list, prev, fallback = "") {
   return next ?? fallback;
 }
 
-export default function HomeScreen({navigation}) {
+export default function HomeScreen({navigation, route}) {
   const {open, close} = useModalStore();
 
   const [shouldInitNotifications, setShouldInitNotifications] = useState(false);
@@ -420,6 +421,19 @@ export default function HomeScreen({navigation}) {
       editor.openEditor?.(payload);
     },
     [editor],
+  );
+
+  // 캘린더 연동
+  useFocusEffect(
+      useCallback(() => {
+        const dateStr = route?.params?.initialDate;
+        if (!dateStr) return;
+
+        const [y, m, d] = String(dateStr).split("-").map(Number);
+        if (!y || !m || !d) return;
+
+        setCurrentDate(new Date(y, m - 1, d));
+      }, [route?.params?.initialDate])
   );
 
   return (

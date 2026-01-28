@@ -88,6 +88,24 @@ export default function CalendarScreen({navigation}) {
         }, [mode])
     );
 
+    const handleSelectMonthDate = useCallback(
+        (d) => {
+            setSelectedDate(d);
+            const dateStr = d.format("YYYY-MM-DD");
+
+            requestAnimationFrame(() => {
+                navigation.navigate("Main", {
+                    screen: "Todo",
+                    params: {
+                        screen: "Home",
+                        params: { initialDate: dateStr },
+                    },
+                });
+            });
+        },
+        [navigation]
+    );
+
 
     return (
       <SafeAreaView className="flex-1 bg-wt" edges={["top"]}>
@@ -131,7 +149,7 @@ export default function CalendarScreen({navigation}) {
                   onChangeDate={setCurrentDate}
                   bowlMap={bowlMap}
                   selectedDate={selectedDate}
-                  onSelectDate={setSelectedDate}
+                  onSelectDate={handleSelectMonthDate}
               />
           )}
         </View>
