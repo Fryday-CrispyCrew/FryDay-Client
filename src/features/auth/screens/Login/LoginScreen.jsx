@@ -110,28 +110,22 @@ export default function LoginScreen({ navigation }) {
   };
 
   return (
-      <SafeAreaView className="flex-1 bg-or">
+      <SafeAreaView className="flex-1 bg-[#FF4D00]" edges={["top"]}>
         <Image
             source={require("../../assets/png/login-bg.png")}
             style={{
               position: "absolute",
+              left: 0,
+              right: 0,
+              bottom: 0,
               width: "100%",
               height: "100%",
-              alignSelf: "center",
             }}
-            resizeMode="contain"
+            resizeMode="cover"
         />
 
         <View className="flex-1 px-5">
-          <View
-              className="flex-[6] items-center justify-center"
-              style={{ transform: [{ translateY: height * 0.07 }] }}
-          >
-            <Image
-                source={require("../../assets/png/login-logo.png")}
-                style={{ width: "100%", maxWidth: 420, aspectRatio: 410 / 350 }}
-                resizeMode="contain"
-            />
+          <View className="flex-[6] items-center justify-center">
           </View>
 
           <View className="flex-[4] justify-start" style={{ paddingTop: Math.max(8, height * 0.02) }}>
