@@ -227,7 +227,7 @@ export default function EditProfile({ navigation }) {
                                                     inputRef.current?.focus?.();
                                                 }}
                                             >
-                                                <ErrorIcon width={18} height={18} />
+                                                <ErrorIcon width={24} height={24} />
                                             </TouchableOpacity>
                                         ) : null}
 
@@ -237,7 +237,7 @@ export default function EditProfile({ navigation }) {
                                                 onPress={finishEdit}
                                                 style={{ marginLeft: 10 }}
                                             >
-                                                <CheckIcon width={18} height={18} />
+                                                <CheckIcon width={24} height={24} />
                                             </TouchableOpacity>
                                         ) : null}
                                     </View>
