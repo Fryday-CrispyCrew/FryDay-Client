@@ -12,6 +12,7 @@ import {
   InteractionManager,
   Pressable,
   Keyboard,
+  ActivityIndicator,
 } from "react-native";
 import {Gesture, GestureDetector} from "react-native-gesture-handler";
 import {SafeAreaView} from "react-native-safe-area-context";
@@ -86,8 +87,8 @@ function getLottieKeyFromStatus(status) {
     case "CASE_G":
       return "caseG";
     default:
-      return "caseA"; // fallback
-    // return null;
+      // return "caseA"; // fallback
+      return null;
   }
 }
 
@@ -281,11 +282,15 @@ export default function HomeScreen({navigation}) {
   const {
     data: characterStatus, // { status, imageCode, description }
     dataUpdatedAt: characterUpdatedAt,
+    isLoading: isCharacterLoading, // ✅ 추가
+    isFetching: isCharacterFetching, // (선택)
   } = useTodoCharacterStatusQuery({date}, {enabled: isHomeTodosSuccess});
 
   useEffect(() => {
     console.log("characterStatus: ", characterStatus);
   }, [characterStatus]);
+
+  const isCharacterBusy = isCharacterLoading || isCharacterFetching;
 
   const lottieKey = useMemo(() => {
     return getLottieKeyFromStatus(characterStatus?.status);
@@ -475,27 +480,35 @@ export default function HomeScreen({navigation}) {
               );
             }}
           >
-            {/* ✅ caseE1 / caseE2일 때만 back 레이어 추가 */}
-            {shouldRenderBack && (
-              <LottieView
-                source={
-                  lottieKey === "caseE1"
-                    ? TodoLottie.caseE1Back
-                    : TodoLottie.caseE2Back
-                }
-                autoPlay
-                loop={false}
-                style={styles.lottie}
-              />
-            )}
+            {isCharacterBusy ? (
+              // <View style={styles.spinnerWrapper}>
+              //   <ActivityIndicator size="large" color={colors.gr500} />
+              // </View>
+              <></>
+            ) : (
+              <>
+                {shouldRenderBack && (
+                  <LottieView
+                    source={
+                      lottieKey === "caseE1"
+                        ? TodoLottie.caseE1Back
+                        : TodoLottie.caseE2Back
+                    }
+                    autoPlay
+                    loop={false}
+                    style={styles.lottie}
+                  />
+                )}
 
-            {/* ✅ 메인 캐릭터 */}
-            <LottieView
-              source={TodoLottie[lottieKey] ?? TodoLottie.caseA}
-              autoPlay
-              loop={false}
-              style={styles.lottie}
-            />
+                {/* ✅ 메인 캐릭터 */}
+                <LottieView
+                  source={TodoLottie[lottieKey]}
+                  autoPlay
+                  loop={false}
+                  style={styles.lottie}
+                />
+              </>
+            )}
           </Pressable>
           <View style={styles.shadowWrapper}>
             {isShadowGR ? (
@@ -561,6 +574,16 @@ const styles = StyleSheet.create({
     aspectRatio: 1,
     marginTop: "8%",
   },
+  spinnerWrapper: {
+    position: "absolute",
+    top: 0,
+    left: 0,
+    right: 0,
+    bottom: 0,
+    alignItems: "center",
+    justifyContent: "center",
+  },
+
   lottie: {
     position: "absolute",
     width: "100%",
