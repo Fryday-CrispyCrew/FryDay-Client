@@ -86,7 +86,7 @@ function getLottieKeyFromStatus(status) {
     case "CASE_G":
       return "caseG";
     default:
-      return "caseB"; // fallback
+      return "caseA"; // fallback
     // return null;
   }
 }
@@ -221,6 +221,37 @@ export default function HomeScreen({navigation}) {
     return date === formatYYYYMMDD(new Date());
   }, [date]);
 
+  // ✅ 카테고리 조회 (서버)
+  const {data: rawCategories = []} = useCategoriesQuery();
+
+  // ✅ TodoCard가 기대하는 형태로 매핑 + displayOrder 정렬
+  const categories = useMemo(() => {
+    const arr = Array.isArray(rawCategories) ? rawCategories : [];
+    return arr
+      .slice()
+      .sort((a, b) => (a?.displayOrder ?? 0) - (b?.displayOrder ?? 0))
+      .map((c) => ({
+        categoryId: c.id,
+        label: c.name,
+        color: c.colorHex, // 화면 표시용 hex
+      }));
+  }, [rawCategories]);
+
+  // ✅ 홈 투두 조회 (categoryId 생략 = 전체)
+  const {data: rawTodos = [], isSuccess: isHomeTodosSuccess} =
+    useHomeTodosQuery({
+      date,
+      categoryId: undefined,
+    });
+
+  useEffect(() => {
+    console.log("Categories: ", rawCategories);
+  }, [rawCategories]);
+
+  useEffect(() => {
+    console.log("Home todos: ", rawTodos);
+  }, [rawTodos]);
+
   const SWIPE_THRESHOLD = 50;
   const onSwipeChangeDate = useCallback(
     (dx) => {
@@ -250,7 +281,7 @@ export default function HomeScreen({navigation}) {
   const {
     data: characterStatus, // { status, imageCode, description }
     dataUpdatedAt: characterUpdatedAt,
-  } = useTodoCharacterStatusQuery({date});
+  } = useTodoCharacterStatusQuery({date}, {enabled: isHomeTodosSuccess});
 
   useEffect(() => {
     console.log("characterStatus: ", characterStatus);
@@ -276,36 +307,6 @@ export default function HomeScreen({navigation}) {
   }, [characterStatus?.status, characterUpdatedAt]);
 
   const shouldRenderBack = lottieKey === "caseE1" || lottieKey === "caseE2";
-
-  // ✅ 카테고리 조회 (서버)
-  const {data: rawCategories = []} = useCategoriesQuery();
-
-  // ✅ TodoCard가 기대하는 형태로 매핑 + displayOrder 정렬
-  const categories = useMemo(() => {
-    const arr = Array.isArray(rawCategories) ? rawCategories : [];
-    return arr
-      .slice()
-      .sort((a, b) => (a?.displayOrder ?? 0) - (b?.displayOrder ?? 0))
-      .map((c) => ({
-        categoryId: c.id,
-        label: c.name,
-        color: c.colorHex, // 화면 표시용 hex
-      }));
-  }, [rawCategories]);
-
-  // ✅ 홈 투두 조회 (categoryId 생략 = 전체)
-  const {data: rawTodos = []} = useHomeTodosQuery({
-    date,
-    categoryId: undefined,
-  });
-
-  useEffect(() => {
-    console.log("Categories: ", rawCategories);
-  }, [rawCategories]);
-
-  useEffect(() => {
-    console.log("Home todos: ", rawTodos);
-  }, [rawTodos]);
 
   // ✅ TodoCard가 쓰는 형태로 변환 + displayOrder 정렬
   const todos = useMemo(() => {
