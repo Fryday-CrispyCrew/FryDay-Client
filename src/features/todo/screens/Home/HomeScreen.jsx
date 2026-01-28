@@ -2,16 +2,11 @@
 import React, {useCallback, useEffect, useMemo, useRef, useState} from "react";
 import {
   View,
-  Text,
   StyleSheet,
   Dimensions,
   StatusBar,
   TouchableOpacity,
-  ScrollView,
-  Platform,
-  InteractionManager,
   Pressable,
-  Keyboard,
 } from "react-native";
 import {Gesture, GestureDetector} from "react-native-gesture-handler";
 import {SafeAreaView} from "react-native-safe-area-context";
@@ -86,8 +81,8 @@ function getLottieKeyFromStatus(status) {
     case "CASE_G":
       return "caseG";
     default:
-      return "caseB"; // fallback
-    // return null;
+      // return "caseA"; // fallback
+      return null;
   }
 }
 
@@ -129,7 +124,7 @@ const BUBBLE_MENTS = {
     "우우.. 튀겨보면 알겠지",
     "오늘은 뭘 튀겨볼까?",
     "한번 사는 인생, 바삭하게 살자구…",
-    "텅텅한 생새우 상태도 좋지만…",
+    "탱글한 생새우 상태도 좋지만…",
     "튀김옷 입을 준비 완료!",
   ],
   CASE_B: [
@@ -221,6 +216,37 @@ export default function HomeScreen({navigation}) {
     return date === formatYYYYMMDD(new Date());
   }, [date]);
 
+  // ✅ 카테고리 조회 (서버)
+  const {data: rawCategories = []} = useCategoriesQuery();
+
+  // ✅ TodoCard가 기대하는 형태로 매핑 + displayOrder 정렬
+  const categories = useMemo(() => {
+    const arr = Array.isArray(rawCategories) ? rawCategories : [];
+    return arr
+      .slice()
+      .sort((a, b) => (a?.displayOrder ?? 0) - (b?.displayOrder ?? 0))
+      .map((c) => ({
+        categoryId: c.id,
+        label: c.name,
+        color: c.colorHex, // 화면 표시용 hex
+      }));
+  }, [rawCategories]);
+
+  // ✅ 홈 투두 조회 (categoryId 생략 = 전체)
+  const {data: rawTodos = [], isSuccess: isHomeTodosSuccess} =
+    useHomeTodosQuery({
+      date,
+      categoryId: undefined,
+    });
+
+  useEffect(() => {
+    console.log("Categories: ", rawCategories);
+  }, [rawCategories]);
+
+  useEffect(() => {
+    console.log("Home todos: ", rawTodos);
+  }, [rawTodos]);
+
   const SWIPE_THRESHOLD = 50;
   const onSwipeChangeDate = useCallback(
     (dx) => {
@@ -250,11 +276,15 @@ export default function HomeScreen({navigation}) {
   const {
     data: characterStatus, // { status, imageCode, description }
     dataUpdatedAt: characterUpdatedAt,
-  } = useTodoCharacterStatusQuery({date});
+    isLoading: isCharacterLoading, // ✅ 추가
+    isFetching: isCharacterFetching, // (선택)
+  } = useTodoCharacterStatusQuery({date}, {enabled: isHomeTodosSuccess});
 
   useEffect(() => {
     console.log("characterStatus: ", characterStatus);
   }, [characterStatus]);
+
+  const isCharacterBusy = isCharacterLoading || isCharacterFetching;
 
   const lottieKey = useMemo(() => {
     return getLottieKeyFromStatus(characterStatus?.status);
@@ -276,36 +306,6 @@ export default function HomeScreen({navigation}) {
   }, [characterStatus?.status, characterUpdatedAt]);
 
   const shouldRenderBack = lottieKey === "caseE1" || lottieKey === "caseE2";
-
-  // ✅ 카테고리 조회 (서버)
-  const {data: rawCategories = []} = useCategoriesQuery();
-
-  // ✅ TodoCard가 기대하는 형태로 매핑 + displayOrder 정렬
-  const categories = useMemo(() => {
-    const arr = Array.isArray(rawCategories) ? rawCategories : [];
-    return arr
-      .slice()
-      .sort((a, b) => (a?.displayOrder ?? 0) - (b?.displayOrder ?? 0))
-      .map((c) => ({
-        categoryId: c.id,
-        label: c.name,
-        color: c.colorHex, // 화면 표시용 hex
-      }));
-  }, [rawCategories]);
-
-  // ✅ 홈 투두 조회 (categoryId 생략 = 전체)
-  const {data: rawTodos = []} = useHomeTodosQuery({
-    date,
-    categoryId: undefined,
-  });
-
-  useEffect(() => {
-    console.log("Categories: ", rawCategories);
-  }, [rawCategories]);
-
-  useEffect(() => {
-    console.log("Home todos: ", rawTodos);
-  }, [rawTodos]);
 
   // ✅ TodoCard가 쓰는 형태로 변환 + displayOrder 정렬
   const todos = useMemo(() => {
@@ -474,27 +474,35 @@ export default function HomeScreen({navigation}) {
               );
             }}
           >
-            {/* ✅ caseE1 / caseE2일 때만 back 레이어 추가 */}
-            {shouldRenderBack && (
-              <LottieView
-                source={
-                  lottieKey === "caseE1"
-                    ? TodoLottie.caseE1Back
-                    : TodoLottie.caseE2Back
-                }
-                autoPlay
-                loop
-                style={styles.lottie}
-              />
-            )}
+            {isCharacterBusy ? (
+              // <View style={styles.spinnerWrapper}>
+              //   <ActivityIndicator size="large" color={colors.gr500} />
+              // </View>
+              <></>
+            ) : (
+              <>
+                {shouldRenderBack && (
+                  <LottieView
+                    source={
+                      lottieKey === "caseE1"
+                        ? TodoLottie.caseE1Back
+                        : TodoLottie.caseE2Back
+                    }
+                    autoPlay
+                    loop={false}
+                    style={styles.lottie}
+                  />
+                )}
 
-            {/* ✅ 메인 캐릭터 */}
-            <LottieView
-              source={TodoLottie[lottieKey] ?? TodoLottie.caseA}
-              autoPlay
-              loop
-              style={styles.lottie}
-            />
+                {/* ✅ 메인 캐릭터 */}
+                <LottieView
+                  source={TodoLottie[lottieKey]}
+                  autoPlay
+                  loop={false}
+                  style={styles.lottie}
+                />
+              </>
+            )}
           </Pressable>
           <View style={styles.shadowWrapper}>
             {isShadowGR ? (
@@ -507,118 +515,7 @@ export default function HomeScreen({navigation}) {
       </GestureDetector>
       {/* ✅ (고정) 구분선 */}
       <View style={styles.dashedDivider} />
-      {/* ✅ (스크롤) TodoCard 영역만 스크롤 */}
-      {/* <ScrollView
-        style={styles.todoScroll}
-        contentContainerStyle={styles.todoScrollContent}
-        showsVerticalScrollIndicator={false}
-        keyboardShouldPersistTaps="handled"
-      >
-        <TodoCard
-          navigation={navigation}
-          onPressInput={handlePressTodoInput}
-          categories={categories}
-          todos={todos}
-          isViewingToday={isViewingToday}
-          onDoToday={async (todoId) => {
-            // ✅ "오늘하기" 눌렀을 때 확인 모달 띄우기
-            return new Promise((resolve) => {
-              open({
-                title: "확인",
-                description:
-                  "투두가 오늘 날짜로 이동하며,\n기존 날짜의 투두는 삭제돼요. 오늘 하기로 설정할까요?",
-                closeOnBackdrop: true,
-                showClose: true,
 
-                primary: {
-                  label: "네, 설정할래요",
-                  variant: "outline",
-                  closeAfterPress: false, // ✅ async 끝나기 전에 ModalHost가 닫지 않게
-                  onPress: async () => {
-                    try {
-                      await moveTodoTodayMutateAsync({todoId});
-                      resolve(true);
-                    } finally {
-                      close(); // ✅ 처리 후 모달 닫기
-                    }
-                  },
-                },
-
-                secondary: {
-                  label: "아니요, 그만둘래요",
-                  variant: "outline",
-                  closeAfterPress: true,
-                  onPress: () => resolve(false),
-                },
-
-                onClose: () => resolve(false),
-              });
-            });
-          }}
-          onDoTomorrow={async (todoId) => {
-            // ✅ "내일하기" 눌렀을 때 확인 모달 띄우기
-            return new Promise((resolve) => {
-              open({
-                title: "확인",
-                description:
-                  "투두가 내일 날짜로 이동하며,\n기존 날짜의 투두는 삭제돼요. 내일 하기로 설정할까요?",
-
-                // (선택) 배경 클릭 시 닫히게 할지
-                closeOnBackdrop: true,
-                showClose: true,
-
-                primary: {
-                  label: "네, 설정할래요",
-                  // 스샷은 두 버튼 다 아웃라인 느낌이라 outline로 통일(원하면 primary로 변경)
-                  variant: "outline",
-                  closeAfterPress: false, // ✅ 중요: async 끝나기 전에 ModalHost가 닫지 않게
-                  onPress: async () => {
-                    try {
-                      await moveTodoTomorrowMutateAsync({todoId});
-                      resolve(true);
-                    } finally {
-                      close(); // ✅ 성공/실패 상관없이 모달 닫기
-                    }
-                  },
-                },
-
-                secondary: {
-                  label: "아니요, 그만둘래요",
-                  variant: "outline",
-                  closeAfterPress: true, // 기본 true라 close() 자동
-                  onPress: () => {
-                    resolve(false);
-                  },
-                },
-
-                // X 버튼/백버튼/배경 클릭으로 닫힐 때도 resolve 처리
-                onClose: () => {
-                  resolve(false);
-                },
-              });
-            });
-          }}
-          onDeleteTodo={handleRequestDeleteTodo}
-          onToggleTodoCompletion={async (todoId) => {
-            // ✅ POST /api/todos/{todoId}/completion
-            await toggleCompletionMutateAsync({todoId: Number(todoId)});
-          }}
-          onReorderTodos={async ({ids}) => {
-            // ✅ date는 HomeScreen의 현재 date를 사용 (필수 쿼리)
-            await reorderTodosMutateAsync({date, ids});
-          }}
-        />
-      </ScrollView>*/}
-
-      {/* ✅ @gorhom/bottom-sheet 기반 입력 시트 */}
-      {/* <TodoEditorSheet
-        {...editor.sheetProps}
-        todoId={selectedTodoId}
-        onDismiss={() => {
-          setSelectedTodoId(null);
-          editor.sheetProps?.onDismiss?.();
-        }}
-      /> */}
       <View style={{flex: 1}}>
         <TodoBoardSection
           navigation={navigation}
@@ -664,7 +561,6 @@ const styles = StyleSheet.create({
     height: height * 0.377,
     alignItems: "center",
     justifyContent: "center",
-    // borderWidth: 1,
   },
   lottieWrapper: {
     position: "relative",
@@ -672,6 +568,16 @@ const styles = StyleSheet.create({
     aspectRatio: 1,
     marginTop: "8%",
   },
+  spinnerWrapper: {
+    position: "absolute",
+    top: 0,
+    left: 0,
+    right: 0,
+    bottom: 0,
+    alignItems: "center",
+    justifyContent: "center",
+  },
+
   lottie: {
     position: "absolute",
     width: "100%",
@@ -759,9 +665,9 @@ const bubbleStyles = StyleSheet.create({
     right: 0,
     alignItems: "center",
     zIndex: 10,
-    // borderWidth: 1,
   },
   bubble: {
+    position: "relative",
     backgroundColor: colors.wt,
     borderWidth: 1,
     borderColor: colors.gr200,
@@ -777,19 +683,21 @@ const bubbleStyles = StyleSheet.create({
     fontFamily: "Pretendard-Medium",
     fontSize: 12,
     lineHeight: 12 * 1.5,
-    color: "#3A3A3A",
+    color: colors.gr900,
     // borderWidth: 1,
   },
   tail: {
     position: "absolute",
     bottom: -6,
-    left: "50%",
+    left: "48.2%",
+    // marginLeft: 20,
+    // right: "0%",
     width: 12,
     height: 12,
     backgroundColor: colors.wt,
     borderRightWidth: 1,
     borderBottomWidth: 1,
     borderColor: colors.gr200,
-    transform: [{translateX: -20}, {rotate: "45deg"}],
+    transform: [{rotate: "45deg"}],
   },
 });
