@@ -67,9 +67,9 @@ export default function CalendarScreen({navigation}) {
     });
   }, []);
 
-  useFocusEffect(
-      useCallback(() => {
-        const startDate = currentDate.startOf("month").format("YYYY-MM-DD");
+    useFocusEffect(
+        useCallback(() => {
+            const startDate = currentDate.startOf("month").format("YYYY-MM-DD");
 
         const monthEnd = currentDate.endOf("month");
         const today = dayjs();
@@ -77,7 +77,7 @@ export default function CalendarScreen({navigation}) {
             "YYYY-MM-DD"
         );
 
-        let alive = true;
+            let alive = true;
 
         (async () => {
           try {
@@ -93,17 +93,10 @@ export default function CalendarScreen({navigation}) {
           }
         })();
 
-        return () => {
-          alive = false;
-        };
-      }, [currentDate])
-  );
-    useFocusEffect(
-        useCallback(() => {
-            const today = dayjs();
-            setSelectedDate(today);
-            setCurrentDate((prev) => (mode === "month" ? today.startOf("month") : today));
-        }, [mode])
+            return () => {
+                alive = false;
+            };
+        }, [currentDate])
     );
 
     const handleSelectMonthDate = useCallback(
