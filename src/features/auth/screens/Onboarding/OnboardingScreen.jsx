@@ -9,6 +9,7 @@ import {
 import * as SecureStore from "expo-secure-store";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { SafeAreaView } from "react-native-safe-area-context";
+import {Gesture, GestureDetector} from "react-native-gesture-handler";
 
 import AppText from "../../../../shared/components/AppText";
 import SkipIcon from "../../assets/svg/skip-arrow.svg";
@@ -89,6 +90,20 @@ export default function OnboardingScreen({ navigation }) {
         else onNext();
     };
 
+    const swipe = useMemo(() => {
+        const SWIPE_MIN = 30; // 민감도
+        return Gesture.Pan()
+            .runOnJS(true)
+            .onEnd((e) => {
+                const dx = e.translationX;
+
+                if (Math.abs(dx) < SWIPE_MIN) return;
+                if (dx < 0) onNext();
+                else onPrev();
+            });
+    }, [onNext, onPrev]);
+
+
     return (
         <SafeAreaView className="flex-1 bg-wt">
             <View className="px-5 pt-4 items-end">
@@ -105,7 +120,7 @@ export default function OnboardingScreen({ navigation }) {
                     <SkipIcon />
                 </TouchableOpacity>
             </View>
-
+            <GestureDetector gesture={swipe}>
             <Pressable className="flex-1" onPress={onPressSide}>
                 <View
                     className="flex-row justify-center items-center gap-2"
@@ -147,6 +162,7 @@ export default function OnboardingScreen({ navigation }) {
                     />
                 </View>
             </Pressable>
+            </GestureDetector>
 
             {isLast ? (
                 <View
