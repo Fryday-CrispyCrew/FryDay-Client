@@ -12,25 +12,25 @@ import CategoryStack from "./stacks/CategoryStack";
 const Stack = createNativeStackNavigator();
 
 export default function RootNavigator() {
-  //   const [ready, setReady] = useState(false);
-  //   const [isLoggedIn, setIsLoggedIn] = useState(false);
+    const [ready, setReady] = useState(false);
+    const [isLoggedIn, setIsLoggedIn] = useState(false);
 
-  //   useEffect(() => {
-  //     (async () => {
-  //       const token = await getAccessToken();
-  //       setIsLoggedIn(!!token);
-  //       setReady(true);
-  //     })();
-  //   }, []);
+    useEffect(() => {
+      (async () => {
+        const token = await getAccessToken();
+        setIsLoggedIn(!!token);
+        setReady(true);
+      })();
+    }, []);
 
-  //   if (!ready) return null;
+    if (!ready) return null;
 
   return (
     <Stack.Navigator
       id="root"
       screenOptions={{headerShown: false}}
-      //   initialRouteName={isLoggedIn ? "Main" : "Auth"}
-      initialRouteName="Auth"
+        initialRouteName={isLoggedIn ? "Main" : "Auth"}
+      // initialRouteName="Auth"
     >
       <Stack.Screen name="Auth" component={AuthStack} />
       <Stack.Screen name="Naming" component={NamingStack} />
