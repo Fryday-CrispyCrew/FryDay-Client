@@ -19,7 +19,7 @@ function mapAttendanceIconToCaseType(attendanceIcon) {
     return "C";
 }
 
-function parseJoinedMonthToDate(input) {
+function normalizeYM(input) {
     if (!input) return null;
     const s = String(input).trim();
     const m = /(\d{4})-(\d{1,2})/.exec(s);
@@ -29,7 +29,7 @@ function parseJoinedMonthToDate(input) {
     const mo = Number(m[2]);
     if (!y || mo < 1 || mo > 12) return null;
 
-    return dayjs().year(y).month(mo - 1).startOf("month");
+    return `${y}-${String(mo).padStart(2, "0")}`;
 }
 
 export default function ReportScreen() {
@@ -46,16 +46,24 @@ export default function ReportScreen() {
     const openYMModal = useCallback(() => setIsYMModalOpen(true), []);
     const closeYMModal = useCallback(() => setIsYMModalOpen(false), []);
 
-    const joinedMonthDate = useMemo(() => parseJoinedMonthToDate(joinedMonth), [joinedMonth]);
+    const joinedYM = useMemo(() => normalizeYM(joinedMonth), [joinedMonth]);
 
-    // 정책: 회원가입월 ~ 이번달. 표시는 "이전달, 이번달" 중 가입월 이후만 허용
     const allowedMonths = useMemo(() => {
-        const base = [prevMonth, nowMonth];
-        if (!joinedMonthDate) return base;
+        const startYM = joinedYM ?? nowMonth.format("YYYY-MM");
+        const start = dayjs(startYM + "-01").startOf("month");
+        const end = nowMonth.startOf("month");
 
-        const filtered = base.filter((d) => !d.isBefore(joinedMonthDate, "month"));
-        return filtered.length ? filtered : [nowMonth];
-    }, [joinedMonthDate, prevMonth, nowMonth]);
+        const out = [];
+        let cur = start;
+
+        while (cur.isSame(end, "month") || cur.isBefore(end, "month")) {
+            out.push(cur);
+            cur = cur.add(1, "month");
+        }
+
+        return out.length ? out : [nowMonth];
+    }, [joinedYM, nowMonth]);
+
 
     const allowedMonthKeys = useMemo(
         () => new Set(allowedMonths.map((d) => d.format("YYYY-MM"))),
@@ -96,44 +104,6 @@ export default function ReportScreen() {
         [allowedMonths]
     );
 
-    const lastFetchKeyRef = useRef("");
-
-    const refreshOnFocus = useCallback(async () => {
-        const jmRaw = await AsyncStorage.getItem("joinedMonth");
-        const jmDate = parseJoinedMonthToDate(jmRaw);
-
-        const joinedAtStr = jmDate ? jmDate.format("YYYY-MM") : (jmRaw ? String(jmRaw) : "");
-        setJoinedMonth(joinedAtStr);
-
-        const nick = await SecureStore.getItemAsync("nickname");
-        if (nick) setNickname(nick);
-
-        const base = [prevMonth, nowMonth];
-        const allowed = jmDate
-            ? (base.filter((d) => !d.isBefore(jmDate, "month")).length
-                ? base.filter((d) => !d.isBefore(jmDate, "month"))
-                : [nowMonth])
-            : base;
-
-        const allowedKeys = new Set(allowed.map((d) => d.format("YYYY-MM")));
-
-        let target = currentDate;
-        if (!allowedKeys.has(target.format("YYYY-MM"))) target = allowed[allowed.length - 1];
-
-        // const fetchKey = `${target.format("YYYY-MM")}`;
-        // if (lastFetchKeyRef.current === fetchKey) return;
-        // lastFetchKeyRef.current = fetchKey;
-
-        setCurrentDate(target);
-
-        try {
-            const data = await getReport(target.year(), target.month() + 1);
-            setReportData(data);
-        } catch {
-            setReportData(null);
-        }
-    }, [currentDate, nowMonth, prevMonth]);
-
     const lastSuccessKeyRef = useRef("");
     const reqSeqRef = useRef(0);
 
@@ -143,45 +113,24 @@ export default function ReportScreen() {
             const mySeq = ++reqSeqRef.current;
 
             (async () => {
-                // 1) user meta 갱신
                 const jmRaw = await AsyncStorage.getItem("joinedMonth");
-                const jmDate = parseJoinedMonthToDate(jmRaw);
-                const joinedAtStr = jmDate ? jmDate.format("YYYY-MM") : (jmRaw ? String(jmRaw) : "");
+                const joinedAtStr = normalizeYM(jmRaw) ?? (jmRaw ? String(jmRaw) : "");
                 if (alive) setJoinedMonth(joinedAtStr);
 
                 const nick = await SecureStore.getItemAsync("nickname");
                 if (alive && nick) setNickname(nick);
 
                 const fetchKey = `${year}-${String(month).padStart(2, "0")}`;
-
                 if (lastSuccessKeyRef.current === fetchKey) return;
 
                 try {
-                    console.log("[report] fetch start", {mySeq, fetchKey, year, month});
-
                     const data = await getReport(year, month);
-
                     if (!alive || reqSeqRef.current !== mySeq) return;
 
                     setReportData(data);
-
                     lastSuccessKeyRef.current = fetchKey;
-
-                    const payload = data?.data ?? data?.result ?? data?.report ?? data;
-                    const rawCategories =
-                        payload?.categories ?? payload?.categoryList ?? payload?.categoryStats ?? [];
-                    console.log("[report] fetch ok", {mySeq, fetchKey, categoriesLen: rawCategories?.length});
-                } catch (e) {
+                } catch {
                     if (!alive || reqSeqRef.current !== mySeq) return;
-
-                    console.log(
-                        "[report] fetch err",
-                        {mySeq, fetchKey},
-                        e?.response?.status,
-                        JSON.stringify(e?.response?.data ?? null),
-                        e?.message
-                    );
-
                     setReportData(null);
                 }
             })();
@@ -191,26 +140,6 @@ export default function ReportScreen() {
             };
         }, [year, month])
     );
-
-
-    // ✅ 기존 useEffect 방식 유지 (삭제 X)
-    // useEffect(() => {
-    //   const key = currentDate.format("YYYY-MM");
-    //   if (!allowedMonthKeys.has(key)) return;
-    //
-    //   const fetchKey = `${key}`;
-    //   if (lastFetchKeyRef.current === fetchKey) return;
-    //   lastFetchKeyRef.current = fetchKey;
-    //
-    //   (async () => {
-    //     try {
-    //       const data = await getReport(year, month);
-    //       setReportData(data);
-    //     } catch {
-    //       setReportData(null);
-    //     }
-    //   })();
-    // }, [currentDate, allowedMonthKeys, year, month]);
 
     const report = useMemo(() => {
         const payload =
@@ -275,11 +204,13 @@ export default function ReportScreen() {
                 onPressYearMonth={openYMModal}
             />
 
-            <ScrollView className="flex-1" contentContainerStyle={{paddingBottom: 32}} showsVerticalScrollIndicator={false}>
+            <ScrollView
+                className="flex-1"
+                contentContainerStyle={{paddingBottom: 32}}
+                showsVerticalScrollIndicator={false}
+            >
                 <ReportHeroCard caseType={report.caseType} nickname={nickname} />
-
                 <ReportTotalSection total={totals.total} completed={totals.completed} failed={totals.failed} />
-
                 <ReportCategoryCard data={report.categories} />
             </ScrollView>
 

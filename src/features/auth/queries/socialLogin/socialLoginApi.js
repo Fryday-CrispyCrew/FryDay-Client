@@ -1,10 +1,10 @@
 import api from "../../../../shared/lib/api";
-import { Platform } from "react-native";
-import { getDeviceId } from "../../lib/device";
-import { saveAccessToken, saveRefreshToken } from "../../../../shared/lib/storage/tokenStorage";
+import {Platform} from "react-native";
+import {getDeviceId} from "../../lib/device";
+import {saveAccessToken, saveRefreshToken} from "../../../../shared/lib/storage/tokenStorage";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import * as SecureStore from "expo-secure-store";
-import { STEP_KEY } from "../../../../shared/constants/onboardingStep";
+import {STEP_KEY} from "../../../../shared/constants/onboardingStep";
 import dayjs from "dayjs";
 
 async function persistLoginResult(data, deviceId) {
@@ -25,19 +25,23 @@ async function persistLoginResult(data, deviceId) {
             SecureStore.setItemAsync("nickname", nick),
         ]);
     }
-    const joinedMonth =
-        data?.user?.createdAt
-            ? dayjs(data.user.createdAt).format("YYYY-MM")
-            : dayjs().format("YYYY-MM");
 
-    await AsyncStorage.setItem("joinedMonth", joinedMonth);
+    const prevJoinedMonth = await AsyncStorage.getItem("joinedMonth");
+    const createdAt = data?.user?.createdAt;
+    const nextJoinedMonth = createdAt ? dayjs(createdAt).format("YYYY-MM") : null;
+
+    if (nextJoinedMonth) {
+        if (!prevJoinedMonth || nextJoinedMonth <= prevJoinedMonth) {
+            await AsyncStorage.setItem("joinedMonth", nextJoinedMonth);
+        }
+    } else {
+    }
 
     await AsyncStorage.setItem(STEP_KEY, String(data?.onboardingStatus ?? ""));
 }
 
-
 export const socialLoginApi = {
-    createSocialLogin: async ({ provider, accessToken }, options = {}) => {
+    createSocialLogin: async ({provider, accessToken}, options = {}) => {
         const deviceId = await getDeviceId();
 
         const res = await api.post(
@@ -50,8 +54,8 @@ export const socialLoginApi = {
                 deviceName: "FryDay",
             },
             {
-                headers: { Authorization: undefined },
-                meta: { skipErrorToast: !!options.skipErrorToast },
+                headers: {Authorization: undefined},
+                meta: {skipErrorToast: !!options.skipErrorToast},
             }
         );
 
@@ -60,7 +64,7 @@ export const socialLoginApi = {
         return data;
     },
 
-    createAppleLogin: async ({ idToken }, options = {}) => {
+    createAppleLogin: async ({idToken}, options = {}) => {
         const deviceId = await getDeviceId();
 
         const res = await api.post(
@@ -72,7 +76,7 @@ export const socialLoginApi = {
                 deviceName: "FryDay",
             },
             {
-                meta: { skipErrorToast: !!options.skipErrorToast },
+                meta: {skipErrorToast: !!options.skipErrorToast},
             }
         );
 
