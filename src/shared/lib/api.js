@@ -44,82 +44,82 @@ api.interceptors.request.use(
 let refreshPromise = null;
 
 function executeRefresh() {
-    const p = (async () => {
-        const refreshToken = await getRefreshToken();
-        if (!refreshToken) {
-            await deleteTokens();
-            throw new Error("No refresh token");
-        }
-        const { data } = await api.post(
-            "/api/users/token/refresh",
-            { refreshToken },
-            { meta: { skipErrorToast: true } }
-        );
-        await saveAccessToken(data.accessToken);
-        await saveRefreshToken(data.refreshToken);
-        return data.accessToken;
-    })().finally(() => {
-        refreshPromise = null;
-    });
-    refreshPromise = p;
-    return p;
+  const p = (async () => {
+    const refreshToken = await getRefreshToken();
+    if (!refreshToken) {
+      await deleteTokens();
+      throw new Error("No refresh token");
+    }
+    const {data} = await api.post(
+      "/api/users/token/refresh",
+      {refreshToken},
+      {meta: {skipErrorToast: true}},
+    );
+    await saveAccessToken(data.accessToken);
+    await saveRefreshToken(data.refreshToken);
+    return data.accessToken;
+  })().finally(() => {
+    refreshPromise = null;
+  });
+  refreshPromise = p;
+  return p;
 }
 
 api.interceptors.response.use(
-    (res) => res,
-    async (error) => {
-        const originalRequest = error.config;
+  (res) => res,
+  async (error) => {
+    const originalRequest = error.config;
 
-        if (originalRequest?.url?.includes("/api/users/token/refresh")) {
-            await deleteTokens();
-            error.isSessionExpired = true;
-            return Promise.reject(error);
-        }
-
-        if (error.response?.status === 401 && !originalRequest._retry) {
-            originalRequest._retry = true;
-
-            let newAccessToken;
-            try {
-                if (refreshPromise) {
-                    newAccessToken = await refreshPromise;
-                } else {
-                    newAccessToken = await executeRefresh();
-                }
-            } catch (e) {
-                await deleteTokens();
-                e.isSessionExpired = true;
-                return Promise.reject(e);
-            }
-
-            originalRequest.headers = {
-                ...(originalRequest.headers || {}),
-                Authorization: `Bearer ${newAccessToken}`,
-            };
-            return api(originalRequest);
-        }
-
-        // 이하 toast 로직: 재시도(GET) 실패·세션 만료 시 일반 API 토스트 생략
-        const method = error?.config?.method?.toLowerCase();
-        const skipErrorToast = Boolean(error?.config?.meta?.skipErrorToast);
-        const isRetryRequest = Boolean(originalRequest?._retry);
-        const isSessionExpired = Boolean(error?.isSessionExpired);
-
-        const shouldSkipToast =
-            skipErrorToast ||
-            isSessionExpired ||
-            (isRetryRequest && method === "get"); // 백그라운드 refetch 재시도 실패 시 토스트 생략
-
-        if (!shouldSkipToast) {
-            if (method === "get") toast.show(TOAST_MESSAGES.GET_ERROR, { position: "center" });
-            else if (["post", "put", "patch", "delete"].includes(method)) {
-                toast.show(TOAST_MESSAGES.MUTATION_ERROR, { position: "center" });
-            }
-        }
-
-        return Promise.reject(error);
+    if (originalRequest?.url?.includes("/api/users/token/refresh")) {
+      await deleteTokens();
+      error.isSessionExpired = true;
+      return Promise.reject(error);
     }
-);
 
+    if (error.response?.status === 403 && !originalRequest._retry) {
+      originalRequest._retry = true;
+
+      let newAccessToken;
+      try {
+        if (refreshPromise) {
+          newAccessToken = await refreshPromise;
+        } else {
+          newAccessToken = await executeRefresh();
+        }
+      } catch (e) {
+        await deleteTokens();
+        e.isSessionExpired = true;
+        return Promise.reject(e);
+      }
+
+      originalRequest.headers = {
+        ...(originalRequest.headers || {}),
+        Authorization: `Bearer ${newAccessToken}`,
+      };
+      return api(originalRequest);
+    }
+
+    // 이하 toast 로직: 재시도(GET) 실패·세션 만료 시 일반 API 토스트 생략
+    const method = error?.config?.method?.toLowerCase();
+    const skipErrorToast = Boolean(error?.config?.meta?.skipErrorToast);
+    const isRetryRequest = Boolean(originalRequest?._retry);
+    const isSessionExpired = Boolean(error?.isSessionExpired);
+
+    const shouldSkipToast =
+      skipErrorToast ||
+      isSessionExpired ||
+      (isRetryRequest && method === "get"); // 백그라운드 refetch 재시도 실패 시 토스트 생략
+
+    if (!shouldSkipToast) {
+      if (method === "get")
+        toast.show(TOAST_MESSAGES.GET_ERROR, {position: "center"});
+      else if (["post", "put", "patch", "delete"].includes(method)) {
+        toast.show(TOAST_MESSAGES.MUTATION_ERROR, {position: "center"});
+      }
+    }
+
+    return Promise.reject(error);
+  },
+);
 
 export default api;
