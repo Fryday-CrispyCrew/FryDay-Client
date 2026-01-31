@@ -2,7 +2,7 @@ import React, { useCallback } from "react";
 import { Pressable, TouchableOpacity, View } from "react-native";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import AppText from "../../../../shared/components/AppText";
-import { STEP_KEY, ONBOARDING_STEP } from "../../../../shared/constants/onboardingStep";
+import { STEP_KEY, ONBOARDING_STEP, MARKETING_CONSENT_KEY } from "../../../../shared/constants/onboardingStep";
 import { useCreateMarketingConsentMutation } from "../../queries/marketing/useCreateMarketingConsentMutation";
 
 export default function MarketingModal({ navigation }) {
@@ -22,6 +22,7 @@ export default function MarketingModal({ navigation }) {
                     skipErrorToast: true,
                 });
                 await AsyncStorage.setItem(STEP_KEY, ONBOARDING_STEP.COMPLETED);
+                await AsyncStorage.setItem(MARKETING_CONSENT_KEY, marketingOptional ? "true" : "false");
 
                 const rootNav = navigation.getParent("root") ?? navigation.getParent();
                 rootNav?.reset({ index: 0, routes: [{ name: "Main" }] });
