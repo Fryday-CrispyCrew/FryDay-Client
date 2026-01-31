@@ -159,7 +159,6 @@ export default function OnboardingScreen({ navigation }) {
                     style={{
                         paddingTop: imageTopPadding,
                         paddingHorizontal: Math.min(32, width * 0.07),
-                        paddingBottom: isLast ? overlayHeight : 0,
                     }}
                 >
                     <Image source={page.image} style={{ flex: 1, width: "100%" }} resizeMode="contain" />
