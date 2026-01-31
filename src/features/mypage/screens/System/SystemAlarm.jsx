@@ -4,7 +4,7 @@ import {View, Platform, Linking} from "react-native";
 import ToggleMenu from "../../components/ToggleMenu";
 import * as Notifications from "expo-notifications";
 import AsyncStorage from "@react-native-async-storage/async-storage";
-import {useEffect, useState, useCallback, useRef} from "react";
+import {useEffect, useState, useCallback} from "react";
 import {useFocusEffect} from "@react-navigation/native";
 import {useUpdateNotificationSettingsMutation} from "../../../../notifications/queries/useUpdateNotificationSettingsMutation";
 import {useCreateMarketingConsentMutation} from "../../../auth/queries/marketing/useCreateMarketingConsentMutation";
@@ -13,46 +13,47 @@ import {MARKETING_CONSENT_KEY} from "../../../../shared/constants/onboardingStep
 export default function SystemAlarm() {
     const updateSettings = useUpdateNotificationSettingsMutation();
     const createMarketingConsent = useCreateMarketingConsentMutation();
-    const hasSyncedOnLoadRef = useRef(false);
 
-    const [pushEnabled, setPushEnabled] = useState(false);
+    const [systemAllowed, setSystemAllowed] = useState(false);
+
+    const [pushEnabled, setPushEnabled] = useState(true);
     const [fryEnabled, setFryEnabled] = useState(true);
     const [marketingEnabled, setMarketingEnabled] = useState(false);
     const [initialLoadDone, setInitialLoadDone] = useState(false);
 
-    const syncWithSystemPermission = useCallback(async () => {
+    const syncSystemPermission = useCallback(async () => {
         const {status} = await Notifications.getPermissionsAsync();
         const allowed = status === "granted";
-        setPushEnabled(allowed);
+        setSystemAllowed(allowed);
         return allowed;
     }, []);
 
     useFocusEffect(
         useCallback(() => {
-            syncWithSystemPermission();
-        }, [syncWithSystemPermission])
+            syncSystemPermission();
+        }, [syncSystemPermission])
     );
 
     useEffect(() => {
         let cancelled = false;
+
         (async () => {
             const [allowed, marketingVal] = await Promise.all([
                 Notifications.getPermissionsAsync().then((r) => r.status === "granted"),
                 AsyncStorage.getItem(MARKETING_CONSENT_KEY),
             ]);
+
             if (cancelled) return;
-            setPushEnabled(allowed);
+
+            setSystemAllowed(allowed);
             setMarketingEnabled(marketingVal === "true");
             setInitialLoadDone(true);
         })();
-        return () => { cancelled = true; };
-    }, []);
 
-    useEffect(() => {
-        if (!initialLoadDone || !pushEnabled || hasSyncedOnLoadRef.current) return;
-        hasSyncedOnLoadRef.current = true;
-        updateSettings.mutate({pushNotificationEnabled: true});
-    }, [initialLoadDone, pushEnabled, updateSettings]);
+        return () => {
+            cancelled = true;
+        };
+    }, []);
 
     const openSystemSettings = useCallback(async () => {
         if (Platform.OS === "ios") {
@@ -62,39 +63,56 @@ export default function SystemAlarm() {
         await Linking.openSettings();
     }, []);
 
-    // 푸시 알람 = 기기 알람 허용 여부만. API 호출 없음.
     const handleTogglePush = useCallback(
         async (next) => {
-            if (!next) {
-                await openSystemSettings();
+            const allowed = await syncSystemPermission();
+
+            if (next) {
+                if (!allowed) {
+                    await openSystemSettings();
+                    return;
+                }
+                setPushEnabled(true);
+                updateSettings.mutate({pushNotificationEnabled: true});
                 return;
             }
-            const allowed = await syncWithSystemPermission();
-            if (!allowed) await openSystemSettings();
+
+            setPushEnabled(false);
+            setFryEnabled(false);
+            setMarketingEnabled(false);
+
+            updateSettings.mutate({pushNotificationEnabled: false});
+            AsyncStorage.setItem(MARKETING_CONSENT_KEY, "false");
+            createMarketingConsent.mutate({marketingOptional: false, skipErrorToast: true});
         },
-        [openSystemSettings, syncWithSystemPermission]
+        [syncSystemPermission, openSystemSettings, updateSettings, createMarketingConsent]
     );
 
-    // 튀김 알람 = pushNotificationEnabled (서버에 푸시 보낼지)
     const handleToggleFry = useCallback(
         (next) => {
+            if (!pushEnabled) return;
             setFryEnabled(next);
             updateSettings.mutate({pushNotificationEnabled: next});
         },
-        [updateSettings]
+        [pushEnabled, updateSettings]
     );
 
     const handleToggleMarketing = useCallback(
         (next) => {
+            if (!pushEnabled) return;
             setMarketingEnabled(next);
             AsyncStorage.setItem(MARKETING_CONSENT_KEY, next ? "true" : "false");
-            createMarketingConsent.mutate({
-                marketingOptional: next,
-                skipErrorToast: true,
-            });
+            createMarketingConsent.mutate({marketingOptional: next, skipErrorToast: true});
         },
-        [createMarketingConsent]
+        [pushEnabled, createMarketingConsent]
     );
+
+    useEffect(() => {
+        if (!initialLoadDone) return;
+        if (!pushEnabled) return;
+        if (systemAllowed) return;
+        setPushEnabled(false);
+    }, [initialLoadDone, pushEnabled, systemAllowed]);
 
     return (
         <SafeAreaView className="flex-1">
