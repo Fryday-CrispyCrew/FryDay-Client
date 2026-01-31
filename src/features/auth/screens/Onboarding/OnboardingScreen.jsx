@@ -103,10 +103,16 @@ export default function OnboardingScreen({ navigation }) {
             });
     }, [onNext, onPrev]);
 
+    const imageTopPadding = useMemo(() => {
+        return Math.min(28, Math.max(12, Math.round(height * 0.022)));
+    }, [height]);
+
+
 
     return (
-        <SafeAreaView className="flex-1 bg-wt">
-            <View className="px-5 pt-4 items-end">
+        <SafeAreaView edges={["top", "left", "right"]} className="flex-1 bg-wt">
+
+        <View className="px-5 pt-4 items-end">
                 <TouchableOpacity
                     onPress={onDone}
                     activeOpacity={0.5}
@@ -149,18 +155,17 @@ export default function OnboardingScreen({ navigation }) {
                 </View>
 
                 <View
-                    className="flex-1 justify-end items-center"
+                    className="flex-1"
                     style={{
-                        paddingHorizontal: Math.min(32, width * 0.08),
-                        paddingBottom: 0,
+                        paddingTop: imageTopPadding,
+                        paddingHorizontal: Math.min(32, width * 0.07),
+                        paddingBottom: isLast ? overlayHeight : 0,
                     }}
                 >
-                    <Image
-                        source={page.image}
-                        style={{ width: "100%", height: "100%" }}
-                        resizeMode="contain"
-                    />
+                    <Image source={page.image} style={{ flex: 1, width: "100%" }} resizeMode="contain" />
                 </View>
+
+
             </Pressable>
             </GestureDetector>
 
