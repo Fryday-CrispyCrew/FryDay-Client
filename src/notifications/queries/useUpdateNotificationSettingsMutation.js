@@ -22,6 +22,12 @@ export function useUpdateNotificationSettingsMutation(options = {}) {
       // response: { message: "알림 설정이 성공적으로 변경되었습니다." }
       return res?.data;
     },
+    onSuccess: (data) => {
+      // console.log("update notifySettings success", data);
+    },
+    onError: (err) => {
+      // console.log("update notifySettings failed", err?.response?.data ?? err);
+    },
     ...options,
   });
 }

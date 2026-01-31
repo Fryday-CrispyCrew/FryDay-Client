@@ -40,7 +40,7 @@ import TodoBoardSection from "../../components/TodoBoardSection";
 import FCMInitializer from "../../../../notifications/components/FCMInitializer";
 
 const {width, height} = Dimensions.get("window");
-import { useFocusEffect } from "@react-navigation/native";
+import {useFocusEffect} from "@react-navigation/native";
 
 import Dotted from "../../../calendar/assets/svg/Dotted.svg";
 
@@ -427,27 +427,27 @@ export default function HomeScreen({navigation, route}) {
 
   // 캘린더 연동
   const appliedInitialDateRef = useRef(null); // 마지막으로 적용한 initialDate
-  const skipResetOnceRef = useRef(false);     // 캘린더에서 넘어온 직후 1회 리셋 방지
+  const skipResetOnceRef = useRef(false); // 캘린더에서 넘어온 직후 1회 리셋 방지
 
   useFocusEffect(
-      useCallback(() => {
-        const dateStr = route?.params?.initialDate;
+    useCallback(() => {
+      const dateStr = route?.params?.initialDate;
 
-        if (dateStr && appliedInitialDateRef.current !== dateStr) {
-          const [y, m, d] = String(dateStr).split("-").map(Number);
-          if (y && m && d) {
-            appliedInitialDateRef.current = dateStr;
-            skipResetOnceRef.current = true;
-            setCurrentDate(new Date(y, m - 1, d));
-          }
-          return;
+      if (dateStr && appliedInitialDateRef.current !== dateStr) {
+        const [y, m, d] = String(dateStr).split("-").map(Number);
+        if (y && m && d) {
+          appliedInitialDateRef.current = dateStr;
+          skipResetOnceRef.current = true;
+          setCurrentDate(new Date(y, m - 1, d));
         }
-        if (skipResetOnceRef.current) {
-          skipResetOnceRef.current = false;
-          return;
-        }
-        setCurrentDate(new Date());
-      }, [route?.params?.initialDate])
+        return;
+      }
+      if (skipResetOnceRef.current) {
+        skipResetOnceRef.current = false;
+        return;
+      }
+      setCurrentDate(new Date());
+    }, [route?.params?.initialDate]),
   );
 
   return (
@@ -589,15 +589,19 @@ const styles = StyleSheet.create({
     justifyContent: "center",
   },
   illustrationWrapper: {
+    width: "100%",
     height: height * 0.377,
     alignItems: "center",
     justifyContent: "center",
+    // borderWidth: 1,
   },
   lottieWrapper: {
     position: "relative",
-    width: "60%",
+    width: "72%",
     aspectRatio: 1,
+    maxHeight: "80%", // ✅ 핵심
     marginTop: "8%",
+    // borderWidth: 1,
   },
   spinnerWrapper: {
     position: "absolute",
