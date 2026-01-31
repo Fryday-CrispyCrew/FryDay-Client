@@ -30,7 +30,7 @@ export default function ToggleMenu({
                     } ${disabled ? "opacity-40" : ""}`}
                 >
                     <View
-                        className={`w-5 h-5 rounded-full bg-white ${
+                        className={`w-6 h-6 rounded-full bg-white ${
                             value ? "self-end" : "self-start"
                         }`}
                     />
