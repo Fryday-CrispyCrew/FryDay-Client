@@ -7,6 +7,7 @@ import {
   StatusBar,
   TouchableOpacity,
   Pressable,
+  Image,
 } from "react-native";
 import {Gesture, GestureDetector} from "react-native-gesture-handler";
 import {SafeAreaView} from "react-native-safe-area-context";
@@ -17,6 +18,7 @@ import TodayIcon from "../../assets/svg/Today.svg";
 import CategoryIcon from "../../assets/svg/Category.svg";
 import ShadowGRIcon from "../../assets/svg/shadow/shadowGR.svg";
 import ShadowORIcon from "../../assets/svg/shadow/shadowOR.svg";
+import ErrorImage from "../../../../shared/assets/png/error-icon.png";
 
 import TodoCard from "../../components/TodoCard";
 import TodoEditorSheet from "../../components/TodoEditorSheet/TodoEditorSheet";
@@ -281,6 +283,7 @@ export default function HomeScreen({navigation, route}) {
     dataUpdatedAt: characterUpdatedAt,
     isLoading: isCharacterLoading, // ✅ 추가
     isFetching: isCharacterFetching, // (선택)
+    isError: isCharacterError,
   } = useTodoCharacterStatusQuery({date}, {enabled: isHomeTodosSuccess});
 
   useEffect(() => {
@@ -490,7 +493,7 @@ export default function HomeScreen({navigation, route}) {
       {/* ✅ (고정) illustrationWrapper: 여기서는 스크롤 안 됨 */}
       <GestureDetector gesture={panGesture}>
         <View style={styles.illustrationWrapper}>
-          <SpeechBubble text={bubbleText} />
+          {!isCharacterError && <SpeechBubble text={bubbleText} />}
           <Pressable
             style={styles.lottieWrapper}
             onPress={() => {
@@ -507,6 +510,13 @@ export default function HomeScreen({navigation, route}) {
               //   <ActivityIndicator size="large" color={colors.gr500} />
               // </View>
               <></>
+            ) : isCharacterError ? (
+              // 2️⃣ ❌ 에러 → 로컬 에러 이미지
+              <Image
+                source={ErrorImage}
+                style={styles.errorImage}
+                resizeMode="contain"
+              />
             ) : (
               <>
                 {shouldRenderBack && (
@@ -532,13 +542,15 @@ export default function HomeScreen({navigation, route}) {
               </>
             )}
           </Pressable>
-          <View style={styles.shadowWrapper}>
-            {isShadowGR ? (
-              <ShadowGRIcon height="100%" width="100%" />
-            ) : (
-              <ShadowORIcon height="100%" width="100%" />
-            )}
-          </View>
+          {!isCharacterError && (
+            <View style={styles.shadowWrapper}>
+              {isShadowGR ? (
+                <ShadowGRIcon height="100%" width="100%" />
+              ) : (
+                <ShadowORIcon height="100%" width="100%" />
+              )}
+            </View>
+          )}
         </View>
       </GestureDetector>
       {/* ✅ (고정) 구분선 */}
@@ -602,6 +614,10 @@ const styles = StyleSheet.create({
     maxHeight: "80%", // ✅ 핵심
     marginTop: "8%",
     // borderWidth: 1,
+  },
+  errorImage: {
+    width: "100%",
+    height: "100%",
   },
   spinnerWrapper: {
     position: "absolute",

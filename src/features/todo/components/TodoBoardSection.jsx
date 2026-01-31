@@ -1,8 +1,9 @@
 // src/features/todo/components/TodoBoardSection.jsx
 import React, {useMemo, useState, useCallback} from "react";
-import {ScrollView} from "react-native";
+import {Image, ScrollView, StyleSheet, View} from "react-native";
 import TodoCard from "./TodoCard";
 import TodoEditorSheet from "./TodoEditorSheet/TodoEditorSheet";
+import ErrorImage from "../../../shared/assets/png/error-icon.png";
 import {useTodoEditorController} from "../hooks/useTodoEditorController";
 
 import {useCategoriesQuery} from "../queries/category/useCategoriesQuery";
@@ -25,7 +26,8 @@ export default function TodoBoardSection({
 }) {
   const {open, close} = useModalStore();
 
-  const {data: rawCategories = []} = useCategoriesQuery();
+  const {data: rawCategories = [], isError: isCategoriesError} =
+    useCategoriesQuery();
   const categories = useMemo(() => {
     const arr = Array.isArray(rawCategories) ? rawCategories : [];
     return arr
@@ -38,7 +40,7 @@ export default function TodoBoardSection({
       }));
   }, [rawCategories]);
 
-  const {data: rawTodos = []} = useHomeTodosQuery({
+  const {data: rawTodos = [], isError: isTodosError} = useHomeTodosQuery({
     date,
     categoryId: undefined,
   });
@@ -142,6 +144,8 @@ export default function TodoBoardSection({
     [editor],
   );
 
+  const shouldShowBoardError = isCategoriesError && isTodosError;
+
   return (
     <>
       <ScrollView
@@ -150,82 +154,92 @@ export default function TodoBoardSection({
         showsVerticalScrollIndicator={false}
         keyboardShouldPersistTaps="handled"
       >
-        <TodoCard
-          navigation={navigation}
-          onPressInput={handlePressTodoInput}
-          categories={categories}
-          todos={todos}
-          isViewingToday={isViewingToday}
-          onDoToday={async (todoId) => {
-            return new Promise((resolve) => {
-              open({
-                title: "확인",
-                description:
-                  "투두가 오늘 날짜로 이동하며,\n기존 날짜의 투두는 삭제돼요. 오늘 하기로 설정할까요?",
-                closeOnBackdrop: true,
-                showClose: true,
-                primary: {
-                  label: "네, 설정할래요",
-                  variant: "outline",
-                  closeAfterPress: false,
-                  onPress: async () => {
-                    try {
-                      await moveTodoTodayMutateAsync({todoId});
-                      resolve(true);
-                    } finally {
-                      close();
-                    }
+        {shouldShowBoardError ? (
+          <View style={styles.errorContainer}>
+            <Image
+              source={ErrorImage}
+              style={styles.errorImage}
+              resizeMode="contain"
+            />
+          </View>
+        ) : (
+          <TodoCard
+            navigation={navigation}
+            onPressInput={handlePressTodoInput}
+            categories={categories}
+            todos={todos}
+            isViewingToday={isViewingToday}
+            onDoToday={async (todoId) => {
+              return new Promise((resolve) => {
+                open({
+                  title: "확인",
+                  description:
+                    "투두가 오늘 날짜로 이동하며,\n기존 날짜의 투두는 삭제돼요. 오늘 하기로 설정할까요?",
+                  closeOnBackdrop: true,
+                  showClose: true,
+                  primary: {
+                    label: "네, 설정할래요",
+                    variant: "outline",
+                    closeAfterPress: false,
+                    onPress: async () => {
+                      try {
+                        await moveTodoTodayMutateAsync({todoId});
+                        resolve(true);
+                      } finally {
+                        close();
+                      }
+                    },
                   },
-                },
-                secondary: {
-                  label: "아니요, 그만둘래요",
-                  variant: "outline",
-                  closeAfterPress: true,
-                  onPress: () => resolve(false),
-                },
-                onClose: () => resolve(false),
-              });
-            });
-          }}
-          onDoTomorrow={async (todoId) => {
-            return new Promise((resolve) => {
-              open({
-                title: "확인",
-                description:
-                  "투두가 내일 날짜로 이동하며,\n기존 날짜의 투두는 삭제돼요. 내일 하기로 설정할까요?",
-                closeOnBackdrop: true,
-                showClose: true,
-                primary: {
-                  label: "네, 설정할래요",
-                  variant: "outline",
-                  closeAfterPress: false,
-                  onPress: async () => {
-                    try {
-                      await moveTodoTomorrowMutateAsync({todoId});
-                      resolve(true);
-                    } finally {
-                      close();
-                    }
+                  secondary: {
+                    label: "아니요, 그만둘래요",
+                    variant: "outline",
+                    closeAfterPress: true,
+                    onPress: () => resolve(false),
                   },
-                },
-                secondary: {
-                  label: "아니요, 그만둘래요",
-                  variant: "outline",
-                  closeAfterPress: true,
-                  onPress: () => resolve(false),
-                },
-                onClose: () => resolve(false),
+                  onClose: () => resolve(false),
+                });
               });
-            });
-          }}
-          onDeleteTodo={handleRequestDeleteTodo}
-          onToggleTodoCompletion={async (todoId) => {
-            await toggleCompletionMutateAsync({todoId: Number(todoId)});
-          }}
-          onReorderTodos={async ({ids}) => {
-            await reorderTodosMutateAsync({date, ids});
-          }}
-        />
+            }}
+            onDoTomorrow={async (todoId) => {
+              return new Promise((resolve) => {
+                open({
+                  title: "확인",
+                  description:
+                    "투두가 내일 날짜로 이동하며,\n기존 날짜의 투두는 삭제돼요. 내일 하기로 설정할까요?",
+                  closeOnBackdrop: true,
+                  showClose: true,
+                  primary: {
+                    label: "네, 설정할래요",
+                    variant: "outline",
+                    closeAfterPress: false,
+                    onPress: async () => {
+                      try {
+                        await moveTodoTomorrowMutateAsync({todoId});
+                        resolve(true);
+                      } finally {
+                        close();
+                      }
+                    },
+                  },
+                  secondary: {
+                    label: "아니요, 그만둘래요",
+                    variant: "outline",
+                    closeAfterPress: true,
+                    onPress: () => resolve(false),
+                  },
+                  onClose: () => resolve(false),
+                });
+              });
+            }}
+            onDeleteTodo={handleRequestDeleteTodo}
+            onToggleTodoCompletion={async (todoId) => {
+              await toggleCompletionMutateAsync({todoId: Number(todoId)});
+            }}
+            onReorderTodos={async ({ids}) => {
+              await reorderTodosMutateAsync({date, ids});
+            }}
+          />
+        )}
       </ScrollView>
 
       <TodoEditorSheet
@@ -239,3 +253,15 @@ export default function TodoBoardSection({
     </>
   );
 }
+
+const styles = StyleSheet.create({
+  errorContainer: {
+    flex: 1,
+    justifyContent: "center",
+    alignItems: "center",
+  },
+  errorImage: {
+    width: 180,
+    height: 180,
+  },
+});
