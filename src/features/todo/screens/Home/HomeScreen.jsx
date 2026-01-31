@@ -42,6 +42,8 @@ import FCMInitializer from "../../../../notifications/components/FCMInitializer"
 const {width, height} = Dimensions.get("window");
 import { useFocusEffect } from "@react-navigation/native";
 
+import Dotted from "../../../calendar/assets/svg/Dotted.svg";
+
 // ✅ 오늘 날짜(로컬 기준) YYYY-MM-DD
 function formatYYYYMMDD(dateObj) {
   const y = dateObj.getFullYear();
@@ -540,7 +542,10 @@ export default function HomeScreen({navigation, route}) {
         </View>
       </GestureDetector>
       {/* ✅ (고정) 구분선 */}
-      <View style={styles.dashedDivider} />
+      <View className="mx-1">
+        <Dotted style={{ width: "100%" }} height={1} />
+      </View>
+
 
       <View style={{flex: 1}}>
         <TodoBoardSection
