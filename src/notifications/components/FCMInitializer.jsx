@@ -9,11 +9,14 @@ import {
 import {registerForegroundMessageListener} from "../listeners";
 import {useRegisterFcmTokenMutation} from "../queries/useRegisterFcmTokenMutation";
 import {getDeviceId} from "../lib/getDeviceId";
+import {useUpdateNotificationSettingsMutation} from "../queries/useUpdateNotificationSettingsMutation";
 
 let didInit = false;
 
 export default function FCMInitializer() {
   const registerFcmTokenMutation = useRegisterFcmTokenMutation();
+  const updateNotificationSettingsMutation =
+    useUpdateNotificationSettingsMutation(); // ✅ 추가
 
   useEffect(() => {
     if (didInit) return;
@@ -26,8 +29,14 @@ export default function FCMInitializer() {
       await initNotifeeChannel();
 
       const deviceId = await getDeviceId(); // ✅ expo-application 기반
-      const token = await ensureFcmPermissionAndGetToken();
+      const {enabled, token} = await ensureFcmPermissionAndGetToken();
 
+      // ✅ 권한 결과를 서버 설정에 반영
+      updateNotificationSettingsMutation.mutate({
+        pushNotificationEnabled: enabled,
+      });
+
+      console.log("FCM permission enabled:", enabled);
       console.log("FCMtoken:", token, "deviceId:", deviceId);
 
       if (token && deviceId) {
