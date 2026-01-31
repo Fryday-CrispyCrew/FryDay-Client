@@ -64,7 +64,9 @@ export default function ReportScreen() {
 
     useEffect(() => {
         const key = currentDate.format("YYYY-MM");
-        if (!allowedMonthKeys.has(key)) setCurrentDate(allowedMonths[allowedMonths.length - 1]);
+        if (!allowedMonthKeys.has(key)) {
+            setCurrentDate(allowedMonths[allowedMonths.length - 1]);
+        }
     }, [allowedMonthKeys, allowedMonths, currentDate]);
 
     const year = useMemo(() => currentDate.year(), [currentDate]);
@@ -118,9 +120,9 @@ export default function ReportScreen() {
         let target = currentDate;
         if (!allowedKeys.has(target.format("YYYY-MM"))) target = allowed[allowed.length - 1];
 
-        const fetchKey = `${target.format("YYYY-MM")}`;
-        if (lastFetchKeyRef.current === fetchKey) return;
-        lastFetchKeyRef.current = fetchKey;
+        // const fetchKey = `${target.format("YYYY-MM")}`;
+        // if (lastFetchKeyRef.current === fetchKey) return;
+        // lastFetchKeyRef.current = fetchKey;
 
         setCurrentDate(target);
 
@@ -138,34 +140,55 @@ export default function ReportScreen() {
 
             (async () => {
                 try {
-                    await refreshOnFocus();
-                } finally {
+                    // user meta 먼저 읽기
+                    const jmRaw = await AsyncStorage.getItem("joinedMonth");
+                    const jmDate = parseJoinedMonthToDate(jmRaw);
+                    const joinedAtStr = jmDate ? jmDate.format("YYYY-MM") : (jmRaw ? String(jmRaw) : "");
+                    if (alive) setJoinedMonth(joinedAtStr);
+
+                    const nick = await SecureStore.getItemAsync("nickname");
+                    if (alive && nick) setNickname(nick);
+
+                    const fetchKey = `${year}-${String(month).padStart(2, "0")}`;
+                    if (lastFetchKeyRef.current === fetchKey) {
+                        // 그래도 포커스 갱신은 위에서 했으니 fetch만 스킵
+                        return;
+                    }
+                    lastFetchKeyRef.current = fetchKey;
+
+                    // report fetch
+                    const data = await getReport(year, month);
                     if (!alive) return;
+                    setReportData(data);
+                } catch (e) {
+                    if (!alive) return;
+                    setReportData(null);
                 }
             })();
 
             return () => {
                 alive = false;
             };
-        }, [refreshOnFocus])
+        }, [year, month])
     );
 
+    // ✅ 기존 useEffect 방식 유지 (삭제 X)
     // useEffect(() => {
-    //     const key = currentDate.format("YYYY-MM");
-    //     if (!allowedMonthKeys.has(key)) return;
+    //   const key = currentDate.format("YYYY-MM");
+    //   if (!allowedMonthKeys.has(key)) return;
     //
-    //     const fetchKey = `${key}`;
-    //     if (lastFetchKeyRef.current === fetchKey) return;
-    //     lastFetchKeyRef.current = fetchKey;
+    //   const fetchKey = `${key}`;
+    //   if (lastFetchKeyRef.current === fetchKey) return;
+    //   lastFetchKeyRef.current = fetchKey;
     //
-    //     (async () => {
-    //         try {
-    //             const data = await getReport(year, month);
-    //             setReportData(data);
-    //         } catch {
-    //             setReportData(null);
-    //         }
-    //     })();
+    //   (async () => {
+    //     try {
+    //       const data = await getReport(year, month);
+    //       setReportData(data);
+    //     } catch {
+    //       setReportData(null);
+    //     }
+    //   })();
     // }, [currentDate, allowedMonthKeys, year, month]);
 
     const report = useMemo(() => {
@@ -174,6 +197,7 @@ export default function ReportScreen() {
             reportData?.result ??
             reportData?.report ??
             reportData;
+
         if (!payload) return {caseType: "C", categories: []};
 
         const caseType = mapAttendanceIconToCaseType(payload.attendanceIcon);
@@ -183,26 +207,27 @@ export default function ReportScreen() {
             payload.categoryList ??
             payload.categoryStats ??
             [];
+
         const categories = Array.isArray(rawCategories)
             ? rawCategories
-                  .filter(Boolean)
-                  .map((c) => {
-                      const total = Number(c?.totalTodos ?? c?.total ?? 0);
-                      const success = Number(c?.completedTodos ?? c?.completed ?? 0);
-                      const fail =
-                          c?.incompleteTodos != null
-                              ? Number(c.incompleteTodos)
-                              : c?.fail != null
+                .filter(Boolean)
+                .map((c) => {
+                    const total = Number(c?.totalTodos ?? c?.total ?? 0);
+                    const success = Number(c?.completedTodos ?? c?.completed ?? 0);
+                    const fail =
+                        c?.incompleteTodos != null
+                            ? Number(c.incompleteTodos)
+                            : c?.fail != null
                                 ? Number(c.fail)
                                 : Math.max(0, total - success);
 
-                      return {
-                          name: c?.categoryName ?? c?.name ?? "카테고리",
-                          total,
-                          success,
-                          fail,
-                      };
-                  })
+                    return {
+                        name: c?.categoryName ?? c?.name ?? "카테고리",
+                        total,
+                        success,
+                        fail,
+                    };
+                })
             : [];
 
         return {caseType, categories};
@@ -219,8 +244,6 @@ export default function ReportScreen() {
             {total: 0, completed: 0, failed: 0}
         );
     }, [report.categories]);
-
-
 
     return (
         <SafeAreaView className="flex-1 bg-wt" edges={["top"]}>
