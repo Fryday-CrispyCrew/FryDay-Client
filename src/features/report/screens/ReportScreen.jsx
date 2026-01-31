@@ -150,45 +150,59 @@ export default function ReportScreen() {
         }, [refreshOnFocus])
     );
 
-    useEffect(() => {
-        const key = currentDate.format("YYYY-MM");
-        if (!allowedMonthKeys.has(key)) return;
-
-        const fetchKey = `${key}`;
-        if (lastFetchKeyRef.current === fetchKey) return;
-        lastFetchKeyRef.current = fetchKey;
-
-        (async () => {
-            try {
-                const data = await getReport(year, month);
-                setReportData(data);
-            } catch {
-                setReportData(null);
-            }
-        })();
-    }, [currentDate, allowedMonthKeys, year, month]);
+    // useEffect(() => {
+    //     const key = currentDate.format("YYYY-MM");
+    //     if (!allowedMonthKeys.has(key)) return;
+    //
+    //     const fetchKey = `${key}`;
+    //     if (lastFetchKeyRef.current === fetchKey) return;
+    //     lastFetchKeyRef.current = fetchKey;
+    //
+    //     (async () => {
+    //         try {
+    //             const data = await getReport(year, month);
+    //             setReportData(data);
+    //         } catch {
+    //             setReportData(null);
+    //         }
+    //     })();
+    // }, [currentDate, allowedMonthKeys, year, month]);
 
     const report = useMemo(() => {
-        const payload = reportData?.data ?? reportData;
+        const payload =
+            reportData?.data ??
+            reportData?.result ??
+            reportData?.report ??
+            reportData;
         if (!payload) return {caseType: "C", categories: []};
 
         const caseType = mapAttendanceIconToCaseType(payload.attendanceIcon);
 
-        const categories = Array.isArray(payload.categories)
-            ? payload.categories
-                .filter(Boolean)
-                .map((c) => {
-                    const total = Number(c?.totalTodos ?? 0);
-                    const success = Number(c?.completedTodos ?? 0);
-                    const fail = c?.incompleteTodos != null ? Number(c.incompleteTodos) : Math.max(0, total - success);
+        const rawCategories =
+            payload.categories ??
+            payload.categoryList ??
+            payload.categoryStats ??
+            [];
+        const categories = Array.isArray(rawCategories)
+            ? rawCategories
+                  .filter(Boolean)
+                  .map((c) => {
+                      const total = Number(c?.totalTodos ?? c?.total ?? 0);
+                      const success = Number(c?.completedTodos ?? c?.completed ?? 0);
+                      const fail =
+                          c?.incompleteTodos != null
+                              ? Number(c.incompleteTodos)
+                              : c?.fail != null
+                                ? Number(c.fail)
+                                : Math.max(0, total - success);
 
-                    return {
-                        name: c?.categoryName ?? "카테고리",
-                        total,
-                        success,
-                        fail,
-                    };
-                })
+                      return {
+                          name: c?.categoryName ?? c?.name ?? "카테고리",
+                          total,
+                          success,
+                          fail,
+                      };
+                  })
             : [];
 
         return {caseType, categories};
@@ -205,6 +219,8 @@ export default function ReportScreen() {
             {total: 0, completed: 0, failed: 0}
         );
     }, [report.categories]);
+
+
 
     return (
         <SafeAreaView className="flex-1 bg-wt" edges={["top"]}>
