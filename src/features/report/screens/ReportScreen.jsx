@@ -134,34 +134,54 @@ export default function ReportScreen() {
         }
     }, [currentDate, nowMonth, prevMonth]);
 
+    const lastSuccessKeyRef = useRef("");
+    const reqSeqRef = useRef(0);
+
     useFocusEffect(
         useCallback(() => {
             let alive = true;
+            const mySeq = ++reqSeqRef.current;
 
             (async () => {
+                // 1) user meta 갱신
+                const jmRaw = await AsyncStorage.getItem("joinedMonth");
+                const jmDate = parseJoinedMonthToDate(jmRaw);
+                const joinedAtStr = jmDate ? jmDate.format("YYYY-MM") : (jmRaw ? String(jmRaw) : "");
+                if (alive) setJoinedMonth(joinedAtStr);
+
+                const nick = await SecureStore.getItemAsync("nickname");
+                if (alive && nick) setNickname(nick);
+
+                const fetchKey = `${year}-${String(month).padStart(2, "0")}`;
+
+                if (lastSuccessKeyRef.current === fetchKey) return;
+
                 try {
-                    // user meta 먼저 읽기
-                    const jmRaw = await AsyncStorage.getItem("joinedMonth");
-                    const jmDate = parseJoinedMonthToDate(jmRaw);
-                    const joinedAtStr = jmDate ? jmDate.format("YYYY-MM") : (jmRaw ? String(jmRaw) : "");
-                    if (alive) setJoinedMonth(joinedAtStr);
+                    console.log("[report] fetch start", {mySeq, fetchKey, year, month});
 
-                    const nick = await SecureStore.getItemAsync("nickname");
-                    if (alive && nick) setNickname(nick);
-
-                    const fetchKey = `${year}-${String(month).padStart(2, "0")}`;
-                    if (lastFetchKeyRef.current === fetchKey) {
-                        // 그래도 포커스 갱신은 위에서 했으니 fetch만 스킵
-                        return;
-                    }
-                    lastFetchKeyRef.current = fetchKey;
-
-                    // report fetch
                     const data = await getReport(year, month);
-                    if (!alive) return;
+
+                    if (!alive || reqSeqRef.current !== mySeq) return;
+
                     setReportData(data);
+
+                    lastSuccessKeyRef.current = fetchKey;
+
+                    const payload = data?.data ?? data?.result ?? data?.report ?? data;
+                    const rawCategories =
+                        payload?.categories ?? payload?.categoryList ?? payload?.categoryStats ?? [];
+                    console.log("[report] fetch ok", {mySeq, fetchKey, categoriesLen: rawCategories?.length});
                 } catch (e) {
-                    if (!alive) return;
+                    if (!alive || reqSeqRef.current !== mySeq) return;
+
+                    console.log(
+                        "[report] fetch err",
+                        {mySeq, fetchKey},
+                        e?.response?.status,
+                        JSON.stringify(e?.response?.data ?? null),
+                        e?.message
+                    );
+
                     setReportData(null);
                 }
             })();
@@ -171,6 +191,7 @@ export default function ReportScreen() {
             };
         }, [year, month])
     );
+
 
     // ✅ 기존 useEffect 방식 유지 (삭제 X)
     // useEffect(() => {
