@@ -1,59 +1,111 @@
 // src/shared/components/wheels/YearMonthWheelModal.jsx
 import React, {useCallback, useEffect, useMemo, useState} from "react";
-import {
-  Modal,
-  Pressable,
-  View,
-  Text,
-  TouchableOpacity,
-  StyleSheet,
-} from "react-native";
+import {Modal, Pressable, View, Text, TouchableOpacity, StyleSheet} from "react-native";
 import WheelColumn from "./WheelColumn";
 import colors from "../../../../../shared/styles/colors";
 
-const range = (from, to) =>
-  Array.from({length: to - from + 1}, (_, i) => from + i);
+const range = (from, to) => Array.from({length: to - from + 1}, (_, i) => from + i);
+
+function toYM(input) {
+  if (!input) return null;
+  if (typeof input === "string") {
+    const m = /^(\d{4})-(\d{1,2})$/.exec(input);
+    if (!m) return null;
+    const y = Number(m[1]);
+    const mo = Number(m[2]);
+    if (!y || mo < 1 || mo > 12) return null;
+    return {y, m: mo};
+  }
+  if (typeof input === "object" && input.year && input.month) {
+    const y = Number(input.year);
+    const mo = Number(input.month);
+    if (!y || mo < 1 || mo > 12) return null;
+    return {y, m: mo};
+  }
+  return null;
+}
 
 export default function YearMonthWheelModal({
-  visible,
-  initialYear,
-  initialMonth, // 1~12
-  onCancel,
-  onConfirm, // (year, month) => void
+                                              visible,
+                                              initialYear,
+                                              initialMonth,
+                                              onCancel,
+                                              onConfirm,
 
-  yearFrom,
-  yearTo,
+                                              yearFrom,
+                                              yearTo,
 
-  // ✅ 스샷 기준 기본값
-  title = "연월 이동",
-  moveText = "이동하기",
-}) {
+                                              availableYMs,
+
+                                              title = "연월 이동",
+                                              moveText = "이동하기",
+                                            }) {
   const baseYear = new Date().getFullYear();
 
+  const available = useMemo(() => {
+    if (!Array.isArray(availableYMs) || availableYMs.length === 0) return null;
+
+    const map = new Map();
+    for (const v of availableYMs) {
+      const ym = toYM(v);
+      if (!ym) continue;
+      if (!map.has(ym.y)) map.set(ym.y, new Set());
+      map.get(ym.y).add(ym.m);
+    }
+
+    const years = Array.from(map.keys()).sort((a, b) => a - b);
+    const monthsByYear = new Map();
+    years.forEach((y) => {
+      const months = Array.from(map.get(y)).sort((a, b) => a - b);
+      monthsByYear.set(y, months);
+    });
+
+    return {years, monthsByYear};
+  }, [availableYMs]);
+
   const years = useMemo(() => {
+    if (Array.isArray(availableYMs)) return available?.years ?? [];
     const from = yearFrom ?? baseYear - 50;
     const to = yearTo ?? baseYear + 50;
-
     const a = Math.min(from, to);
     const b = Math.max(from, to);
-
     return range(a, b);
-  }, [baseYear, yearFrom, yearTo]);
-
-  const months = useMemo(() => range(1, 12), []);
+  }, [available, baseYear, yearFrom, yearTo]);
 
   const [yearIdx, setYearIdx] = useState(0);
   const [monthIdx, setMonthIdx] = useState(0);
+
+  const selectedYear = years[yearIdx] ?? initialYear;
+
+  const months = useMemo(() => {
+    if (available) return available.monthsByYear.get(selectedYear) ?? [];
+    return range(1, 12);
+  }, [available, selectedYear]);
 
   useEffect(() => {
     if (!visible) return;
 
     const yi = years.indexOf(initialYear);
-    const mi = months.indexOf(initialMonth);
+    const nextYearIdx = yi >= 0 ? yi : 0;
 
-    setYearIdx(yi >= 0 ? yi : 0);
-    setMonthIdx(mi >= 0 ? mi : 0);
-  }, [visible, initialYear, initialMonth, years, months]);
+    const nextYear = years[nextYearIdx] ?? initialYear;
+    const list = available ? available.monthsByYear.get(nextYear) ?? [] : months;
+
+    const mi = list.indexOf(initialMonth);
+    const nextMonthIdx = mi >= 0 ? mi : 0;
+
+    setYearIdx(nextYearIdx);
+    setMonthIdx(nextMonthIdx);
+  }, [visible, initialYear, initialMonth, years, available]);
+
+  useEffect(() => {
+    if (!visible) return;
+    if (!months || months.length === 0) {
+      setMonthIdx(0);
+      return;
+    }
+    if (monthIdx > months.length - 1) setMonthIdx(0);
+  }, [visible, months, monthIdx]);
 
   const handleMove = useCallback(() => {
     const y = years[yearIdx] ?? initialYear;
@@ -62,59 +114,49 @@ export default function YearMonthWheelModal({
   }, [years, months, yearIdx, monthIdx, initialYear, initialMonth, onConfirm]);
 
   return (
-    <Modal visible={visible} transparent animationType="fade">
-      {/* dim */}
-      <Pressable style={styles.backdrop} onPress={onCancel} />
+      <Modal visible={visible} transparent animationType="fade">
+        <Pressable style={styles.backdrop} onPress={onCancel} />
 
-      {/* sheet */}
-      <View style={styles.sheet}>
-        {/* header: title + close */}
-        <View style={styles.header}>
-          <View style={styles.headerSide} />
-          <Text style={styles.title}>{title}</Text>
-          <TouchableOpacity
-            activeOpacity={0.8}
-            onPress={onCancel}
-            style={styles.closeBtn}
-            hitSlop={10}
-          >
-            <Text style={styles.closeText}>×</Text>
-          </TouchableOpacity>
-        </View>
+        <View style={styles.sheet}>
+          <View style={styles.header}>
+            <View style={styles.headerSide} />
+            <Text style={styles.title}>{title}</Text>
+            <TouchableOpacity activeOpacity={0.8} onPress={onCancel} style={styles.closeBtn} hitSlop={10}>
+              <Text style={styles.closeText}>×</Text>
+            </TouchableOpacity>
+          </View>
 
-        {/* wheels */}
-        <View style={styles.wheelRow}>
-          <WheelColumn
-            data={years}
-            selectedIndex={yearIdx}
-            onChangeIndex={setYearIdx}
-            renderLabel={(y) => `${y}년`}
-            containerStyle={styles.wheelColBox}
-            textStyle={styles.wheelText}
-            activeTextStyle={styles.wheelTextActive}
-          />
-          <WheelColumn
-            data={months}
-            selectedIndex={monthIdx}
-            onChangeIndex={setMonthIdx}
-            renderLabel={(m) => `${m}월`}
-            containerStyle={styles.wheelColBox}
-            textStyle={styles.wheelText}
-            activeTextStyle={styles.wheelTextActive}
-          />
+          <View style={styles.wheelRow}>
+            <WheelColumn
+                data={years}
+                selectedIndex={yearIdx}
+                onChangeIndex={(idx) => {
+                  setYearIdx(idx);
+                  setMonthIdx(0);
+                }}
+                renderLabel={(y) => `${y}년`}
+                containerStyle={styles.wheelColBox}
+                textStyle={styles.wheelText}
+                activeTextStyle={styles.wheelTextActive}
+            />
+            <WheelColumn
+                data={months}
+                selectedIndex={monthIdx}
+                onChangeIndex={setMonthIdx}
+                renderLabel={(m) => `${m}월`}
+                containerStyle={styles.wheelColBox}
+                textStyle={styles.wheelText}
+                activeTextStyle={styles.wheelTextActive}
+            />
+          </View>
+
+          <View style={styles.buttonSection}>
+            <TouchableOpacity activeOpacity={0.9} onPress={handleMove} style={styles.moveBtn}>
+              <Text style={styles.moveBtnText}>{moveText}</Text>
+            </TouchableOpacity>
+          </View>
         </View>
-        {/* bottom CTA */}
-        <View style={styles.buttonSection}>
-          <TouchableOpacity
-            activeOpacity={0.9}
-            onPress={handleMove}
-            style={styles.moveBtn}
-          >
-            <Text style={styles.moveBtnText}>{moveText}</Text>
-          </TouchableOpacity>
-        </View>
-      </View>
-    </Modal>
+      </Modal>
   );
 }
 
@@ -148,7 +190,7 @@ const styles = StyleSheet.create({
     // borderWidth: 1,
     // marginBottom: 12,
   },
-  headerSide: {width: 34, height: 18}, // title center 정렬용 더미
+  headerSide: {width: 34, height: 18},
   title: {
     fontFamily: "Pretendard-SemiBold",
     fontSize: 16,

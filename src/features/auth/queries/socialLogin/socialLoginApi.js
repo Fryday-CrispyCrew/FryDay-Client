@@ -5,6 +5,7 @@ import { saveAccessToken, saveRefreshToken } from "../../../../shared/lib/storag
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import * as SecureStore from "expo-secure-store";
 import { STEP_KEY } from "../../../../shared/constants/onboardingStep";
+import dayjs from "dayjs";
 
 async function persistLoginResult(data, deviceId) {
     await Promise.all([
@@ -24,6 +25,12 @@ async function persistLoginResult(data, deviceId) {
             SecureStore.setItemAsync("nickname", nick),
         ]);
     }
+    const joinedMonth =
+        data?.user?.createdAt
+            ? dayjs(data.user.createdAt).format("YYYY-MM")
+            : dayjs().format("YYYY-MM");
+
+    await AsyncStorage.setItem("joinedMonth", joinedMonth);
 
     await AsyncStorage.setItem(STEP_KEY, String(data?.onboardingStatus ?? ""));
 }
