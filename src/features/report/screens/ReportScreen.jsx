@@ -1,6 +1,7 @@
-import React, {useMemo, useState, useEffect, useCallback} from "react";
+import React, {useMemo, useState, useEffect, useCallback, useRef} from "react";
 import {ScrollView} from "react-native";
 import {SafeAreaView} from "react-native-safe-area-context";
+import {useFocusEffect} from "@react-navigation/native";
 import dayjs from "dayjs";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import * as SecureStore from "expo-secure-store";
@@ -12,112 +13,160 @@ import ReportCategoryCard from "../components/ReportCategoryCard";
 
 import {getReport} from "../api/reportApi";
 import YearMonthWheelModal from "../../todo/components/RepeatSettingsSection/wheel/YearMonthWheelModal";
-
 function mapAttendanceIconToCaseType(attendanceIcon) {
     if (attendanceIcon === "EXCELLENT") return "A";
     if (attendanceIcon === "GOOD") return "B";
     return "C";
 }
 
-const ZERO_REPORT = {attendanceIcon: "POOR", categories: []};
+function parseJoinedMonthToDate(input) {
+    if (!input) return null;
+    const s = String(input).trim();
+    const m = /(\d{4})-(\d{1,2})/.exec(s);
+    if (!m) return null;
+
+    const y = Number(m[1]);
+    const mo = Number(m[2]);
+    if (!y || mo < 1 || mo > 12) return null;
+
+    return dayjs().year(y).month(mo - 1).startOf("month");
+}
 
 export default function ReportScreen() {
-    const [currentDate, setCurrentDate] = useState(dayjs().startOf("month"));
+    const nowMonth = useMemo(() => dayjs().startOf("month"), []);
+    const prevMonth = useMemo(() => dayjs().subtract(1, "month").startOf("month"), []);
+
+    const [currentDate, setCurrentDate] = useState(nowMonth);
     const [reportData, setReportData] = useState(null);
 
     const [nickname, setNickname] = useState("");
-    const [joinedMonth, setJoinedMonth] = useState(null);
+    const [joinedMonth, setJoinedMonth] = useState("");
 
-    const lastMonth = useMemo(() => dayjs().subtract(1, "month").startOf("month"), []);
+    const [isYMModalOpen, setIsYMModalOpen] = useState(false);
+    const openYMModal = useCallback(() => setIsYMModalOpen(true), []);
+    const closeYMModal = useCallback(() => setIsYMModalOpen(false), []);
 
-    useEffect(() => {
-        let alive = true;
+    const joinedMonthDate = useMemo(() => parseJoinedMonthToDate(joinedMonth), [joinedMonth]);
 
-        (async () => {
-            const jm = await AsyncStorage.getItem("joinedMonth");
-            if (alive && jm) setJoinedMonth(jm);
+    // 정책: 회원가입월 ~ 이번달. 표시는 "이전달, 이번달" 중 가입월 이후만 허용
+    const allowedMonths = useMemo(() => {
+        const base = [prevMonth, nowMonth];
+        if (!joinedMonthDate) return base;
 
-            const nick = await SecureStore.getItemAsync("nickname");
-            if (alive && nick) setNickname(nick);
-        })();
+        const filtered = base.filter((d) => !d.isBefore(joinedMonthDate, "month"));
+        return filtered.length ? filtered : [nowMonth];
+    }, [joinedMonthDate, prevMonth, nowMonth]);
 
-        return () => {
-            alive = false;
-        };
-    }, []);
-
-    const joinedMonthDate = useMemo(
-        () => (joinedMonth ? dayjs(joinedMonth, "YYYY-MM").startOf("month") : null),
-        [joinedMonth]
+    const allowedMonthKeys = useMemo(
+        () => new Set(allowedMonths.map((d) => d.format("YYYY-MM"))),
+        [allowedMonths]
     );
 
-    const maxMonth = useMemo(() => {
-        const lastMonth = dayjs().subtract(1, "month").startOf("month");
-        if (!joinedMonthDate) return lastMonth;
-
-        // 가입월이 지난달보다 "더 최근"이면(=이번달 가입) 가입월까지 허용
-        return joinedMonthDate.isAfter(lastMonth, "month") ? joinedMonthDate : lastMonth;
-    }, [joinedMonthDate]);
-
-
-
     useEffect(() => {
-        if (!joinedMonthDate) return;
-        if (currentDate.isAfter(maxMonth, "month")) setCurrentDate(maxMonth);
-        if (currentDate.isBefore(joinedMonthDate, "month")) setCurrentDate(joinedMonthDate);
-    }, [joinedMonthDate, maxMonth]);
+        const key = currentDate.format("YYYY-MM");
+        if (!allowedMonthKeys.has(key)) setCurrentDate(allowedMonths[allowedMonths.length - 1]);
+    }, [allowedMonthKeys, allowedMonths, currentDate]);
 
-    const year = useMemo(() => dayjs(currentDate).year(), [currentDate]);
-    const month = useMemo(() => dayjs(currentDate).month() + 1, [currentDate]);
-    const viewingYM = useMemo(() => dayjs(currentDate).format("YYYY-MM"), [currentDate]);
-
-    const isJoinedMonthView = useMemo(() => {
-        if (!joinedMonthDate) return false;
-        return dayjs(currentDate).isSame(joinedMonthDate, "month");
-    }, [currentDate, joinedMonthDate]);
+    const year = useMemo(() => currentDate.year(), [currentDate]);
+    const month = useMemo(() => currentDate.month() + 1, [currentDate]);
 
     const handleChangeMonth = useCallback(
         (nextDate) => {
             const next = dayjs(nextDate).startOf("month");
-            if (joinedMonthDate && next.isBefore(joinedMonthDate, "month")) return;
-            if (next.isAfter(maxMonth, "month")) return;
+            if (!allowedMonthKeys.has(next.format("YYYY-MM"))) return;
             setCurrentDate(next);
         },
-        [joinedMonthDate, maxMonth]
+        [allowedMonthKeys]
+    );
+
+    const handleConfirmYM = useCallback(
+        (y, m) => {
+            const next = dayjs().year(y).month(m - 1).startOf("month");
+            if (!allowedMonthKeys.has(next.format("YYYY-MM"))) return;
+            setCurrentDate(next);
+            setIsYMModalOpen(false);
+        },
+        [allowedMonthKeys]
+    );
+
+    const availableYMs = useMemo(
+        () => allowedMonths.map((d) => ({year: d.year(), month: d.month() + 1})),
+        [allowedMonths]
+    );
+
+    const lastFetchKeyRef = useRef("");
+
+    const refreshOnFocus = useCallback(async () => {
+        const jmRaw = await AsyncStorage.getItem("joinedMonth");
+        const jmDate = parseJoinedMonthToDate(jmRaw);
+
+        const joinedAtStr = jmDate ? jmDate.format("YYYY-MM") : (jmRaw ? String(jmRaw) : "");
+        setJoinedMonth(joinedAtStr);
+
+        const nick = await SecureStore.getItemAsync("nickname");
+        if (nick) setNickname(nick);
+
+        const base = [prevMonth, nowMonth];
+        const allowed = jmDate
+            ? (base.filter((d) => !d.isBefore(jmDate, "month")).length
+                ? base.filter((d) => !d.isBefore(jmDate, "month"))
+                : [nowMonth])
+            : base;
+
+        const allowedKeys = new Set(allowed.map((d) => d.format("YYYY-MM")));
+
+        let target = currentDate;
+        if (!allowedKeys.has(target.format("YYYY-MM"))) target = allowed[allowed.length - 1];
+
+        const fetchKey = `${target.format("YYYY-MM")}`;
+        if (lastFetchKeyRef.current === fetchKey) return;
+        lastFetchKeyRef.current = fetchKey;
+
+        setCurrentDate(target);
+
+        try {
+            const data = await getReport(target.year(), target.month() + 1);
+            setReportData(data);
+        } catch {
+            setReportData(null);
+        }
+    }, [currentDate, nowMonth, prevMonth]);
+
+    useFocusEffect(
+        useCallback(() => {
+            let alive = true;
+
+            (async () => {
+                try {
+                    await refreshOnFocus();
+                } finally {
+                    if (!alive) return;
+                }
+            })();
+
+            return () => {
+                alive = false;
+            };
+        }, [refreshOnFocus])
     );
 
     useEffect(() => {
-        let alive = true;
+        const key = currentDate.format("YYYY-MM");
+        if (!allowedMonthKeys.has(key)) return;
+
+        const fetchKey = `${key}`;
+        if (lastFetchKeyRef.current === fetchKey) return;
+        lastFetchKeyRef.current = fetchKey;
 
         (async () => {
-            if (!joinedMonthDate) return;
-
-            if (isJoinedMonthView) {
-                if (!alive) return;
-                setReportData(ZERO_REPORT);
-                return;
-            }
-
-            if (dayjs(currentDate).isAfter(maxMonth, "month")) {
-                if (!alive) return;
-                setReportData(null);
-                return;
-            }
-
             try {
                 const data = await getReport(year, month);
-                if (!alive) return;
                 setReportData(data);
             } catch {
-                if (!alive) return;
                 setReportData(null);
             }
         })();
-
-        return () => {
-            alive = false;
-        };
-    }, [joinedMonthDate, isJoinedMonthView, currentDate, maxMonth, year, month]);
+    }, [currentDate, allowedMonthKeys, year, month]);
 
     const report = useMemo(() => {
         const payload = reportData?.data ?? reportData;
@@ -129,15 +178,12 @@ export default function ReportScreen() {
             ? payload.categories
                 .filter(Boolean)
                 .map((c) => {
-                    const total = Number(c?.["totalTodos"] ?? 0);
-                    const success = Number(c?.["completedTodos"] ?? 0);
-                    const fail =
-                        c?.["incompleteTodos"] != null
-                            ? Number(c?.["incompleteTodos"])
-                            : Math.max(0, total - success);
+                    const total = Number(c?.totalTodos ?? 0);
+                    const success = Number(c?.completedTodos ?? 0);
+                    const fail = c?.incompleteTodos != null ? Number(c.incompleteTodos) : Math.max(0, total - success);
 
                     return {
-                        name: c?.["categoryName"] ?? "카테고리",
+                        name: c?.categoryName ?? "카테고리",
                         total,
                         success,
                         fail,
@@ -160,42 +206,6 @@ export default function ReportScreen() {
         );
     }, [report.categories]);
 
-    const [isYMModalOpen, setIsYMModalOpen] = useState(false);
-
-    const openYMModal = useCallback(() => setIsYMModalOpen(true), []);
-    const closeYMModal = useCallback(() => setIsYMModalOpen(false), []);
-
-    const yearFrom = joinedMonthDate ? joinedMonthDate.year() : currentDate.year();
-    const yearTo = maxMonth.year();
-
-    const handleConfirmYM = useCallback(
-        (year, month) => {
-            const next = dayjs().year(year).month(month - 1).startOf("month");
-
-            if (joinedMonthDate && next.isBefore(joinedMonthDate, "month")) return;
-            if (next.isAfter(maxMonth, "month")) return;
-
-            setCurrentDate(next);
-            setIsYMModalOpen(false);
-        },
-        [joinedMonthDate, maxMonth]
-    );
-
-    const isSelectableMonth = useCallback(
-        (y, m) => {
-            const target = dayjs().year(y).month(m - 1).startOf("month");
-            if (joinedMonthDate && target.isBefore(joinedMonthDate, "month")) return false;
-            if (target.isAfter(maxMonth, "month")) return false;
-            return true;
-        },
-        [joinedMonthDate, maxMonth]
-    );
-
-    const isMoveDisabled = useCallback(
-        (y, m) => !isSelectableMonth(y, m),
-        [isSelectableMonth]
-    );
-
     return (
         <SafeAreaView className="flex-1 bg-wt" edges={["top"]}>
             <ReportHeader
@@ -205,30 +215,21 @@ export default function ReportScreen() {
                 onPressYearMonth={openYMModal}
             />
 
-            <ScrollView
-                className="flex-1"
-                contentContainerStyle={{paddingBottom: 32}}
-                showsVerticalScrollIndicator={false}
-            >
+            <ScrollView className="flex-1" contentContainerStyle={{paddingBottom: 32}} showsVerticalScrollIndicator={false}>
                 <ReportHeroCard caseType={report.caseType} nickname={nickname} />
 
-                <ReportTotalSection
-                    total={totals.total}
-                    completed={totals.completed}
-                    failed={totals.failed}
-                />
+                <ReportTotalSection total={totals.total} completed={totals.completed} failed={totals.failed} />
 
                 <ReportCategoryCard data={report.categories} />
             </ScrollView>
 
             <YearMonthWheelModal
                 visible={isYMModalOpen}
-                initialYear={currentDate.year()}
-                initialMonth={currentDate.month() + 1}
+                initialYear={allowedMonths[allowedMonths.length - 1].year()}
+                initialMonth={allowedMonths[allowedMonths.length - 1].month() + 1}
                 onCancel={closeYMModal}
                 onConfirm={handleConfirmYM}
-                yearFrom={joinedMonthDate ? joinedMonthDate.year() : currentDate.year()}
-                yearTo={maxMonth.year()}
+                availableYMs={availableYMs}
             />
         </SafeAreaView>
     );
