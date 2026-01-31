@@ -121,7 +121,7 @@ export default function ReportScreen() {
                 if (alive && nick) setNickname(nick);
 
                 const fetchKey = `${year}-${String(month).padStart(2, "0")}`;
-                if (lastSuccessKeyRef.current === fetchKey) return;
+                // if (lastSuccessKeyRef.current === fetchKey) return;
 
                 try {
                     const data = await getReport(year, month);
