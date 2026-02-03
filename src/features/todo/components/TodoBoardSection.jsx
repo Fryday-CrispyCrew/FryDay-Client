@@ -1,6 +1,7 @@
 // src/features/todo/components/TodoBoardSection.jsx
 import React, {useMemo, useState, useCallback} from "react";
-import {Image, ScrollView, StyleSheet, View} from "react-native";
+import {Image, StyleSheet, View} from "react-native";
+import {NestableScrollContainer} from "react-native-draggable-flatlist";
 import TodoCard from "./TodoCard";
 import TodoEditorSheet from "./TodoEditorSheet/TodoEditorSheet";
 import ErrorImage from "../../../shared/assets/png/error-icon.png";
@@ -148,7 +149,7 @@ export default function TodoBoardSection({
 
   return (
     <>
-      <ScrollView
+      <NestableScrollContainer
         style={{flex: 1}}
         contentContainerStyle={{paddingBottom: 36}}
         showsVerticalScrollIndicator={false}
@@ -240,7 +241,7 @@ export default function TodoBoardSection({
             }}
           />
         )}
-      </ScrollView>
+      </NestableScrollContainer>
 
       <TodoEditorSheet
         {...editor.sheetProps}
