@@ -15,7 +15,7 @@ const TYPO = {
   pointM : "font-pretendard-bold text-body-xl",
 
   // Body L
-  L400: "font-pretendard-regular text-body-l",
+  L400: "font-pretendard-regular text-body-l leading-5 tracking-tight",
   L500: "font-pretendard-medium text-body-l",
   L600: "font-pretendard-semibold text-body-l",
 
@@ -25,8 +25,8 @@ const TYPO = {
   M600: "font-pretendard-semibold text-body-m",
 
   // Body S
-  S400: "font-pretendard-regular text-body-s",
-  S500: "font-pretendard-medium text-body-s",
+  S400: "font-pretendard-regular text-body-s leading-4 tracking-tight",
+  S500: "font-pretendard-medium text-body-s leading-4 tracking-tight",
   S600: "font-pretendard-semibold text-body-s",
   S700: "font-pretendard-bold text-body-s",
 };
