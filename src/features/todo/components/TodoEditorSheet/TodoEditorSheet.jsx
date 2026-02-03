@@ -8,7 +8,6 @@ import {
   ScrollView,
   TouchableOpacity,
   Keyboard,
-  Platform,
 } from "react-native";
 import {
   BottomSheetModal,
@@ -1131,12 +1130,12 @@ const TodoEditorSheet = React.forwardRef(function TodoEditorSheet(
       backgroundStyle={{backgroundColor: "#FAFAFA"}}
       handleIndicatorStyle={{backgroundColor: "#D0D0D0", width: "38.4%"}}
       enableContentPanningGesture={false} // ✅ content로는 시트 이동 X (고정)
-      bottomInset={Platform.OS === "ios" ? 0 : insets.bottom}
+      bottomInset={insets.bottom}
       enablePanDownToClose={false}
       // detached={true}
     >
       <BottomSheetView>
-        <View style={[styles.container, Platform.OS === "ios" && {paddingBottom: 15}]}>
+        <View style={styles.container}>
           {/* (선택) 로딩 표시 */}
           {mode === "edit" && (isTodoDetailLoading || isTodoDetailFetching) ? (
             <Text style={{fontSize: 12, color: "#B0B0B0", marginBottom: 8}}>
