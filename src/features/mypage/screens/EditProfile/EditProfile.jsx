@@ -30,6 +30,7 @@ import { useAccountActions } from "../../hook/useAccountActions";
 const HAS_KOREAN_JAMO = /[\u3131-\u318E\u1100-\u11FF\uA960-\uA97F\uD7B0-\uD7FF]/;
 const FINAL_ALLOWED_REGEX = /^[가-힣a-zA-Z0-9]+$/;
 const NICKNAME_MAX = 10;
+import LottieView from "lottie-react-native";
 
 export default function EditProfile({ navigation }) {
     const { width, height } = useWindowDimensions();
@@ -59,6 +60,8 @@ export default function EditProfile({ navigation }) {
     const containerWidth = Math.min(width - 40, 520);
     const errorWidth = Math.min(Math.max(180, containerWidth * 0.55), 280);
     const contentPaddingBottom = Math.max(24, Math.min(48, height * 0.04));
+
+    const [isDeleting, setIsDeleting] = useState(false);
 
     const errorMessage = useMemo(() => {
         if (nicknameError === "duplicate") return "이미 사용중인 닉네임이에요";
@@ -152,6 +155,18 @@ export default function EditProfile({ navigation }) {
             Keyboard.dismiss();
         } catch {
             setNicknameError("network");
+        }
+    };
+
+    const onConfirmDelete = async () => {
+        if (isDeleting) return;
+        setModalType(null);
+        setIsDeleting(true);
+
+        try {
+            await deleteAccount();
+        } finally {
+            setIsDeleting(false);
         }
     };
 
@@ -313,9 +328,30 @@ export default function EditProfile({ navigation }) {
                 secondaryText="아니요, 계속 튀길래요!"
                 primaryText="네, 삭제할래요"
                 onSecondary={() => setModalType(null)}
-                onPrimary={deleteAccount}
+                onPrimary={onConfirmDelete}
                 containerWidth={containerWidth}
             />
+            {isDeleting ? (
+                <View
+                    style={{
+                        position: "absolute",
+                        top: 0, left: 0, right: 0, bottom: 0,
+                        backgroundColor: "rgba(0,0,0,0.35)",
+                        alignItems: "center",
+                        justifyContent: "center",
+                        zIndex: 9999,
+                    }}
+                    pointerEvents="auto"
+                >
+                    <LottieView
+                        source={require("../../assets/lottie/loading.json")}
+                        autoPlay
+                        loop
+                        style={{ width: 250, height: 250 }}
+                    />
+                </View>
+            ) : null}
+
         </SafeAreaView>
     );
 }
