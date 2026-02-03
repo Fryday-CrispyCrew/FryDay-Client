@@ -3,11 +3,11 @@ import AppText from "../../../shared/components/AppText";
 
 export default function SystemBox({title, content}) {
     return(
-        <View className="py-3 gap-2">
+        <View className="py-3 px-5 gap-2">
             <AppText variant="M500" className="text-gr500">
                 {title}
             </AppText>
-            <AppText variant="L400" className="text-bk text-center">
+            <AppText variant="L400" className="text-bk">
                 {content}
             </AppText>
         </View>
