@@ -24,7 +24,7 @@ export default function MyProfileScreen() {
                 <MyPageMenu menuTitle="계정 설정" to="EditProfile" />
                 <MyPageMenu menuTitle="알림 설정" to="Alarm" />
 
-                <MyPageMenu menuTitle="이용 정책" to="Use" />
+                <MyPageMenu menuTitle="이용 약관" to="Use" />
                 <MyPageMenu menuTitle="자주 묻는 질문" to="Qna" />
 
                 <MyPageMenu menuTitle="버전 정보" rightText="1.1ver" hideArrow />
