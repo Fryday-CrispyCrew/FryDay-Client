@@ -106,11 +106,18 @@ export default function EditProfile({ navigation }) {
 
     const onChangeNickname = (text) => {
         const raw = text ?? "";
-        setDraftNickName(raw);
 
-        if (nicknameError && raw.trim().length <= NICKNAME_MAX) {
-            setNicknameError(null);
-        }
+        // 한글 완성형 + 자모 + 영문 + 숫자 + 공백 허용
+        const filtered = raw.replace(
+            /[^가-힣ㄱ-ㅎㅏ-ㅣa-zA-Z0-9\s]/g,
+            ""
+        );
+
+        const limited = filtered.slice(0, NICKNAME_MAX);
+
+        setDraftNickName(limited);
+
+        if (nicknameError) setNicknameError(null);
     };
 
     const finishEdit = async () => {
