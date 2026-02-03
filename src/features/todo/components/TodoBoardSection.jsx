@@ -24,6 +24,7 @@ export default function TodoBoardSection({
   navigation,
   date, // ✅ Home/Calendar에서 넘겨주는 선택 날짜(YYYY-MM-DD)
   isViewingToday,
+  ListHeaderComponent,
 }) {
   const {open, close} = useModalStore();
 
@@ -59,6 +60,7 @@ export default function TodoBoardSection({
         date: t.date,
         recurrenceId: t.recurrenceId,
         occurrenceDate: t.occurrenceDate,
+        memo: t.memo ?? "",
       }));
   }, [rawTodos]);
 
@@ -155,6 +157,7 @@ export default function TodoBoardSection({
         showsVerticalScrollIndicator={false}
         keyboardShouldPersistTaps="handled"
       >
+        {ListHeaderComponent}
         {shouldShowBoardError ? (
           <View style={styles.errorContainer}>
             <Image

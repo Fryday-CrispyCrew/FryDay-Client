@@ -291,7 +291,7 @@ const TodoEditorSheet = React.forwardRef(function TodoEditorSheet(
   },
   ref,
 ) {
-  // const insets = useSafeAreaInsets();
+  const insets = useSafeAreaInsets();
   const repeatPayload = useRepeatEditorStore.getState().getRepeatPayload();
 
   const EDIT_TOOL_ICONS = [
@@ -1135,7 +1135,7 @@ const TodoEditorSheet = React.forwardRef(function TodoEditorSheet(
       // detached={true}
     >
       <BottomSheetView>
-        <View style={styles.container}>
+        <View style={[styles.container, {paddingBottom: Math.min(insets.bottom, 15)}]}>
           {/* (선택) 로딩 표시 */}
           {mode === "edit" && (isTodoDetailLoading || isTodoDetailFetching) ? (
             <Text style={{fontSize: 12, color: "#B0B0B0", marginBottom: 8}}>
@@ -1532,7 +1532,7 @@ const styles = StyleSheet.create({
     // flex: 1,
     paddingHorizontal: 20,
     paddingTop: 8,
-    paddingBottom: 15,
+    // paddingBottom: 16,
   },
 
   categoryInlineRow: {
