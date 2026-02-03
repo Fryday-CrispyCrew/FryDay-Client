@@ -38,7 +38,9 @@ export default function MyPageMenu({
                     ) : null}
 
                     {!hideArrow && !rightText ? (
-                        <Arrow width={14} height={14} />
+                        <View className="w-4 h-4">
+                            <Arrow width="100%" height="100%" />
+                        </View>
                     ) : null}
                 </View>
             </View>
