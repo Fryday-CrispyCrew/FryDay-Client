@@ -37,7 +37,7 @@ export default function EditProfile({ navigation }) {
 
     const [nickName, setNickName] = useState("");
     const [draftNickName, setDraftNickName] = useState("");
-    const [email] = useState("usermail@fry.com");
+    const [email, setEmail] = useState("");
 
     const [isEditing, setIsEditing] = useState(false);
     const [modalType, setModalType] = useState(null);
@@ -71,15 +71,22 @@ export default function EditProfile({ navigation }) {
     useEffect(() => {
         let alive = true;
         (async () => {
-            const [a, s] = await Promise.all([
+            const [aNick, sNick, aEmail, sEmail] = await Promise.all([
                 AsyncStorage.getItem("nickname"),
                 SecureStore.getItemAsync("nickname"),
+                AsyncStorage.getItem("email"),
+                SecureStore.getItemAsync("email"),
             ]);
             if (!alive) return;
-            const saved = (a ?? s ?? "").trim();
-            if (saved) {
-                setNickName(saved);
-                setDraftNickName(saved);
+            const savedNick = (aNick ?? sNick ?? "").trim();
+            if (savedNick) {
+                setNickName(savedNick);
+                setDraftNickName(savedNick);
+            }
+
+            const savedEmail = (aEmail ?? sEmail ?? "").trim();
+            if (savedEmail) {
+                setEmail(savedEmail);
             }
         })();
         return () => {

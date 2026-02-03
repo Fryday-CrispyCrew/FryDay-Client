@@ -26,6 +26,14 @@ async function persistLoginResult(data, deviceId) {
         ]);
     }
 
+    const email = String(data?.user?.email ?? "").trim();
+    if (email) {
+        await Promise.allSettled([
+            AsyncStorage.setItem("email", email),
+            SecureStore.setItemAsync("email", email),
+        ]);
+    }
+
     const prevJoinedMonth = await AsyncStorage.getItem("joinedMonth");
     const createdAt = data?.user?.createdAt;
     const nextJoinedMonth = createdAt ? dayjs(createdAt).format("YYYY-MM") : null;

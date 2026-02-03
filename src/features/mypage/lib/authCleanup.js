@@ -9,6 +9,7 @@ export async function clearStorageAndSecure() {
         SecureStore.deleteItemAsync("refreshToken"),
         SecureStore.deleteItemAsync("nickname"),
         SecureStore.deleteItemAsync("hasOnboarded"),
+        SecureStore.deleteItemAsync("email"),
         SecureStore.deleteItemAsync(STEP_KEY),
         SecureStore.deleteItemAsync("deviceId"),
     ]);
