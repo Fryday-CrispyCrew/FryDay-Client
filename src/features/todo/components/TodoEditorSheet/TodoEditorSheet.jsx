@@ -291,7 +291,7 @@ const TodoEditorSheet = React.forwardRef(function TodoEditorSheet(
   },
   ref,
 ) {
-  const insets = useSafeAreaInsets();
+  // const insets = useSafeAreaInsets();
   const repeatPayload = useRepeatEditorStore.getState().getRepeatPayload();
 
   const EDIT_TOOL_ICONS = [
@@ -885,6 +885,11 @@ const TodoEditorSheet = React.forwardRef(function TodoEditorSheet(
     }
     // ✅ 알림 신규 설정/시간 변경
     else if (initialNotifyAt !== currentNotifyAt && currentNotifyAt) {
+      const alarmDate = new Date(currentNotifyAt);
+      if (alarmDate < new Date()) {
+        toast.show("알림 시간은 현재 시간 이후로 설정해야 합니다.");
+        return; // 여기서 중단
+      }
       tasks.push(setAlarm({todoId: numericTodoId, notifyAt: currentNotifyAt}));
     }
 
@@ -982,8 +987,12 @@ const TodoEditorSheet = React.forwardRef(function TodoEditorSheet(
       await Promise.all(tasks);
       onCloseAfterSubmit?.(); // ✅ 모달 없이 즉시 닫기
     } catch (e) {
-      // axios interceptor에서 토스트 처리 중이면 여기서는 조용히
-      // 필요하면 추가 toast 가능
+      // ✅ 백엔드 에러 메시지 우선 표시
+      const message = e?.response?.data?.message;
+      if (message) {
+        toast.show(message);
+      }
+      // 그 외에는 api.js의 인터셉터가 제네릭 토스트 처리
     }
   }, [
     mode,
@@ -1121,7 +1130,7 @@ const TodoEditorSheet = React.forwardRef(function TodoEditorSheet(
       backgroundStyle={{backgroundColor: "#FAFAFA"}}
       handleIndicatorStyle={{backgroundColor: "#D0D0D0", width: "38.4%"}}
       enableContentPanningGesture={false} // ✅ content로는 시트 이동 X (고정)
-      bottomInset={insets.bottom}
+      bottomInset={0}
       enablePanDownToClose={false}
       // detached={true}
     >
@@ -1294,10 +1303,16 @@ const TodoEditorSheet = React.forwardRef(function TodoEditorSheet(
                   <TodoBottomSheetTextInput
                     inputRef={memoInputRef}
                     value={memoText}
-                    onChangeText={setMemoText}
+                    onChangeText={(text) => {
+                      if (text.length > 100) {
+                        toast.show("메모는 100자까지 입력 가능합니다.");
+                        return;
+                      }
+                      setMemoText(text);
+                    }}
                     onEnabledChange={() => {}}
                     placeholder="기억해야 할 메모를 입력해 주세요."
-                    maxLength={200}
+                    maxLength={101}
                     multiline
                     blurOnSubmit={false}
                     scrollEnabled
@@ -1517,7 +1532,7 @@ const styles = StyleSheet.create({
     // flex: 1,
     paddingHorizontal: 20,
     paddingTop: 8,
-    // paddingBottom: 16,
+    paddingBottom: 15,
   },
 
   categoryInlineRow: {
