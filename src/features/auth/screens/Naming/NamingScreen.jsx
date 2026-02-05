@@ -1,44 +1,40 @@
-import React, {useCallback, useEffect, useRef, useState} from "react";
-import {
-    View,
-    Image,
-    TextInput,
-    TouchableOpacity,
-    useWindowDimensions,
-} from "react-native";
-import * as SecureStore from "expo-secure-store";
-import AppText from "../../../../shared/components/AppText";
+import React, {useCallback, useEffect, useMemo, useRef, useState} from "react";
+import {Platform, TextInput, TouchableOpacity, useWindowDimensions, View} from "react-native";
 import {SafeAreaView} from "react-native-safe-area-context";
-
-import Balloon from "../../assets/svg/naming-balloon.svg";
-import NamingArrow from "../../assets/svg/naming-arrow.svg";
+import * as SecureStore from "expo-secure-store";
 import AsyncStorage from "@react-native-async-storage/async-storage";
+import LottieView from "lottie-react-native";
+
+import AppText from "../../../../shared/components/AppText";
+import NamingArrow from "../../assets/svg/naming-arrow.svg";
+
 import {STEP_KEY, ONBOARDING_STEP} from "../../../../shared/constants/onboardingStep";
 import {deleteTokens} from "../../../../shared/lib/storage/tokenStorage";
-
 import {useCheckNicknameQuery} from "../../queries/nickname/useCheckNicknameQuery";
 import {useCreateMyNicknameMutation} from "../../queries/nickname/useCreateMyNicknameMutation";
 
 const HAS_KOREAN_JAMO = /[\u3131-\u318E\u1100-\u11FF\uA960-\uA97F\uD7B0-\uD7FF]/;
 const FINAL_ALLOWED_REGEX = /^[가-힣a-zA-Z0-9]+$/;
+const NICKNAME_MAX = 10;
 
-export default function NamingScreen({navigation}) {
+export default function NamingScreen({navigation, route}) {
     const {width, height} = useWindowDimensions();
+    const isNewUser = route?.params?.isNewUser ?? true;
 
-    const [name, setName] = useState("");
-    const trimmed = name.trim();
+    const [draft, setDraft] = useState("");
+    const trimmed = (draft ?? "").trim();
 
-    const NICKNAME_MAX = 10;
-    const isTooLong = trimmed.length > NICKNAME_MAX;
-    const isLengthValid = trimmed.length >= 2 && trimmed.length <= NICKNAME_MAX;
-
-    // null | "duplicate" | "invalid" | "tooLong" | "network"
     const [nicknameError, setNicknameError] = useState(null);
 
-    const onChangeName = (text) => {
-        setName(typeof text === "string" ? text : "");
+    const onChangeNickname = (text) => {
+        const raw = text ?? "";
+        const filtered = raw.replace(/[^가-힣ㄱ-ㅎㅏ-ㅣa-zA-Z0-9\s]/g, "");
+        const limited = filtered.slice(0, NICKNAME_MAX);
+        setDraft(limited);
         if (nicknameError) setNicknameError(null);
     };
+
+    const isLengthValid = trimmed.length >= 2 && trimmed.length <= NICKNAME_MAX;
 
     const [debouncedNickname, setDebouncedNickname] = useState("");
     const debounceRef = useRef(null);
@@ -68,35 +64,29 @@ export default function NamingScreen({navigation}) {
     const isCheckError = !!checkQuery?.isError;
 
     const available = debouncedNickname ? (checkQuery?.data?.available ?? null) : null;
-
     const isDuplicate = available === false;
 
-    const isValidForButton = isLengthValid && available === true;
+    const isNeutral = !trimmed || trimmed.length < 2;
+    const isError = !isNeutral && (!!nicknameError || isDuplicate || (!checking && isCheckError));
 
-    const balloonText = (() => {
-        if (!trimmed) return "이제 다 왔어요!\n마지막으로 당신의 이름을 알려주세요.";
-
-        if (nicknameError === "duplicate") return "아앗...\n이미 존재하는 닉네임이에요!";
+    const errorMessage = useMemo(() => {
+        if (nicknameError === "duplicate" || isDuplicate) return "이미 사용중인 닉네임이에요";
         if (nicknameError === "tooLong" || nicknameError === "invalid")
-            return "아차차...\n닉네임은 한/영문/숫자 10자까지 가능해요!";
-        if (nicknameError === "network") return "닉네임을 확인할 수 없어요.\n잠시 후 다시 시도해주세요.";
-        if (isTooLong) return "아차차...\n닉네임은 10자까지 입력 가능해요!";
-        if (isDuplicate) return "아앗...\n이미 존재하는 닉네임이에요!";
+            return "닉네임은 한/영문/숫자 10자까지 입력 가능해요";
+        if (nicknameError === "network") return "잠시 후 다시 시도해주세요.";
+        if (!checking && isCheckError) return "잠시 후 다시 시도해주세요.";
+        return "";
+    }, [nicknameError, isDuplicate, checking, isCheckError]);
 
-        if (isLengthValid && debouncedNickname && isCheckError && !checking)
-            return "닉네임을 확인할 수 없어요.\n잠시 후 다시 시도해주세요.";
+    const isValidForButton =
+        isLengthValid && !nicknameError && available === true && !isDuplicate && !isCheckError;
 
-        if (available === true) return "좋아요!\n가입하기 버튼을 눌러주세요.";
-        return "닉네임을 2~10자로 입력해주세요.";
-    })();
-
-    const {mutateAsync: createMyNickname, isPending: isSubmitting} =
-        useCreateMyNicknameMutation();
+    const {mutateAsync: createMyNickname, isPending: isSubmitting} = useCreateMyNicknameMutation();
 
     const validateBeforeSave = (v) => {
-        if (HAS_KOREAN_JAMO.test(v)) return "invalid";
         if (!v || v.length < 2) return "invalid";
         if (v.length > NICKNAME_MAX) return "tooLong";
+        if (HAS_KOREAN_JAMO.test(v)) return "invalid";
         if (!FINAL_ALLOWED_REGEX.test(v)) return "invalid";
         return null;
     };
@@ -114,17 +104,13 @@ export default function NamingScreen({navigation}) {
 
         try {
             const res = await checkQuery?.refetch?.();
-            // refetch 결과 형태에 안전하게 대응
-            const avail =
-                res?.data?.available ??
-                res?.data?.data?.available ??
-                null;
+            const avail = res?.data?.available ?? res?.data?.data?.available ?? null;
 
             if (avail === false) {
                 setNicknameError("duplicate");
                 return;
             }
-            if (avail === null) {
+            if (avail == null) {
                 setNicknameError("network");
                 return;
             }
@@ -157,36 +143,25 @@ export default function NamingScreen({navigation}) {
         }
     };
 
-    const [line1, line2] = balloonText.split("\n");
-
-    const balloonW = Math.min(width - 40, 360);
-    const balloonH = balloonW * (78 / 320);
-    const iconSize = Math.min(120, Math.max(96, width * 0.28));
-
-    const isNewUser = true;
-
-    const goBackToAuth = useCallback(async () => {
+    const goBackToConsent = useCallback(async () => {
         if (isNewUser) await deleteTokens();
-
         const rootNav = navigation.getParent("root") ?? navigation.getParent();
-        rootNav?.reset({index: 0, routes: [{name: "Auth"}]});
-    }, [navigation]);
+        rootNav?.reset({index: 0, routes: [{name: "Consent"}]});
+    }, [navigation, isNewUser]);
 
-    const balloonEmphasis =
-        nicknameError === "duplicate" ||
-        nicknameError === "invalid" ||
-        nicknameError === "tooLong" ||
-        isTooLong ||
-        isDuplicate
-            ? "error"
-            : "default";
+    const containerWidth = Math.min(width - 40, 520);
+    const errorWidth = Math.min(Math.max(180, containerWidth * 0.55), 280);
+    const topPad = Math.max(18, height * 0.03);
+
+    const LOTTIE_H = 260;
+    const lottieW = Math.min(width - 40, 520);
 
     return (
         <SafeAreaView className="flex-1 bg-wt">
             <View className="px-5 pt-4">
                 <TouchableOpacity
                     activeOpacity={0.5}
-                    onPress={goBackToAuth}
+                    onPress={goBackToConsent}
                     className="flex-row items-center gap-2 self-start"
                 >
                     <NamingArrow />
@@ -196,72 +171,85 @@ export default function NamingScreen({navigation}) {
                 </TouchableOpacity>
             </View>
 
-            <View className="flex-1 px-5">
-                <View className="items-center" style={{ paddingTop: Math.max(16, height * 0.03) }}>
-                    <View className="relative items-center justify-center">
-                        <Balloon width={balloonW} height={balloonH} />
-                        <View className="absolute px-4" style={{ paddingBottom: Math.max(6, balloonH * 0.12) }}>
-                            {balloonEmphasis === "error" ? (
-                                <>
-                                    <AppText variant="M500" className="text-gr900 text-center">
-                                        {line1}
-                                    </AppText>
-                                    <AppText variant="M600" className="text-or text-center mt-0.5">
-                                        {line2}
-                                    </AppText>
-                                </>
-                            ) : (
-                                <>
-                                    <AppText variant="M500" className="text-gr900 text-center">
-                                        {line1}
-                                    </AppText>
-                                    {line2 ? (
-                                        <AppText variant="M500" className="text-gr900 text-center mt-0.5">
-                                            {line2}
-                                        </AppText>
-                                    ) : null}
-                                </>
-                            )}
-                        </View>
-                    </View>
-
-                    <Image
-                        source={require("../../assets/png/naming-icon.png")}
-                        style={{ width: iconSize, height: iconSize, marginTop: Math.max(16, height * 0.02) }}
-                        resizeMode="contain"
+            <View className="flex-1 px-5" style={{paddingTop: topPad}}>
+                <View
+                    className="items-center justify-center"
+                    style={{ height: LOTTIE_H, width: lottieW, alignSelf: "center" }}
+                >
+                    <LottieView
+                        source={require("../../assets/lottie/nickname.json")}
+                        autoPlay
+                        loop
+                        resizeMode="cover"
+                        style={{ width: "100%", height: "100%" }}
                     />
                 </View>
 
-                <View style={{ marginTop: Math.max(20, height * 0.04) }}>
-                    <AppText variant="M500" className="text-gr500 mb-2">
+
+                <View className="flex-row justify-between items-start">
+                    <AppText variant="M500" className="text-gr500">
                         내 이름은...
                     </AppText>
 
+                    <View style={{width: errorWidth, alignItems: "flex-end"}}>
+                        {isError ? (
+                            <AppText
+                                variant="S400"
+                                className="text-red-500"
+                                numberOfLines={2}
+                                ellipsizeMode="tail"
+                                style={{textAlign: "right"}}
+                            >
+                                {errorMessage}
+                            </AppText>
+                        ) : null}
+                    </View>
+                </View>
+
+                <View
+                    className="bg-wt rounded-2xl px-4 py-4 mt-2"
+                    style={{
+                        width: containerWidth,
+                        alignSelf: "center",
+                        borderWidth: 1,
+                        borderColor: isError ? "#F97316" : "#E5E7EB",
+                    }}
+                >
                     <TextInput
-                        value={name}
-                        onChangeText={onChangeName}
+                        value={draft}
+                        onChangeText={onChangeNickname}
                         placeholder="닉네임을 10자 이내로 입력해 주세요"
                         placeholderTextColor="#BDBDBD"
-                        maxLength={12}
-                        className="bg-wt border border-gr200 rounded-2xl px-4 py-4 text-bk text-[14px]"
+                        maxLength={NICKNAME_MAX + 1}
+                        returnKeyType="done"
+                        onSubmitEditing={onSubmit}
+                        className="text-[14px] text-bk"
+                        style={{
+                            minHeight: 22,
+                            paddingVertical: 0,
+                            paddingHorizontal: 0,
+                            textAlignVertical: "center",
+                            fontWeight: "500",
+                            ...(Platform.OS === "android" ? {includeFontPadding: false} : null),
+                        }}
                     />
-
-                    <TouchableOpacity
-                        activeOpacity={0.8}
-                        onPress={onSubmit}
-                        disabled={!isValidForButton || isSubmitting}
-                        className={`mt-5 rounded-2xl py-4 items-center ${
-                            isValidForButton && !isSubmitting ? "bg-bk" : "bg-gr200"
-                        }`}
-                    >
-                        <AppText
-                            variant="L600"
-                            className={`${isValidForButton && !isSubmitting ? "text-wt" : "text-gr300"}`}
-                        >
-                            가입하기
-                        </AppText>
-                    </TouchableOpacity>
                 </View>
+
+                <TouchableOpacity
+                    activeOpacity={0.8}
+                    onPress={onSubmit}
+                    disabled={!isValidForButton || isSubmitting}
+                    className={`mt-5 rounded-2xl py-4 items-center ${
+                        isValidForButton && !isSubmitting ? "bg-bk" : "bg-gr200"
+                    }`}
+                >
+                    <AppText
+                        variant="L600"
+                        className={isValidForButton && !isSubmitting ? "text-wt" : "text-gr300"}
+                    >
+                        가입하기
+                    </AppText>
+                </TouchableOpacity>
             </View>
         </SafeAreaView>
     );
