@@ -30,6 +30,9 @@ export default function OnboardingScreen({ navigation }) {
     const { width, height } = useWindowDimensions();
 
     const [idx, setIdx] = useState(0);
+
+    const swipeLockRef = React.useRef(false);
+
     const page = PAGES[idx];
     const isFirst = idx === 0;
     const isLast = idx === PAGES.length - 1;
@@ -56,7 +59,7 @@ export default function OnboardingScreen({ navigation }) {
         await Promise.allSettled([
             SecureStore.setItemAsync("hasOnboarded", "true"),
             AsyncStorage.setItem("hasOnboarded", "true"),
-            AsyncStorage.setItem(STEP_KEY, ONBOARDING_STEP.NEEDS_MARKETING),
+            AsyncStorage.setItem(STEP_KEY, ONBOARDING_STEP.COMPLETED),
         ]);
 
         const root = getRootNav(navigation);
@@ -65,8 +68,7 @@ export default function OnboardingScreen({ navigation }) {
             CommonActions.reset({
                 index: 0,
                 routes: [
-                    { name: "Main" },
-                    { name: "Marketing" }, // Main 위에 모달
+                    { name: "Main" }
                 ],
             })
         );
