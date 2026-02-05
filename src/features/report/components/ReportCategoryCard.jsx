@@ -154,7 +154,7 @@ function BarChart({ data }) {
     const plotLeft = 44;
     const plotRightPadding = 20;
     const plotTop = 12;
-    const plotHeight = 144;
+    const plotHeight = 160;
 
     const barW = 24;
     const labelBoxW = 44;
@@ -240,9 +240,10 @@ function LineChart({ data }) {
     const plotLeft = 44;
     const plotRightPadding = 16;
     const plotTop = 16;
-    const plotHeight = 144;
+    const plotHeight = 160;
     const topPadding = 16;
-    const usableHeight = plotHeight - topPadding;
+    const bottomPadding = 16;
+    const usableHeight = plotHeight - topPadding-bottomPadding;
 
     const barW = 24;
 

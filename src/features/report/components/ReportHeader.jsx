@@ -1,7 +1,7 @@
 import { View, TouchableOpacity } from 'react-native';
 import dayjs from 'dayjs';
 import AppText from '../../../shared/components/AppText';
-import ArrowLeft from '../assets/svg/ArrowLeft.svg';
+import ArrowLeft from '../assets/svg/ArrowLeft.svg'
 import ArrowRight from '../assets/svg/ArrowRight.svg';
 
 export default function ReportHeader({ currentDate, onChangeMonth, joinedAt, onPressYearMonth }) {
@@ -47,24 +47,24 @@ export default function ReportHeader({ currentDate, onChangeMonth, joinedAt, onP
                 </View>
             </TouchableOpacity>
 
-            <View className="flex-row items-center gap-3">
+            <View className="flex-row items-center gap-4">
                 <TouchableOpacity onPress={handlePrev}>
                     <View
-                        className={`w-8 h-8 rounded-full items-center justify-center ${
+                        className={`w-6 h-6 rounded-full items-center justify-center ${
                             isPrevHidden ? "opacity-30" : ""
                         }`}
                     >
-                        {!isPrevHidden ? <ArrowLeft width={18} height={18} /> : null}
+                        {!isPrevHidden ? <ArrowLeft width="100%" height="100%"/> : null}
                     </View>
                 </TouchableOpacity>
 
                 <TouchableOpacity onPress={handleNext}>
                     <View
-                        className={`w-8 h-8 rounded-full items-center justify-center ${
+                        className={`w-6 h-6 rounded-full items-center justify-center ${
                             isNextHidden ? "opacity-30" : ""
                         }`}
                     >
-                        {!isNextHidden ? <ArrowRight width={18} height={18} /> : null}
+                        {!isNextHidden ? <ArrowRight width="100%" height="100%" /> : null}
                     </View>
                 </TouchableOpacity>
             </View>

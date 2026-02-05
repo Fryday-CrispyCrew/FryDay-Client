@@ -18,7 +18,6 @@ export default function SystemNotice() {
             <ScrollView
                 showsVerticalScrollIndicator={false}
                 contentContainerStyle={{
-                    paddingHorizontal: 20,
                     paddingTop: 16,
                     paddingBottom: 24,
                     rowGap: 16,

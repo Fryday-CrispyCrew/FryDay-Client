@@ -5,8 +5,8 @@ import {getAccessToken} from "../../shared/lib/storage/tokenStorage";
 import AuthStack from "./stacks/AuthStack";
 import OnboardingStack from "./stacks/OnboardingStack";
 import NamingStack from "./stacks/NamingStack";
+import ConsentStack from "./stacks/ConsentStack";
 import MainTabs from "./MainTabs";
-import MarketingModal from "../../features/auth/screens/Marketing/MarketingModal";
 import CategoryStack from "./stacks/CategoryStack";
 
 const Stack = createNativeStackNavigator();
@@ -34,19 +34,11 @@ export default function RootNavigator() {
     >
       <Stack.Screen name="Auth" component={AuthStack} />
       <Stack.Screen name="Naming" component={NamingStack} />
+      <Stack.Screen name="Consent" component={ConsentStack} />
       <Stack.Screen name="Onboarding" component={OnboardingStack} />
       <Stack.Screen name="Category" component={CategoryStack} />
       <Stack.Screen name="Main" component={MainTabs} />
 
-      <Stack.Group
-        screenOptions={{
-          presentation: "transparentModal",
-          contentStyle: {backgroundColor: "transparent"},
-          animation: "fade",
-        }}
-      >
-        <Stack.Screen name="Marketing" component={MarketingModal} />
-      </Stack.Group>
     </Stack.Navigator>
   );
 }

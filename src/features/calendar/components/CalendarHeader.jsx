@@ -27,7 +27,7 @@ export default function CalendarHeader({
 
       </View>
 
-      <View className="flex-row items-center gap-3">
+      <View className="flex-row items-center gap-4">
         <TouchableOpacity
           onPress={onPressButton}
           className="w-8 h-8 items-center justify-center"

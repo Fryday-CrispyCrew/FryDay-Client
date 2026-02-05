@@ -14,7 +14,11 @@ export default function MyPageHeader({ showBackButton = false, title }) {
                     className="flex-row items-center"
                     hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
                 >
-                    <Arrow width={14} height={14} />
+                    <View className="w-4 h-4">
+                        <Arrow width="100%" height="100%" />
+                    </View>
+
+
                     <AppText variant="H3" className="text-bk ml-2">
                         {title}
                     </AppText>

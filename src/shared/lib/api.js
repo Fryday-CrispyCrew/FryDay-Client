@@ -76,6 +76,19 @@ api.interceptors.response.use(
       return Promise.reject(error);
     }
 
+      const msg = error?.response?.data?.message;
+
+      if (typeof msg === "string" && msg.includes("탈퇴 후 7일")) {
+          toast.show(msg, { position: "center" });
+
+          originalRequest.meta = {
+              ...(originalRequest.meta || {}),
+              skipErrorToast: true,
+          };
+
+          return Promise.reject(error);
+      }
+
     if (error.response?.status === 403 && !originalRequest._retry) {
       originalRequest._retry = true;
 

@@ -15,17 +15,15 @@ import { useCreateConsentMutation } from "../../queries/consent/useCreateConsent
 function nextRoute(status) {
   switch (status) {
     case "NEEDS_AGREEMENT":
-      return "Naming";
+      return "Consent";
     case "NEEDS_NICKNAME":
       return "Naming";
     case "NEEDS_ONBOARDING":
       return "Onboarding";
-    case "NEEDS_MARKETING":
-      return "Marketing";
     case "COMPLETED":
       return "Main";
     default:
-      return "Naming";
+      return "Consent";
   }
 }
 

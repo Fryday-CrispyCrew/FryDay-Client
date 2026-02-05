@@ -30,6 +30,7 @@ import { useAccountActions } from "../../hook/useAccountActions";
 const HAS_KOREAN_JAMO = /[\u3131-\u318E\u1100-\u11FF\uA960-\uA97F\uD7B0-\uD7FF]/;
 const FINAL_ALLOWED_REGEX = /^[가-힣a-zA-Z0-9]+$/;
 const NICKNAME_MAX = 10;
+import LottieView from "lottie-react-native";
 
 export default function EditProfile({ navigation }) {
     const { width, height } = useWindowDimensions();
@@ -37,7 +38,7 @@ export default function EditProfile({ navigation }) {
 
     const [nickName, setNickName] = useState("");
     const [draftNickName, setDraftNickName] = useState("");
-    const [email] = useState("usermail@fry.com");
+    const [email, setEmail] = useState("");
 
     const [isEditing, setIsEditing] = useState(false);
     const [modalType, setModalType] = useState(null);
@@ -60,6 +61,8 @@ export default function EditProfile({ navigation }) {
     const errorWidth = Math.min(Math.max(180, containerWidth * 0.55), 280);
     const contentPaddingBottom = Math.max(24, Math.min(48, height * 0.04));
 
+    const [isDeleting, setIsDeleting] = useState(false);
+
     const errorMessage = useMemo(() => {
         if (nicknameError === "duplicate") return "이미 사용중인 닉네임이에요";
         if (nicknameError === "tooLong" || nicknameError === "invalid")
@@ -71,15 +74,22 @@ export default function EditProfile({ navigation }) {
     useEffect(() => {
         let alive = true;
         (async () => {
-            const [a, s] = await Promise.all([
+            const [aNick, sNick, aEmail, sEmail] = await Promise.all([
                 AsyncStorage.getItem("nickname"),
                 SecureStore.getItemAsync("nickname"),
+                AsyncStorage.getItem("email"),
+                SecureStore.getItemAsync("email"),
             ]);
             if (!alive) return;
-            const saved = (a ?? s ?? "").trim();
-            if (saved) {
-                setNickName(saved);
-                setDraftNickName(saved);
+            const savedNick = (aNick ?? sNick ?? "").trim();
+            if (savedNick) {
+                setNickName(savedNick);
+                setDraftNickName(savedNick);
+            }
+
+            const savedEmail = (aEmail ?? sEmail ?? "").trim();
+            if (savedEmail) {
+                setEmail(savedEmail);
             }
         })();
         return () => {
@@ -96,11 +106,18 @@ export default function EditProfile({ navigation }) {
 
     const onChangeNickname = (text) => {
         const raw = text ?? "";
-        setDraftNickName(raw);
 
-        if (nicknameError && raw.trim().length <= NICKNAME_MAX) {
-            setNicknameError(null);
-        }
+        // 한글 완성형 + 자모 + 영문 + 숫자 + 공백 허용
+        const filtered = raw.replace(
+            /[^가-힣ㄱ-ㅎㅏ-ㅣa-zA-Z0-9\s]/g,
+            ""
+        );
+
+        const limited = filtered.slice(0, NICKNAME_MAX);
+
+        setDraftNickName(limited);
+
+        if (nicknameError) setNicknameError(null);
     };
 
     const finishEdit = async () => {
@@ -145,6 +162,18 @@ export default function EditProfile({ navigation }) {
             Keyboard.dismiss();
         } catch {
             setNicknameError("network");
+        }
+    };
+
+    const onConfirmDelete = async () => {
+        if (isDeleting) return;
+        setModalType(null);
+        setIsDeleting(true);
+
+        try {
+            await deleteAccount();
+        } finally {
+            setIsDeleting(false);
         }
     };
 
@@ -306,9 +335,34 @@ export default function EditProfile({ navigation }) {
                 secondaryText="아니요, 계속 튀길래요!"
                 primaryText="네, 삭제할래요"
                 onSecondary={() => setModalType(null)}
-                onPrimary={deleteAccount}
+                onPrimary={onConfirmDelete}
                 containerWidth={containerWidth}
             />
+            {isDeleting ? (
+                <View
+                    style={{
+                        position: "absolute",
+                        top: 0,
+                        left: 0,
+                        right: 0,
+                        bottom: 0,
+                        backgroundColor: "rgba(0,0,0,0.35)",
+                        alignItems: "center",
+                        justifyContent: "center",
+                        zIndex: 9999,
+                    }}
+                    pointerEvents="auto"
+                >
+                    <LottieView
+                        source={require("../../assets/lottie/loading.json")}
+                        autoPlay
+                        loop
+                        style={{ width: "100%", height: "100%" }}
+                    />
+                </View>
+
+            ) : null}
+
         </SafeAreaView>
     );
 }
