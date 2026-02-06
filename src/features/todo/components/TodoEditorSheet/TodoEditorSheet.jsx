@@ -292,6 +292,9 @@ const TodoEditorSheet = React.forwardRef(function TodoEditorSheet(
   },
   ref,
 ) {
+  useEffect(() => {
+    console.log("categories: ", categories);
+  }, [categories]);
   const insets = useSafeAreaInsets();
   const repeatPayload = useRepeatEditorStore.getState().getRepeatPayload();
 
@@ -856,6 +859,7 @@ const TodoEditorSheet = React.forwardRef(function TodoEditorSheet(
     // create 모드는 기존 흐름 유지(필요하면 create mutation 연결)
     if (mode !== "edit") {
       onSubmit?.(draftCategoryId);
+      onCloseAfterSubmit?.();
       return;
     }
 
@@ -1049,6 +1053,10 @@ const TodoEditorSheet = React.forwardRef(function TodoEditorSheet(
       .filter((c) => c.categoryId !== draftCategoryId);
   }, [categories, draftCategoryId]);
 
+  const selectedCategory = useMemo(() => {
+    return categories?.find((c) => c.categoryId === draftCategoryId);
+  }, [categories, draftCategoryId]);
+
   const handleClearText = useCallback(() => {
     onChangeText?.("");
     requestAnimationFrame(() => inputRef.current?.focus?.());
@@ -1165,7 +1173,14 @@ const TodoEditorSheet = React.forwardRef(function TodoEditorSheet(
 
           {/* 카테고리 row */}
           <View style={styles.categoryInlineRow}>
-            <View style={styles.categoryChipSelected}>
+            <View
+              style={[
+                styles.categoryChipSelected,
+                selectedCategory?.color
+                  ? {backgroundColor: selectedCategory.color}
+                  : null,
+              ]}
+            >
               <AppText variant="M600" style={styles.categorySelectedText}>
                 {categories.find((c) => c.categoryId === draftCategoryId)
                   ?.label ?? categoryLabel}
@@ -1203,7 +1218,9 @@ const TodoEditorSheet = React.forwardRef(function TodoEditorSheet(
                     onPress={() => handlePickCategory(c.categoryId)}
                     style={styles.categoryChip}
                   >
-                    <Text style={styles.categoryText}>{c.label}</Text>
+                    <AppText variant="M600" style={styles.categoryText}>
+                      {c.label}
+                    </AppText>
                   </TouchableOpacity>
                 ))}
               </ScrollView>
@@ -1563,7 +1580,6 @@ const styles = StyleSheet.create({
     backgroundColor: colors.or,
   },
   categorySelectedText: {
-    fontSize: 13,
     color: "#FFFFFF",
   },
 
@@ -1583,14 +1599,14 @@ const styles = StyleSheet.create({
   },
 
   categoryChip: {
-    paddingHorizontal: 14,
-    paddingVertical: 7,
+    paddingHorizontal: 10,
+    paddingVertical: 6,
     borderRadius: 999,
     backgroundColor: "#F0F0F0",
   },
   categoryText: {
-    fontSize: 13,
-    color: "#B0B0B0",
+    // fontSize: 13,
+    color: colors.gr300,
   },
 
   // ===== create =====
