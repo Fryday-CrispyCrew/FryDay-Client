@@ -307,6 +307,9 @@ const TodoEditorSheet = React.forwardRef(function TodoEditorSheet(
   const memoInputRef = useRef(null);
   const [memoText, setMemoText] = useState("");
 
+  // ✅ 키보드 상태 추적
+  const [isKeyboardVisible, setIsKeyboardVisible] = useState(false);
+
   const [isTitleFocused, setIsTitleFocused] = useState(false);
   const [isMemoFocused, setIsMemoFocused] = useState(false);
 
@@ -347,6 +350,27 @@ const TodoEditorSheet = React.forwardRef(function TodoEditorSheet(
   const [todoWheelInitialMonth, setTodoWheelInitialMonth] = useState(
     todoMonthCursor.getMonth() + 1,
   );
+
+  // ✅ 키보드 이벤트 리스너 설정
+  useEffect(() => {
+    const keyboardDidShowListener = Keyboard.addListener(
+      "keyboardDidShow",
+      () => {
+        setIsKeyboardVisible(true);
+      },
+    );
+    const keyboardDidHideListener = Keyboard.addListener(
+      "keyboardDidHide",
+      () => {
+        setIsKeyboardVisible(false);
+      },
+    );
+
+    return () => {
+      keyboardDidShowListener.remove();
+      keyboardDidHideListener.remove();
+    };
+  }, []);
 
   // todoId가 string일 수 있으니 숫자로 보정
   const numericTodoId = useMemo(() => {
@@ -1121,12 +1145,17 @@ const TodoEditorSheet = React.forwardRef(function TodoEditorSheet(
       backgroundStyle={{backgroundColor: "#FAFAFA"}}
       handleIndicatorStyle={{backgroundColor: "#D0D0D0", width: "38.4%"}}
       enableContentPanningGesture={false} // ✅ content로는 시트 이동 X (고정)
-      bottomInset={insets.bottom}
+      // bottomInset={insets.bottom}
       enablePanDownToClose={false}
       // detached={true}
     >
       <BottomSheetView>
-        <View style={styles.container}>
+        <View
+          style={[
+            styles.container,
+            {paddingBottom: isKeyboardVisible ? 0 : insets.bottom},
+          ]}
+        >
           {/* (선택) 로딩 표시 */}
           {mode === "edit" && (isTodoDetailLoading || isTodoDetailFetching) ? (
             <Text style={{fontSize: 12, color: "#B0B0B0", marginBottom: 8}}>
