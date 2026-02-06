@@ -863,6 +863,7 @@ const TodoEditorSheet = React.forwardRef(function TodoEditorSheet(
         }),
       );
     }
+    ("알림 시간은 현재 시간 이후로 설정해야 합니다.");
 
     // 2) 카테고리 변경
     if (

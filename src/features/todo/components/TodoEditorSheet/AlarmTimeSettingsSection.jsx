@@ -4,6 +4,7 @@ import DateTimePicker, {
   DateTimePickerAndroid,
 } from "@react-native-community/datetimepicker";
 import colors from "../../../../shared/styles/colors";
+import {toast} from "../../../../shared/components/toast/CenterToast";
 
 /**
  * Alarm UI (alarmBox ~ alarmFooter) 전담 컴포넌트
@@ -69,8 +70,17 @@ export default function AlarmTimeSettingSection({
   }, [setHasPickedAlarmTime, setAlarmTime, setIsIosInlineAlarmPickerOpen]);
 
   const handleApply = useCallback(() => {
+    // ✅ 현재 시간 가져오기
+    const now = new Date();
+
     // ✅ iOS picker가 열려있었다면 무조건 시간이 선택된 것으로 간주
     if (Platform.OS === "ios" && isIosInlineAlarmPickerOpen) {
+      // 선택한 시간이 현재 시간 이전인지 확인
+      if (alarmDraftDate <= now) {
+        toast.show("알림 시간은 현재 시간 이후로 설정해야 합니다.");
+        return;
+      }
+
       setAlarmTime(hhmm);
       setHasPickedAlarmTime(true);
       setIsIosInlineAlarmPickerOpen(false);
@@ -83,6 +93,12 @@ export default function AlarmTimeSettingSection({
       setAlarmTime(null);
       setIsIosInlineAlarmPickerOpen(false);
       onClosePanel?.();
+      return;
+    }
+
+    // ✅ Android에서 시간을 고른 상태면 그 값 적용 (시간 체크)
+    if (alarmDraftDate <= now) {
+      toast.show("알림 시간은 현재 시간 이후로 설정해야 합니다.");
       return;
     }
 
@@ -99,6 +115,7 @@ export default function AlarmTimeSettingSection({
     onClosePanel,
     hasPickedAlarmTime,
     isIosInlineAlarmPickerOpen,
+    alarmDraftDate,
   ]);
 
   return (
