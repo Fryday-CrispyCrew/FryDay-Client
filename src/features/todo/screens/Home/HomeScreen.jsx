@@ -328,6 +328,7 @@ export default function HomeScreen({navigation, route}) {
         date: t.date,
         recurrenceId: t.recurrenceId,
         occurrenceDate: t.occurrenceDate,
+        memo: t.memo ?? "",
       }));
   }, [rawTodos]);
 
@@ -490,80 +491,78 @@ export default function HomeScreen({navigation, route}) {
           </TouchableOpacity>
         </View>
       </View>
-      {/* ✅ (고정) illustrationWrapper: 여기서는 스크롤 안 됨 */}
-      <GestureDetector gesture={panGesture}>
-        <View style={styles.illustrationWrapper}>
-          {!isCharacterError && <SpeechBubble text={bubbleText} />}
-          <Pressable
-            style={styles.lottieWrapper}
-            onPress={() => {
-              const status = characterStatus?.status;
-              const pool = BUBBLE_MENTS[status] ?? null;
-
-              setBubbleText((prev) =>
-                pickRandomDifferent(pool, prev, "대충 응원하는 문구"),
-              );
-            }}
-          >
-            {isCharacterBusy ? (
-              // <View style={styles.spinnerWrapper}>
-              //   <ActivityIndicator size="large" color={colors.gr500} />
-              // </View>
-              <></>
-            ) : isCharacterError ? (
-              // 2️⃣ ❌ 에러 → 로컬 에러 이미지
-              <Image
-                source={ErrorImage}
-                style={styles.errorImage}
-                resizeMode="contain"
-              />
-            ) : (
-              <>
-                {shouldRenderBack && (
-                  <LottieView
-                    source={
-                      lottieKey === "caseE1"
-                        ? TodoLottie.caseE1Back
-                        : TodoLottie.caseE2Back
-                    }
-                    autoPlay
-                    loop={false}
-                    style={styles.lottie}
-                  />
-                )}
-
-                {/* ✅ 메인 캐릭터 */}
-                <LottieView
-                  source={TodoLottie[lottieKey]}
-                  autoPlay
-                  loop={false}
-                  style={styles.lottie}
-                />
-              </>
-            )}
-          </Pressable>
-          {!isCharacterError && (
-            <View style={styles.shadowWrapper}>
-              {isShadowGR ? (
-                <ShadowGRIcon height="100%" width="100%" />
-              ) : (
-                <ShadowORIcon height="100%" width="100%" />
-              )}
-            </View>
-          )}
-        </View>
-      </GestureDetector>
-      {/* ✅ (고정) 구분선 */}
-      <View className="mx-1">
-        <Dotted style={{ width: "100%" }} height={1} />
-      </View>
-
-
       <View style={{flex: 1}}>
         <TodoBoardSection
           navigation={navigation}
           date={date}
           isViewingToday={isViewingToday}
+          ListHeaderComponent={
+            <>
+              {/* 캐릭터 영역: 스크롤과 함께 이동 */}
+              <GestureDetector gesture={panGesture}>
+                <View style={styles.illustrationWrapper}>
+                  {!isCharacterError && <SpeechBubble text={bubbleText} />}
+                  <Pressable
+                    style={styles.lottieWrapper}
+                    onPress={() => {
+                      const status = characterStatus?.status;
+                      const pool = BUBBLE_MENTS[status] ?? null;
+
+                      setBubbleText((prev) =>
+                        pickRandomDifferent(pool, prev, "대충 응원하는 문구"),
+                      );
+                    }}
+                  >
+                    {isCharacterBusy ? (
+                      <></>
+                    ) : isCharacterError ? (
+                      <Image
+                        source={ErrorImage}
+                        style={styles.errorImage}
+                        resizeMode="contain"
+                      />
+                    ) : (
+                      <>
+                        {shouldRenderBack && (
+                          <LottieView
+                            source={
+                              lottieKey === "caseE1"
+                                ? TodoLottie.caseE1Back
+                                : TodoLottie.caseE2Back
+                            }
+                            autoPlay
+                            loop={false}
+                            style={styles.lottie}
+                          />
+                        )}
+
+                        {/* 메인 캐릭터 */}
+                        <LottieView
+                          source={TodoLottie[lottieKey]}
+                          autoPlay
+                          loop={false}
+                          style={styles.lottie}
+                        />
+                      </>
+                    )}
+                  </Pressable>
+                  {!isCharacterError && (
+                    <View style={styles.shadowWrapper}>
+                      {isShadowGR ? (
+                        <ShadowGRIcon height="100%" width="100%" />
+                      ) : (
+                        <ShadowORIcon height="100%" width="100%" />
+                      )}
+                    </View>
+                  )}
+                </View>
+              </GestureDetector>
+              {/* 구분선 */}
+              <View className="mx-1">
+                <Dotted style={{ width: "100%" }} height={1} />
+              </View>
+            </>
+          }
         />
       </View>
     </SafeAreaView>
@@ -580,7 +579,7 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "space-between",
-    height: "11%",
+    height: "10%",
   },
   todoScroll: {
     flex: 1, // ✅ 남은 영역을 TodoCard 스크롤이 차지

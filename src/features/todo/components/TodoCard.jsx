@@ -1,7 +1,7 @@
 // src/features/todo/components/TodoCard.jsx
 import React, {useMemo, useState, useCallback, useEffect} from "react";
 import {View, StyleSheet, TouchableOpacity} from "react-native";
-import DraggableFlatList from "react-native-draggable-flatlist";
+import {NestableDraggableFlatList} from "react-native-draggable-flatlist";
 
 import AppText from "../../../shared/components/AppText";
 import DragHandleIcon from "../assets/svg/DragHandle.svg";
@@ -60,6 +60,8 @@ function TodoItem({
   }, [isOpen, translateX]);
 
   const panGesture = Gesture.Pan()
+    // ✅ 드래그 중이면 스와이프 비활성화 (DraggableFlatList 우선)
+    .enabled(!isActive)
     // ✅ 가로로 확실히 움직일 때만 스와이프를 "활성화"
     .activeOffsetX([-8, 8])
     // ✅ 세로로 조금만 움직여도 스와이프는 "실패" → ScrollView가 스크롤 우선
@@ -89,77 +91,86 @@ function TodoItem({
 
   return (
     <View style={styles.todoRowWrapper}>
-      {/* 뒤에 깔린 삭제 버튼 */}
-      <View style={styles.todoRightActionContainer}>
-        <TouchableOpacity
-          style={styles.todoDeleteButton}
-          activeOpacity={0.7}
-          onPress={() => onDelete(item)}
-        >
-          <DeleteIcon width={24} height={24} />
-        </TouchableOpacity>
+      {/* 타이틀 row 영역 (스와이프 대상) */}
+      <View style={styles.todoTitleArea}>
+        {/* 뒤에 깔린 삭제 버튼 */}
+        <View style={styles.todoRightActionContainer}>
+          <TouchableOpacity
+            style={styles.todoDeleteButton}
+            activeOpacity={0.7}
+            onPress={() => onDelete(item)}
+          >
+            <DeleteIcon width={24} height={24} />
+          </TouchableOpacity>
 
-        {isViewingToday ? (
-          <TouchableOpacity
-            style={styles.todoTodayButton} // ✅ 스타일 그대로 재사용
-            activeOpacity={0.7}
-            onPress={() => onDoTomorrow?.(item.id)}
+          {isViewingToday ? (
+            <TouchableOpacity
+              style={styles.todoTodayButton}
+              activeOpacity={0.7}
+              onPress={() => onDoTomorrow?.(item.id)}
+            >
+              <TomorrowIcon width={24} height={24} />
+            </TouchableOpacity>
+          ) : (
+            <TouchableOpacity
+              style={styles.todoTodayButton}
+              activeOpacity={0.7}
+              onPress={() => onDoToday?.(item.id)}
+            >
+              <StartDateIcon width={24} height={24} />
+            </TouchableOpacity>
+          )}
+        </View>
+
+        {/* 앞에서 좌우로 움직이는 투두 row */}
+        <GestureDetector gesture={panGesture}>
+          <Animated.View
+            style={[
+              styles.todoRow,
+              isActive && {backgroundColor: "#F2F2F2"},
+              isOpen && {backgroundColor: "#F2F2F2"},
+              animatedRowStyle,
+            ]}
           >
-            <TomorrowIcon width={24} height={24} />
-          </TouchableOpacity>
-        ) : (
-          <TouchableOpacity
-            style={styles.todoTodayButton}
-            activeOpacity={0.7}
-            onPress={() => onDoToday?.(item.id)}
-          >
-            <StartDateIcon width={24} height={24} />
-          </TouchableOpacity>
-        )}
+            <TouchableOpacity
+              onLongPress={onLongPressDrag}
+              hitSlop={8}
+              style={styles.dragHandleButton}
+            >
+              <DragHandleIcon width={12} />
+            </TouchableOpacity>
+
+            <TouchableOpacity
+              activeOpacity={0.7}
+              style={{flex: 1}}
+              onPress={() => onPressItem?.(item)}
+            >
+              <AppText variant="M500" className="text-bk">
+                {item.title}
+              </AppText>
+            </TouchableOpacity>
+
+            <TouchableOpacity
+              style={styles.todoRadioHitArea}
+              activeOpacity={0.6}
+              onPress={() => onToggleDone(item.id)}
+            >
+              {item.done ? (
+                <TodoRadioOnIcon width={24} height={24} />
+              ) : (
+                <TodoRadioOffIcon width={24} height={24} />
+              )}
+            </TouchableOpacity>
+          </Animated.View>
+        </GestureDetector>
       </View>
 
-      {/* 앞에서 좌우로 움직이는 투두 row */}
-      <GestureDetector gesture={panGesture}>
-        <Animated.View
-          style={[
-            styles.todoRow,
-            isActive && {backgroundColor: "#F2F2F2"},
-            isOpen && {backgroundColor: "#F2F2F2"},
-            animatedRowStyle,
-          ]}
-        >
-          <TouchableOpacity
-            onLongPress={onLongPressDrag}
-            hitSlop={8}
-            style={styles.dragHandleButton}
-          >
-            <DragHandleIcon width={12} />
-          </TouchableOpacity>
-
-          {/* ✅ 텍스트 눌러서 수정 바텀시트 열기 */}
-          <TouchableOpacity
-            activeOpacity={0.7}
-            style={{flex: 1}}
-            onPress={() => onPressItem?.(item)}
-          >
-            <AppText variant="M500" className="text-bk">
-              {item.title}
-            </AppText>
-          </TouchableOpacity>
-
-          <TouchableOpacity
-            style={styles.todoRadioHitArea}
-            activeOpacity={0.6}
-            onPress={() => onToggleDone(item.id)}
-          >
-            {item.done ? (
-              <TodoRadioOnIcon width={24} height={24} />
-            ) : (
-              <TodoRadioOffIcon width={24} height={24} />
-            )}
-          </TouchableOpacity>
-        </Animated.View>
-      </GestureDetector>
+      {/* 메모 영역 (스와이프 안 됨, 타이틀 아래 표시) */}
+      {item.memo ? (
+        <AppText variant="M400" style={styles.memoText}>
+          {item.memo}
+        </AppText>
+      ) : null}
     </View>
   );
 }
@@ -393,7 +404,7 @@ export default function TodoCard({
 
         {isOpen && (
           <View style={styles.listArea}>
-            <DraggableFlatList
+            <NestableDraggableFlatList
               data={sectionTodos}
               keyExtractor={(item) => item.id}
               onDragEnd={({data}) => handleDragEnd(category.categoryId, data)}
@@ -418,7 +429,6 @@ export default function TodoCard({
                   } // ✅ 추가
                 />
               )}
-              scrollEnabled={false} // ✅ 섹션 안에서 스크롤 안 하고, Home 전체 스크롤로(원하면 부모에 ScrollView)
             />
           </View>
         )}
@@ -524,9 +534,11 @@ const styles = StyleSheet.create({
 
   /** TodoItem styles */
   todoRowWrapper: {
+    // borderWidth: 1,
+  },
+  todoTitleArea: {
     height: 36,
     justifyContent: "center",
-    // borderWidth: 1,
   },
   todoRow: {
     flexDirection: "row",
@@ -576,5 +588,13 @@ const styles = StyleSheet.create({
     borderColor: "#FF5B22",
     alignItems: "center",
     justifyContent: "center",
+  },
+  memoText: {
+    fontSize: 12,
+    lineHeight: 18,
+    color: colors.gr500,
+    paddingLeft: 30,
+    paddingRight: 6,
+    marginTop: 0,
   },
 });

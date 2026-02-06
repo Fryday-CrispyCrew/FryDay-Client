@@ -1,6 +1,7 @@
 // src/features/todo/components/TodoBoardSection.jsx
 import React, {useMemo, useState, useCallback} from "react";
-import {Image, ScrollView, StyleSheet, View} from "react-native";
+import {Image, StyleSheet, View} from "react-native";
+import {NestableScrollContainer} from "react-native-draggable-flatlist";
 import TodoCard from "./TodoCard";
 import TodoEditorSheet from "./TodoEditorSheet/TodoEditorSheet";
 import ErrorImage from "../../../shared/assets/png/error-icon.png";
@@ -23,6 +24,7 @@ export default function TodoBoardSection({
   navigation,
   date, // ✅ Home/Calendar에서 넘겨주는 선택 날짜(YYYY-MM-DD)
   isViewingToday,
+  ListHeaderComponent,
 }) {
   const {open, close} = useModalStore();
 
@@ -58,6 +60,7 @@ export default function TodoBoardSection({
         date: t.date,
         recurrenceId: t.recurrenceId,
         occurrenceDate: t.occurrenceDate,
+        memo: t.memo ?? "",
       }));
   }, [rawTodos]);
 
@@ -148,12 +151,13 @@ export default function TodoBoardSection({
 
   return (
     <>
-      <ScrollView
+      <NestableScrollContainer
         style={{flex: 1}}
         contentContainerStyle={{paddingBottom: 36}}
         showsVerticalScrollIndicator={false}
         keyboardShouldPersistTaps="handled"
       >
+        {ListHeaderComponent}
         {shouldShowBoardError ? (
           <View style={styles.errorContainer}>
             <Image
@@ -240,7 +244,7 @@ export default function TodoBoardSection({
             }}
           />
         )}
-      </ScrollView>
+      </NestableScrollContainer>
 
       <TodoEditorSheet
         {...editor.sheetProps}
