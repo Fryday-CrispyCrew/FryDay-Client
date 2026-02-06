@@ -1,6 +1,6 @@
 // src/features/todo/hooks/useTodoEditorController.js
 import {useCallback, useEffect, useMemo, useRef, useState} from "react";
-import {Keyboard, BackHandler} from "react-native";
+import {Keyboard, BackHandler, AppState} from "react-native";
 import {useRepeatEditorStore} from "../stores/repeatEditorStore";
 import {useModalStore} from "../../../shared/stores/modal/modalStore";
 
@@ -41,6 +41,10 @@ export function useTodoEditorController({
   // 편집 대상 todo / 입력 텍스트
   const [editingTodo, setEditingTodo] = useState(null); // { id, title, categoryId } or null
   const [editingText, setEditingText] = useState("");
+
+  useEffect(() => {
+    console.log("editingText: ", editingText);
+  }, [editingText]);
 
   // 바텀시트 "초기 선택 카테고리"
   const initialFallbackCategoryId =
@@ -151,6 +155,22 @@ export function useTodoEditorController({
     },
     [categories, initialFallbackCategoryId],
   );
+
+  useEffect(() => {
+    const subscription = AppState.addEventListener("change", (nextAppState) => {
+      if (nextAppState === "active" && isSheetOpen) {
+        // 앱이 다시 활성화될 때 시트를 index 0으로 리셋
+        console.log("app restart while sheet open");
+        requestAnimationFrame(() => {
+          bottomSheetRef.current?.snapToIndex?.(0);
+        });
+      }
+    });
+
+    return () => {
+      subscription?.remove();
+    };
+  }, [isSheetOpen]);
 
   // 시트 dismiss 되었을 때 상태 초기화
   const onDismiss = useCallback(() => {
