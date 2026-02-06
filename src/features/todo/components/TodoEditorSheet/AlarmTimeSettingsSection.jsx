@@ -69,6 +69,15 @@ export default function AlarmTimeSettingSection({
   }, [setHasPickedAlarmTime, setAlarmTime, setIsIosInlineAlarmPickerOpen]);
 
   const handleApply = useCallback(() => {
+    // ✅ iOS picker가 열려있었다면 무조건 시간이 선택된 것으로 간주
+    if (Platform.OS === "ios" && isIosInlineAlarmPickerOpen) {
+      setAlarmTime(hhmm);
+      setHasPickedAlarmTime(true);
+      setIsIosInlineAlarmPickerOpen(false);
+      onClosePanel?.();
+      return;
+    }
+
     // ✅ clear를 눌러서 "미설정" 상태면, 적용하기는 '삭제/미설정 적용'으로 동작
     if (!hasPickedAlarmTime) {
       setAlarmTime(null);
@@ -89,6 +98,7 @@ export default function AlarmTimeSettingSection({
     setIsIosInlineAlarmPickerOpen,
     onClosePanel,
     hasPickedAlarmTime,
+    isIosInlineAlarmPickerOpen,
   ]);
 
   return (
