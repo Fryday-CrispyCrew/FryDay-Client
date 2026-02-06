@@ -1,6 +1,6 @@
 // src/features/todo/hooks/useTodoEditorController.js
 import {useCallback, useEffect, useMemo, useRef, useState} from "react";
-import {Keyboard, BackHandler} from "react-native";
+import {Keyboard, BackHandler, AppState} from "react-native";
 import {useRepeatEditorStore} from "../stores/repeatEditorStore";
 import {useModalStore} from "../../../shared/stores/modal/modalStore";
 
@@ -35,6 +35,21 @@ export function useTodoEditorController({
       subHide.remove();
     };
   }, [bottomSheetRef]);
+
+  useEffect(() => {
+    const subscription = AppState.addEventListener("change", (nextAppState) => {
+      if (nextAppState === "active" && isSheetOpen) {
+        // 앱이 다시 활성화될 때 시트를 index 0으로 리셋
+        requestAnimationFrame(() => {
+          bottomSheetRef.current?.snapToIndex?.(0);
+        });
+      }
+    });
+
+    return () => {
+      subscription?.remove();
+    };
+  }, [isSheetOpen]);
 
   const [isSheetOpen, setIsSheetOpen] = useState(false);
 
