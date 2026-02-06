@@ -42,6 +42,10 @@ export function useTodoEditorController({
   const [editingTodo, setEditingTodo] = useState(null); // { id, title, categoryId } or null
   const [editingText, setEditingText] = useState("");
 
+  useEffect(() => {
+    console.log("editingText: ", editingText);
+  }, [editingText]);
+
   // 바텀시트 "초기 선택 카테고리"
   const initialFallbackCategoryId =
     defaultCategoryId ?? categories?.[0]?.categoryId ?? 0;

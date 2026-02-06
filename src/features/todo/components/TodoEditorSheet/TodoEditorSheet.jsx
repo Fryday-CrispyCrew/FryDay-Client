@@ -41,6 +41,7 @@ import {useCreateTodoRecurrenceMutation} from "../../queries/sheet/repeat/useCre
 import {useUpdateRecurrenceRuleMutation} from "../../queries/sheet/repeat/useUpdateRecurrenceRuleMutation";
 import {useUpdateTodoDateMutation} from "../../queries/sheet/date/useUpdateTodoDateMutation";
 import {useDeleteTodoRecurrenceMutation} from "../../queries/sheet/repeat/useDeleteTodoRecurrenceMutation";
+import AppText from "../../../../shared/components/AppText";
 
 /**
  * ✅ BottomSheetTextInput만 분리 (IME-safe 로직 포함)
@@ -1165,10 +1166,10 @@ const TodoEditorSheet = React.forwardRef(function TodoEditorSheet(
           {/* 카테고리 row */}
           <View style={styles.categoryInlineRow}>
             <View style={styles.categoryChipSelected}>
-              <Text style={styles.categorySelectedText}>
+              <AppText variant="M600" style={styles.categorySelectedText}>
                 {categories.find((c) => c.categoryId === draftCategoryId)
                   ?.label ?? categoryLabel}
-              </Text>
+              </AppText>
             </View>
 
             {!isCategoryOpen && (
@@ -1556,10 +1557,10 @@ const styles = StyleSheet.create({
   },
 
   categoryChipSelected: {
-    paddingHorizontal: 16,
-    paddingVertical: 7,
-    borderRadius: 999,
-    backgroundColor: "#FF5B22",
+    paddingHorizontal: 10,
+    paddingVertical: 6,
+    borderRadius: 24,
+    backgroundColor: colors.or,
   },
   categorySelectedText: {
     fontSize: 13,
