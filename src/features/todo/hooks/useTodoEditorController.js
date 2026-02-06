@@ -36,21 +36,6 @@ export function useTodoEditorController({
     };
   }, [bottomSheetRef]);
 
-  useEffect(() => {
-    const subscription = AppState.addEventListener("change", (nextAppState) => {
-      if (nextAppState === "active" && isSheetOpen) {
-        // 앱이 다시 활성화될 때 시트를 index 0으로 리셋
-        requestAnimationFrame(() => {
-          bottomSheetRef.current?.snapToIndex?.(0);
-        });
-      }
-    });
-
-    return () => {
-      subscription?.remove();
-    };
-  }, [isSheetOpen]);
-
   const [isSheetOpen, setIsSheetOpen] = useState(false);
 
   // 편집 대상 todo / 입력 텍스트
@@ -166,6 +151,22 @@ export function useTodoEditorController({
     },
     [categories, initialFallbackCategoryId],
   );
+
+  useEffect(() => {
+    const subscription = AppState.addEventListener("change", (nextAppState) => {
+      if (nextAppState === "active" && isSheetOpen) {
+        // 앱이 다시 활성화될 때 시트를 index 0으로 리셋
+        console.log("app restart while sheet open");
+        requestAnimationFrame(() => {
+          bottomSheetRef.current?.snapToIndex?.(0);
+        });
+      }
+    });
+
+    return () => {
+      subscription?.remove();
+    };
+  }, [isSheetOpen]);
 
   // 시트 dismiss 되었을 때 상태 초기화
   const onDismiss = useCallback(() => {
