@@ -1146,7 +1146,7 @@ const TodoEditorSheet = React.forwardRef(function TodoEditorSheet(
       backgroundStyle={{backgroundColor: "#FAFAFA"}}
       handleIndicatorStyle={{backgroundColor: "#D0D0D0", width: "38.4%"}}
       enableContentPanningGesture={false} // ✅ content로는 시트 이동 X (고정)
-      enablePanDownToClose={false}
+      enablePanDownToClose={true}
     >
       <BottomSheetView>
         <View
