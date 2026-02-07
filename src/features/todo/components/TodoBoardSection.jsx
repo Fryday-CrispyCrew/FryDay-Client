@@ -19,6 +19,7 @@ import {useReorderHomeTodosMutation} from "../queries/home/useReorderHomeTodosMu
 import {useDeleteRecurrenceTodosMutation} from "../queries/home/useDeleteRecurrenceTodosMutation";
 
 import {useModalStore} from "../../../shared/stores/modal/modalStore";
+import {toast} from "../../../shared/components/toast/CenterToast";
 
 export default function TodoBoardSection({
   navigation,
@@ -147,6 +148,20 @@ export default function TodoBoardSection({
     [editor],
   );
 
+  const toYmd = (d) => {
+    const yyyy = d.getFullYear();
+    const mm = String(d.getMonth() + 1).padStart(2, "0");
+    const dd = String(d.getDate()).padStart(2, "0");
+    return `${yyyy}-${mm}-${dd}`;
+  };
+
+  const todayStr = toYmd(new Date());
+  const tomorrowStr = (() => {
+    const d = new Date();
+    d.setDate(d.getDate() + 1);
+    return toYmd(d);
+  })();
+
   const shouldShowBoardError = isCategoriesError && isTodosError;
 
   return (
@@ -173,12 +188,15 @@ export default function TodoBoardSection({
             categories={categories}
             todos={todos}
             isViewingToday={isViewingToday}
-            onDoToday={async (todoId) => {
+            onDoToday={async (todo) => {
+              const todoId = Number(todo?.id);
+              const isDone = !!todo?.done;
               return new Promise((resolve) => {
                 open({
-                  title: "확인",
-                  description:
-                    "투두가 오늘 날짜로 이동하며,\n기존 날짜의 투두는 삭제돼요. 오늘 하기로 설정할까요?",
+                  title: isDone ? "오늘 또 하기" : "오늘 하기",
+                  description: isDone
+                    ? "투두가 오늘 날짜로 복사되며,\n완료한 기존 투두도 유지돼요. 오늘 하기로 설정할까요?"
+                    : "투두가 오늘 날짜로 이동하며,\n남은 기존 투두는 삭제돼요. 오늘 하기로 설정할까요?",
                   closeOnBackdrop: true,
                   showClose: true,
                   primary: {
@@ -187,7 +205,19 @@ export default function TodoBoardSection({
                     closeAfterPress: false,
                     onPress: async () => {
                       try {
-                        await moveTodoTodayMutateAsync({todoId});
+                        if (isDone) {
+                          // ✅ 완료 투두: “복사” (기존 유지)
+                          await createTodoMutateAsync({
+                            description: todo?.title ?? "",
+                            categoryId: todo?.categoryId,
+                            date: todayStr,
+                          });
+                        } else {
+                          // ✅ 미완료 투두: “이동”
+                          await moveTodoTodayMutateAsync({todoId});
+                        }
+                        toast.show("해당 튀김을 오늘 튀기기로 설정했어요");
+
                         resolve(true);
                       } finally {
                         close();
@@ -204,12 +234,15 @@ export default function TodoBoardSection({
                 });
               });
             }}
-            onDoTomorrow={async (todoId) => {
+            onDoTomorrow={async (todo) => {
+              const todoId = Number(todo?.id);
+              const isDone = !!todo?.done;
               return new Promise((resolve) => {
                 open({
-                  title: "확인",
-                  description:
-                    "투두가 내일 날짜로 이동하며,\n기존 날짜의 투두는 삭제돼요. 내일 하기로 설정할까요?",
+                  title: isDone ? "내일 또 하기" : "내일 하기",
+                  description: isDone
+                    ? "투두가 내일 날짜로 복사되며,\n완료한 기존 투두도 유지돼요. 내일 하기로 설정할까요?"
+                    : "투두가 내일 날짜로 이동하며,\n남은 기존 투두는 삭제돼요. 내일 하기로 설정할까요?",
                   closeOnBackdrop: true,
                   showClose: true,
                   primary: {
@@ -218,7 +251,18 @@ export default function TodoBoardSection({
                     closeAfterPress: false,
                     onPress: async () => {
                       try {
-                        await moveTodoTomorrowMutateAsync({todoId});
+                        if (isDone) {
+                          // ✅ 완료 투두: “복사”
+                          await createTodoMutateAsync({
+                            description: todo?.title ?? "",
+                            categoryId: todo?.categoryId,
+                            date: tomorrowStr,
+                          });
+                        } else {
+                          // ✅ 미완료 투두: “이동”
+                          await moveTodoTomorrowMutateAsync({todoId});
+                        }
+                        toast.show("해당 튀김을 내일 튀기기로 설정했어요");
                         resolve(true);
                       } finally {
                         close();

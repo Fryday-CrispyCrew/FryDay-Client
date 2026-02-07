@@ -7,6 +7,7 @@ import {
   Platform,
   StyleSheet,
   Switch,
+  Pressable,
 } from "react-native";
 import RadioOn from "../../assets/svg/RadioOn.svg";
 import RadioOff from "../../assets/svg/RadioOff.svg";
@@ -119,14 +120,14 @@ export default function RepeatSettingsSection({
   const setRepeatWeekdays = useRepeatEditorStore((s) => s.setRepeatWeekdays);
   const setRepeatMonthDays = useRepeatEditorStore((s) => s.setRepeatMonthDays);
   const setRepeatYearMonths = useRepeatEditorStore(
-    (s) => s.setRepeatYearMonths
+    (s) => s.setRepeatYearMonths,
   );
   const setRepeatYearDays = useRepeatEditorStore((s) => s.setRepeatYearDays);
 
   const isCycleUnset = !repeatCycle || repeatCycle === "unset";
 
   const [draftStartDate, setDraftStartDate] = useState(
-    repeatStartDate ?? new Date()
+    repeatStartDate ?? new Date(),
   );
   const [draftEndType, setDraftEndType] = useState(repeatEndType); // "none" | "date"
   const [draftEndDate, setDraftEndDate] = useState(repeatEndDate ?? new Date());
@@ -184,7 +185,7 @@ export default function RepeatSettingsSection({
 
       setDraftEndDate(normalized);
       setEndMonthCursor(
-        new Date(normalized.getFullYear(), normalized.getMonth(), 1)
+        new Date(normalized.getFullYear(), normalized.getMonth(), 1),
       );
     }
   }, [openKey, repeatEndType, repeatEndDate, repeatStartDate]);
@@ -237,30 +238,30 @@ export default function RepeatSettingsSection({
       }
       onToggleOpenKey(nextKey);
     },
-    [isCycleUnset, onToggleOpenKey]
+    [isCycleUnset, onToggleOpenKey],
   );
 
   const toggleWeekday = useCallback((key) => {
     setDraftWeekdays((prev) =>
-      prev.includes(key) ? prev.filter((k) => k !== key) : [...prev, key]
+      prev.includes(key) ? prev.filter((k) => k !== key) : [...prev, key],
     );
   }, []);
 
   const toggleMonthDay = useCallback((day) => {
     setDraftMonthDays((prev) =>
-      prev.includes(day) ? prev.filter((d) => d !== day) : [...prev, day]
+      prev.includes(day) ? prev.filter((d) => d !== day) : [...prev, day],
     );
   }, []);
 
   const toggleYearMonth = useCallback((month) => {
     setDraftYearMonths((prev) =>
-      prev.includes(month) ? prev.filter((m) => m !== month) : [...prev, month]
+      prev.includes(month) ? prev.filter((m) => m !== month) : [...prev, month],
     );
   }, []);
 
   const toggleYearDay = useCallback((day) => {
     setDraftYearDays((prev) =>
-      prev.includes(day) ? prev.filter((d) => d !== day) : [...prev, day]
+      prev.includes(day) ? prev.filter((d) => d !== day) : [...prev, day],
     );
   }, []);
 
@@ -294,7 +295,7 @@ export default function RepeatSettingsSection({
       setRepeatStartDate,
       setRepeatEndType,
       setRepeatEndDate,
-    ]
+    ],
   );
 
   //반복 시작 날짜 관련
@@ -331,7 +332,7 @@ export default function RepeatSettingsSection({
   //반복 종료 날짜 관련
   const endMonthGrid = useMemo(
     () => buildMonthGrid(endMonthCursor),
-    [endMonthCursor]
+    [endMonthCursor],
   );
 
   const handlePickEndDateFromCalendar = useCallback(
@@ -347,7 +348,7 @@ export default function RepeatSettingsSection({
       setDraftEndDate(date);
       setDraftEndType("date");
     },
-    [repeatStartDate]
+    [repeatStartDate],
   );
 
   const isEndNone = draftEndType === "none";
@@ -465,7 +466,7 @@ export default function RepeatSettingsSection({
   // ✅ repeatStart 캘린더 grid
   const startMonthGrid = useMemo(
     () => buildMonthGrid(startMonthCursor),
-    [startMonthCursor]
+    [startMonthCursor],
   );
 
   const today = useMemo(() => new Date(), []);
@@ -486,7 +487,7 @@ export default function RepeatSettingsSection({
 
       setDraftStartDate(date); // store 반영 X, 임시값만 변경
     },
-    [repeatEndType, repeatEndDate]
+    [repeatEndType, repeatEndDate],
   );
 
   const openStartYearMonthWheel = () => {
@@ -509,6 +510,11 @@ export default function RepeatSettingsSection({
     setYmWheelOpen(true);
   }, [draftEndType, endMonthCursor]);
 
+  const unlockEndCalendarIfNone = useCallback(() => {
+    if (draftEndType !== "none") return;
+    setDraftEndType("date"); // ✅ 비활성화만 해제 (날짜는 선택 X)
+  }, [draftEndType, setDraftEndType]);
+
   const handleConfirmYearMonth = useCallback(
     (year, month) => {
       const next = new Date(year, month - 1, 1);
@@ -521,7 +527,7 @@ export default function RepeatSettingsSection({
 
       setYmWheelOpen(false);
     },
-    [ymTarget]
+    [ymTarget],
   );
 
   const applyStartYearMonth = (year, month) => {
@@ -657,7 +663,7 @@ export default function RepeatSettingsSection({
                     activeOpacity={0.85}
                     onPress={() =>
                       setDraftCycle((prev) =>
-                        prev === opt.key ? "unset" : opt.key
+                        prev === opt.key ? "unset" : opt.key,
                       )
                     }
                     style={[
@@ -997,10 +1003,16 @@ export default function RepeatSettingsSection({
               isEndNone && styles.calendarWrapDisabled,
             ]}
           >
-            <View style={styles.calendarHeader}>
+            <Pressable
+              onPress={unlockEndCalendarIfNone}
+              style={styles.calendarHeader}
+              // ✅ 캘린더가 잠겨있을 때만 "헤더 터치"가 의미있게
+              pointerEvents="auto"
+            >
               <TouchableOpacity
                 activeOpacity={0.7}
                 onPress={() => setEndMonthCursor((d) => addMonths(d, -1))}
+                disabled={draftEndType === "none"} // ✅ 종료 없음일 때는 탭 비활성
                 style={styles.monthNavBtn}
                 hitSlop={8}
               >
@@ -1011,7 +1023,6 @@ export default function RepeatSettingsSection({
                   strokeWidth={2}
                 />
               </TouchableOpacity>
-
               <TouchableOpacity
                 activeOpacity={0.8}
                 onPress={openEndYearMonthWheel}
@@ -1022,10 +1033,10 @@ export default function RepeatSettingsSection({
                   {endMonthCursor.getMonth() + 1}월
                 </Text>
               </TouchableOpacity>
-
               <TouchableOpacity
                 activeOpacity={0.7}
                 onPress={() => setEndMonthCursor((d) => addMonths(d, 1))}
+                disabled={draftEndType === "none"} // ✅ 종료 없음일 때는 탭 비활성
                 style={styles.monthNavBtn}
                 hitSlop={8}
               >
@@ -1036,8 +1047,12 @@ export default function RepeatSettingsSection({
                   strokeWidth={2}
                 />
               </TouchableOpacity>
-            </View>
-            <View style={styles.weekHeaderRow}>
+            </Pressable>
+
+            <Pressable
+              onPress={unlockEndCalendarIfNone}
+              style={styles.weekHeaderRow}
+            >
               {WEEKDAYS.map((w, idx) => (
                 <View key={w} style={styles.weekHeaderCell}>
                   <Text
@@ -1051,7 +1066,7 @@ export default function RepeatSettingsSection({
                   </Text>
                 </View>
               ))}
-            </View>
+            </Pressable>
             <View style={styles.calendarGrid}>
               {endMonthGrid.map((cellDate, i) => {
                 const isEmpty = !cellDate;
@@ -1069,9 +1084,21 @@ export default function RepeatSettingsSection({
                 return (
                   <TouchableOpacity
                     key={`end-${i}`}
-                    disabled={isEmpty || draftEndType === "none"}
+                    disabled={isEmpty} // ✅ empty만 막고, none일 때는 눌릴 수 있게
                     activeOpacity={0.85}
-                    onPress={() => handlePickEndDateFromCalendar(cellDate)}
+                    onPress={() => {
+                      if (!cellDate) return;
+
+                      // ✅ 캘린더가 비활성화 상태(반복 종료 없음=true)라면
+                      // 날짜는 선택하지 않고, 비활성화만 해제
+                      if (draftEndType === "none") {
+                        setDraftEndType("date");
+                        return;
+                      }
+
+                      // ✅ 이미 활성화 상태면 정상적으로 날짜 선택
+                      handlePickEndDateFromCalendar(cellDate);
+                    }}
                     style={styles.dayCell}
                   >
                     {isEmpty ? (
@@ -1448,6 +1475,10 @@ const styles = StyleSheet.create({
     justifyContent: "center",
     // borderWidth: 1,
   },
+  dayCellDisabled: {
+    opacity: 0.35,
+  },
+
   dayCircle: {
     width: "100%",
     height: 20,

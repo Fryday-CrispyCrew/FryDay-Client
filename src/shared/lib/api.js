@@ -76,18 +76,18 @@ api.interceptors.response.use(
       return Promise.reject(error);
     }
 
-      const msg = error?.response?.data?.message;
+    const msg = error?.response?.data?.message;
 
-      if (typeof msg === "string" && msg.includes("탈퇴 후 7일")) {
-          toast.show(msg, { position: "center" });
+    if (typeof msg === "string" && msg.includes("탈퇴 후 7일")) {
+      toast.show(msg, {position: "center"});
 
-          originalRequest.meta = {
-              ...(originalRequest.meta || {}),
-              skipErrorToast: true,
-          };
+      originalRequest.meta = {
+        ...(originalRequest.meta || {}),
+        skipErrorToast: true,
+      };
 
-          return Promise.reject(error);
-      }
+      return Promise.reject(error);
+    }
 
     if (error.response?.status === 403 && !originalRequest._retry) {
       originalRequest._retry = true;
@@ -130,6 +130,30 @@ api.interceptors.response.use(
         toast.show(TOAST_MESSAGES.MUTATION_ERROR, {position: "center"});
       }
     }
+
+    // if (!shouldSkipToast) {
+    //   // ✅ 1순위: 백엔드에서 내려준 에러 메시지가 있으면 그걸 먼저 노출
+    //   // (서버 구현에 따라 키가 다를 수 있어 범용적으로 몇 가지를 확인)
+    //   const data = error?.response?.data;
+
+    //   const backendMessage =
+    //     (typeof data?.message === "string" && data.message.trim()) ||
+    //     (typeof data?.error === "string" && data.error.trim()) ||
+    //     (typeof data?.detail === "string" && data.detail.trim()) ||
+    //     (typeof data?.msg === "string" && data.msg.trim()) ||
+    //     "";
+
+    //   if (backendMessage) {
+    //     toast.show(backendMessage, {position: "center"});
+    //   } else {
+    //     // ✅ 2순위: 기존 고정 문구
+    //     if (method === "get") {
+    //       toast.show(TOAST_MESSAGES.GET_ERROR, {position: "center"});
+    //     } else if (["post", "put", "patch", "delete"].includes(method)) {
+    //       toast.show(TOAST_MESSAGES.MUTATION_ERROR, {position: "center"});
+    //     }
+    //   }
+    // }
 
     return Promise.reject(error);
   },
