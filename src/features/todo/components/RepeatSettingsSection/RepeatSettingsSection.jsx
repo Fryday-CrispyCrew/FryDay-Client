@@ -119,14 +119,14 @@ export default function RepeatSettingsSection({
   const setRepeatWeekdays = useRepeatEditorStore((s) => s.setRepeatWeekdays);
   const setRepeatMonthDays = useRepeatEditorStore((s) => s.setRepeatMonthDays);
   const setRepeatYearMonths = useRepeatEditorStore(
-    (s) => s.setRepeatYearMonths
+    (s) => s.setRepeatYearMonths,
   );
   const setRepeatYearDays = useRepeatEditorStore((s) => s.setRepeatYearDays);
 
   const isCycleUnset = !repeatCycle || repeatCycle === "unset";
 
   const [draftStartDate, setDraftStartDate] = useState(
-    repeatStartDate ?? new Date()
+    repeatStartDate ?? new Date(),
   );
   const [draftEndType, setDraftEndType] = useState(repeatEndType); // "none" | "date"
   const [draftEndDate, setDraftEndDate] = useState(repeatEndDate ?? new Date());
@@ -184,7 +184,7 @@ export default function RepeatSettingsSection({
 
       setDraftEndDate(normalized);
       setEndMonthCursor(
-        new Date(normalized.getFullYear(), normalized.getMonth(), 1)
+        new Date(normalized.getFullYear(), normalized.getMonth(), 1),
       );
     }
   }, [openKey, repeatEndType, repeatEndDate, repeatStartDate]);
@@ -237,30 +237,30 @@ export default function RepeatSettingsSection({
       }
       onToggleOpenKey(nextKey);
     },
-    [isCycleUnset, onToggleOpenKey]
+    [isCycleUnset, onToggleOpenKey],
   );
 
   const toggleWeekday = useCallback((key) => {
     setDraftWeekdays((prev) =>
-      prev.includes(key) ? prev.filter((k) => k !== key) : [...prev, key]
+      prev.includes(key) ? prev.filter((k) => k !== key) : [...prev, key],
     );
   }, []);
 
   const toggleMonthDay = useCallback((day) => {
     setDraftMonthDays((prev) =>
-      prev.includes(day) ? prev.filter((d) => d !== day) : [...prev, day]
+      prev.includes(day) ? prev.filter((d) => d !== day) : [...prev, day],
     );
   }, []);
 
   const toggleYearMonth = useCallback((month) => {
     setDraftYearMonths((prev) =>
-      prev.includes(month) ? prev.filter((m) => m !== month) : [...prev, month]
+      prev.includes(month) ? prev.filter((m) => m !== month) : [...prev, month],
     );
   }, []);
 
   const toggleYearDay = useCallback((day) => {
     setDraftYearDays((prev) =>
-      prev.includes(day) ? prev.filter((d) => d !== day) : [...prev, day]
+      prev.includes(day) ? prev.filter((d) => d !== day) : [...prev, day],
     );
   }, []);
 
@@ -294,7 +294,7 @@ export default function RepeatSettingsSection({
       setRepeatStartDate,
       setRepeatEndType,
       setRepeatEndDate,
-    ]
+    ],
   );
 
   //반복 시작 날짜 관련
@@ -331,7 +331,7 @@ export default function RepeatSettingsSection({
   //반복 종료 날짜 관련
   const endMonthGrid = useMemo(
     () => buildMonthGrid(endMonthCursor),
-    [endMonthCursor]
+    [endMonthCursor],
   );
 
   const handlePickEndDateFromCalendar = useCallback(
@@ -347,7 +347,7 @@ export default function RepeatSettingsSection({
       setDraftEndDate(date);
       setDraftEndType("date");
     },
-    [repeatStartDate]
+    [repeatStartDate],
   );
 
   const isEndNone = draftEndType === "none";
@@ -465,7 +465,7 @@ export default function RepeatSettingsSection({
   // ✅ repeatStart 캘린더 grid
   const startMonthGrid = useMemo(
     () => buildMonthGrid(startMonthCursor),
-    [startMonthCursor]
+    [startMonthCursor],
   );
 
   const today = useMemo(() => new Date(), []);
@@ -486,7 +486,7 @@ export default function RepeatSettingsSection({
 
       setDraftStartDate(date); // store 반영 X, 임시값만 변경
     },
-    [repeatEndType, repeatEndDate]
+    [repeatEndType, repeatEndDate],
   );
 
   const openStartYearMonthWheel = () => {
@@ -521,7 +521,7 @@ export default function RepeatSettingsSection({
 
       setYmWheelOpen(false);
     },
-    [ymTarget]
+    [ymTarget],
   );
 
   const applyStartYearMonth = (year, month) => {
@@ -657,7 +657,7 @@ export default function RepeatSettingsSection({
                     activeOpacity={0.85}
                     onPress={() =>
                       setDraftCycle((prev) =>
-                        prev === opt.key ? "unset" : opt.key
+                        prev === opt.key ? "unset" : opt.key,
                       )
                     }
                     style={[
@@ -1001,6 +1001,7 @@ export default function RepeatSettingsSection({
               <TouchableOpacity
                 activeOpacity={0.7}
                 onPress={() => setEndMonthCursor((d) => addMonths(d, -1))}
+                disabled={draftEndType === "none"} // ✅ 종료 없음일 때는 탭 비활성
                 style={styles.monthNavBtn}
                 hitSlop={8}
               >
@@ -1026,6 +1027,7 @@ export default function RepeatSettingsSection({
               <TouchableOpacity
                 activeOpacity={0.7}
                 onPress={() => setEndMonthCursor((d) => addMonths(d, 1))}
+                disabled={draftEndType === "none"} // ✅ 종료 없음일 때는 탭 비활성
                 style={styles.monthNavBtn}
                 hitSlop={8}
               >
