@@ -115,7 +115,14 @@
       ],
       "@react-native-firebase/app",
       "@react-native-firebase/messaging",
-      "@react-native-firebase/crashlytics"
+      "@react-native-firebase/crashlytics",
+      [
+      "react-native-google-mobile-ads",
+      {
+        "androidAppId": "ca-app-pub-4203513276439399~7420127615",
+        "iosAppId": "ca-app-pub-4203513276439399~6857020832"
+      }
+      ]
     ],
     "extra": {
       "eas": {
