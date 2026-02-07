@@ -238,7 +238,7 @@ export default function HomeScreen({navigation, route}) {
   }, [rawCategories]);
 
   // ✅ 홈 투두 조회 (categoryId 생략 = 전체)
-  const {data: rawTodos = [], isSuccess: isHomeTodosSuccess} =
+  const {data: rawTodos = [], isFetched: isHomeTodosFetched} =
     useHomeTodosQuery({
       date,
       categoryId: undefined,
@@ -284,7 +284,7 @@ export default function HomeScreen({navigation, route}) {
     isLoading: isCharacterLoading, // ✅ 추가
     isFetching: isCharacterFetching, // (선택)
     isError: isCharacterError,
-  } = useTodoCharacterStatusQuery({date}, {enabled: isHomeTodosSuccess});
+  } = useTodoCharacterStatusQuery({date}, {enabled: isHomeTodosFetched});
 
   useEffect(() => {
     console.log("characterStatus: ", characterStatus);
