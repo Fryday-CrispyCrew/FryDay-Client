@@ -471,9 +471,16 @@ export default function HomeScreen({navigation, route}) {
 
         <View style={styles.iconRow}>
           <TouchableOpacity
-            activeOpacity={0.5}
-            style={styles.iconButton}
-            onPress={() => setCurrentDate(new Date())}
+            activeOpacity={isViewingToday ? 1 : 0.5}
+            disabled={isViewingToday}
+            style={[
+              styles.iconButton,
+              isViewingToday && styles.iconButtonDisabled,
+            ]}
+            onPress={() => {
+              if (isViewingToday) return;
+              setCurrentDate(new Date());
+            }}
           >
             <TodayIcon width={24} height={24} />
           </TouchableOpacity>
@@ -513,14 +520,14 @@ export default function HomeScreen({navigation, route}) {
                       );
                     }}
                   >
-                    {isCharacterBusy ? (
-                      <></>
-                    ) : isCharacterError ? (
+                    {isCharacterError ? (
                       <Image
                         source={ErrorImage}
                         style={styles.errorImage}
                         resizeMode="contain"
                       />
+                    ) : isCharacterBusy ? (
+                      <></>
                     ) : (
                       <>
                         {shouldRenderBack && (
@@ -545,6 +552,37 @@ export default function HomeScreen({navigation, route}) {
                         />
                       </>
                     )}
+                    {/* {isCharacterBusy ? (
+                      <></>
+                    ) : isCharacterError ? (
+                      <Image
+                        source={ErrorImage}
+                        style={styles.errorImage}
+                        resizeMode="contain"
+                      />
+                    ) : (
+                      <>
+                        {shouldRenderBack && (
+                          <LottieView
+                            source={
+                              lottieKey === "caseE1"
+                                ? TodoLottie.caseE1Back
+                                : TodoLottie.caseE2Back
+                            }
+                            autoPlay
+                            loop={false}
+                            style={styles.lottie}
+                          />
+                        )}
+
+                        <LottieView
+                          source={TodoLottie[lottieKey]}
+                          autoPlay
+                          loop={false}
+                          style={styles.lottie}
+                        />
+                      </>
+                    )} */}
                   </Pressable>
                   {!isCharacterError && (
                     <View style={styles.shadowWrapper}>
@@ -559,7 +597,7 @@ export default function HomeScreen({navigation, route}) {
               </GestureDetector>
               {/* 구분선 */}
               <View className="mx-1">
-                <Dotted style={{ width: "100%" }} height={1} />
+                <Dotted style={{width: "100%"}} height={1} />
               </View>
             </>
           }
@@ -598,6 +636,9 @@ const styles = StyleSheet.create({
     borderRadius: 10,
     alignItems: "center",
     justifyContent: "center",
+  },
+  iconButtonDisabled: {
+    opacity: 0.35,
   },
   illustrationWrapper: {
     width: "100%",
