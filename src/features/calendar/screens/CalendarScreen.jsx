@@ -1,4 +1,4 @@
-import React, {useState, useEffect, useCallback} from "react";
+import React, {useState, useEffect, useCallback, useRef} from "react";
 import {View} from "react-native";
 import {SafeAreaView} from "react-native-safe-area-context";
 import dayjs from "dayjs";
@@ -14,13 +14,31 @@ import AsyncStorage from "@react-native-async-storage/async-storage";
 import TodoBoardSection from "../../todo/components/TodoBoardSection";
 import {getDailyResultsMap} from "../api/dailyResultsApi";
 import YearMonthWheelModal from "../../todo/components/RepeatSettingsSection/wheel/YearMonthWheelModal";
+import LoadingModal from "../../../shared/modal/LoadingModal";
+
+
 
 export default function CalendarScreen({navigation}) {
   const [mode, setMode] = useState("month"); // 'week' | 'month'
   const [currentDate, setCurrentDate] = useState(dayjs());
   const [selectedDate, setSelectedDate] = useState(dayjs());
 
-  const selectedDateStr = selectedDate.format("YYYY-MM-DD");
+    const [loading, setLoading] = useState(false);
+    const loadingTimerRef = useRef(null);
+
+    const beginLoadingWithDelay = useCallback(() => {
+        if (loadingTimerRef.current) clearTimeout(loadingTimerRef.current);
+        loadingTimerRef.current = setTimeout(() => setLoading(true), 250); // 0.25초 이상이면 표시
+    }, []);
+
+    const endLoading = useCallback(() => {
+        if (loadingTimerRef.current) clearTimeout(loadingTimerRef.current);
+        loadingTimerRef.current = null;
+        setLoading(false);
+    }, []);
+
+
+    const selectedDateStr = selectedDate.format("YYYY-MM-DD");
   const isViewingToday = selectedDate.isSame(dayjs(), "day");
 
     const [isYMModalOpen, setIsYMModalOpen] = useState(false);
@@ -52,7 +70,37 @@ export default function CalendarScreen({navigation}) {
     }
   }, [mode]);
 
-  useEffect(() => {
+    useFocusEffect(
+        useCallback(() => {
+            const startDate = currentDate.startOf("month").format("YYYY-MM-DD");
+            const monthEnd = currentDate.endOf("month");
+            const today = dayjs();
+            const endDate = (monthEnd.isAfter(today, "day") ? today : monthEnd).format("YYYY-MM-DD");
+
+            let alive = true;
+
+            beginLoadingWithDelay();
+
+            (async () => {
+                try {
+                    const map = await getDailyResultsMap(startDate, endDate);
+                    if (alive) setBowlMap(map);
+                } catch (e) {
+                    console.log("[dailyResults] ERR", e?.response?.status, JSON.stringify(e?.response?.data, null, 2), e?.message);
+                } finally {
+                    if (alive) endLoading();
+                }
+            })();
+
+            return () => {
+                alive = false;
+                endLoading();
+            };
+        }, [currentDate, beginLoadingWithDelay, endLoading])
+    );
+
+
+    useEffect(() => {
     (async () => {
       const saved = await AsyncStorage.getItem("calendarMode");
       if (saved === "week" || saved === "month") setMode(saved);
@@ -67,37 +115,7 @@ export default function CalendarScreen({navigation}) {
     });
   }, []);
 
-    useFocusEffect(
-        useCallback(() => {
-            const startDate = currentDate.startOf("month").format("YYYY-MM-DD");
 
-        const monthEnd = currentDate.endOf("month");
-        const today = dayjs();
-        const endDate = (monthEnd.isAfter(today, "day") ? today : monthEnd).format(
-            "YYYY-MM-DD"
-        );
-
-            let alive = true;
-
-        (async () => {
-          try {
-            const map = await getDailyResultsMap(startDate, endDate);
-            if (alive) setBowlMap(map);
-          } catch (e) {
-            console.log(
-                "[dailyResults] ERR",
-                e?.response?.status,
-                JSON.stringify(e?.response?.data, null, 2),
-                e?.message
-            );
-          }
-        })();
-
-            return () => {
-                alive = false;
-            };
-        }, [currentDate])
-    );
 
     const handleSelectMonthDate = useCallback(
         (d) => {
@@ -162,7 +180,9 @@ export default function CalendarScreen({navigation}) {
                   bowlMap={bowlMap}
                   selectedDate={selectedDate}
                   onSelectDate={handleSelectMonthDate}
+                  onSwipeStart={beginLoadingWithDelay}
               />
+
           )}
         </View>
           <YearMonthWheelModal
@@ -172,6 +192,8 @@ export default function CalendarScreen({navigation}) {
               onCancel={closeYMModal}
               onConfirm={handleConfirmYM}
           />
+
+          <LoadingModal visible={loading} />
 
       </SafeAreaView>
   );
