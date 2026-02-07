@@ -16,8 +16,6 @@ import {TodoLottie} from "../../assets/lottie"; // HomeScreen 기준 상대경�
 import AppText from "../../../../shared/components/AppText";
 import TodayIcon from "../../assets/svg/Today.svg";
 import CategoryIcon from "../../assets/svg/Category.svg";
-import ShadowGRIcon from "../../assets/svg/shadow/shadowGR.svg";
-import ShadowORIcon from "../../assets/svg/shadow/shadowOR.svg";
 import ErrorImage from "../../../../shared/assets/png/error-icon.png";
 
 import TodoCard from "../../components/TodoCard";
@@ -85,6 +83,8 @@ function getLottieKeyFromStatus(status) {
       return "caseF";
     case "CASE_G":
       return "caseG";
+    case "CASE_H":
+      return "caseH";
     default:
       // return "caseA"; // fallback
       return null;
@@ -584,15 +584,6 @@ export default function HomeScreen({navigation, route}) {
                       </>
                     )} */}
                   </Pressable>
-                  {!isCharacterError && (
-                    <View style={styles.shadowWrapper}>
-                      {isShadowGR ? (
-                        <ShadowGRIcon height="100%" width="100%" />
-                      ) : (
-                        <ShadowORIcon height="100%" width="100%" />
-                      )}
-                    </View>
-                  )}
                 </View>
               </GestureDetector>
               {/* 구분선 */}
@@ -652,7 +643,7 @@ const styles = StyleSheet.create({
     width: "72%",
     aspectRatio: 1,
     maxHeight: "80%", // ✅ 핵심
-    marginTop: "8%",
+    // marginTop: "8%",
     // borderWidth: 1,
   },
   errorImage: {
@@ -790,5 +781,6 @@ const bubbleStyles = StyleSheet.create({
     borderBottomWidth: 1,
     borderColor: colors.gr200,
     transform: [{rotate: "45deg"}],
+    borderBottomRightRadius: 3,
   },
 });
