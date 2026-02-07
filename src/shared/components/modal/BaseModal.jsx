@@ -22,6 +22,8 @@ export default function BaseModal({
                                     cardStyle,
                                     bodyStyle,
                                   }) {
+  const close = onBackdropPress ?? onRequestClose;
+
   return (
       <Modal
           visible={visible}
@@ -29,11 +31,9 @@ export default function BaseModal({
           animationType="fade"
           onRequestClose={onRequestClose}
       >
-        {/* dim */}
-        <Pressable
-            style={styles.backdrop}
-            onPress={onBackdropPress ?? onRequestClose}
-        />
+        {!hideCard ? (
+            <Pressable style={styles.backdrop} onPress={close} />
+        ) : null}
 
         {hideCard ? (
             <View style={styles.fullscreen}>{children}</View>
@@ -75,7 +75,6 @@ const styles = StyleSheet.create({
     backgroundColor: "rgba(0,0,0,0.5)",
   },
 
-  // 기존 카드 모달
   card: {
     position: "absolute",
     left: 24,
@@ -115,10 +114,13 @@ const styles = StyleSheet.create({
   },
 
   fullscreen: {
-    flex: 1,
+    position: "absolute",
+    top: 120,
+    bottom: 150,
+    left: 0,
+    right: 0,
     alignItems: "center",
     justifyContent: "center",
-    paddingHorizontal: 24,
     backgroundColor: colors.wt,
   },
 });
