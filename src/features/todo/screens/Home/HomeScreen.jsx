@@ -300,7 +300,8 @@ export default function HomeScreen({navigation, route}) {
   const isCharacterBusy = isCharacterLoading || isCharacterFetching;
 
   const lottieKey = useMemo(() => {
-    return getLottieKeyFromStatus(characterStatus?.status);
+    // return getLottieKeyFromStatus(characterStatus?.status);
+    return getLottieKeyFromStatus("CASE_E1");
   }, [characterStatus?.status]);
 
   const isShadowGR = useMemo(() => {
