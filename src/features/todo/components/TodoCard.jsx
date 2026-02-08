@@ -548,7 +548,7 @@ const styles = StyleSheet.create({
     borderRadius: 12,
     backgroundColor: colors.wt,
     // borderWidth: 1,
-    paddingRight: 10,
+    // paddingRight: 10,
   },
   dragHandleButton: {
     paddingHorizontal: 6,
