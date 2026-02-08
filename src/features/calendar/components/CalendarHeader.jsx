@@ -11,20 +11,23 @@ export default function CalendarHeader({
   mode,
   onPressButton,
   onPressToday,
-  navigation, onPressYearMonth,
+  navigation,
+  onPressYearMonth,
 }) {
   return (
-    <View className="w-full px-5 py-4 flex-row justify-between items-center">
+    <View
+      className="w-full flex-row justify-between items-center"
+      style={{paddingHorizontal: 20, paddingVertical: 16}}
+    >
       <View>
-          <TouchableOpacity onPress={onPressYearMonth}>
-              <AppText variant="M500" className="text-gr500">
-                  {date.year()}년
-              </AppText>
-              <AppText variant="H3" className="mt-1 text-bk">
-                  {date.month() + 1}월
-              </AppText>
-          </TouchableOpacity>
-
+        <TouchableOpacity onPress={onPressYearMonth}>
+          <AppText variant="M500" className="text-gr500">
+            {date.year()}년
+          </AppText>
+          <AppText variant="H3" className="text-bk">
+            {date.month() + 1}월
+          </AppText>
+        </TouchableOpacity>
       </View>
 
       <View className="flex-row items-center gap-4">

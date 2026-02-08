@@ -647,10 +647,8 @@ const styles = StyleSheet.create({
     justifyContent: "center",
     // borderWidth: 1,
     // height: height * 0.312,
-    // height: 259,
-    // height: 217,
-    height: 229,
-    paddingTop: 9,
+    height: 259,
+    paddingTop: 15,
   },
   lottieWrapper: {
     position: "relative",
