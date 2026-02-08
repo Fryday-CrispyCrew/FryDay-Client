@@ -616,7 +616,8 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "space-between",
-    height: "10%",
+    // height: "10%",
+    paddingVertical: 16,
   },
   todoScroll: {
     flex: 1, // ✅ 남은 영역을 TodoCard 스크롤이 차지
@@ -641,10 +642,15 @@ const styles = StyleSheet.create({
   },
   illustrationWrapper: {
     width: "100%",
-    height: height * 0.377,
+    // height: height * 0.377,
     alignItems: "center",
     justifyContent: "center",
     // borderWidth: 1,
+    // height: height * 0.312,
+    // height: 259,
+    // height: 217,
+    height: 229,
+    paddingTop: 9,
   },
   lottieWrapper: {
     position: "relative",
@@ -653,6 +659,7 @@ const styles = StyleSheet.create({
     maxHeight: "80%", // ✅ 핵심
     // marginTop: "8%",
     // borderWidth: 1,
+    maxHeight: "100%",
   },
   errorImage: {
     width: "100%",
@@ -750,7 +757,8 @@ const sheetStyles = StyleSheet.create({
 const bubbleStyles = StyleSheet.create({
   wrap: {
     position: "absolute",
-    top: "5%", // 🔥 튀김 위에 얹고 싶으면 여기 조절
+    top: "3%", // 🔥 튀김 위에 얹고 싶으면 여기 조절
+    // top: 0,
     left: 0,
     right: 0,
     alignItems: "center",
