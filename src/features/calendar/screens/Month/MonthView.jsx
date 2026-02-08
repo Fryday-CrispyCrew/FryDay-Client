@@ -9,6 +9,8 @@ export default function MonthView({
                                       bowlMap,
                                       selectedDate,
                                       onSelectDate,
+                                      onSwipeStart,
+                                      onMonthChanged
                                   }) {
     const { width } = useWindowDimensions();
     const listRef = useRef(null);
@@ -40,6 +42,9 @@ export default function MonthView({
             showsHorizontalScrollIndicator={false}
             keyExtractor={(_, i) => `month-${i}`}
             getItemLayout={(_, i) => ({ length: width, offset: width * i, index: i })}
+            onMomentumScrollBegin={() => {
+                onSwipeStart?.();
+            }}
             onMomentumScrollEnd={(e) => {
                 const page = Math.round(e.nativeEvent.contentOffset.x / width);
 

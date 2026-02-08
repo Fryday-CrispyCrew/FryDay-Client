@@ -4,16 +4,16 @@ import BaseModal from "../components/modal/BaseModal";
 
 export default function LoadingModal({ visible }) {
     return (
-        <BaseModal
+        <BaseModal hideCard
             visible={!!visible}
             title=""
             showClose={false}
             onRequestClose={() => {}}
             onBackdropPress={() => {}}
         >
-            <View style={styles.wrap}>
+            <View style={styles.overlay}>
                 <Image
-                    source={require("../assets/png/loading-icon.png")}
+                    source={require("../assets/png/Loading.png")}
                     style={styles.image}
                     resizeMode="contain"
                 />
@@ -23,10 +23,10 @@ export default function LoadingModal({ visible }) {
 }
 
 const styles = {
-    wrap: {
+    overlay: {
+        position: "absolute",
         alignItems: "center",
         justifyContent: "center",
-        paddingVertical: 4,
     },
     image: {
         width: 220,

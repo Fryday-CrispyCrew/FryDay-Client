@@ -107,7 +107,7 @@ function TodoItem({
             <TouchableOpacity
               style={styles.todoTodayButton}
               activeOpacity={0.7}
-              onPress={() => onDoTomorrow?.(item.id)}
+              onPress={() => onDoTomorrow?.(item)}
             >
               <TomorrowIcon width={24} height={24} />
             </TouchableOpacity>
@@ -115,7 +115,7 @@ function TodoItem({
             <TouchableOpacity
               style={styles.todoTodayButton}
               activeOpacity={0.7}
-              onPress={() => onDoToday?.(item.id)}
+              onPress={() => onDoToday?.(item)}
             >
               <StartDateIcon width={24} height={24} />
             </TouchableOpacity>
@@ -214,9 +214,9 @@ export default function TodoCard({
   }, []);
 
   const handleDoTomorrow = useCallback(
-    async (id) => {
+    async (todo) => {
       try {
-        await onDoTomorrow?.(id);
+        await onDoTomorrow?.(todo);
       } finally {
         closeAnySwipe(); // ✅ 동작 완료 후 스와이프 닫기
       }
@@ -225,9 +225,9 @@ export default function TodoCard({
   );
 
   const handleDoToday = useCallback(
-    async (id) => {
+    async (todo) => {
       try {
-        await onDoToday?.(id);
+        await onDoToday?.(todo);
       } finally {
         closeAnySwipe(); // ✅ 동작 완료 후 스와이프 닫기
       }

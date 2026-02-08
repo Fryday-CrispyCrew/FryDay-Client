@@ -16,8 +16,6 @@ import {TodoLottie} from "../../assets/lottie"; // HomeScreen 기준 상대경�
 import AppText from "../../../../shared/components/AppText";
 import TodayIcon from "../../assets/svg/Today.svg";
 import CategoryIcon from "../../assets/svg/Category.svg";
-import ShadowGRIcon from "../../assets/svg/shadow/shadowGR.svg";
-import ShadowORIcon from "../../assets/svg/shadow/shadowOR.svg";
 import ErrorImage from "../../../../shared/assets/png/error-icon.png";
 
 import TodoCard from "../../components/TodoCard";
@@ -85,6 +83,8 @@ function getLottieKeyFromStatus(status) {
       return "caseF";
     case "CASE_G":
       return "caseG";
+    case "CASE_H":
+      return "caseH";
     default:
       // return "caseA"; // fallback
       return null;
@@ -238,7 +238,7 @@ export default function HomeScreen({navigation, route}) {
   }, [rawCategories]);
 
   // ✅ 홈 투두 조회 (categoryId 생략 = 전체)
-  const {data: rawTodos = [], isSuccess: isHomeTodosSuccess} =
+  const {data: rawTodos = [], isFetched: isHomeTodosFetched} =
     useHomeTodosQuery({
       date,
       categoryId: undefined,
@@ -284,7 +284,7 @@ export default function HomeScreen({navigation, route}) {
     isLoading: isCharacterLoading, // ✅ 추가
     isFetching: isCharacterFetching, // (선택)
     isError: isCharacterError,
-  } = useTodoCharacterStatusQuery({date}, {enabled: isHomeTodosSuccess});
+  } = useTodoCharacterStatusQuery({date}, {enabled: isHomeTodosFetched});
 
   useEffect(() => {
     console.log("characterStatus: ", characterStatus);
@@ -471,9 +471,16 @@ export default function HomeScreen({navigation, route}) {
 
         <View style={styles.iconRow}>
           <TouchableOpacity
-            activeOpacity={0.5}
-            style={styles.iconButton}
-            onPress={() => setCurrentDate(new Date())}
+            activeOpacity={isViewingToday ? 1 : 0.5}
+            disabled={isViewingToday}
+            style={[
+              styles.iconButton,
+              isViewingToday && styles.iconButtonDisabled,
+            ]}
+            onPress={() => {
+              if (isViewingToday) return;
+              setCurrentDate(new Date());
+            }}
           >
             <TodayIcon width={24} height={24} />
           </TouchableOpacity>
@@ -513,14 +520,14 @@ export default function HomeScreen({navigation, route}) {
                       );
                     }}
                   >
-                    {isCharacterBusy ? (
-                      <></>
-                    ) : isCharacterError ? (
+                    {isCharacterError ? (
                       <Image
                         source={ErrorImage}
                         style={styles.errorImage}
                         resizeMode="contain"
                       />
+                    ) : isCharacterBusy ? (
+                      <></>
                     ) : (
                       <>
                         {shouldRenderBack && (
@@ -545,21 +552,43 @@ export default function HomeScreen({navigation, route}) {
                         />
                       </>
                     )}
+                    {/* {isCharacterBusy ? (
+                      <></>
+                    ) : isCharacterError ? (
+                      <Image
+                        source={ErrorImage}
+                        style={styles.errorImage}
+                        resizeMode="contain"
+                      />
+                    ) : (
+                      <>
+                        {shouldRenderBack && (
+                          <LottieView
+                            source={
+                              lottieKey === "caseE1"
+                                ? TodoLottie.caseE1Back
+                                : TodoLottie.caseE2Back
+                            }
+                            autoPlay
+                            loop={false}
+                            style={styles.lottie}
+                          />
+                        )}
+
+                        <LottieView
+                          source={TodoLottie[lottieKey]}
+                          autoPlay
+                          loop={false}
+                          style={styles.lottie}
+                        />
+                      </>
+                    )} */}
                   </Pressable>
-                  {!isCharacterError && (
-                    <View style={styles.shadowWrapper}>
-                      {isShadowGR ? (
-                        <ShadowGRIcon height="100%" width="100%" />
-                      ) : (
-                        <ShadowORIcon height="100%" width="100%" />
-                      )}
-                    </View>
-                  )}
                 </View>
               </GestureDetector>
               {/* 구분선 */}
               <View className="mx-1">
-                <Dotted style={{ width: "100%" }} height={1} />
+                <Dotted style={{width: "100%"}} height={1} />
               </View>
             </>
           }
@@ -599,6 +628,9 @@ const styles = StyleSheet.create({
     alignItems: "center",
     justifyContent: "center",
   },
+  iconButtonDisabled: {
+    opacity: 0.35,
+  },
   illustrationWrapper: {
     width: "100%",
     height: height * 0.377,
@@ -611,7 +643,7 @@ const styles = StyleSheet.create({
     width: "72%",
     aspectRatio: 1,
     maxHeight: "80%", // ✅ 핵심
-    marginTop: "8%",
+    // marginTop: "8%",
     // borderWidth: 1,
   },
   errorImage: {
@@ -749,5 +781,6 @@ const bubbleStyles = StyleSheet.create({
     borderBottomWidth: 1,
     borderColor: colors.gr200,
     transform: [{rotate: "45deg"}],
+    borderBottomRightRadius: 3,
   },
 });

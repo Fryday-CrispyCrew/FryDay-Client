@@ -129,6 +129,7 @@ export default function AlarmTimeSettingSection({
               mode="time"
               display="spinner"
               minuteInterval={1}
+              textColor={colors.or}
               onChange={(event, date) => {
                 if (!date) return;
                 setAlarmDraftDate(date);

@@ -9,20 +9,19 @@ export default function ErrorModal({
                                        message = "아차차... 정보를 불러오지 못했어요.\n잠시 후 다시 시도해 주세요!",
                                    }) {
     return (
-        <BaseModal
+        <BaseModal hideCard
             visible={!!visible}
             title=""
             showClose={false}
             onRequestClose={onClose}
             onBackdropPress={onClose}
         >
-            <View style={styles.wrap}>
+            <View style={styles.overlay}>
                 <Image
-                    source={require("../assets/png/error-icon.png")}
+                    source={require("../assets/png/Error.png")}
                     style={styles.image}
                     resizeMode="contain"
                 />
-
                 <AppText variant="M500" className="text-gr500 text-center">
                     {message}
                 </AppText>
@@ -32,14 +31,13 @@ export default function ErrorModal({
 }
 
 const styles = {
-    wrap: {
+    overlay: {
+        position: "absolute",
         alignItems: "center",
         justifyContent: "center",
-        paddingVertical: 4,
     },
     image: {
         width: 220,
         height: 220,
-        marginBottom: 14,
     },
 };

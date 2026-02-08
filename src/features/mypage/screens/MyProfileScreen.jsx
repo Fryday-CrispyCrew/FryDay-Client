@@ -4,6 +4,7 @@ import { SafeAreaView } from "react-native-safe-area-context";
 
 import MyPageHeader from "../components/MypageHeader";
 import MyPageMenu from "../components/MypageMenu";
+import Banner from "../../../shared/components/Banner";
 
 export default function MyProfileScreen() {
     return (
@@ -23,11 +24,23 @@ export default function MyProfileScreen() {
                 <MyPageMenu menuTitle="공지 사항" to="Notice" />
                 <MyPageMenu menuTitle="계정 설정" to="EditProfile" />
                 <MyPageMenu menuTitle="알림 설정" to="Alarm" />
-
                 <MyPageMenu menuTitle="이용 약관" to="Use" />
                 <MyPageMenu menuTitle="자주 묻는 질문" to="Qna" />
-
                 <MyPageMenu menuTitle="버전 정보" rightText="1.1ver" hideArrow />
+
+                {/* 배너 광고 */}
+                <View
+                    style={{
+                        width: "100%",
+                        height: 80,
+                        marginTop: 28,
+                        borderWidth: 1,
+                        borderColor: "#4DA3FF",
+                        overflow: "hidden",
+                    }}
+                >
+                    <Banner/>
+                </View>
             </ScrollView>
         </SafeAreaView>
     );

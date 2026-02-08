@@ -41,6 +41,7 @@ import {useCreateTodoRecurrenceMutation} from "../../queries/sheet/repeat/useCre
 import {useUpdateRecurrenceRuleMutation} from "../../queries/sheet/repeat/useUpdateRecurrenceRuleMutation";
 import {useUpdateTodoDateMutation} from "../../queries/sheet/date/useUpdateTodoDateMutation";
 import {useDeleteTodoRecurrenceMutation} from "../../queries/sheet/repeat/useDeleteTodoRecurrenceMutation";
+import AppText from "../../../../shared/components/AppText";
 
 /**
  * ✅ BottomSheetTextInput만 분리 (IME-safe 로직 포함)
@@ -291,6 +292,9 @@ const TodoEditorSheet = React.forwardRef(function TodoEditorSheet(
   },
   ref,
 ) {
+  useEffect(() => {
+    console.log("categories: ", categories);
+  }, [categories]);
   const insets = useSafeAreaInsets();
   const repeatPayload = useRepeatEditorStore.getState().getRepeatPayload();
 
@@ -306,6 +310,9 @@ const TodoEditorSheet = React.forwardRef(function TodoEditorSheet(
   // ✅ 메모 입력용 ref/state 추가
   const memoInputRef = useRef(null);
   const [memoText, setMemoText] = useState("");
+
+  // ✅ 키보드 상태 추적
+  const [isKeyboardVisible, setIsKeyboardVisible] = useState(false);
 
   const [isTitleFocused, setIsTitleFocused] = useState(false);
   const [isMemoFocused, setIsMemoFocused] = useState(false);
@@ -347,6 +354,27 @@ const TodoEditorSheet = React.forwardRef(function TodoEditorSheet(
   const [todoWheelInitialMonth, setTodoWheelInitialMonth] = useState(
     todoMonthCursor.getMonth() + 1,
   );
+
+  // ✅ 키보드 이벤트 리스너 설정
+  useEffect(() => {
+    const keyboardDidShowListener = Keyboard.addListener(
+      "keyboardDidShow",
+      () => {
+        setIsKeyboardVisible(true);
+      },
+    );
+    const keyboardDidHideListener = Keyboard.addListener(
+      "keyboardDidHide",
+      () => {
+        setIsKeyboardVisible(false);
+      },
+    );
+
+    return () => {
+      keyboardDidShowListener.remove();
+      keyboardDidHideListener.remove();
+    };
+  }, []);
 
   // todoId가 string일 수 있으니 숫자로 보정
   const numericTodoId = useMemo(() => {
@@ -831,6 +859,7 @@ const TodoEditorSheet = React.forwardRef(function TodoEditorSheet(
     // create 모드는 기존 흐름 유지(필요하면 create mutation 연결)
     if (mode !== "edit") {
       onSubmit?.(draftCategoryId);
+      onCloseAfterSubmit?.();
       return;
     }
 
@@ -989,10 +1018,10 @@ const TodoEditorSheet = React.forwardRef(function TodoEditorSheet(
       onCloseAfterSubmit?.(); // ✅ 모달 없이 즉시 닫기
     } catch (e) {
       // ✅ 백엔드 에러 메시지 우선 표시
-      const message = e?.response?.data?.message;
-      if (message) {
-        toast.show(message);
-      }
+      // const message = e?.response?.data?.message;
+      // if (message) {
+      //   toast.show(message);
+      // }
       // 그 외에는 api.js의 인터셉터가 제네릭 토스트 처리
     }
   }, [
@@ -1032,6 +1061,10 @@ const TodoEditorSheet = React.forwardRef(function TodoEditorSheet(
     return categories
       .filter((c) => c.categoryId !== 0)
       .filter((c) => c.categoryId !== draftCategoryId);
+  }, [categories, draftCategoryId]);
+
+  const selectedCategory = useMemo(() => {
+    return categories?.find((c) => c.categoryId === draftCategoryId);
   }, [categories, draftCategoryId]);
 
   const handleClearText = useCallback(() => {
@@ -1123,6 +1156,7 @@ const TodoEditorSheet = React.forwardRef(function TodoEditorSheet(
       index={0}
       // snapPoints={snapPoints}
       enableDynamicSizing
+      maxDynamicContentSize={700}
       backdropComponent={renderBackdrop}
       onDismiss={handleDismiss}
       onAnimate={handleSheetAnimate}
@@ -1131,12 +1165,15 @@ const TodoEditorSheet = React.forwardRef(function TodoEditorSheet(
       backgroundStyle={{backgroundColor: "#FAFAFA"}}
       handleIndicatorStyle={{backgroundColor: "#D0D0D0", width: "38.4%"}}
       enableContentPanningGesture={false} // ✅ content로는 시트 이동 X (고정)
-      bottomInset={insets.bottom}
-      enablePanDownToClose={false}
-      // detached={true}
+      enablePanDownToClose={true}
     >
       <BottomSheetView>
-        <View style={styles.container}>
+        <View
+          style={[
+            styles.container,
+            {paddingBottom: isKeyboardVisible ? 0 : insets.bottom},
+          ]}
+        >
           {/* (선택) 로딩 표시 */}
           {mode === "edit" && (isTodoDetailLoading || isTodoDetailFetching) ? (
             <Text style={{fontSize: 12, color: "#B0B0B0", marginBottom: 8}}>
@@ -1146,11 +1183,18 @@ const TodoEditorSheet = React.forwardRef(function TodoEditorSheet(
 
           {/* 카테고리 row */}
           <View style={styles.categoryInlineRow}>
-            <View style={styles.categoryChipSelected}>
-              <Text style={styles.categorySelectedText}>
+            <View
+              style={[
+                styles.categoryChipSelected,
+                selectedCategory?.color
+                  ? {backgroundColor: selectedCategory.color}
+                  : null,
+              ]}
+            >
+              <AppText variant="M600" style={styles.categorySelectedText}>
                 {categories.find((c) => c.categoryId === draftCategoryId)
                   ?.label ?? categoryLabel}
-              </Text>
+              </AppText>
             </View>
 
             {!isCategoryOpen && (
@@ -1184,7 +1228,9 @@ const TodoEditorSheet = React.forwardRef(function TodoEditorSheet(
                     onPress={() => handlePickCategory(c.categoryId)}
                     style={styles.categoryChip}
                   >
-                    <Text style={styles.categoryText}>{c.label}</Text>
+                    <AppText variant="M600" style={styles.categoryText}>
+                      {c.label}
+                    </AppText>
                   </TouchableOpacity>
                 ))}
               </ScrollView>
@@ -1544,13 +1590,12 @@ const styles = StyleSheet.create({
   },
 
   categoryChipSelected: {
-    paddingHorizontal: 16,
-    paddingVertical: 7,
-    borderRadius: 999,
-    backgroundColor: "#FF5B22",
+    paddingHorizontal: 10,
+    paddingVertical: 6,
+    borderRadius: 24,
+    backgroundColor: colors.or,
   },
   categorySelectedText: {
-    fontSize: 13,
     color: "#FFFFFF",
   },
 
@@ -1570,14 +1615,14 @@ const styles = StyleSheet.create({
   },
 
   categoryChip: {
-    paddingHorizontal: 14,
-    paddingVertical: 7,
+    paddingHorizontal: 10,
+    paddingVertical: 6,
     borderRadius: 999,
     backgroundColor: "#F0F0F0",
   },
   categoryText: {
-    fontSize: 13,
-    color: "#B0B0B0",
+    // fontSize: 13,
+    color: colors.gr300,
   },
 
   // ===== create =====

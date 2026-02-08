@@ -10,4 +10,5 @@ export const TodoLottie = {
   caseE2Back: require("./caseE_2_back.json"),
   caseF: require("./caseF.json"),
   caseG: require("./caseG.json"),
+  caseH: require("./caseH.json"),
 };
