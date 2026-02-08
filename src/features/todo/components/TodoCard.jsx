@@ -528,8 +528,8 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: "#FF5B22",
     borderRadius: 24,
-    paddingHorizontal: 12,
-    paddingVertical: 8,
+    paddingHorizontal: 10,
+    paddingVertical: 6,
   },
 
   /** TodoItem styles */
