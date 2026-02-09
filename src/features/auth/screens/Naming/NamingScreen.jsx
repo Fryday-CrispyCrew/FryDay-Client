@@ -26,6 +26,10 @@ export default function NamingScreen({navigation, route}) {
 
     const [nicknameError, setNicknameError] = useState(null);
 
+    useEffect(() => {
+        AsyncStorage.setItem(STEP_KEY, ONBOARDING_STEP.NEEDS_NICKNAME);
+    }, []);
+
     const onChangeNickname = (text) => {
         const raw = text ?? "";
         const filtered = raw.replace(/[^가-힣ㄱ-ㅎㅏ-ㅣa-zA-Z0-9\s]/g, "");
@@ -145,6 +149,9 @@ export default function NamingScreen({navigation, route}) {
 
     const goBackToConsent = useCallback(async () => {
         if (isNewUser) await deleteTokens();
+
+        await AsyncStorage.setItem(STEP_KEY, ONBOARDING_STEP.NEEDS_AGREEMENT);
+
         const rootNav = navigation.getParent("root") ?? navigation.getParent();
         rootNav?.reset({index: 0, routes: [{name: "Consent"}]});
     }, [navigation, isNewUser]);

@@ -11,16 +11,18 @@ import { appleGetIdToken } from "../../lib/apple";
 import { useCreateAppleLoginMutation } from "../../queries/socialLogin/useCreateAppleLoginMutation";
 import { useCreateSocialLoginMutation } from "../../queries/socialLogin/useCreateSocialLoginMutation";
 import { useCreateConsentMutation } from "../../queries/consent/useCreateConsentMutation";
+import {ONBOARDING_STEP, STEP_KEY} from "../../../../shared/constants/onboardingStep";
+import AsyncStorage from "@react-native-async-storage/async-storage";
 
 function nextRoute(status) {
   switch (status) {
-    case "NEEDS_AGREEMENT":
+    case ONBOARDING_STEP.NEEDS_AGREEMENT:
       return "Consent";
-    case "NEEDS_NICKNAME":
+    case ONBOARDING_STEP.NEEDS_NICKNAME:
       return "Naming";
-    case "NEEDS_ONBOARDING":
+    case ONBOARDING_STEP.NEEDS_ONBOARDING:
       return "Onboarding";
-    case "COMPLETED":
+    case ONBOARDING_STEP.COMPLETED:
       return "Main";
     default:
       return "Consent";
@@ -39,26 +41,23 @@ export default function LoginScreen({ navigation }) {
   const [loading, setLoading] = useState(false);
 
   const afterLogin = async (data) => {
-    console.log("[login] raw", JSON.stringify(data, null, 2));
     let status = data?.onboardingStatus;
     const nickname = String(data?.user?.nickname ?? "").trim();
 
-    if (status === "NEEDS_NICKNAME" && nickname.length >= 2) {
-      status = "COMPLETED";
+    if (status === ONBOARDING_STEP.NEEDS_NICKNAME && nickname.length >= 2) {
+      status = ONBOARDING_STEP.COMPLETED;
     }
 
-    if (status === "NEEDS_AGREEMENT") {
-      try {
-        await createConsentAsync({ privacyRequired: true, skipErrorToast: true });
-      } catch (e) {
-        console.log("[consent] ERR", e?.response?.status, e?.response?.data, e?.message);
-      }
-    }
+    await AsyncStorage.setItem(STEP_KEY, status ?? ONBOARDING_STEP.NEEDS_AGREEMENT);
+
     const target = nextRoute(status);
     const rootNav = navigation.getParent("root") ?? navigation.getParent();
-    rootNav?.reset({ index: 0, routes: [{ name: target }] });
-
+    rootNav?.reset({
+      index: 0,
+      routes: [{name: target, params: {isNewUser: status === ONBOARDING_STEP.NEEDS_AGREEMENT}}],
+    });
   };
+
 
   const onPressKakao = async () => {
     if (loading) return;
