@@ -14,7 +14,6 @@ import AsyncStorage from "@react-native-async-storage/async-storage";
 import TodoBoardSection from "../../todo/components/TodoBoardSection";
 import {getDailyResultsMap} from "../api/dailyResultsApi";
 import YearMonthWheelModal from "../../todo/components/RepeatSettingsSection/wheel/YearMonthWheelModal";
-import LoadingModal from "../../../shared/modal/LoadingModal";
 
 
 
@@ -23,19 +22,6 @@ export default function CalendarScreen({navigation}) {
   const [currentDate, setCurrentDate] = useState(dayjs());
   const [selectedDate, setSelectedDate] = useState(dayjs());
 
-    const [loading, setLoading] = useState(false);
-    const loadingTimerRef = useRef(null);
-
-    const beginLoadingWithDelay = useCallback(() => {
-        if (loadingTimerRef.current) clearTimeout(loadingTimerRef.current);
-        loadingTimerRef.current = setTimeout(() => setLoading(true), 250); // 0.25초 이상이면 표시
-    }, []);
-
-    const endLoading = useCallback(() => {
-        if (loadingTimerRef.current) clearTimeout(loadingTimerRef.current);
-        loadingTimerRef.current = null;
-        setLoading(false);
-    }, []);
 
 
     const selectedDateStr = selectedDate.format("YYYY-MM-DD");
@@ -79,24 +65,24 @@ export default function CalendarScreen({navigation}) {
 
             let alive = true;
 
-            beginLoadingWithDelay();
-
             (async () => {
                 try {
                     const map = await getDailyResultsMap(startDate, endDate);
                     if (alive) setBowlMap(map);
                 } catch (e) {
-                    console.log("[dailyResults] ERR", e?.response?.status, JSON.stringify(e?.response?.data, null, 2), e?.message);
-                } finally {
-                    if (alive) endLoading();
+                    console.log(
+                        "[dailyResults] ERR",
+                        e?.response?.status,
+                        JSON.stringify(e?.response?.data, null, 2),
+                        e?.message
+                    );
                 }
             })();
 
             return () => {
                 alive = false;
-                endLoading();
             };
-        }, [currentDate, beginLoadingWithDelay, endLoading])
+        }, [currentDate])
     );
 
 
@@ -180,7 +166,6 @@ export default function CalendarScreen({navigation}) {
                   bowlMap={bowlMap}
                   selectedDate={selectedDate}
                   onSelectDate={handleSelectMonthDate}
-                  onSwipeStart={beginLoadingWithDelay}
               />
 
           )}
@@ -193,7 +178,7 @@ export default function CalendarScreen({navigation}) {
               onConfirm={handleConfirmYM}
           />
 
-          <LoadingModal visible={loading} />
+          {/*<LoadingModal visible={loading} />*/}
 
       </SafeAreaView>
   );
