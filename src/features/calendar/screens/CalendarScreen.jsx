@@ -24,10 +24,31 @@ function buildTodayState(mode) {
     };
 }
 
+function buildMonthToWeekState(currentMonthDate) {
+    const today = dayjs();
+    const viewingMonth = currentMonthDate.startOf("month");
+
+    const isTodayMonth = viewingMonth.isSame(today, "month");
+
+    if (isTodayMonth) {
+        return {
+            mode: "week",
+            currentDate: today,
+            selectedDate: today,
+        };
+    }
+
+    const monthFirstDay = viewingMonth.startOf("month");
+    return {
+        mode: "week",
+        currentDate: monthFirstDay,
+        selectedDate: monthFirstDay,
+    };
+}
+
 export default function CalendarScreen({ navigation }) {
     const [ready, setReady] = useState(false);
     const [state, setState] = useState(() => buildTodayState("month"));
-
     const { mode, currentDate, selectedDate } = state;
 
     const selectedDateStr = selectedDate.format("YYYY-MM-DD");
@@ -69,7 +90,17 @@ export default function CalendarScreen({ navigation }) {
         setState((s) => {
             const nextMode = s.mode === "week" ? "month" : "week";
             AsyncStorage.setItem("calendarMode", nextMode);
-            return buildTodayState(nextMode);
+
+            if (s.mode === "month" && nextMode === "week") {
+                return buildMonthToWeekState(s.currentDate);
+            }
+
+            if (s.mode === "week" && nextMode === "month") {
+                const m = s.currentDate.startOf("month");
+                return { ...s, mode: "month", currentDate: m };
+            }
+
+            return { ...s, mode: nextMode };
         });
     }, []);
 
@@ -124,9 +155,7 @@ export default function CalendarScreen({ navigation }) {
         }, [currentDate])
     );
 
-    if (!ready) {
-        return <SafeAreaView className="flex-1 bg-wt" edges={["top"]} />;
-    }
+    if (!ready) return <SafeAreaView className="flex-1 bg-wt" edges={["top"]} />;
 
     return (
         <SafeAreaView className="flex-1 bg-wt" edges={["top"]}>
@@ -159,7 +188,11 @@ export default function CalendarScreen({ navigation }) {
                         </View>
 
                         <View style={{ flex: 1, paddingHorizontal: 20 }}>
-                            <TodoBoardSection navigation={navigation} date={selectedDateStr} isViewingToday={isViewingToday} />
+                            <TodoBoardSection
+                                navigation={navigation}
+                                date={selectedDateStr}
+                                isViewingToday={isViewingToday}
+                            />
                         </View>
                     </>
                 ) : (
