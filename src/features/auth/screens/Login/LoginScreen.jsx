@@ -167,29 +167,29 @@ export default function LoginScreen({ navigation }) {
               ))}
             </View>
 
-            <AppText variant="S400" className="text-wt/75 text-center mt-4" style={{ paddingHorizontal: 8 }}>
-              가입 시 프라이데이의{" "}
-              <AppText
-                  variant="S400"
-                  style={{
-                    textDecorationLine: "underline",
-                    textDecorationColor: "rgba(250,250,250,0.75)",
-                  }}
-              >
-                이용 약관
-              </AppText>
-              과{" "}
-              <AppText
-                  variant="S400"
-                  style={{
-                    textDecorationLine: "underline",
-                    textDecorationColor: "rgba(250,250,250,0.75)",
-                  }}
-              >
-                개인정보 이용
-              </AppText>
-              에 동의하게 돼요
-            </AppText>
+            {/*<AppText variant="S400" className="text-wt/75 text-center mt-4" style={{ paddingHorizontal: 8 }}>*/}
+            {/*  가입 시 프라이데이의{" "}*/}
+            {/*  <AppText*/}
+            {/*      variant="S400"*/}
+            {/*      style={{*/}
+            {/*        textDecorationLine: "underline",*/}
+            {/*        textDecorationColor: "rgba(250,250,250,0.75)",*/}
+            {/*      }}*/}
+            {/*  >*/}
+            {/*    이용 약관*/}
+            {/*  </AppText>*/}
+            {/*  과{" "}*/}
+            {/*  <AppText*/}
+            {/*      variant="S400"*/}
+            {/*      style={{*/}
+            {/*        textDecorationLine: "underline",*/}
+            {/*        textDecorationColor: "rgba(250,250,250,0.75)",*/}
+            {/*      }}*/}
+            {/*  >*/}
+            {/*    개인정보 이용*/}
+            {/*  </AppText>*/}
+            {/*  에 동의하게 돼요*/}
+            {/*</AppText>*/}
           </View>
         </View>
       </SafeAreaView>
