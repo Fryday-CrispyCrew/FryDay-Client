@@ -2,6 +2,9 @@ import { View, TouchableOpacity } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
 import AppText from '../../../shared/components/AppText';
 import Arrow from '../../report/assets/svg/ArrowLeft.svg';
+import colors from "../../../shared/styles/colors";
+import ChevronIcon from "../../../shared/components/ChevronIcon";
+import React from "react";
 
 export default function MyPageHeader({ showBackButton = false, title }) {
     const navigation = useNavigation();
@@ -14,9 +17,12 @@ export default function MyPageHeader({ showBackButton = false, title }) {
                     className="flex-row items-center"
                     hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
                 >
-                    <View className="w-4 h-4">
-                        <Arrow width="100%" height="100%" />
-                    </View>
+                    <ChevronIcon
+                        direction="left"
+                        size={18}
+                        color={colors.bk}
+                        strokeWidth={2}
+                    />
 
 
                     <AppText variant="H3" className="text-bk ml-2">

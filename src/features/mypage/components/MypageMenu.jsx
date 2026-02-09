@@ -1,7 +1,9 @@
 import { TouchableOpacity, View } from "react-native";
 import AppText from "../../../shared/components/AppText";
-import Arrow from "../assets/svg/MenuArrow.svg";
 import { useNavigation } from "@react-navigation/native";
+import colors from "../../../shared/styles/colors";
+import ChevronIcon from "../../../shared/components/ChevronIcon";
+import React from "react";
 
 export default function MyPageMenu({
                                        menuTitle,
@@ -38,9 +40,13 @@ export default function MyPageMenu({
                     ) : null}
 
                     {!hideArrow && !rightText ? (
-                        <View className="w-4 h-4">
-                            <Arrow width="100%" height="100%" />
-                        </View>
+                        <ChevronIcon
+                            direction="right"
+                            size={18}
+                            color={colors.gr500}
+                            strokeWidth={2}
+                        />
+
                     ) : null}
                 </View>
             </View>
