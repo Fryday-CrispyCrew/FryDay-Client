@@ -6,6 +6,7 @@ import AppText from '../../../shared/components/AppText';
 import CategoryBg from '../assets/svg/Category_bg.svg';
 import Tung from '../assets/png/Tung.png';
 import CategoryLine from '../assets/svg/Category_line.svg';
+import colors from '../../../shared/styles/colors';
 
 const TICKS = [100, 80, 60, 40, 20];
 
@@ -15,18 +16,29 @@ export default function ReportCategoryCard({ data = [] }) {
     const computed = useMemo(() => {
         if (!data.length) return [];
 
-        const rates = data.map((d) => (d.total ? Math.round((d.success / d.total) * 100) : 0));
-        const maxRate = Math.max(...rates);
+        const successCounts = data.map((d) => d.success ?? 0);
+        const failCounts = data.map((d) => d.fail ?? 0);
 
-        const maxSuccessCount = Math.max(...data.map((d) => d.success));
-        const maxFailCount = Math.max(...data.map((d) => d.fail));
+        const maxSuccess = Math.max(0, ...successCounts);
+        const maxFail = Math.max(0, ...failCounts);
+
+        const allZeroSF = maxSuccess === 0 && maxFail === 0;
+
+        const bestSuccessIdx = allZeroSF ? -1 : successCounts.findIndex((v) => v === maxSuccess);
+        const mostFailIdx = allZeroSF ? -1 : failCounts.findIndex((v) => v === maxFail);
+
+        const rates = data.map((d) => {
+            const total = d.total ?? 0;
+            const success = d.success ?? 0;
+            return total > 0 ? Math.round((success / total) * 100) : 0;
+        });
 
         return data.map((d, i) => ({
             ...d,
             rate: clamp01(rates[i]),
-            isBestRate: rates[i] === maxRate,
-            isBestSuccessCount: d.success === maxSuccessCount,
-            isMostFailCount: d.fail === maxFailCount,
+            isBestSuccess: i === bestSuccessIdx,
+            isMostFail: i === mostFailIdx,
+            _allZeroSF: allZeroSF,
         }));
     }, [data]);
 
@@ -40,7 +52,7 @@ export default function ReportCategoryCard({ data = [] }) {
 
 // 바삭함 지수 Card
 function RateCard({ data }) {
-    const isEmpty = !data.length || data.every((d) => d.total === 0);
+    const isEmpty = !data.length;
 
     return (
         <View>
@@ -53,9 +65,7 @@ function RateCard({ data }) {
                 </AppText>
             </View>
 
-            <View
-                className="bg-wt rounded-2xl overflow-hidden"
-                style={{ borderWidth: 1, borderColor: '#F2F2F2' }}>
+            <View className="bg-wt rounded-2xl overflow-hidden" style={{ borderWidth: 1, borderColor: '#F2F2F2' }}>
                 {isEmpty ? <EmptyState /> : <BarChart data={data} />}
             </View>
         </View>
@@ -64,7 +74,7 @@ function RateCard({ data }) {
 
 // 바삭함 개수 Card
 function CountCard({ data }) {
-    const isEmpty = !data.length || data.every((d) => d.success === 0 && d.fail === 0);
+    const isEmpty = !data.length;
 
     return (
         <View>
@@ -90,9 +100,7 @@ function CountCard({ data }) {
                 </View>
             </View>
 
-            <View
-                className="bg-wt rounded-2xl overflow-hidden"
-                style={{ borderWidth: 1, borderColor: '#F2F2F2' }}>
+            <View className="bg-wt rounded-2xl overflow-hidden" style={{ borderWidth: 1, borderColor: '#F2F2F2' }}>
                 {isEmpty ? <EmptyState /> : <LineChart data={data} />}
             </View>
         </View>
@@ -121,10 +129,8 @@ function GridLayer() {
     const cardWidth = Math.min(390, width - padX * 2);
     const plotLeft = 44;
     const plotRightPadding = 20;
-    const plotHeight = 144;
-    const plotTop = 12;
     const bgW = Math.max(0, cardWidth - plotLeft - plotRightPadding);
-    const bgH = 180;
+    const bgH = 240;
 
     return (
         <>
@@ -153,11 +159,13 @@ function BarChart({ data }) {
 
     const plotLeft = 44;
     const plotRightPadding = 20;
-    const plotTop = 12;
+    const plotTop = 28;
     const plotHeight = 160;
 
     const barW = 24;
     const labelBoxW = 44;
+
+    const allZeroSF = data.length > 0 && data.every((d) => (d.success ?? 0) === 0 && (d.fail ?? 0) === 0);
 
     const splitCategoryName = (name) => {
         if (name.length <= 4) return name;
@@ -180,11 +188,13 @@ function BarChart({ data }) {
                 {data.map((d, i) => {
                     const barH = Math.max(8, (d.rate / 100) * plotHeight);
 
+                    const barClass = allZeroSF ? 'bg-gr500' : d.isBestSuccess ? 'bg-or' : 'bg-gr500';
+
                     return (
                         <View key={`${d.name}-${i}`} style={{ flex: 1, alignItems: 'center' }}>
                             <CategoryLine width={barW} height={plotHeight} pointerEvents="none" />
-
                             <View
+                                className={barClass}
                                 style={{
                                     position: 'absolute',
                                     bottom: 0,
@@ -192,7 +202,6 @@ function BarChart({ data }) {
                                     height: barH,
                                     borderTopLeftRadius: 12,
                                     borderTopRightRadius: 12,
-                                    backgroundColor: d.isBestRate ? '#FF5B22' : '#EAEAEA',
                                 }}
                             />
                         </View>
@@ -215,8 +224,8 @@ function BarChart({ data }) {
                     <View key={`${d.name}-label-${i}`} style={{ flex: 1, alignItems: 'center' }}>
                         <View style={{ width: labelBoxW, alignItems: 'center' }}>
                             <AppText
-                                variant={d.isBestRate ? 'S700' : 'S500'}
-                                className={d.isBestRate ? 'text-or' : 'text-gr500'}
+                                variant={allZeroSF ? 'S500' : d.isBestSuccess ? 'S700' : 'S500'}
+                                className={allZeroSF ? 'text-gr500' : d.isBestSuccess ? 'text-or' : 'text-gr500'}
                                 style={{ textAlign: 'center' }}
                             >
                                 {splitCategoryName(d.name)}
@@ -241,14 +250,17 @@ function LineChart({ data }) {
     const plotRightPadding = 16;
     const plotTop = 16;
     const plotHeight = 160;
+
     const topPadding = 16;
     const bottomPadding = 16;
-    const usableHeight = plotHeight - topPadding-bottomPadding;
+    const usableHeight = plotHeight - topPadding - bottomPadding;
 
     const barW = 24;
 
-    const successVals = data.map((d) => clamp01(d.success));
-    const failVals = data.map((d) => clamp01(d.fail));
+    const allZeroSF = data.length > 0 && data.every((d) => (d.success ?? 0) === 0 && (d.fail ?? 0) === 0);
+
+    const successVals = data.map((d) => clamp01(d.success ?? 0));
+    const failVals = data.map((d) => clamp01(d.fail ?? 0));
 
     const makePath = (vals, w) => {
         if (n === 1) {
@@ -270,6 +282,20 @@ function LineChart({ data }) {
     const splitCategoryName = (name) => {
         if (name.length <= 4) return name;
         return `${name.slice(0, 4)}\n${name.slice(4)}`;
+    };
+
+    const labelVariant = (d) => {
+        if (allZeroSF) return 'S500';
+        if (d.isBestSuccess) return 'S700';
+        if (d.isMostFail) return 'S700';
+        return 'S500';
+    };
+
+    const labelClass = (d) => {
+        if (allZeroSF) return 'text-gr500';
+        if (d.isBestSuccess) return 'text-or';
+        if (d.isMostFail) return 'text-gr900';
+        return 'text-gr500';
     };
 
     return (
@@ -304,7 +330,7 @@ function LineChart({ data }) {
                             <Svg width={w} height={plotHeight}>
                                 <Path
                                     d={makePath(failVals, w)}
-                                    stroke="#4F4E4D"
+                                    stroke={colors.gr900}
                                     strokeWidth={12}
                                     fill="none"
                                     strokeLinecap="round"
@@ -312,7 +338,7 @@ function LineChart({ data }) {
                                 />
                                 <Path
                                     d={makePath(successVals, w)}
-                                    stroke="#FF5B22"
+                                    stroke={allZeroSF ? colors.gr500 : colors.or}
                                     strokeWidth={12}
                                     fill="none"
                                     strokeLinecap="round"
@@ -321,8 +347,8 @@ function LineChart({ data }) {
 
                                 {isSingle && (
                                     <>
-                                        <Circle cx={centerX} cy={failY} r={6} fill="#4F4E4D" />
-                                        <Circle cx={centerX} cy={successY} r={6} fill="#FF5B22" />
+                                        <Circle cx={centerX} cy={failY} r={6} fill={colors.gr900} />
+                                        <Circle cx={centerX} cy={successY} r={6} fill={allZeroSF ? colors.gr500 : colors.or} />
                                     </>
                                 )}
                             </Svg>
@@ -340,42 +366,13 @@ function LineChart({ data }) {
                     bottom: 10,
                 }}
             >
-                {data.map((d, i) => {
-                    const isSingle = data.length === 1;
-
-                    let labelClass = 'text-gr500';
-                    let isBold = false;
-
-                    if (isSingle) {
-                        if (d.success > d.fail) {
-                            labelClass = 'text-or';
-                            isBold = true;
-                        } else if (d.fail > d.success) {
-                            labelClass = 'text-gr900';
-                            isBold = true;
-                        }
-                    } else {
-                        if (d.isBestSuccessCount) {
-                            labelClass = 'text-or';
-                            isBold = true;
-                        } else if (d.isMostFailCount) {
-                            labelClass = 'text-gr900';
-                            isBold = true;
-                        }
-                    }
-
-                    return (
-                        <View key={`${d.name}-label2-${i}`} style={{ flex: 1, alignItems: 'center' }}>
-                            <AppText
-                                variant={isBold ? 'S700' : 'S500'}
-                                className={labelClass}
-                                style={{ textAlign: 'center' }}
-                            >
-                                {splitCategoryName(d.name)}
-                            </AppText>
-                        </View>
-                    );
-                })}
+                {data.map((d, i) => (
+                    <View key={`${d.name}-label2-${i}`} style={{ flex: 1, alignItems: 'center' }}>
+                        <AppText variant={labelVariant(d)} className={labelClass(d)} style={{ textAlign: 'center' }}>
+                            {splitCategoryName(d.name)}
+                        </AppText>
+                    </View>
+                ))}
             </View>
         </View>
     );
@@ -383,21 +380,12 @@ function LineChart({ data }) {
 
 function MeasureWidth({ render }) {
     const [w, setW] = React.useState(0);
-    const mountedRef = React.useRef(false);
-
-    React.useEffect(() => {
-        mountedRef.current = true;
-        return () => {
-            mountedRef.current = false;
-        };
-    }, []);
 
     return (
         <View
             className="flex-1"
             onLayout={(e) => {
                 const nextW = e.nativeEvent.layout.width;
-                if (!mountedRef.current) return;
                 setW((prev) => (prev === nextW ? prev : nextW));
             }}
         >
@@ -405,4 +393,3 @@ function MeasureWidth({ render }) {
         </View>
     );
 }
-
