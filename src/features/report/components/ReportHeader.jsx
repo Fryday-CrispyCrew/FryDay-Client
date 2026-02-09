@@ -3,6 +3,9 @@ import dayjs from 'dayjs';
 import AppText from '../../../shared/components/AppText';
 import ArrowLeft from '../assets/svg/ArrowLeft.svg'
 import ArrowRight from '../assets/svg/ArrowRight.svg';
+import colors from "../../../shared/styles/colors";
+import ChevronIcon from "../../../shared/components/ChevronIcon";
+import React from "react";
 
 export default function ReportHeader({ currentDate, onChangeMonth, joinedAt, onPressYearMonth }) {
     const date = dayjs(currentDate).startOf('month');
@@ -54,7 +57,13 @@ export default function ReportHeader({ currentDate, onChangeMonth, joinedAt, onP
                             isPrevHidden ? "opacity-30" : ""
                         }`}
                     >
-                        {!isPrevHidden ? <ArrowLeft width="100%" height="100%"/> : null}
+                        {!isPrevHidden ?
+                            <ChevronIcon
+                            direction="left"
+                            size={24}
+                            color={colors.gr900}
+                            strokeWidth={2} />
+                            : null}
                     </View>
                 </TouchableOpacity>
 
@@ -64,7 +73,11 @@ export default function ReportHeader({ currentDate, onChangeMonth, joinedAt, onP
                             isNextHidden ? "opacity-30" : ""
                         }`}
                     >
-                        {!isNextHidden ? <ArrowRight width="100%" height="100%" /> : null}
+                        {!isNextHidden ? <ChevronIcon
+                            direction="right"
+                            size={24}
+                            color={colors.gr900}
+                            strokeWidth={2} /> : null}
                     </View>
                 </TouchableOpacity>
             </View>

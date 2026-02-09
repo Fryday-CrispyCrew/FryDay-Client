@@ -18,6 +18,7 @@ import {SafeAreaProvider} from "react-native-safe-area-context";
 import {BottomSheetModalProvider} from "@gorhom/bottom-sheet";
 import {CenterToastHost} from "../shared/components/toast/CenterToast";
 import ModalHost from "../shared/components/modal/ModalHost";
+import {navigationRef} from "../shared/lib/navigationRef";
 
 export default function AppProviders({children}) {
   const [fontsLoaded] = useFonts({
@@ -73,7 +74,7 @@ export default function AppProviders({children}) {
         <BottomSheetModalProvider>
           {/* ⭐ SafeArea 컨텍스트 */}
           <QueryClientProvider client={queryClient}>
-            <NavigationContainer>{children}</NavigationContainer>
+            <NavigationContainer ref={navigationRef}>{children}</NavigationContainer>
             <CenterToastHost />
             <ModalHost />
           </QueryClientProvider>

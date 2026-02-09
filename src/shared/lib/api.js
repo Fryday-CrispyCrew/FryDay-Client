@@ -1,6 +1,7 @@
 import axios from "axios";
 import {toast} from "../components/toast/CenterToast";
 import {TOAST_MESSAGES} from "../constants/toastMessages";
+
 import {
   getAccessToken,
   getRefreshToken,
@@ -8,6 +9,8 @@ import {
   saveRefreshToken,
   deleteTokens,
 } from "./storage/tokenStorage";
+import { resetToAuth } from "./navigationRef";
+
 
 const baseURL =
   process.env.EXPO_PUBLIC_BACKEND_URL_DEV ??
@@ -48,6 +51,7 @@ function executeRefresh() {
     const refreshToken = await getRefreshToken();
     if (!refreshToken) {
       await deleteTokens();
+      resetToAuth();
       throw new Error("No refresh token");
     }
     const {data} = await api.post(
@@ -70,8 +74,11 @@ api.interceptors.response.use(
   async (error) => {
     const originalRequest = error.config;
 
+    if (!originalRequest) return Promise.reject(error);
+
     if (originalRequest?.url?.includes("/api/users/token/refresh")) {
       await deleteTokens();
+      resetToAuth();
       error.isSessionExpired = true;
       return Promise.reject(error);
     }
@@ -101,6 +108,7 @@ api.interceptors.response.use(
         }
       } catch (e) {
         await deleteTokens();
+        resetToAuth();
         e.isSessionExpired = true;
         return Promise.reject(e);
       }
