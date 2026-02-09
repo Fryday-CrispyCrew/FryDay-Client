@@ -38,7 +38,7 @@ export default function ReportScreen() {
     //     { name: '운동', success: 100, fail: 10, total: 110 },
     //     { name: '공부', success: 40, fail: 20, total: 60 },
     //     { name: '독서', success: 20, fail: 5, total: 25 },
-    //     { name: '휴식', success: 0, fail: 0, total: 0 },
+    //     { name: '휴식', success: 0, fail: 30, total: 30 },
     // ];
 
     const nowMonth = useMemo(() => dayjs().startOf("month"), []);

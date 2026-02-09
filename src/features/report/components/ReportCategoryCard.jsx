@@ -16,30 +16,40 @@ export default function ReportCategoryCard({ data = [] }) {
     const computed = useMemo(() => {
         if (!data.length) return [];
 
-        const successCounts = data.map((d) => d.success ?? 0);
-        const failCounts = data.map((d) => d.fail ?? 0);
-
-        const maxSuccess = Math.max(0, ...successCounts);
-        const maxFail = Math.max(0, ...failCounts);
-
-        const allZeroSF = maxSuccess === 0 && maxFail === 0;
-
-        const bestSuccessIdx = allZeroSF ? -1 : successCounts.findIndex((v) => v === maxSuccess);
-        const mostFailIdx = allZeroSF ? -1 : failCounts.findIndex((v) => v === maxFail);
-
         const rates = data.map((d) => {
             const total = d.total ?? 0;
             const success = d.success ?? 0;
             return total > 0 ? Math.round((success / total) * 100) : 0;
         });
+        const maxRate = Math.max(0, ...rates);
 
-        return data.map((d, i) => ({
-            ...d,
-            rate: clamp01(rates[i]),
-            isBestSuccess: i === bestSuccessIdx,
-            isMostFail: i === mostFailIdx,
-            _allZeroSF: allZeroSF,
-        }));
+        const orCandidates = data.map((d) => ((d.success ?? 0) >= (d.fail ?? 0) ? (d.success ?? 0) : null)).filter((v) => v != null);
+        const grCandidates = data.map((d) => ((d.fail ?? 0) > (d.success ?? 0) ? (d.fail ?? 0) : null)).filter((v) => v != null);
+
+        const maxOrSuccess = orCandidates.length ? Math.max(...orCandidates) : null;
+        const maxGrFail = grCandidates.length ? Math.max(...grCandidates) : null;
+
+        const allZeroSF = data.every((d) => (d.success ?? 0) === 0 && (d.fail ?? 0) === 0);
+
+        return data.map((d, i) => {
+            const success = d.success ?? 0;
+            const fail = d.fail ?? 0;
+
+            const isOrCandidate = success >= fail;
+            const isGrCandidate = fail > success;
+
+            return {
+                ...d,
+                rate: clamp01(rates[i]),
+
+                isBestRate: !allZeroSF && rates[i] === maxRate,
+
+                isOr: !allZeroSF && isOrCandidate && maxOrSuccess != null && success === maxOrSuccess,
+                isGr: !allZeroSF && isGrCandidate && maxGrFail != null && fail === maxGrFail,
+
+                _allZeroSF: allZeroSF,
+            };
+        });
     }, [data]);
 
     return (
@@ -158,9 +168,13 @@ function BarChart({ data }) {
     const cardWidth = Math.min(390, width - padX * 2);
 
     const plotLeft = 44;
-    const plotRightPadding = 20;
-    const plotTop = 28;
+    const plotRightPadding = 16;
+    const plotTop = 22;
     const plotHeight = 160;
+
+    const topPadding = 5;
+    const bottomPadding = 16;
+    const usableHeight = plotHeight - topPadding - bottomPadding;
 
     const barW = 24;
     const labelBoxW = 44;
@@ -186,9 +200,8 @@ function BarChart({ data }) {
                 }}
             >
                 {data.map((d, i) => {
-                    const barH = Math.max(8, (d.rate / 100) * plotHeight);
-
-                    const barClass = allZeroSF ? 'bg-gr500' : d.isBestSuccess ? 'bg-or' : 'bg-gr500';
+                    const barH = Math.max(8, (d.rate / 100) * usableHeight);
+                    const barClass = allZeroSF ? 'bg-gr500' : d.isBestRate ? 'bg-or' : 'bg-gr500';
 
                     return (
                         <View key={`${d.name}-${i}`} style={{ flex: 1, alignItems: 'center' }}>
@@ -197,7 +210,7 @@ function BarChart({ data }) {
                                 className={barClass}
                                 style={{
                                     position: 'absolute',
-                                    bottom: 0,
+                                    bottom: bottomPadding,
                                     width: barW,
                                     height: barH,
                                     borderTopLeftRadius: 12,
@@ -224,8 +237,8 @@ function BarChart({ data }) {
                     <View key={`${d.name}-label-${i}`} style={{ flex: 1, alignItems: 'center' }}>
                         <View style={{ width: labelBoxW, alignItems: 'center' }}>
                             <AppText
-                                variant={allZeroSF ? 'S500' : d.isBestSuccess ? 'S700' : 'S500'}
-                                className={allZeroSF ? 'text-gr500' : d.isBestSuccess ? 'text-or' : 'text-gr500'}
+                                variant={allZeroSF ? 'S500' : d.isBestRate ? 'S700' : 'S500'}
+                                className={allZeroSF ? 'text-gr500' : d.isBestRate ? 'text-or' : 'text-gr500'}
                                 style={{ textAlign: 'center' }}
                             >
                                 {splitCategoryName(d.name)}
@@ -286,15 +299,14 @@ function LineChart({ data }) {
 
     const labelVariant = (d) => {
         if (allZeroSF) return 'S500';
-        if (d.isBestSuccess) return 'S700';
-        if (d.isMostFail) return 'S700';
+        if (d.isGr || d.isOr) return 'S700';
         return 'S500';
     };
 
     const labelClass = (d) => {
         if (allZeroSF) return 'text-gr500';
-        if (d.isBestSuccess) return 'text-or';
-        if (d.isMostFail) return 'text-gr900';
+        if (d.isGr) return 'text-gr900';
+        if (d.isOr) return 'text-or';
         return 'text-gr500';
     };
 
@@ -322,9 +334,6 @@ function LineChart({ data }) {
                 <MeasureWidth
                     render={(w) => {
                         const isSingle = n === 1;
-                        const successY = topPadding + (usableHeight - (successVals[0] / 100) * usableHeight);
-                        const failY = topPadding + (usableHeight - (failVals[0] / 100) * usableHeight);
-                        const centerX = w / 2;
 
                         return (
                             <Svg width={w} height={plotHeight}>
@@ -347,8 +356,18 @@ function LineChart({ data }) {
 
                                 {isSingle && (
                                     <>
-                                        <Circle cx={centerX} cy={failY} r={6} fill={colors.gr900} />
-                                        <Circle cx={centerX} cy={successY} r={6} fill={allZeroSF ? colors.gr500 : colors.or} />
+                                        <Circle
+                                            cx={w / 2}
+                                            cy={topPadding + (usableHeight - (failVals[0] / 100) * usableHeight)}
+                                            r={6}
+                                            fill={colors.gr900}
+                                        />
+                                        <Circle
+                                            cx={w / 2}
+                                            cy={topPadding + (usableHeight - (successVals[0] / 100) * usableHeight)}
+                                            r={6}
+                                            fill={allZeroSF ? colors.gr500 : colors.or}
+                                        />
                                     </>
                                 )}
                             </Svg>
