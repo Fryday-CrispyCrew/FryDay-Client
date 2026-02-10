@@ -376,67 +376,6 @@ export default function HomeScreen({navigation, route}) {
     },
   });
 
-  const isRecurringTodo = (todo) => {
-    const rid = todo?.recurrenceId;
-    return rid !== null && rid !== undefined && Number(rid) !== 0;
-  };
-
-  const handleRequestDeleteTodo = useCallback(
-    async (todo) => {
-      const todoId = Number(todo?.id);
-      if (!todoId) return;
-
-      // ✅ 반복 투두면: 모달
-      if (isRecurringTodo(todo)) {
-        const recurrenceId = Number(todo.recurrenceId);
-
-        open({
-          title: "반복 일정 삭제",
-          showClose: true,
-          closeOnBackdrop: true,
-
-          // 스샷처럼 둘 다 “아웃라인 버튼” 느낌이면 variant를 outline로 통일
-          primary: {
-            label: "이번 투두만 삭제할래요",
-            variant: "outline",
-            closeAfterPress: false,
-            onPress: async () => {
-              await deleteTodoMutateAsync({todoId});
-              close();
-            },
-          },
-          secondary: {
-            label: "모든 반복 투두를 삭제할래요",
-            variant: "outline",
-            closeAfterPress: false,
-            onPress: async () => {
-              await deleteRecurrenceTodosMutateAsync({recurrenceId});
-              close();
-            },
-          },
-        });
-
-        return;
-      }
-
-      // ✅ 반복 투두 아니면: 바로 삭제
-      await deleteTodoMutateAsync({todoId});
-    },
-    [open, close, deleteTodoMutateAsync, deleteRecurrenceTodosMutateAsync],
-  );
-
-  // ✅ TodoCard에서 투두 눌렀을 때 호출될 핸들러로 감싸기
-  const handlePressTodoInput = useCallback(
-    (payload) => {
-      // payload는 TodoCard에서 넘기는 { ...todo, mode: "edit" } or {id:null,...}
-      const id = payload?.id ? Number(payload.id) : null;
-
-      setSelectedTodoId(id); // ✅ edit면 todoId 세팅, create면 null
-      editor.openEditor?.(payload);
-    },
-    [editor],
-  );
-
   // 캘린더 연동
   const appliedInitialDateRef = useRef(null); // 마지막으로 적용한 initialDate
   const skipResetOnceRef = useRef(false); // 캘린더에서 넘어온 직후 1회 리셋 방지
