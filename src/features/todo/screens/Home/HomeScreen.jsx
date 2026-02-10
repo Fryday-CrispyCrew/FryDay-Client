@@ -566,7 +566,7 @@ export default function HomeScreen({navigation, route}) {
                 </View>
               </GestureDetector>
               {/* 구분선 */}
-              <View className="mx-1">
+              <View>
                 <Dotted style={{width: "100%"}} height={1} />
               </View>
             </>

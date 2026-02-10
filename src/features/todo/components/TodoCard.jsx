@@ -20,6 +20,8 @@ import Animated, {
 } from "react-native-reanimated";
 import ChevronIcon from "../../../shared/components/ChevronIcon";
 import PlusIcon from "../assets/svg/Plus.svg";
+import Dotted from "../../calendar/assets/svg/Dotted.svg";
+
 import colors from "../../../shared/styles/colors";
 
 /** ✅ 목업 투두 (규칙: 현재는 mock) */
@@ -440,7 +442,11 @@ export default function TodoCard({
     <View style={styles.container}>
       <View style={styles.todoSection}>{categories.map(renderSection)}</View>
 
-      <View style={styles.dashedDivider} />
+      <View>
+        <Dotted style={{width: "100%", marginVertical: 18}} height={1} />
+      </View>
+
+      {/* <View style={styles.dashedDivider} /> */}
 
       {categories.length < 6 && (
         <TouchableOpacity
