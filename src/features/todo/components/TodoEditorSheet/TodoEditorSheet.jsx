@@ -1192,7 +1192,12 @@ const TodoEditorSheet = React.forwardRef(function TodoEditorSheet(
           ) : null}
 
           {/* 카테고리 row */}
-          <View style={styles.categoryInlineRow}>
+          <TouchableOpacity
+            activeOpacity={0.7}
+            onPress={() => setIsCategoryOpen(true)}
+            disabled={isCategoryOpen}
+            style={styles.categoryInlineRow}
+          >
             <View
               style={[
                 styles.categoryChipSelected,
@@ -1208,19 +1213,12 @@ const TodoEditorSheet = React.forwardRef(function TodoEditorSheet(
             </View>
 
             {!isCategoryOpen && (
-              <TouchableOpacity
-                activeOpacity={0.7}
-                onPress={() => setIsCategoryOpen(true)}
-                style={styles.chevronButton}
-                hitSlop={8}
-              >
-                <ChevronIcon
-                  direction="right"
-                  size={14}
-                  color={colors.gr500}
-                  strokeWidth={2.5}
-                />
-              </TouchableOpacity>
+              <ChevronIcon
+                direction="right"
+                size={14}
+                color={colors.gr500}
+                strokeWidth={2.5}
+              />
             )}
 
             {isCategoryOpen && (
@@ -1245,7 +1243,7 @@ const TodoEditorSheet = React.forwardRef(function TodoEditorSheet(
                 ))}
               </ScrollView>
             )}
-          </View>
+          </TouchableOpacity>
 
           {/* ✅ create/edit 레이아웃 분기 */}
           {mode === "create" ? (
@@ -1597,6 +1595,7 @@ const styles = StyleSheet.create({
     alignItems: "center",
     gap: 8,
     marginBottom: 12,
+    // borderWidth: 1,
   },
 
   categoryChipSelected: {
