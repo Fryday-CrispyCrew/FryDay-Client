@@ -1,8 +1,8 @@
-import { View, TouchableOpacity } from 'react-native';
-import dayjs from 'dayjs';
-import AppText from '../../../shared/components/AppText';
-import ArrowLeft from '../assets/svg/ArrowLeft.svg'
-import ArrowRight from '../assets/svg/ArrowRight.svg';
+import {View, TouchableOpacity} from "react-native";
+import dayjs from "dayjs";
+import AppText from "../../../shared/components/AppText";
+import ArrowLeft from "../assets/svg/ArrowLeft.svg";
+import ArrowRight from "../assets/svg/ArrowRight.svg";
 import colors from "../../../shared/styles/colors";
 import ChevronIcon from "../../../shared/components/ChevronIcon";
 import React from "react";
@@ -56,43 +56,47 @@ export default function ReportHeader({
           <AppText variant="M500" className="text-gr500">
             {yearText}
           </AppText>
-          <AppText variant="H3" className="mt-1 text-bk">
+          <AppText variant="H3" className="text-bk">
             {monthText}
           </AppText>
         </View>
       </TouchableOpacity>
 
-            <View className="flex-row items-center gap-4">
-                <TouchableOpacity onPress={handlePrev}>
-                    <View
-                        className={`w-6 h-6 rounded-full items-center justify-center ${
-                            isPrevHidden ? "opacity-30" : ""
-                        }`}
-                    >
-                        {!isPrevHidden ?
-                            <ChevronIcon
-                            direction="left"
-                            size={24}
-                            color={colors.gr900}
-                            strokeWidth={2} />
-                            : null}
-                    </View>
-                </TouchableOpacity>
+      <View className="flex-row items-center gap-4">
+        <TouchableOpacity onPress={handlePrev}>
+          <View
+            className={`w-6 h-6 rounded-full items-center justify-center ${
+              isPrevHidden ? "opacity-30" : ""
+            }`}
+          >
+            {!isPrevHidden ? (
+              <ChevronIcon
+                direction="left"
+                size={24}
+                color={colors.gr900}
+                strokeWidth={2}
+              />
+            ) : null}
+          </View>
+        </TouchableOpacity>
 
-                <TouchableOpacity onPress={handleNext}>
-                    <View
-                        className={`w-6 h-6 rounded-full items-center justify-center ${
-                            isNextHidden ? "opacity-30" : ""
-                        }`}
-                    >
-                        {!isNextHidden ? <ChevronIcon
-                            direction="right"
-                            size={24}
-                            color={colors.gr900}
-                            strokeWidth={2} /> : null}
-                    </View>
-                </TouchableOpacity>
-            </View>
-        </View>
-    );
+        <TouchableOpacity onPress={handleNext}>
+          <View
+            className={`w-6 h-6 rounded-full items-center justify-center ${
+              isNextHidden ? "opacity-30" : ""
+            }`}
+          >
+            {!isNextHidden ? (
+              <ChevronIcon
+                direction="right"
+                size={24}
+                color={colors.gr900}
+                strokeWidth={2}
+              />
+            ) : null}
+          </View>
+        </TouchableOpacity>
+      </View>
+    </View>
+  );
 }
