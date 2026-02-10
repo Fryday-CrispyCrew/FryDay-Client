@@ -12,6 +12,8 @@ import {useCategoriesQuery} from "../../queries/category/useCategoriesQuery";
 import {useReorderCategoriesMutation} from "../../queries/category/useReorderCategoriesMutation";
 import {toast} from "../../../../shared/components/toast/CenterToast";
 
+const EMPTY_CATEGORIES = [];
+
 // const MOCK_CATEGORIES = [
 //   {id: "1", label: "카테고리 이름 1", color: colors.br},
 //   {id: "2", label: "카테고리 이름 2", color: colors.lg},
@@ -23,7 +25,7 @@ import {toast} from "../../../../shared/components/toast/CenterToast";
 
 export default function CategListScreen({navigation}) {
   const {
-    data: serverCategories = [],
+    data: serverCategories = EMPTY_CATEGORIES,
     isLoading,
     isError,
     error,
