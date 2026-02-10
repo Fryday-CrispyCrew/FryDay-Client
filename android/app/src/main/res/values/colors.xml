@@ -1,0 +1,10 @@
+<resources>
+  <color name="splashscreen_background">#FF5B22</color>
+  <color name="iconBackground">#ffffff</color>
+  <color name="colorPrimary">#023c69</color>
+  <color name="colorPrimaryDark">#FF5B22</color>
+  <color name="timePicker_headerBackground">#FF5B22</color>
+  <color name="timePicker_numbersSelectorColor">#FF5B22</color>
+  <color name="timePicker_background">#FFFFFF</color>
+  <color name="timePicker_numbersBackgroundColor">#EEEEEE</color>
+</resources>

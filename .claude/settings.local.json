@@ -1,7 +1,20 @@
 {
   "permissions": {
     "allow": [
-      "Bash(find:*)"
+      "Bash(find:*)",
+      "Bash(python -c:*)",
+      "Bash(python3:*)",
+      "Bash(ls:*)",
+      "Bash(wc:*)",
+      "Bash(xxd:*)",
+      "Bash(magick:*)",
+      "Bash(convert:*)",
+      "Bash(npx:*)",
+      "Bash(SRC=\"c:/Users/bmbx0/Downloads/appicon_fryday \\(2\\)/appicon_fryday/ic_push_android_v2.png\")",
+      "Bash(RES=\"C:/Users/bmbx0/Desktop/KevinProjects/FryDay-Client/android/app/src/main/res\")",
+      "Bash(for:*)",
+      "Bash(do file \"$RES/$d/ic_notification.png\")",
+      "Bash(done)"
     ]
   }
 }
