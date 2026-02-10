@@ -1,5 +1,5 @@
 // src/features/todo/components/TodoCard.jsx
-import React, {useMemo, useState, useCallback, useEffect} from "react";
+import React, {useMemo, useState, useCallback, useEffect, useImperativeHandle} from "react";
 import {View, StyleSheet, TouchableOpacity} from "react-native";
 import {NestableDraggableFlatList} from "react-native-draggable-flatlist";
 
@@ -191,7 +191,7 @@ function Chevron({isOpen, color}) {
   );
 }
 
-export default function TodoCard({
+const TodoCard = React.forwardRef(function TodoCard({
   navigation,
   onPressInput,
   categories = [],
@@ -202,7 +202,7 @@ export default function TodoCard({
   onReorderTodos, // ✅ 추가
   isViewingToday = false,
   todos: todosProp = [], // ✅ 추가 (HomeScreen에서 내려줌)
-}) {
+}, ref) {
   const [todos, setTodos] = useState(todosProp);
   const [swipedTodoId, setSwipedTodoId] = useState(null);
 
@@ -257,6 +257,12 @@ export default function TodoCard({
     setOpenMap(initial);
     setDidInitOpenMap(true);
   }, [categories, didInitOpenMap]);
+
+  useImperativeHandle(ref, () => ({
+    openCategory: (categoryId) => {
+      setOpenMap((prev) => ({...prev, [categoryId]: true}));
+    },
+  }));
 
   const grouped = useMemo(() => {
     const by = {};
@@ -466,7 +472,9 @@ export default function TodoCard({
       )}
     </View>
   );
-}
+});
+
+export default TodoCard;
 
 const styles = StyleSheet.create({
   container: {

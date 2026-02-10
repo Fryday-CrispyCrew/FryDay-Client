@@ -1,5 +1,5 @@
 // src/features/todo/components/TodoBoardSection.jsx
-import React, {useMemo, useState, useCallback} from "react";
+import React, {useMemo, useState, useCallback, useRef} from "react";
 import {Image, StyleSheet, View} from "react-native";
 import {NestableScrollContainer} from "react-native-draggable-flatlist";
 import TodoCard from "./TodoCard";
@@ -78,6 +78,7 @@ export default function TodoBoardSection({
   const {mutateAsync: reorderTodosMutateAsync} = useReorderHomeTodosMutation();
 
   const [selectedTodoId, setSelectedTodoId] = useState(null);
+  const todoCardRef = useRef(null);
 
   const editor = useTodoEditorController({
     categories,
@@ -89,6 +90,7 @@ export default function TodoBoardSection({
           categoryId,
           date, // ✅ 선택 날짜로 생성
         });
+        todoCardRef.current?.openCategory?.(categoryId);
         return;
       }
       // edit 모드 업데이트는 추후 추가
@@ -185,6 +187,7 @@ export default function TodoBoardSection({
           </View>
         ) : (
           <TodoCard
+            ref={todoCardRef}
             navigation={navigation}
             onPressInput={handlePressTodoInput}
             categories={categories}
@@ -341,6 +344,9 @@ export default function TodoBoardSection({
       <TodoEditorSheet
         {...editor.sheetProps}
         todoId={selectedTodoId}
+        onEditSuccess={(categoryId) =>
+          todoCardRef.current?.openCategory?.(categoryId)
+        }
         onDismiss={() => {
           setSelectedTodoId(null);
           editor.sheetProps?.onDismiss?.();

@@ -60,12 +60,12 @@ export default function CategEditScreen({navigation, route}) {
 
   // ✅ edit이면 기존 값으로 초기화, create면 빈 값
   const [name, setName] = useState(
-    isEdit ? (editingCategory?.label ?? editingCategory?.name ?? "") : ""
+    isEdit ? (editingCategory?.label ?? editingCategory?.name ?? "") : "",
   );
   const [selectedColor, setSelectedColor] = useState(
     isEdit
       ? (editingCategory?.color ?? editingCategory?.colorHex ?? null)
-      : null
+      : null,
   );
 
   const [isColorOpen, setIsColorOpen] = useState(false);
@@ -124,7 +124,7 @@ export default function CategEditScreen({navigation, route}) {
 
   const helperText = useMemo(
     () => `카테고리 이름은 ${MAX_NAME_LEN}자까지 입력할 수 있어요`,
-    []
+    [],
   );
 
   // ✅ create: 이름+컬러 둘 다 필요
@@ -214,7 +214,8 @@ export default function CategEditScreen({navigation, route}) {
     <SafeAreaView style={styles.safe} edges={["top", "bottom"]}>
       <KeyboardAvoidingView
         style={styles.flex}
-        behavior={Platform.OS === "ios" ? "padding" : undefined}
+        // behavior={Platform.OS === "ios" ? "padding" : undefined}
+        behavior={"padding"}
       >
         <View style={styles.headerWrap}>
           <CategoryHeader

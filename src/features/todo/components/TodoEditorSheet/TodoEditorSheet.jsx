@@ -283,6 +283,7 @@ const TodoEditorSheet = React.forwardRef(function TodoEditorSheet(
     onSubmit,
     onCloseTogether,
     onCloseAfterSubmit, // ✅ 추가
+    onEditSuccess,
     onDismiss,
     categoryLabel = "카테고리",
     categories = [],
@@ -1021,7 +1022,7 @@ const TodoEditorSheet = React.forwardRef(function TodoEditorSheet(
 
     try {
       await Promise.all(tasks);
-      // console.log("all tasks finished");
+      onEditSuccess?.(draftCategoryId);
       onCloseAfterSubmit?.(); // ✅ 모달 없이 즉시 닫기
       // console.log("is there funtion?: ", !!onCloseAfterSubmit);
       // console.log("after close");
@@ -1050,6 +1051,7 @@ const TodoEditorSheet = React.forwardRef(function TodoEditorSheet(
     setAlarm,
     updateTodoDate,
     onSubmit,
+    onEditSuccess,
     onCloseTogether,
     createRecurrence,
     updateRecurrenceRule,
