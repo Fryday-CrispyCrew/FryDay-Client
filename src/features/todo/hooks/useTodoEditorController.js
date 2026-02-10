@@ -38,13 +38,8 @@ export function useTodoEditorController({
 
   const [isSheetOpen, setIsSheetOpen] = useState(false);
 
-  // 편집 대상 todo / 입력 텍스트
+  // 편집 대상 todo
   const [editingTodo, setEditingTodo] = useState(null); // { id, title, categoryId } or null
-  const [editingText, setEditingText] = useState("");
-
-  useEffect(() => {
-    console.log("editingText: ", editingText);
-  }, [editingText]);
 
   // 바텀시트 "초기 선택 카테고리"
   const initialFallbackCategoryId =
@@ -123,7 +118,6 @@ export function useTodoEditorController({
 
       setSheetInitialCategoryId(nextCategoryId);
       setEditingTodo(todo ?? null);
-      setEditingText(todo?.title ?? "");
 
       if (todo?.mode === "create") {
         useRepeatEditorStore.getState().resetRepeat();
@@ -175,14 +169,13 @@ export function useTodoEditorController({
   // 시트 dismiss 되었을 때 상태 초기화
   const onDismiss = useCallback(() => {
     setEditingTodo(null);
-    setEditingText("");
     setIsSheetOpen(false);
   }, []);
 
   // submit
   const handleSubmit = useCallback(
-    async (draftCategoryId) => {
-      const trimmed = (editingText ?? "").trim();
+    async (draftCategoryId, text) => {
+      const trimmed = (text ?? "").trim();
 
       // create인데 텍스트가 비어있으면 그냥 닫기
       if (!editingTodo?.id && trimmed.length === 0) {
@@ -210,7 +203,6 @@ export function useTodoEditorController({
     },
     [
       editingTodo,
-      editingText,
       onSubmitTodo,
       closeEditorTogether,
       sheetCategory,
@@ -223,21 +215,20 @@ export function useTodoEditorController({
     () => ({
       ref: bottomSheetRef,
       mode: sheetMode,
-      value: editingText,
-      onChangeText: setEditingText,
+      initialValue: editingTodo?.title ?? "",
       onCloseTogether: requestCloseEditorTogether, // ✅ 항상 모달 먼저
       onCloseAfterSubmit: closeEditorTogether, // ✅ 제출 성공 시 즉시 닫기
       onDismiss,
       categoryLabel: sheetCategory?.label ?? "카테고리",
       categories,
       initialCategoryId: sheetCategory?.categoryId ?? 0,
-      onSubmit: (draftCategoryId) => handleSubmit(draftCategoryId),
+      onSubmit: (draftCategoryId, text) => handleSubmit(draftCategoryId, text),
     }),
     [
       categories,
       requestCloseEditorTogether,
       closeEditorTogether,
-      editingText,
+      editingTodo,
       handleSubmit,
       onDismiss,
       sheetCategory,
@@ -251,14 +242,14 @@ export function useTodoEditorController({
 
     // state
     editingTodo,
-    editingText,
+    // editingText,
     sheetInitialCategoryId,
     sheetCategory,
     sheetMode,
 
     // setters (필요시 화면에서 쓰게)
     setEditingTodo,
-    setEditingText,
+    // setEditingText,
     setSheetInitialCategoryId,
 
     // actions
