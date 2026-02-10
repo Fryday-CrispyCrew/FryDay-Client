@@ -156,11 +156,11 @@ export function useTodoEditorController({
   useEffect(() => {
     const subscription = AppState.addEventListener("change", (nextAppState) => {
       if (nextAppState === "active" && isSheetOpen) {
-        // 앱이 다시 활성화될 때 시트를 index 0으로 리셋
-        console.log("app restart while sheet open");
-        requestAnimationFrame(() => {
+        // 앱이 다시 활성화될 때 키보드 먼저 닫고, 이후 시트를 index 0으로 리셋
+        Keyboard.dismiss();
+        setTimeout(() => {
           bottomSheetRef.current?.snapToIndex?.(0);
-        });
+        }, 100);
       }
     });
 
