@@ -20,12 +20,14 @@ export function useTodoEditorController({
   selectedDate, // ✅ 추가: 홈/달력에서 선택된 날짜(YYYY-MM-DD)
 } = {}) {
   const bottomSheetRef = useRef(null);
+  const isClosingRef = useRef(false);
   const {open, close} = useModalStore();
 
   useEffect(() => {
     const subHide = Keyboard.addListener("keyboardDidHide", () => {
       // ✅ 키보드는 내려갔는데 시트가 떠있는 잔상(translate)이 남는 케이스 방지
-      // Modal ref는 외부에서 forwardRef로 들어오니 ref 사용
+      // 제출로 인해 닫히는 중이면 snapToIndex 스킵
+      if (isClosingRef.current) return;
       requestAnimationFrame(() => {
         bottomSheetRef?.current?.snapToIndex?.(0);
       });
@@ -62,6 +64,7 @@ export function useTodoEditorController({
 
   // Editor 닫기(키보드 + 시트 동시에)
   const closeEditorTogether = useCallback(() => {
+    isClosingRef.current = true;
     Keyboard.dismiss();
     bottomSheetRef.current?.dismiss?.();
     // 상태 초기화는 onDismiss에서 통일
@@ -168,6 +171,7 @@ export function useTodoEditorController({
 
   // 시트 dismiss 되었을 때 상태 초기화
   const onDismiss = useCallback(() => {
+    isClosingRef.current = false;
     setEditingTodo(null);
     setIsSheetOpen(false);
   }, []);

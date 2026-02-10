@@ -1021,7 +1021,10 @@ const TodoEditorSheet = React.forwardRef(function TodoEditorSheet(
 
     try {
       await Promise.all(tasks);
+      // console.log("all tasks finished");
       onCloseAfterSubmit?.(); // ✅ 모달 없이 즉시 닫기
+      // console.log("is there funtion?: ", !!onCloseAfterSubmit);
+      // console.log("after close");
     } catch (e) {
       // ✅ 백엔드 에러 메시지 우선 표시
       // const message = e?.response?.data?.message;
@@ -1029,7 +1032,6 @@ const TodoEditorSheet = React.forwardRef(function TodoEditorSheet(
       //   toast.show(message);
       // }
       // 그 외에는 api.js의 인터셉터가 제네릭 토스트 처리
-      onCloseAfterSubmit?.(); // ✅ 모달 없이 즉시 닫기
     }
   }, [
     mode,
