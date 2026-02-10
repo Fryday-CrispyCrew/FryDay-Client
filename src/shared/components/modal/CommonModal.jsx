@@ -88,7 +88,7 @@ const styles = StyleSheet.create({
     // borderWidth: 1,
   },
   btnStack: {marginTop: 24, gap: 12},
-  footer: {marginTop: 12, alignItems: "flex-end"},
+  footer: {marginTop: 8, alignItems: "flex-end"},
   btn: {
     height: 48,
     borderRadius: 16,
