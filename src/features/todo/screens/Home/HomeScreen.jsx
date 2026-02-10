@@ -529,11 +529,13 @@ export default function HomeScreen({navigation, route}) {
                     }}
                   >
                     {isCharacterError ? (
-                      <Image
-                        source={ErrorImage}
-                        style={styles.errorImage}
-                        resizeMode="contain"
-                      />
+                      <View style={styles.errorContainer}>
+                        <Image
+                          source={ErrorImage}
+                          style={styles.errorImage}
+                          resizeMode="contain"
+                        />
+                      </View>
                     ) : isCharacterBusy ? (
                       <></>
                     ) : (
@@ -659,9 +661,18 @@ const styles = StyleSheet.create({
     // borderWidth: 1,
     maxHeight: "100%",
   },
+  errorContainer: {
+    width: "100%",
+    height: "100%",
+    justifyContent: "center",
+    alignItems: "center",
+  },
   errorImage: {
     width: "100%",
     height: "100%",
+    width: 180,
+    height: 180,
+    // borderWidth: 1,
   },
   spinnerWrapper: {
     position: "absolute",
