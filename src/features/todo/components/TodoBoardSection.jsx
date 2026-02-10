@@ -110,6 +110,7 @@ export default function TodoBoardSection({
 
         open({
           title: "반복 일정 삭제",
+          description: "어떤 반복 일정을 삭제할까요?",
           showClose: true,
           closeOnBackdrop: true,
           primary: {

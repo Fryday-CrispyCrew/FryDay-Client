@@ -21,6 +21,7 @@ import AlarmTimeSettingSection from "../TodoEditorSheet/AlarmTimeSettingsSection
 import ChevronIcon from "../../../../shared/components/ChevronIcon";
 import RepeatOffIcon from "../../assets/svg/todoEditorSheet/RepeatSettingsSection/RepeatOff.svg";
 import {toast} from "../../../../shared/components/toast/CenterToast";
+import AppText from "../../../../shared/components/AppText";
 const WEEKDAYS = ["일", "월", "화", "수", "목", "금", "토"];
 
 const WEEKDAY_LABEL = {
@@ -707,14 +708,15 @@ export default function RepeatSettingsSection({
                       active && styles.weekdayChipActive,
                     ]}
                   >
-                    <Text
+                    <AppText
+                      variant="M500"
                       style={[
                         styles.weekdayText,
                         active && styles.weekdayTextActive,
                       ]}
                     >
                       {d.label}
-                    </Text>
+                    </AppText>
                   </TouchableOpacity>
                 );
               })}
@@ -1626,7 +1628,7 @@ const styles = StyleSheet.create({
     backgroundColor: colors.or,
   },
   weekdayText: {
-    fontSize: 12,
+    // fontSize: 12,
     color: colors.gr300,
   },
   weekdayTextActive: {
