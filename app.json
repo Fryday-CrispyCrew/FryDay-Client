@@ -34,7 +34,8 @@
       },
       "edgeToEdgeEnabled": true,
       "package": "com.bmbx08.FryDay",
-      "googleServicesFile": "./google-services.json"
+      "googleServicesFile": "./google-services.json",
+      "runtimeVersion": "1.0.0"
     },
     "web": {
       "favicon": "./assets/fryday-favicon.png",
@@ -117,11 +118,11 @@
       "@react-native-firebase/messaging",
       "@react-native-firebase/crashlytics",
       [
-      "react-native-google-mobile-ads",
-      {
-        "androidAppId": "ca-app-pub-4203513276439399~7420127615",
-        "iosAppId": "ca-app-pub-4203513276439399~6857020832"
-      }
+        "react-native-google-mobile-ads",
+        {
+          "androidAppId": "ca-app-pub-4203513276439399~7420127615",
+          "iosAppId": "ca-app-pub-4203513276439399~6857020832"
+        }
       ]
     ],
     "extra": {

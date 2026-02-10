@@ -214,8 +214,8 @@ export default function CategEditScreen({navigation, route}) {
     <SafeAreaView style={styles.safe} edges={["top", "bottom"]}>
       <KeyboardAvoidingView
         style={styles.flex}
-        // behavior={Platform.OS === "ios" ? "padding" : undefined}
-        behavior={"padding"}
+        behavior={Platform.OS === "ios" ? "padding" : undefined}
+        // behavior={"padding"}
       >
         <View style={styles.headerWrap}>
           <CategoryHeader
@@ -479,6 +479,7 @@ const styles = StyleSheet.create({
   bottomArea: {
     paddingHorizontal: 20,
     paddingBottom: 24,
+    backgroundColor: colors.wt,
   },
 
   submitBtn: {
