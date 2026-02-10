@@ -7,48 +7,60 @@ import colors from "../../../shared/styles/colors";
 import ChevronIcon from "../../../shared/components/ChevronIcon";
 import React from "react";
 
-export default function ReportHeader({ currentDate, onChangeMonth, joinedAt, onPressYearMonth }) {
-    const date = dayjs(currentDate).startOf('month');
+export default function ReportHeader({
+  currentDate,
+  onChangeMonth,
+  joinedAt,
+  onPressYearMonth,
+}) {
+  const date = dayjs(currentDate).startOf("month");
 
-    const yearText = date.format('YYYY년');
-    const monthText = date.format('M월 리포트');
+  const yearText = date.format("YYYY년");
+  const monthText = date.format("M월 리포트");
 
-    const joinedMonth = joinedAt
-        ? dayjs(joinedAt, "YYYY-MM").startOf("month")
-        : null;
+  const joinedMonth = joinedAt
+    ? dayjs(joinedAt, "YYYY-MM").startOf("month")
+    : null;
 
-    const maxMonth = dayjs().startOf("month");
+  const maxMonth = dayjs().startOf("month");
 
-    const isPrevHidden = joinedMonth ? date.isSame(joinedMonth, "month") : true;
+  const isPrevHidden = joinedMonth ? date.isSame(joinedMonth, "month") : true;
 
-    const isNextHidden = date.isSame(maxMonth, "month");
+  const isNextHidden = date.isSame(maxMonth, "month");
 
-    const handlePrev = () => {
-        if (isPrevHidden) return;
+  const handlePrev = () => {
+    if (isPrevHidden) return;
 
-        const prev = date.subtract(1, "month");
-        if (joinedMonth && prev.isBefore(joinedMonth, "month")) return;
+    const prev = date.subtract(1, "month");
+    if (joinedMonth && prev.isBefore(joinedMonth, "month")) return;
 
-        onChangeMonth(prev);
-    };
+    onChangeMonth(prev);
+  };
 
-    const handleNext = () => {
-        if (isNextHidden) return;
+  const handleNext = () => {
+    if (isNextHidden) return;
 
-        const next = date.add(1, "month");
-        if (next.isAfter(maxMonth, "month")) return;
+    const next = date.add(1, "month");
+    if (next.isAfter(maxMonth, "month")) return;
 
-        onChangeMonth(next);
-    };
+    onChangeMonth(next);
+  };
 
-    return (
-        <View className="px-5 py-4 flex-row justify-between items-center">
-            <TouchableOpacity onPress={onPressYearMonth}>
-                <View>
-                    <AppText variant="M500" className="text-gr500">{yearText}</AppText>
-                    <AppText variant="H3" className="mt-1 text-bk">{monthText}</AppText>
-                </View>
-            </TouchableOpacity>
+  return (
+    <View
+      className="flex-row justify-between items-center"
+      style={{paddingVertical: 16, paddingHorizontal: 20}}
+    >
+      <TouchableOpacity onPress={onPressYearMonth}>
+        <View>
+          <AppText variant="M500" className="text-gr500">
+            {yearText}
+          </AppText>
+          <AppText variant="H3" className="mt-1 text-bk">
+            {monthText}
+          </AppText>
+        </View>
+      </TouchableOpacity>
 
             <View className="flex-row items-center gap-4">
                 <TouchableOpacity onPress={handlePrev}>

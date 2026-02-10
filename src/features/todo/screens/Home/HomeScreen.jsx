@@ -179,7 +179,14 @@ const BUBBLE_MENTS = {
     "너 오늘 하루 **완전 튀겼어**",
     "빵가루 털고 푹 쉬자! 오늘도 수고 많았어!",
     "최고야! 내일도 맛있는 하루 부탁해!",
-    "우와아... 따뜻하고 뿌듯한 하루야…",
+    "우와아… 따뜻하고 뿌듯한 하루야…",
+  ],
+  CASE_H: [
+    "날… 잊은 건 아니지?",
+    "바삭해진다는건 어떤 느낌일까?",
+    "나도 바삭해지고 싶다…",
+    "내일은 바삭해질 수 있을까?",
+    "내일은 날 잊지 말아줘…!",
   ],
 };
 
@@ -294,6 +301,7 @@ export default function HomeScreen({navigation, route}) {
 
   const lottieKey = useMemo(() => {
     return getLottieKeyFromStatus(characterStatus?.status);
+    // return getLottieKeyFromStatus("CASE_E1");
   }, [characterStatus?.status]);
 
   const isShadowGR = useMemo(() => {
@@ -367,67 +375,6 @@ export default function HomeScreen({navigation, route}) {
       // await updateTodoMutateAsync({ todoId: todo.id, ... })
     },
   });
-
-  const isRecurringTodo = (todo) => {
-    const rid = todo?.recurrenceId;
-    return rid !== null && rid !== undefined && Number(rid) !== 0;
-  };
-
-  const handleRequestDeleteTodo = useCallback(
-    async (todo) => {
-      const todoId = Number(todo?.id);
-      if (!todoId) return;
-
-      // ✅ 반복 투두면: 모달
-      if (isRecurringTodo(todo)) {
-        const recurrenceId = Number(todo.recurrenceId);
-
-        open({
-          title: "반복 일정 삭제",
-          showClose: true,
-          closeOnBackdrop: true,
-
-          // 스샷처럼 둘 다 “아웃라인 버튼” 느낌이면 variant를 outline로 통일
-          primary: {
-            label: "이번 투두만 삭제할래요",
-            variant: "outline",
-            closeAfterPress: false,
-            onPress: async () => {
-              await deleteTodoMutateAsync({todoId});
-              close();
-            },
-          },
-          secondary: {
-            label: "모든 반복 투두를 삭제할래요",
-            variant: "outline",
-            closeAfterPress: false,
-            onPress: async () => {
-              await deleteRecurrenceTodosMutateAsync({recurrenceId});
-              close();
-            },
-          },
-        });
-
-        return;
-      }
-
-      // ✅ 반복 투두 아니면: 바로 삭제
-      await deleteTodoMutateAsync({todoId});
-    },
-    [open, close, deleteTodoMutateAsync, deleteRecurrenceTodosMutateAsync],
-  );
-
-  // ✅ TodoCard에서 투두 눌렀을 때 호출될 핸들러로 감싸기
-  const handlePressTodoInput = useCallback(
-    (payload) => {
-      // payload는 TodoCard에서 넘기는 { ...todo, mode: "edit" } or {id:null,...}
-      const id = payload?.id ? Number(payload.id) : null;
-
-      setSelectedTodoId(id); // ✅ edit면 todoId 세팅, create면 null
-      editor.openEditor?.(payload);
-    },
-    [editor],
-  );
 
   // 캘린더 연동
   const appliedInitialDateRef = useRef(null); // 마지막으로 적용한 initialDate
@@ -521,11 +468,13 @@ export default function HomeScreen({navigation, route}) {
                     }}
                   >
                     {isCharacterError ? (
-                      <Image
-                        source={ErrorImage}
-                        style={styles.errorImage}
-                        resizeMode="contain"
-                      />
+                      <View style={styles.errorContainer}>
+                        <Image
+                          source={ErrorImage}
+                          style={styles.errorImage}
+                          resizeMode="contain"
+                        />
+                      </View>
                     ) : isCharacterBusy ? (
                       <></>
                     ) : (
@@ -552,42 +501,11 @@ export default function HomeScreen({navigation, route}) {
                         />
                       </>
                     )}
-                    {/* {isCharacterBusy ? (
-                      <></>
-                    ) : isCharacterError ? (
-                      <Image
-                        source={ErrorImage}
-                        style={styles.errorImage}
-                        resizeMode="contain"
-                      />
-                    ) : (
-                      <>
-                        {shouldRenderBack && (
-                          <LottieView
-                            source={
-                              lottieKey === "caseE1"
-                                ? TodoLottie.caseE1Back
-                                : TodoLottie.caseE2Back
-                            }
-                            autoPlay
-                            loop={false}
-                            style={styles.lottie}
-                          />
-                        )}
-
-                        <LottieView
-                          source={TodoLottie[lottieKey]}
-                          autoPlay
-                          loop={false}
-                          style={styles.lottie}
-                        />
-                      </>
-                    )} */}
                   </Pressable>
                 </View>
               </GestureDetector>
               {/* 구분선 */}
-              <View className="mx-1">
+              <View>
                 <Dotted style={{width: "100%"}} height={1} />
               </View>
             </>
@@ -608,7 +526,8 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "space-between",
-    height: "10%",
+    // height: "10%",
+    paddingVertical: 16,
   },
   todoScroll: {
     flex: 1, // ✅ 남은 영역을 TodoCard 스크롤이 차지
@@ -633,10 +552,13 @@ const styles = StyleSheet.create({
   },
   illustrationWrapper: {
     width: "100%",
-    height: height * 0.377,
+    // height: height * 0.377,
     alignItems: "center",
     justifyContent: "center",
     // borderWidth: 1,
+    // height: height * 0.312,
+    height: 247,
+    paddingTop: 13,
   },
   lottieWrapper: {
     position: "relative",
@@ -645,10 +567,20 @@ const styles = StyleSheet.create({
     maxHeight: "80%", // ✅ 핵심
     // marginTop: "8%",
     // borderWidth: 1,
+    maxHeight: "100%",
+  },
+  errorContainer: {
+    width: "100%",
+    height: "100%",
+    justifyContent: "center",
+    alignItems: "center",
   },
   errorImage: {
     width: "100%",
     height: "100%",
+    width: 180,
+    height: 180,
+    // borderWidth: 1,
   },
   spinnerWrapper: {
     position: "absolute",
@@ -742,7 +674,8 @@ const sheetStyles = StyleSheet.create({
 const bubbleStyles = StyleSheet.create({
   wrap: {
     position: "absolute",
-    top: "5%", // 🔥 튀김 위에 얹고 싶으면 여기 조절
+    top: "3%", // 🔥 튀김 위에 얹고 싶으면 여기 조절
+    // top: 0,
     left: 0,
     right: 0,
     alignItems: "center",
@@ -770,17 +703,17 @@ const bubbleStyles = StyleSheet.create({
   },
   tail: {
     position: "absolute",
-    bottom: -6,
-    left: "48.2%",
+    bottom: -4,
+    left: "48.5%",
     // marginLeft: 20,
     // right: "0%",
-    width: 12,
-    height: 12,
+    width: 8,
+    height: 8,
     backgroundColor: colors.wt,
     borderRightWidth: 1,
     borderBottomWidth: 1,
     borderColor: colors.gr200,
     transform: [{rotate: "45deg"}],
-    borderBottomRightRadius: 3,
+    borderBottomRightRadius: 2,
   },
 });

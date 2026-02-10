@@ -1,7 +1,7 @@
 // src/shared/styles/tailwind/colors.js
 module.exports = {
   // Primary / Secondary
-  or: "#FF5822",
+  or: "#FF5B22",
   gr: "#F4F4F4",
 
   // Secondary / Calendar

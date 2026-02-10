@@ -279,11 +279,11 @@ const mapRecurrenceToRepeatStore = (recurrence) => {
 const TodoEditorSheet = React.forwardRef(function TodoEditorSheet(
   {
     mode = "create", // ✅ "create" | "edit"
-    value,
-    onChangeText,
+    initialValue = "",
     onSubmit,
     onCloseTogether,
     onCloseAfterSubmit, // ✅ 추가
+    onEditSuccess,
     onDismiss,
     categoryLabel = "카테고리",
     categories = [],
@@ -295,6 +295,13 @@ const TodoEditorSheet = React.forwardRef(function TodoEditorSheet(
   useEffect(() => {
     console.log("categories: ", categories);
   }, [categories]);
+
+  const [editingText, setEditingText] = useState(initialValue ?? "");
+
+  useEffect(() => {
+    setEditingText(initialValue ?? "");
+  }, [initialValue]);
+
   const insets = useSafeAreaInsets();
   const repeatPayload = useRepeatEditorStore.getState().getRepeatPayload();
 
@@ -468,7 +475,7 @@ const TodoEditorSheet = React.forwardRef(function TodoEditorSheet(
     };
 
     // ✅ 화면 값 주입
-    onChangeText?.(description);
+    setEditingText(description);
     if (categoryId != null) setDraftCategoryId(categoryId);
     setMemoText(memo);
 
@@ -504,7 +511,7 @@ const TodoEditorSheet = React.forwardRef(function TodoEditorSheet(
       repeatStore.resetRepeat();
       initialRecurrencePayloadRef.current = null;
     }
-  }, [mode, numericTodoId, todoDetail, onChangeText]);
+  }, [mode, numericTodoId, todoDetail]);
 
   const isMemoOpen = mode === "edit" && selectedToolKey === "memo";
   const isAlarmOpen = mode === "edit" && selectedToolKey === "alarm";
@@ -858,7 +865,7 @@ const TodoEditorSheet = React.forwardRef(function TodoEditorSheet(
   const handleSubmitInternal = useCallback(async () => {
     // create 모드는 기존 흐름 유지(필요하면 create mutation 연결)
     if (mode !== "edit") {
-      onSubmit?.(draftCategoryId);
+      onSubmit?.(draftCategoryId, editingText);
       onCloseAfterSubmit?.();
       return;
     }
@@ -867,7 +874,7 @@ const TodoEditorSheet = React.forwardRef(function TodoEditorSheet(
 
     const initial = initialRef.current;
 
-    const currentDescription = normalizeDesc(value);
+    const currentDescription = normalizeDesc(editingText);
     const currentCategoryId = draftCategoryId;
     const currentMemo = normalizeMemo(memoText);
 
@@ -1015,7 +1022,10 @@ const TodoEditorSheet = React.forwardRef(function TodoEditorSheet(
 
     try {
       await Promise.all(tasks);
+      onEditSuccess?.(draftCategoryId);
       onCloseAfterSubmit?.(); // ✅ 모달 없이 즉시 닫기
+      // console.log("is there funtion?: ", !!onCloseAfterSubmit);
+      // console.log("after close");
     } catch (e) {
       // ✅ 백엔드 에러 메시지 우선 표시
       // const message = e?.response?.data?.message;
@@ -1027,7 +1037,7 @@ const TodoEditorSheet = React.forwardRef(function TodoEditorSheet(
   }, [
     mode,
     numericTodoId,
-    value,
+    editingText,
     draftCategoryId,
     memoText,
     hasPickedAlarmTime,
@@ -1041,6 +1051,7 @@ const TodoEditorSheet = React.forwardRef(function TodoEditorSheet(
     setAlarm,
     updateTodoDate,
     onSubmit,
+    onEditSuccess,
     onCloseTogether,
     createRecurrence,
     updateRecurrenceRule,
@@ -1051,6 +1062,7 @@ const TodoEditorSheet = React.forwardRef(function TodoEditorSheet(
     setDraftCategoryId(initialCategoryId);
     setSelectedToolKey(null);
     setMemoText(""); // ✅ 닫을 때 메모 입력 초기화
+    setEditingText(""); // ✅ 닫을 때 제목 입력 초기화
     setHasAppliedTodoDate(false);
     resetEditHydrationRefs(); // ✅ 주입 가드 전체 리셋
     Keyboard.dismiss();
@@ -1068,9 +1080,9 @@ const TodoEditorSheet = React.forwardRef(function TodoEditorSheet(
   }, [categories, draftCategoryId]);
 
   const handleClearText = useCallback(() => {
-    onChangeText?.("");
+    setEditingText("");
     requestAnimationFrame(() => inputRef.current?.focus?.());
-  }, [onChangeText]);
+  }, []);
 
   const todoMonthGrid = useMemo(
     () => buildMonthGrid(todoMonthCursor),
@@ -1182,7 +1194,12 @@ const TodoEditorSheet = React.forwardRef(function TodoEditorSheet(
           ) : null}
 
           {/* 카테고리 row */}
-          <View style={styles.categoryInlineRow}>
+          <TouchableOpacity
+            activeOpacity={0.7}
+            onPress={() => setIsCategoryOpen(true)}
+            disabled={isCategoryOpen}
+            style={styles.categoryInlineRow}
+          >
             <View
               style={[
                 styles.categoryChipSelected,
@@ -1198,19 +1215,12 @@ const TodoEditorSheet = React.forwardRef(function TodoEditorSheet(
             </View>
 
             {!isCategoryOpen && (
-              <TouchableOpacity
-                activeOpacity={0.7}
-                onPress={() => setIsCategoryOpen(true)}
-                style={styles.chevronButton}
-                hitSlop={8}
-              >
-                <ChevronIcon
-                  direction="right"
-                  size={14}
-                  color={colors.gr500}
-                  strokeWidth={2.5}
-                />
-              </TouchableOpacity>
+              <ChevronIcon
+                direction="right"
+                size={14}
+                color={colors.gr500}
+                strokeWidth={2.5}
+              />
             )}
 
             {isCategoryOpen && (
@@ -1235,7 +1245,7 @@ const TodoEditorSheet = React.forwardRef(function TodoEditorSheet(
                 ))}
               </ScrollView>
             )}
-          </View>
+          </TouchableOpacity>
 
           {/* ✅ create/edit 레이아웃 분기 */}
           {mode === "create" ? (
@@ -1249,8 +1259,8 @@ const TodoEditorSheet = React.forwardRef(function TodoEditorSheet(
               >
                 <TodoBottomSheetTextInput
                   inputRef={inputRef}
-                  value={value}
-                  onChangeText={onChangeText}
+                  value={editingText}
+                  onChangeText={setEditingText}
                   onSubmitEditing={handleSubmitInternal}
                   onEnabledChange={setIsSubmitEnabled}
                   maxLength={20}
@@ -1259,7 +1269,7 @@ const TodoEditorSheet = React.forwardRef(function TodoEditorSheet(
                   onBlur={() => setIsTitleFocused(false)}
                 />
 
-                {!!value?.length && (
+                {!!editingText?.length && (
                   <TouchableOpacity
                     activeOpacity={0.7}
                     onPress={handleClearText}
@@ -1303,8 +1313,8 @@ const TodoEditorSheet = React.forwardRef(function TodoEditorSheet(
               >
                 <TodoBottomSheetTextInput
                   inputRef={inputRef}
-                  value={value}
-                  onChangeText={onChangeText}
+                  value={editingText}
+                  onChangeText={setEditingText}
                   onSubmitEditing={handleSubmitInternal}
                   onEnabledChange={setIsSubmitEnabled}
                   maxLength={20}
@@ -1327,7 +1337,7 @@ const TodoEditorSheet = React.forwardRef(function TodoEditorSheet(
                   onBlur={() => setIsTitleFocused(false)}
                 />
 
-                {!!value?.length && (
+                {!!editingText?.length && (
                   <TouchableOpacity
                     activeOpacity={0.7}
                     onPress={handleClearText}
@@ -1587,6 +1597,7 @@ const styles = StyleSheet.create({
     alignItems: "center",
     gap: 8,
     marginBottom: 12,
+    // borderWidth: 1,
   },
 
   categoryChipSelected: {

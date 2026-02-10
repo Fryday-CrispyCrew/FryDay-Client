@@ -1,5 +1,6 @@
 // src/notifications/displayNotification.js
 import notifee, {AndroidImportance} from "@notifee/react-native";
+import colors from "../shared/styles/colors";
 
 export async function displayTodoNotification({title, body, data}) {
   await notifee.displayNotification({
@@ -13,8 +14,8 @@ export async function displayTodoNotification({title, body, data}) {
       pressAction: {
         id: "default",
       },
-      // (선택) 작은 아이콘 지정 (안 하면 기본 아이콘 이슈가 날 수 있음)
-      // smallIcon: "ic_notification",
+      smallIcon: "ic_notification",
+      color: colors.or,
     },
 
     ios: {

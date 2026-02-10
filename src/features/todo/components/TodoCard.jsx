@@ -1,5 +1,5 @@
 // src/features/todo/components/TodoCard.jsx
-import React, {useMemo, useState, useCallback, useEffect} from "react";
+import React, {useMemo, useState, useCallback, useEffect, useImperativeHandle} from "react";
 import {View, StyleSheet, TouchableOpacity} from "react-native";
 import {NestableDraggableFlatList} from "react-native-draggable-flatlist";
 
@@ -20,6 +20,8 @@ import Animated, {
 } from "react-native-reanimated";
 import ChevronIcon from "../../../shared/components/ChevronIcon";
 import PlusIcon from "../assets/svg/Plus.svg";
+import Dotted from "../../calendar/assets/svg/Dotted.svg";
+
 import colors from "../../../shared/styles/colors";
 
 /** ✅ 목업 투두 (규칙: 현재는 mock) */
@@ -189,7 +191,7 @@ function Chevron({isOpen, color}) {
   );
 }
 
-export default function TodoCard({
+const TodoCard = React.forwardRef(function TodoCard({
   navigation,
   onPressInput,
   categories = [],
@@ -200,7 +202,7 @@ export default function TodoCard({
   onReorderTodos, // ✅ 추가
   isViewingToday = false,
   todos: todosProp = [], // ✅ 추가 (HomeScreen에서 내려줌)
-}) {
+}, ref) {
   const [todos, setTodos] = useState(todosProp);
   const [swipedTodoId, setSwipedTodoId] = useState(null);
 
@@ -255,6 +257,12 @@ export default function TodoCard({
     setOpenMap(initial);
     setDidInitOpenMap(true);
   }, [categories, didInitOpenMap]);
+
+  useImperativeHandle(ref, () => ({
+    openCategory: (categoryId) => {
+      setOpenMap((prev) => ({...prev, [categoryId]: true}));
+    },
+  }));
 
   const grouped = useMemo(() => {
     const by = {};
@@ -440,7 +448,11 @@ export default function TodoCard({
     <View style={styles.container}>
       <View style={styles.todoSection}>{categories.map(renderSection)}</View>
 
-      <View style={styles.dashedDivider} />
+      <View>
+        <Dotted style={{width: "100%", marginVertical: 18}} height={1} />
+      </View>
+
+      {/* <View style={styles.dashedDivider} /> */}
 
       {categories.length < 6 && (
         <TouchableOpacity
@@ -460,7 +472,9 @@ export default function TodoCard({
       )}
     </View>
   );
-}
+});
+
+export default TodoCard;
 
 const styles = StyleSheet.create({
   container: {
@@ -528,8 +542,8 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: "#FF5B22",
     borderRadius: 24,
-    paddingHorizontal: 12,
-    paddingVertical: 8,
+    paddingHorizontal: 10,
+    paddingVertical: 6,
   },
 
   /** TodoItem styles */
@@ -548,7 +562,7 @@ const styles = StyleSheet.create({
     borderRadius: 12,
     backgroundColor: colors.wt,
     // borderWidth: 1,
-    paddingRight: 10,
+    // paddingRight: 10,
   },
   dragHandleButton: {
     paddingHorizontal: 6,

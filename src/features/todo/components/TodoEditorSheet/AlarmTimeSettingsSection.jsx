@@ -5,6 +5,8 @@ import DateTimePicker, {
 } from "@react-native-community/datetimepicker";
 import colors from "../../../../shared/styles/colors";
 import {toast} from "../../../../shared/components/toast/CenterToast";
+import XCircleIcon from "../../assets/svg/xCircle.svg";
+import AppText from "../../../../shared/components/AppText";
 
 /**
  * Alarm UI (alarmBox ~ alarmFooter) 전담 컴포넌트
@@ -141,7 +143,13 @@ export default function AlarmTimeSettingSection({
         ) : (
           <>
             <View style={styles.timeRow}>
-              <Text style={styles.timeText}>{displayText}</Text>
+              {hasPickedAlarmTime && (
+                <View style={styles.timeLeftPlaceholder} />
+              )}
+
+              <AppText variant="H1" style={styles.timeText}>
+                {displayText}
+              </AppText>
 
               {hasPickedAlarmTime && (
                 <TouchableOpacity
@@ -150,7 +158,7 @@ export default function AlarmTimeSettingSection({
                   onPress={handleClear}
                   hitSlop={8}
                 >
-                  <Text style={styles.clearIcon}>×</Text>
+                  <XCircleIcon width={15} height={15} />
                 </TouchableOpacity>
               )}
             </View>
@@ -192,34 +200,40 @@ const styles = StyleSheet.create({
   },
 
   timeRow: {
-    position: "relative",
+    // position: "relative",
+    flexDirection: "row",
     height: 91,
     alignItems: "center",
     justifyContent: "center",
   },
 
+  timeLeftPlaceholder: {
+    width: 18,
+    height: 18,
+    borderRadius: 13,
+    marginRight: 16,
+    // borderWidth: 1,
+  },
+
   timeText: {
     textAlign: "center",
-    fontSize: 24,
+    // fontSize: 24,
     lineHeight: 36,
     color: colors.or,
-    fontFamily: "Pretendard-Bold",
+    // fontFamily: "Pretendard-Bold",
+    // borderWidth: 1,
   },
 
   clearButton: {
-    position: "absolute",
-    right: "20%",
-    width: 26,
-    height: 26,
+    // position: "absolute",
+    // right: "20%",
+    width: 18,
+    height: 18,
     borderRadius: 13,
     alignItems: "center",
     justifyContent: "center",
-  },
-
-  clearIcon: {
-    fontSize: 18,
-    lineHeight: 18,
-    color: "#B0B0B0",
+    marginLeft: 16,
+    // borderWidth: 1,
   },
 
   divider: {
