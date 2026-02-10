@@ -562,37 +562,6 @@ export default function HomeScreen({navigation, route}) {
                         />
                       </>
                     )}
-                    {/* {isCharacterBusy ? (
-                      <></>
-                    ) : isCharacterError ? (
-                      <Image
-                        source={ErrorImage}
-                        style={styles.errorImage}
-                        resizeMode="contain"
-                      />
-                    ) : (
-                      <>
-                        {shouldRenderBack && (
-                          <LottieView
-                            source={
-                              lottieKey === "caseE1"
-                                ? TodoLottie.caseE1Back
-                                : TodoLottie.caseE2Back
-                            }
-                            autoPlay
-                            loop={false}
-                            style={styles.lottie}
-                          />
-                        )}
-
-                        <LottieView
-                          source={TodoLottie[lottieKey]}
-                          autoPlay
-                          loop={false}
-                          style={styles.lottie}
-                        />
-                      </>
-                    )} */}
                   </Pressable>
                 </View>
               </GestureDetector>
