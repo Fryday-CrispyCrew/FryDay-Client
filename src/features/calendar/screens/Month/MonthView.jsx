@@ -1,5 +1,5 @@
 import { View, FlatList, useWindowDimensions } from "react-native";
-import { useMemo, useRef, useEffect } from "react";
+import { useMemo, useRef, useLayoutEffect, useCallback } from "react";
 import MonthRow from "./MonthRow";
 import { getMonthMatrix } from "../../components/date";
 
@@ -10,10 +10,12 @@ export default function MonthView({
                                       selectedDate,
                                       onSelectDate,
                                       onSwipeStart,
-                                      onMonthChanged
+                                      onMonthChanged,
                                   }) {
     const { width } = useWindowDimensions();
     const listRef = useRef(null);
+    const isSnappingRef = useRef(false);
+    const lastHandledPageRef = useRef(1);
 
     const months = useMemo(
         () => [
@@ -24,14 +26,23 @@ export default function MonthView({
         [currentDate]
     );
 
-    const lastHandledPageRef = useRef(1);
+    const snapToCenter = useCallback(() => {
+        const ref = listRef.current;
+        if (!ref || !width) return;
 
-    useEffect(() => {
+        isSnappingRef.current = true;
+        lastHandledPageRef.current = 1;
+
+        ref.scrollToOffset({ offset: width, animated: false });
+
         requestAnimationFrame(() => {
-            lastHandledPageRef.current = 1;
-            listRef.current?.scrollToIndex({ index: 1, animated: false });
+            isSnappingRef.current = false;
         });
-    }, [months, width]);
+    }, [width]);
+
+    useLayoutEffect(() => {
+        snapToCenter();
+    }, [snapToCenter, months]);
 
     return (
         <FlatList
@@ -41,18 +52,31 @@ export default function MonthView({
             pagingEnabled
             showsHorizontalScrollIndicator={false}
             keyExtractor={(_, i) => `month-${i}`}
-            getItemLayout={(_, i) => ({ length: width, offset: width * i, index: i })}
+            getItemLayout={(_, i) => ({
+                length: width,
+                offset: width * i,
+                index: i,
+            })}
             onMomentumScrollBegin={() => {
                 onSwipeStart?.();
             }}
             onMomentumScrollEnd={(e) => {
+                if (isSnappingRef.current) return;
+
                 const page = Math.round(e.nativeEvent.contentOffset.x / width);
 
                 if (page === lastHandledPageRef.current) return;
                 lastHandledPageRef.current = page;
 
-                if (page === 0) onChangeDate((d) => d.subtract(1, "month"));
-                if (page === 2) onChangeDate((d) => d.add(1, "month"));
+                if (page === 0) {
+                    onChangeDate(currentDate.subtract(1, "month"));
+                    onMonthChanged?.(currentDate.subtract(1, "month"));
+                    return;
+                }
+                if (page === 2) {
+                    onChangeDate(currentDate.add(1, "month"));
+                    onMonthChanged?.(currentDate.add(1, "month"));
+                }
             }}
             renderItem={({ item }) => {
                 const weeks = getMonthMatrix(item);

@@ -2,6 +2,7 @@ import React, {useCallback, useEffect, useMemo, useState} from "react";
 import {Pressable, ScrollView, TouchableOpacity, View} from "react-native";
 import {SafeAreaView} from "react-native-safe-area-context";
 import {useNavigation, useRoute} from "@react-navigation/native";
+import AsyncStorage from "@react-native-async-storage/async-storage";
 
 import NamingArrow from "../../assets/svg/naming-arrow.svg";
 import AppText from "../../../../shared/components/AppText";
@@ -11,6 +12,7 @@ import CheckOn from "../../assets/svg/checkbox-on.svg";
 import CheckOff from "../../assets/svg/checkbox-off.svg";
 
 import {useCreateConsentMutation} from "../../queries/consent/useCreateConsentMutation"; // 경로만 프로젝트에 맞게
+import {STEP_KEY, ONBOARDING_STEP} from "../../../../shared/constants/onboardingStep";
 
 // 체크 버튼
 function CheckIcon({checked}) {
@@ -64,8 +66,13 @@ export default function ConsentScreen() {
 
     const canNext = agreeTerms && agreePrivacy;
 
+    useEffect(() => {
+        AsyncStorage.setItem(STEP_KEY, ONBOARDING_STEP.NEEDS_AGREEMENT);
+    }, []);
+
     const goBackToAuth = useCallback(async () => {
         if (isNewUser) await deleteTokens();
+        await AsyncStorage.removeItem(STEP_KEY);
 
         const rootNav = navigation.getParent("root") ?? navigation.getParent();
         rootNav?.reset({index: 0, routes: [{name: "Auth"}]});
@@ -162,6 +169,8 @@ export default function ConsentScreen() {
                                 privacyRequired: agreePrivacy,
                                 marketingOptional: agreeMarketing,
                             });
+
+                            await AsyncStorage.setItem(STEP_KEY, ONBOARDING_STEP.NEEDS_NICKNAME);
 
                             navigation.navigate("Naming", {
                                 isNewUser,

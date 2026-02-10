@@ -1,125 +1,116 @@
-import React, {useState, useEffect, useCallback, useRef} from "react";
-import {View} from "react-native";
-import {SafeAreaView} from "react-native-safe-area-context";
+import React, { useState, useEffect, useCallback } from "react";
+import { View } from "react-native";
+import { SafeAreaView } from "react-native-safe-area-context";
 import dayjs from "dayjs";
-import {useFocusEffect} from "@react-navigation/native";
+import { useFocusEffect } from "@react-navigation/native";
+import AsyncStorage from "@react-native-async-storage/async-storage";
 
 import CalendarHeader from "../components/CalendarHeader";
 import WeekdayHeader from "../components/WeekdayHeader";
 import MonthView from "./Month/MonthView";
 import WeekSlider from "./Week/WeekSlider";
 import Dotted from "../assets/svg/Dotted.svg";
-import AsyncStorage from "@react-native-async-storage/async-storage";
 
 import TodoBoardSection from "../../todo/components/TodoBoardSection";
-import {getDailyResultsMap} from "../api/dailyResultsApi";
+import { getDailyResultsMap } from "../api/dailyResultsApi";
 import YearMonthWheelModal from "../../todo/components/RepeatSettingsSection/wheel/YearMonthWheelModal";
-import LoadingModal from "../../../shared/modal/LoadingModal";
 
+function buildTodayState(mode) {
+    const today = dayjs();
+    return {
+        mode,
+        currentDate: mode === "week" ? today : today.startOf("month"),
+        selectedDate: today,
+    };
+}
 
+function buildMonthToWeekState(currentMonthDate) {
+    const today = dayjs();
+    const viewingMonth = currentMonthDate.startOf("month");
 
-export default function CalendarScreen({navigation}) {
-  const [mode, setMode] = useState("month"); // 'week' | 'month'
-  const [currentDate, setCurrentDate] = useState(dayjs());
-  const [selectedDate, setSelectedDate] = useState(dayjs());
+    const isTodayMonth = viewingMonth.isSame(today, "month");
 
-    const [loading, setLoading] = useState(false);
-    const loadingTimerRef = useRef(null);
+    if (isTodayMonth) {
+        return {
+            mode: "week",
+            currentDate: today,
+            selectedDate: today,
+        };
+    }
 
-    const beginLoadingWithDelay = useCallback(() => {
-        if (loadingTimerRef.current) clearTimeout(loadingTimerRef.current);
-        loadingTimerRef.current = setTimeout(() => setLoading(true), 250); // 0.25초 이상이면 표시
-    }, []);
+    const monthFirstDay = viewingMonth.startOf("month");
+    return {
+        mode: "week",
+        currentDate: monthFirstDay,
+        selectedDate: monthFirstDay,
+    };
+}
 
-    const endLoading = useCallback(() => {
-        if (loadingTimerRef.current) clearTimeout(loadingTimerRef.current);
-        loadingTimerRef.current = null;
-        setLoading(false);
-    }, []);
-
+export default function CalendarScreen({ navigation }) {
+    const [ready, setReady] = useState(false);
+    const [state, setState] = useState(() => buildTodayState("month"));
+    const { mode, currentDate, selectedDate } = state;
 
     const selectedDateStr = selectedDate.format("YYYY-MM-DD");
-  const isViewingToday = selectedDate.isSame(dayjs(), "day");
+    const isViewingToday = selectedDate.isSame(dayjs(), "day");
 
     const [isYMModalOpen, setIsYMModalOpen] = useState(false);
-
     const openYMModal = useCallback(() => setIsYMModalOpen(true), []);
     const closeYMModal = useCallback(() => setIsYMModalOpen(false), []);
 
     const handleConfirmYM = useCallback((year, month) => {
-        // month: 1~12
-        const next = dayjs()
-            .year(year)
-            .month(month - 1)
-            .startOf("month");
-
-        setCurrentDate(next);
+        const next = dayjs().year(year).month(month - 1).startOf("month");
+        setState((s) => ({ ...s, currentDate: next }));
         setIsYMModalOpen(false);
     }, []);
 
-
     const [bowlMap, setBowlMap] = useState({});
-
-  const handlePressToday = useCallback(() => {
-    const today = dayjs();
-    if (mode === "week") {
-      setCurrentDate(today);
-      setSelectedDate(today);
-    } else {
-      setCurrentDate(today.startOf("month"));
-    }
-  }, [mode]);
 
     useFocusEffect(
         useCallback(() => {
-            const startDate = currentDate.startOf("month").format("YYYY-MM-DD");
-            const monthEnd = currentDate.endOf("month");
-            const today = dayjs();
-            const endDate = (monthEnd.isAfter(today, "day") ? today : monthEnd).format("YYYY-MM-DD");
-
-            let alive = true;
-
-            beginLoadingWithDelay();
-
-            (async () => {
-                try {
-                    const map = await getDailyResultsMap(startDate, endDate);
-                    if (alive) setBowlMap(map);
-                } catch (e) {
-                    console.log("[dailyResults] ERR", e?.response?.status, JSON.stringify(e?.response?.data, null, 2), e?.message);
-                } finally {
-                    if (alive) endLoading();
-                }
-            })();
-
-            return () => {
-                alive = false;
-                endLoading();
-            };
-        }, [currentDate, beginLoadingWithDelay, endLoading])
+            setState((s) => buildTodayState(s.mode));
+        }, [])
     );
 
-
     useEffect(() => {
-    (async () => {
-      const saved = await AsyncStorage.getItem("calendarMode");
-      if (saved === "week" || saved === "month") setMode(saved);
-    })();
-  }, []);
+        let alive = true;
+        (async () => {
+            const saved = await AsyncStorage.getItem("calendarMode");
+            const initialMode = saved === "week" || saved === "month" ? saved : "month";
+            if (!alive) return;
+            setState(buildTodayState(initialMode));
+            setReady(true);
+        })();
+        return () => {
+            alive = false;
+        };
+    }, []);
 
-  const toggleMode = useCallback(() => {
-    setMode((m) => {
-      const next = m === "week" ? "month" : "week";
-      AsyncStorage.setItem("calendarMode", next);
-      return next;
-    });
-  }, []);
+    const toggleMode = useCallback(() => {
+        setState((s) => {
+            const nextMode = s.mode === "week" ? "month" : "week";
+            AsyncStorage.setItem("calendarMode", nextMode);
 
+            if (s.mode === "month" && nextMode === "week") {
+                return buildMonthToWeekState(s.currentDate);
+            }
 
+            if (s.mode === "week" && nextMode === "month") {
+                const m = s.currentDate.startOf("month");
+                return { ...s, mode: "month", currentDate: m };
+            }
+
+            return { ...s, mode: nextMode };
+        });
+    }, []);
+
+    const handlePressToday = useCallback(() => {
+        setState((s) => buildTodayState(s.mode));
+    }, []);
 
     const handleSelectMonthDate = useCallback(
         (d) => {
-            setSelectedDate(d);
+            setState((s) => ({ ...s, selectedDate: d }));
             const dateStr = d.format("YYYY-MM-DD");
 
             requestAnimationFrame(() => {
@@ -135,66 +126,93 @@ export default function CalendarScreen({navigation}) {
         [navigation]
     );
 
+    useFocusEffect(
+        useCallback(() => {
+            const startDate = currentDate.startOf("month").format("YYYY-MM-DD");
+            const monthEnd = currentDate.endOf("month");
+            const today = dayjs();
+            const endDate = (monthEnd.isAfter(today, "day") ? today : monthEnd).format("YYYY-MM-DD");
+
+            let alive = true;
+
+            (async () => {
+                try {
+                    const map = await getDailyResultsMap(startDate, endDate);
+                    if (alive) setBowlMap(map);
+                } catch (e) {
+                    console.log(
+                        "[dailyResults] ERR",
+                        e?.response?.status,
+                        JSON.stringify(e?.response?.data, null, 2),
+                        e?.message
+                    );
+                }
+            })();
+
+            return () => {
+                alive = false;
+            };
+        }, [currentDate])
+    );
+
+    if (!ready) return <SafeAreaView className="flex-1 bg-wt" edges={["top"]} />;
 
     return (
-      <SafeAreaView className="flex-1 bg-wt" edges={["top"]}>
-          <CalendarHeader
-              date={currentDate}
-              mode={mode}
-              onPressButton={toggleMode}
-              onPressToday={handlePressToday}
-              navigation={navigation}
-              onPressYearMonth={openYMModal}
-          />
+        <SafeAreaView className="flex-1 bg-wt" edges={["top"]}>
+            <CalendarHeader
+                date={currentDate}
+                mode={mode}
+                onPressButton={toggleMode}
+                onPressToday={handlePressToday}
+                navigation={navigation}
+                onPressYearMonth={openYMModal}
+            />
 
-          <WeekdayHeader />
+            <WeekdayHeader />
 
-        <View className="flex-1">
-          {mode === "week" ? (
-              <>
-                <View className="shrink-0">
-                  <WeekSlider
-                      currentDate={currentDate}
-                      selectedDate={selectedDate}
-                      onSelectDate={setSelectedDate}
-                      onChangeDate={setCurrentDate}
-                      bowlMap={bowlMap}
-                  />
-                </View>
-                <View className="mt-3 mx-5 shrink-0">
-                  <Dotted style={{width: "100%"}} height={1} />
-                </View>
+            <View className="flex-1">
+                {mode === "week" ? (
+                    <>
+                        <View className="shrink-0">
+                            <WeekSlider
+                                currentDate={currentDate}
+                                selectedDate={selectedDate}
+                                onSelectDate={(d) => setState((s) => ({ ...s, selectedDate: d }))}
+                                onChangeDate={(d) => setState((s) => ({ ...s, currentDate: d }))}
+                                bowlMap={bowlMap}
+                            />
+                        </View>
 
-                <View style={{flex: 1, paddingHorizontal: 20}}>
-                  <TodoBoardSection
-                      navigation={navigation}
-                      date={selectedDateStr}
-                      isViewingToday={isViewingToday}
-                  />
-                </View>
-              </>
-          ) : (
-              <MonthView
-                  currentDate={currentDate}
-                  onChangeDate={setCurrentDate}
-                  bowlMap={bowlMap}
-                  selectedDate={selectedDate}
-                  onSelectDate={handleSelectMonthDate}
-                  onSwipeStart={beginLoadingWithDelay}
-              />
+                        <View className="mt-3 mx-5 shrink-0">
+                            <Dotted style={{ width: "100%" }} height={1} />
+                        </View>
 
-          )}
-        </View>
-          <YearMonthWheelModal
-              visible={isYMModalOpen}
-              initialYear={currentDate.year()}
-              initialMonth={currentDate.month() + 1}
-              onCancel={closeYMModal}
-              onConfirm={handleConfirmYM}
-          />
+                        <View style={{ flex: 1, paddingHorizontal: 20 }}>
+                            <TodoBoardSection
+                                navigation={navigation}
+                                date={selectedDateStr}
+                                isViewingToday={isViewingToday}
+                            />
+                        </View>
+                    </>
+                ) : (
+                    <MonthView
+                        currentDate={currentDate}
+                        onChangeDate={(d) => setState((s) => ({ ...s, currentDate: d }))}
+                        bowlMap={bowlMap}
+                        selectedDate={selectedDate}
+                        onSelectDate={handleSelectMonthDate}
+                    />
+                )}
+            </View>
 
-          <LoadingModal visible={loading} />
-
-      </SafeAreaView>
-  );
+            <YearMonthWheelModal
+                visible={isYMModalOpen}
+                initialYear={currentDate.year()}
+                initialMonth={currentDate.month() + 1}
+                onCancel={closeYMModal}
+                onConfirm={handleConfirmYM}
+            />
+        </SafeAreaView>
+    );
 }
