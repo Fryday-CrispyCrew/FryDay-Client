@@ -45,7 +45,7 @@ function TermsBox({title, body}) {
                     style={{height: 120}}
                     showsVerticalScrollIndicator={false}
                 >
-                    <AppText variant="L400" className="text-bk">
+                    <AppText variant="L400" className="text-bk leading-[1.5]">
                         {body}
                     </AppText>
                 </ScrollView>
@@ -150,7 +150,7 @@ export default function ConsentScreen() {
                 </View>
 
                 <View className="mt-4 gap-2">
-                    <AppText variant="L400" className="text-gr500">
+                    <AppText variant="M500" className="text-gr500">
                         마케팅 정보 수신 동의 (선택)
                     </AppText>
                     <CheckRow
