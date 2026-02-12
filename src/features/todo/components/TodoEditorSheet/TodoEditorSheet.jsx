@@ -315,6 +315,7 @@ const TodoEditorSheet = React.forwardRef(function TodoEditorSheet(
   ];
 
   const inputRef = useRef(null);
+  const isSubmittingRef = useRef(false);
 
   // ✅ 메모 입력용 ref/state 추가
   const memoInputRef = useRef(null);
@@ -907,8 +908,19 @@ const TodoEditorSheet = React.forwardRef(function TodoEditorSheet(
   const handleSubmitInternal = useCallback(async () => {
     // create 모드는 기존 흐름 유지(필요하면 create mutation 연결)
     if (mode !== "edit") {
-      onSubmit?.(draftCategoryId, editingText);
-      onCloseAfterSubmit?.();
+      const text = (editingText ?? "").trim();
+      if (!text) return;
+
+      if (isSubmittingRef.current) return;
+      isSubmittingRef.current = true;
+
+      onSubmit?.(draftCategoryId, text);
+
+      Keyboard.dismiss();
+      requestAnimationFrame(() => {
+        ref?.current?.dismiss?.();
+      });
+
       return;
     }
 
@@ -1099,18 +1111,34 @@ const TodoEditorSheet = React.forwardRef(function TodoEditorSheet(
     updateRecurrenceRule,
   ]);
 
+  // const handleDismiss = useCallback(() => {
+  //   setIsCategoryOpen(false);
+  //   setDraftCategoryId(initialCategoryId);
+  //   setSelectedToolKey(null);
+  //   setMemoText(""); // ✅ 닫을 때 메모 입력 초기화
+  //   setEditingText(""); // ✅ 닫을 때 제목 입력 초기화
+  //   setHasAppliedTodoDate(false);
+  //   resetEditHydrationRefs(); // ✅ 주입 가드 전체 리셋
+  //   Keyboard.dismiss();
+  //   onDismiss?.();
+  // }, [onDismiss, initialCategoryId]);
+
   const handleDismiss = useCallback(() => {
     setIsCategoryOpen(false);
     setDraftCategoryId(initialCategoryId);
     setSelectedToolKey(null);
-    setMemoText(""); // ✅ 닫을 때 메모 입력 초기화
-    setEditingText(""); // ✅ 닫을 때 제목 입력 초기화
+    setMemoText("");
+    setEditingText("");
     setHasAppliedTodoDate(false);
     setIsSheetReady(false);
     resetEditHydrationRefs(); // ✅ 주입 가드 전체 리셋
     Keyboard.dismiss();
     onDismiss?.();
-  }, [onDismiss, initialCategoryId]);
+
+    const wasSubmitting = isSubmittingRef.current;
+    isSubmittingRef.current = false;
+  }, [initialCategoryId, onDismiss, onSubmit]);
+
 
   const otherCategories = useMemo(() => {
     return categories
