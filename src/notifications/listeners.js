@@ -13,7 +13,10 @@ export function registerForegroundMessageListener() {
     const title =
       remoteMessage.notification?.title ?? remoteMessage.data?.title;
     const body = remoteMessage.notification?.body ?? remoteMessage.data?.body;
-
+    console.log("remoteMessage.notification.title: ", title);
+    console.log("remoteMessage.notification.body: ", body);
+    console.log("remoteMessage.data.title: ", title);
+    console.log("remoteMessage.data.body: ", body);
     await displayTodoNotification({
       title,
       body,
