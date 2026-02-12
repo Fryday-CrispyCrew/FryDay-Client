@@ -3,7 +3,7 @@ import MyPageHeader from "../../components/MypageHeader";
 import {View, Platform, Linking} from "react-native";
 import ToggleMenu from "../../components/ToggleMenu";
 import * as Notifications from "expo-notifications";
-import {useEffect, useRef, useState, useCallback} from "react";
+import {useEffect, useState, useCallback} from "react";
 import {useFocusEffect} from "@react-navigation/native";
 import {useUpdateNotificationSettingsMutation} from "../../../../notifications/queries/useUpdateNotificationSettingsMutation";
 import {useNotificationSettingsQuery} from "../../queries/notification/useNotificationSettingsQuery";
@@ -15,10 +15,8 @@ export default function SystemAlarm() {
     const {data, refetch} = useNotificationSettingsQuery();
 
     const [systemAllowed, setSystemAllowed] = useState(false);
-    const [pushEnabled, setPushEnabled] = useState(false);
     const [fryEnabled, setFryEnabled] = useState(false);
     const [marketingEnabled, setMarketingEnabled] = useState(false);
-    const isInitialSyncRef = useRef(true);
 
     const log = useCallback(
         (tag, extra = {}) => {
@@ -62,7 +60,6 @@ export default function SystemAlarm() {
     useFocusEffect(
         useCallback(() => {
             console.log("[system-alarm]", JSON.stringify({tag: "focus"}, null, 2));
-            isInitialSyncRef.current = true;
             (async () => {
                 await syncSystemPermission();
                 const res = await refetch();
@@ -76,9 +73,6 @@ export default function SystemAlarm() {
 
     useEffect(() => {
         if (!data) return;
-        if (!isInitialSyncRef.current) return;
-        isInitialSyncRef.current = false;
-        setPushEnabled(Boolean(data.pushNotificationEnabled));
         setFryEnabled(Boolean(data.pushNotificationEnabled));
         setMarketingEnabled(Boolean(data.marketingAgreed));
         console.log(
@@ -95,8 +89,8 @@ export default function SystemAlarm() {
         );
     }, [data]);
 
-    const pushValue = systemAllowed ? pushEnabled : false;
-    const canControlChildren = systemAllowed && pushEnabled;
+    const pushValue = systemAllowed ? Boolean(data?.pushNotificationEnabled) : false;
+    const canControlChildren = systemAllowed && Boolean(data?.pushNotificationEnabled);
     const fryValue = systemAllowed ? fryEnabled : false;
     const marketingValue = systemAllowed ? marketingEnabled : false;
 
@@ -112,7 +106,6 @@ export default function SystemAlarm() {
                     return;
                 }
 
-                setPushEnabled(true);
                 updateSettings.mutate(
                     {pushNotificationEnabled: true},
                     {
@@ -154,7 +147,9 @@ export default function SystemAlarm() {
                 return;
             }
 
-            setPushEnabled(false);
+            setFryEnabled(false);
+            setMarketingEnabled(false);
+
             updateSettings.mutate(
                 {pushNotificationEnabled: false},
                 {
