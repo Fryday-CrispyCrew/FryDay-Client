@@ -8,6 +8,7 @@ import {
   ScrollView,
   TouchableOpacity,
   Keyboard,
+  Platform,
 } from "react-native";
 import {
   BottomSheetModal,
@@ -42,6 +43,7 @@ import {useUpdateRecurrenceRuleMutation} from "../../queries/sheet/repeat/useUpd
 import {useUpdateTodoDateMutation} from "../../queries/sheet/date/useUpdateTodoDateMutation";
 import {useDeleteTodoRecurrenceMutation} from "../../queries/sheet/repeat/useDeleteTodoRecurrenceMutation";
 import AppText from "../../../../shared/components/AppText";
+import Banner from "../../../../shared/components/Banner";
 
 /**
  * ✅ BottomSheetTextInput만 분리 (IME-safe 로직 포함)
@@ -331,6 +333,10 @@ const TodoEditorSheet = React.forwardRef(function TodoEditorSheet(
 
   const [selectedToolKey, setSelectedToolKey] = useState(null);
   const selectedToolKeyRef = useRef(null);
+  const isToolTransitioningRef = useRef(false);
+
+  // 바텀시트가 완전히 열렸는지 추적
+  const [isSheetReady, setIsSheetReady] = useState(false);
 
   // 알림 시간(임시 선택 값)
   const [alarmDraftDate, setAlarmDraftDate] = useState(new Date());
@@ -578,10 +584,16 @@ const TodoEditorSheet = React.forwardRef(function TodoEditorSheet(
     setIsMemoFocused(false);
     Keyboard.dismiss();
 
+    // iOS: 시트 리사이즈 중 BottomSheetTextInput이 자동 재포커스되는 것을 방지
+    isToolTransitioningRef.current = true;
+
     // 2) 키보드/시트 인터랙션이 끝난 다음 프레임에 패널 오픈
     InteractionManager.runAfterInteractions(() => {
       requestAnimationFrame(() => {
         setSelectedToolKey(key);
+        setTimeout(() => {
+          isToolTransitioningRef.current = false;
+        }, 400);
       });
     });
   }, []);
@@ -651,16 +663,34 @@ const TodoEditorSheet = React.forwardRef(function TodoEditorSheet(
     });
   }, []);
 
+  const sheetReadyTimerRef = useRef(null);
+
   const handleSheetAnimate = useCallback(
     (fromIndex, toIndex) => {
-      if (fromIndex === -1 && toIndex >= 0) focusInput();
+      if (fromIndex === -1 && toIndex >= 0) {
+        focusInput();
+        sheetReadyTimerRef.current = setTimeout(() => {
+          setIsSheetReady(true);
+        }, Platform.OS === "ios" ? 1150 : 500);
+      }
+      if (toIndex === -1) {
+        if (sheetReadyTimerRef.current) {
+          clearTimeout(sheetReadyTimerRef.current);
+          sheetReadyTimerRef.current = null;
+        }
+        setIsSheetReady(false);
+      }
     },
     [focusInput],
   );
 
   const renderBackdrop = useCallback(
     (props) => (
-      <Pressable style={[StyleSheet.absoluteFill]} onPress={onCloseTogether}>
+      <Pressable
+        style={[StyleSheet.absoluteFill]}
+        onPress={onCloseTogether}
+        pointerEvents={isSheetReady ? "auto" : "none"}
+      >
         <BottomSheetBackdrop
           {...props}
           pressBehavior="none"
@@ -668,9 +698,21 @@ const TodoEditorSheet = React.forwardRef(function TodoEditorSheet(
           disappearsOnIndex={-1}
           opacity={0.5}
         />
+        <View
+            pointerEvents="box-none"
+            style={{
+              position: "absolute",
+              top: 80,
+              left: 20,
+              right: 20,
+              alignItems: "center"
+            }}
+        >
+          <Banner />
+        </View>
       </Pressable>
     ),
-    [onCloseTogether],
+    [onCloseTogether, isSheetReady],
   );
 
   useEffect(() => {
@@ -1088,7 +1130,8 @@ const TodoEditorSheet = React.forwardRef(function TodoEditorSheet(
     setMemoText("");
     setEditingText("");
     setHasAppliedTodoDate(false);
-    resetEditHydrationRefs();
+    setIsSheetReady(false);
+    resetEditHydrationRefs(); // ✅ 주입 가드 전체 리셋
     Keyboard.dismiss();
     onDismiss?.();
 
@@ -1208,402 +1251,414 @@ const TodoEditorSheet = React.forwardRef(function TodoEditorSheet(
       enablePanDownToClose={true}
     >
       <BottomSheetView>
-        <View
-          style={[
-            styles.container,
-            {paddingBottom: isKeyboardVisible ? 0 : insets.bottom},
-          ]}
-        >
-          {/* (선택) 로딩 표시 */}
-          {mode === "edit" && (isTodoDetailLoading || isTodoDetailFetching) ? (
-            <Text style={{fontSize: 12, color: "#B0B0B0", marginBottom: 8}}>
-              투두 정보를 불러오는 중...
-            </Text>
-          ) : null}
-
-          {/* 카테고리 row */}
-          <TouchableOpacity
-            activeOpacity={0.7}
-            onPress={() => setIsCategoryOpen(true)}
-            disabled={isCategoryOpen}
-            style={styles.categoryInlineRow}
-          >
+        <View style={{position: "relative"}}>
+          {!isSheetReady && (
             <View
-              style={[
-                styles.categoryChipSelected,
-                selectedCategory?.color
-                  ? {backgroundColor: selectedCategory.color}
-                  : null,
-              ]}
+              style={[StyleSheet.absoluteFill, {zIndex: 10}]}
+              pointerEvents="box-only"
+            />
+          )}
+          <View
+            style={[
+              styles.container,
+              {paddingBottom: isKeyboardVisible ? 0 : insets.bottom},
+            ]}
+          >
+            {/* (선택) 로딩 표시 */}
+            {mode === "edit" &&
+            (isTodoDetailLoading || isTodoDetailFetching) ? (
+              <Text style={{fontSize: 12, color: "#B0B0B0", marginBottom: 8}}>
+                투두 정보를 불러오는 중...
+              </Text>
+            ) : null}
+
+            {/* 카테고리 row */}
+            <TouchableOpacity
+              activeOpacity={0.7}
+              onPress={() => setIsCategoryOpen(true)}
+              disabled={isCategoryOpen}
+              style={styles.categoryInlineRow}
             >
-              <AppText variant="M600" style={styles.categorySelectedText}>
-                {categories.find((c) => c.categoryId === draftCategoryId)
-                  ?.label ?? categoryLabel}
-              </AppText>
-            </View>
-
-            {!isCategoryOpen && (
-              <ChevronIcon
-                direction="right"
-                size={14}
-                color={colors.gr500}
-                strokeWidth={2.5}
-              />
-            )}
-
-            {isCategoryOpen && (
-              <ScrollView
-                horizontal
-                keyboardShouldPersistTaps="always"
-                showsHorizontalScrollIndicator={false}
-                contentContainerStyle={styles.categoryInlineList}
-                style={styles.categoryInlineScroll}
-              >
-                {otherCategories.map((c) => (
-                  <TouchableOpacity
-                    key={c.categoryId}
-                    activeOpacity={0.7}
-                    onPress={() => handlePickCategory(c.categoryId)}
-                    style={styles.categoryChip}
-                  >
-                    <AppText variant="M600" style={styles.categoryText}>
-                      {c.label}
-                    </AppText>
-                  </TouchableOpacity>
-                ))}
-              </ScrollView>
-            )}
-          </TouchableOpacity>
-
-          {/* ✅ create/edit 레이아웃 분기 */}
-          {mode === "create" ? (
-            // ===== 생성 모드: input 옆에 submit =====
-            <View style={styles.inputRow}>
               <View
                 style={[
-                  styles.inputWrapper,
-                  isTitleFocused && styles.inputWrapperFocused,
+                  styles.categoryChipSelected,
+                  selectedCategory?.color
+                    ? {backgroundColor: selectedCategory.color}
+                    : null,
                 ]}
               >
-                <TodoBottomSheetTextInput
-                  inputRef={inputRef}
-                  value={editingText}
-                  onChangeText={setEditingText}
-                  onSubmitEditing={handleSubmitInternal}
-                  onEnabledChange={setIsSubmitEnabled}
-                  maxLength={20}
-                  style={styles.input}
-                  onFocus={() => setIsTitleFocused(true)}
-                  onBlur={() => setIsTitleFocused(false)}
-                />
-
-                {!!editingText?.length && (
-                  <TouchableOpacity
-                    activeOpacity={0.7}
-                    onPress={handleClearText}
-                    style={styles.clearButton}
-                    hitSlop={8}
-                  >
-                    <ClearIcon width={16} height={16} color={colors.gr300} />
-                  </TouchableOpacity>
-                )}
+                <AppText variant="M600" style={styles.categorySelectedText}>
+                  {categories.find((c) => c.categoryId === draftCategoryId)
+                    ?.label ?? categoryLabel}
+                </AppText>
               </View>
 
-              <TouchableOpacity
-                activeOpacity={0.7}
-                onPress={handleSubmitInternal}
-                disabled={!isSubmitEnabled}
-                style={[
-                  styles.submitButton,
-                  !isSubmitEnabled && styles.submitButtonDisabled,
-                ]}
-              >
+              {!isCategoryOpen && (
                 <ChevronIcon
                   direction="right"
-                  size={24}
-                  color={isSubmitEnabled ? colors.gr : colors.gr300}
+                  size={14}
+                  color={colors.gr500}
                   strokeWidth={2.5}
                 />
-              </TouchableOpacity>
-            </View>
-          ) : (
-            // ===== 수정 모드: memo 선택 시 제목 아래 메모 input + toolsRow + submit =====
-            <View>
-              <View
-                style={[
-                  styles.inputWrapperEdit,
-                  isTitleFocused && styles.inputWrapperFocused,
-                  isMemoOpen && {
-                    borderBottomLeftRadius: 0,
-                    borderBottomRightRadius: 0,
-                  },
-                ]}
-              >
-                <TodoBottomSheetTextInput
-                  inputRef={inputRef}
-                  value={editingText}
-                  onChangeText={setEditingText}
-                  onSubmitEditing={handleSubmitInternal}
-                  onEnabledChange={setIsSubmitEnabled}
-                  maxLength={20}
-                  style={styles.inputEdit}
-                  placeholder="두근두근, 무엇을 튀겨볼까요?"
-                  onFocus={() => {
-                    setIsTitleFocused(true);
+              )}
 
-                    if (selectedToolKey) {
-                      // ✅ 켜져있던 툴/패널 닫기
-                      setSelectedToolKey(null);
-                      // ✅ repeat 내부 드롭다운도 정리
-                      setOpenRepeatDropdownKey(null);
-                      // ✅ 알림 인라인 picker 정리
-                      setIsIosInlineAlarmPickerOpen(false);
-                      // ✅ 메모 input 열려있으면 내려주기
-                      blurMemoOnly();
-                    }
-                  }}
-                  onBlur={() => setIsTitleFocused(false)}
-                />
+              {isCategoryOpen && (
+                <ScrollView
+                  horizontal
+                  keyboardShouldPersistTaps="always"
+                  showsHorizontalScrollIndicator={false}
+                  contentContainerStyle={styles.categoryInlineList}
+                  style={styles.categoryInlineScroll}
+                >
+                  {otherCategories.map((c) => (
+                    <TouchableOpacity
+                      key={c.categoryId}
+                      activeOpacity={0.7}
+                      onPress={() => handlePickCategory(c.categoryId)}
+                      style={styles.categoryChip}
+                    >
+                      <AppText variant="M600" style={styles.categoryText}>
+                        {c.label}
+                      </AppText>
+                    </TouchableOpacity>
+                  ))}
+                </ScrollView>
+              )}
+            </TouchableOpacity>
 
-                {!!editingText?.length && (
-                  <TouchableOpacity
-                    activeOpacity={0.7}
-                    onPress={handleClearText}
-                    style={styles.clearButton}
-                    hitSlop={8}
-                  >
-                    <ClearIcon width={16} height={16} color={colors.gr300} />
-                  </TouchableOpacity>
-                )}
-              </View>
-
-              {/* ✅ memo 아이콘 선택 시: 최대 3줄 메모 input */}
-              {isMemoOpen && (
+            {/* ✅ create/edit 레이아웃 분기 */}
+            {mode === "create" ? (
+              // ===== 생성 모드: input 옆에 submit =====
+              <View style={styles.inputRow}>
                 <View
                   style={[
-                    styles.memoWrapper,
-                    isMemoFocused && styles.inputWrapperFocused,
+                    styles.inputWrapper,
+                    isTitleFocused && styles.inputWrapperFocused,
                   ]}
                 >
                   <TodoBottomSheetTextInput
-                    inputRef={memoInputRef}
-                    value={memoText}
-                    onChangeText={(text) => {
-                      if (text.length > 100) {
-                        toast.show("메모는 100자까지 입력 가능합니다.");
-                        return;
+                    inputRef={inputRef}
+                    value={editingText}
+                    onChangeText={setEditingText}
+                    onSubmitEditing={handleSubmitInternal}
+                    onEnabledChange={setIsSubmitEnabled}
+                    maxLength={20}
+                    style={styles.input}
+                    onFocus={() => setIsTitleFocused(true)}
+                    onBlur={() => setIsTitleFocused(false)}
+                  />
+
+                  {!!editingText?.length && (
+                    <TouchableOpacity
+                      activeOpacity={0.7}
+                      onPress={handleClearText}
+                      style={styles.clearButton}
+                      hitSlop={8}
+                    >
+                      <ClearIcon width={16} height={16} color={colors.gr300} />
+                    </TouchableOpacity>
+                  )}
+                </View>
+
+                <TouchableOpacity
+                  activeOpacity={0.7}
+                  onPress={handleSubmitInternal}
+                  disabled={!isSubmitEnabled}
+                  style={[
+                    styles.submitButton,
+                    !isSubmitEnabled && styles.submitButtonDisabled,
+                  ]}
+                >
+                  <ChevronIcon
+                    direction="right"
+                    size={24}
+                    color={isSubmitEnabled ? colors.gr : colors.gr300}
+                    strokeWidth={2.5}
+                  />
+                </TouchableOpacity>
+              </View>
+            ) : (
+              // ===== 수정 모드: memo 선택 시 제목 아래 메모 input + toolsRow + submit =====
+              <View>
+                <View
+                  style={[
+                    styles.inputWrapperEdit,
+                    isTitleFocused && styles.inputWrapperFocused,
+                    isMemoOpen && {
+                      borderBottomLeftRadius: 0,
+                      borderBottomRightRadius: 0,
+                    },
+                  ]}
+                >
+                  <TodoBottomSheetTextInput
+                    inputRef={inputRef}
+                    value={editingText}
+                    onChangeText={setEditingText}
+                    onSubmitEditing={handleSubmitInternal}
+                    onEnabledChange={setIsSubmitEnabled}
+                    maxLength={20}
+                    style={styles.inputEdit}
+                    placeholder="두근두근, 무엇을 튀겨볼까요?"
+                    onFocus={() => {
+                      setIsTitleFocused(true);
+
+                      // iOS: 툴 전환 중 시트 리사이즈로 인한 자동 재포커스는 무시
+                      if (isToolTransitioningRef.current) return;
+
+                      if (selectedToolKey) {
+                        // ✅ 켜져있던 툴/패널 닫기
+                        setSelectedToolKey(null);
+                        // ✅ repeat 내부 드롭다운도 정리
+                        setOpenRepeatDropdownKey(null);
+                        // ✅ 알림 인라인 picker 정리
+                        setIsIosInlineAlarmPickerOpen(false);
+                        // ✅ 메모 input 열려있으면 내려주기
+                        blurMemoOnly();
                       }
-                      setMemoText(text);
                     }}
-                    onEnabledChange={() => {}}
-                    placeholder="기억해야 할 메모를 입력해 주세요."
-                    maxLength={101}
-                    multiline
-                    blurOnSubmit={false}
-                    scrollEnabled
-                    style={styles.memoInput}
-                    onFocus={() => setIsMemoFocused(true)}
-                    onBlur={() => setIsMemoFocused(false)}
-                    autoFocus={true}
+                    onBlur={() => setIsTitleFocused(false)}
                   />
+
+                  {!!editingText?.length && (
+                    <TouchableOpacity
+                      activeOpacity={0.7}
+                      onPress={handleClearText}
+                      style={styles.clearButton}
+                      hitSlop={8}
+                    >
+                      <ClearIcon width={16} height={16} color={colors.gr300} />
+                    </TouchableOpacity>
+                  )}
                 </View>
-              )}
 
-              {renderEditTools()}
-
-              {/* ✅ iOS/Android 공통: 처음엔 동일한 '미설정' UI */}
-              {isAlarmOpen && (
-                <View style={styles.alarmPanel}>
-                  <Text style={styles.alarmTitle}>알림 설정</Text>
-
-                  <AlarmTimeSettingSection
-                    alarmDraftDate={alarmDraftDate}
-                    alarmTime={alarmTime}
-                    hasPickedAlarmTime={hasPickedAlarmTime}
-                    isIosInlineAlarmPickerOpen={isIosInlineAlarmPickerOpen}
-                    setAlarmDraftDate={setAlarmDraftDate}
-                    setAlarmTime={setAlarmTime}
-                    setHasPickedAlarmTime={setHasPickedAlarmTime}
-                    setIsIosInlineAlarmPickerOpen={
-                      setIsIosInlineAlarmPickerOpen
-                    }
-                    onClosePanel={() => closePanelAndFocusTitle("alarm")}
-                    styles={styles}
-                  />
-                </View>
-              )}
-
-              <RepeatSettingsSection
-                visible={isRepeatOpen}
-                openKey={openRepeatDropdownKey}
-                onToggleOpenKey={toggleRepeatDropdown}
-              />
-
-              {/* ✅ SelectDateIcon: 투두 날짜 변경 캘린더 */}
-              {isSelectDateOpen && (
-                <View style={styles.selectDatePanel}>
-                  <Text style={styles.selectDateTitle}>변경할 날짜</Text>
-
-                  <View style={styles.calendarWrap}>
-                    {/* 월 네비게이션 */}
-                    <View style={styles.calendarHeader}>
-                      <TouchableOpacity
-                        activeOpacity={0.7}
-                        onPress={() =>
-                          setTodoMonthCursor((d) => addMonths(d, -1))
+                {/* ✅ memo 아이콘 선택 시: 최대 3줄 메모 input */}
+                {isMemoOpen && (
+                  <View
+                    style={[
+                      styles.memoWrapper,
+                      isMemoFocused && styles.inputWrapperFocused,
+                    ]}
+                  >
+                    <TodoBottomSheetTextInput
+                      inputRef={memoInputRef}
+                      value={memoText}
+                      onChangeText={(text) => {
+                        if (text.length > 100) {
+                          toast.show("메모는 100자까지 입력 가능합니다.");
+                          return;
                         }
-                        style={styles.monthNavBtn}
-                        hitSlop={8}
-                      >
-                        <ChevronIcon
-                          direction="left"
-                          size={18}
-                          color={colors.gr500}
-                          strokeWidth={2}
-                        />
-                      </TouchableOpacity>
+                        setMemoText(text);
+                      }}
+                      onEnabledChange={() => {}}
+                      placeholder="기억해야 할 메모를 입력해 주세요."
+                      maxLength={101}
+                      multiline
+                      blurOnSubmit={false}
+                      scrollEnabled
+                      style={styles.memoInput}
+                      onFocus={() => setIsMemoFocused(true)}
+                      onBlur={() => setIsMemoFocused(false)}
+                      autoFocus={true}
+                    />
+                  </View>
+                )}
 
-                      <TouchableOpacity
-                        activeOpacity={0.7}
-                        onPress={() => {
-                          setTodoWheelInitialYear(
-                            todoMonthCursor.getFullYear(),
-                          );
-                          setTodoWheelInitialMonth(
-                            todoMonthCursor.getMonth() + 1,
-                          );
-                          setIsTodoYearMonthWheelOpen(true);
-                        }}
-                        hitSlop={8}
-                      >
-                        <Text style={styles.calendarHeaderText}>
-                          {todoMonthCursor.getFullYear()}년{" "}
-                          {todoMonthCursor.getMonth() + 1}월
-                        </Text>
-                      </TouchableOpacity>
+                {renderEditTools()}
 
-                      <TouchableOpacity
-                        activeOpacity={0.7}
-                        onPress={() =>
-                          setTodoMonthCursor((d) => addMonths(d, 1))
-                        }
-                        style={styles.monthNavBtn}
-                        hitSlop={8}
-                      >
-                        <ChevronIcon
-                          direction="right"
-                          size={18}
-                          color={colors.gr500}
-                          strokeWidth={2}
-                        />
-                      </TouchableOpacity>
-                    </View>
+                {/* ✅ iOS/Android 공통: 처음엔 동일한 '미설정' UI */}
+                {isAlarmOpen && (
+                  <View style={styles.alarmPanel}>
+                    <Text style={styles.alarmTitle}>알림 설정</Text>
 
-                    {/* 요일 */}
-                    <View style={styles.weekHeaderRow}>
-                      {WEEKDAYS.map((w, idx) => (
-                        <View key={w} style={styles.weekHeaderCell}>
-                          <Text
-                            style={[
-                              styles.weekHeaderText,
-                              idx === 0 && styles.weekHeaderSun,
-                              idx === 6 && styles.weekHeaderSat,
-                            ]}
-                          >
-                            {w}
+                    <AlarmTimeSettingSection
+                      alarmDraftDate={alarmDraftDate}
+                      alarmTime={alarmTime}
+                      hasPickedAlarmTime={hasPickedAlarmTime}
+                      isIosInlineAlarmPickerOpen={isIosInlineAlarmPickerOpen}
+                      setAlarmDraftDate={setAlarmDraftDate}
+                      setAlarmTime={setAlarmTime}
+                      setHasPickedAlarmTime={setHasPickedAlarmTime}
+                      setIsIosInlineAlarmPickerOpen={
+                        setIsIosInlineAlarmPickerOpen
+                      }
+                      onClosePanel={() => closePanelAndFocusTitle("alarm")}
+                      styles={styles}
+                    />
+                  </View>
+                )}
+
+                <RepeatSettingsSection
+                  visible={isRepeatOpen}
+                  openKey={openRepeatDropdownKey}
+                  onToggleOpenKey={toggleRepeatDropdown}
+                />
+
+                {/* ✅ SelectDateIcon: 투두 날짜 변경 캘린더 */}
+                {isSelectDateOpen && (
+                  <View style={styles.selectDatePanel}>
+                    <Text style={styles.selectDateTitle}>변경할 날짜</Text>
+
+                    <View style={styles.calendarWrap}>
+                      {/* 월 네비게이션 */}
+                      <View style={styles.calendarHeader}>
+                        <TouchableOpacity
+                          activeOpacity={0.7}
+                          onPress={() =>
+                            setTodoMonthCursor((d) => addMonths(d, -1))
+                          }
+                          style={styles.monthNavBtn}
+                          hitSlop={8}
+                        >
+                          <ChevronIcon
+                            direction="left"
+                            size={18}
+                            color={colors.gr500}
+                            strokeWidth={2}
+                          />
+                        </TouchableOpacity>
+
+                        <TouchableOpacity
+                          activeOpacity={0.7}
+                          onPress={() => {
+                            setTodoWheelInitialYear(
+                              todoMonthCursor.getFullYear(),
+                            );
+                            setTodoWheelInitialMonth(
+                              todoMonthCursor.getMonth() + 1,
+                            );
+                            setIsTodoYearMonthWheelOpen(true);
+                          }}
+                          hitSlop={8}
+                        >
+                          <Text style={styles.calendarHeaderText}>
+                            {todoMonthCursor.getFullYear()}년{" "}
+                            {todoMonthCursor.getMonth() + 1}월
                           </Text>
-                        </View>
-                      ))}
-                    </View>
+                        </TouchableOpacity>
 
-                    {/* 날짜 grid */}
-                    <View style={styles.calendarGrid}>
-                      {todoMonthGrid.map((cellDate, i) => {
-                        const isEmpty = !cellDate;
-                        const selected = cellDate
-                          ? isSameDay(cellDate, draftTodoDate)
-                          : false;
-                        const isToday = cellDate
-                          ? isSameDay(cellDate, today)
-                          : false;
+                        <TouchableOpacity
+                          activeOpacity={0.7}
+                          onPress={() =>
+                            setTodoMonthCursor((d) => addMonths(d, 1))
+                          }
+                          style={styles.monthNavBtn}
+                          hitSlop={8}
+                        >
+                          <ChevronIcon
+                            direction="right"
+                            size={18}
+                            color={colors.gr500}
+                            strokeWidth={2}
+                          />
+                        </TouchableOpacity>
+                      </View>
 
-                        // ✅ 오늘이더라도 선택이면 오늘 스타일은 적용 X
-                        const useTodayStyle = isToday && !selected;
+                      {/* 요일 */}
+                      <View style={styles.weekHeaderRow}>
+                        {WEEKDAYS.map((w, idx) => (
+                          <View key={w} style={styles.weekHeaderCell}>
+                            <Text
+                              style={[
+                                styles.weekHeaderText,
+                                idx === 0 && styles.weekHeaderSun,
+                                idx === 6 && styles.weekHeaderSat,
+                              ]}
+                            >
+                              {w}
+                            </Text>
+                          </View>
+                        ))}
+                      </View>
 
-                        return (
-                          <TouchableOpacity
-                            key={`todo-d-${i}`}
-                            disabled={isEmpty}
-                            activeOpacity={0.85}
-                            onPress={() =>
-                              handlePickTodoDateFromCalendar(cellDate)
-                            }
-                            style={styles.dayCell}
-                          >
-                            {isEmpty ? (
-                              <View style={styles.dayCircle} />
-                            ) : (
-                              <View
-                                style={[
-                                  styles.dayCircle,
-                                  selected && styles.daySelectedCircle,
-                                  useTodayStyle && styles.dayTodayCircle,
-                                ]}
-                              >
-                                <Text
+                      {/* 날짜 grid */}
+                      <View style={styles.calendarGrid}>
+                        {todoMonthGrid.map((cellDate, i) => {
+                          const isEmpty = !cellDate;
+                          const selected = cellDate
+                            ? isSameDay(cellDate, draftTodoDate)
+                            : false;
+                          const isToday = cellDate
+                            ? isSameDay(cellDate, today)
+                            : false;
+
+                          // ✅ 오늘이더라도 선택이면 오늘 스타일은 적용 X
+                          const useTodayStyle = isToday && !selected;
+
+                          return (
+                            <TouchableOpacity
+                              key={`todo-d-${i}`}
+                              disabled={isEmpty}
+                              activeOpacity={0.85}
+                              onPress={() =>
+                                handlePickTodoDateFromCalendar(cellDate)
+                              }
+                              style={styles.dayCell}
+                            >
+                              {isEmpty ? (
+                                <View style={styles.dayCircle} />
+                              ) : (
+                                <View
                                   style={[
-                                    styles.dayText,
-                                    selected && styles.daySelectedText,
-                                    useTodayStyle && styles.dayTodayText,
+                                    styles.dayCircle,
+                                    selected && styles.daySelectedCircle,
+                                    useTodayStyle && styles.dayTodayCircle,
                                   ]}
                                 >
-                                  {cellDate.getDate()}
-                                </Text>
-                              </View>
-                            )}
-                          </TouchableOpacity>
-                        );
-                      })}
+                                  <Text
+                                    style={[
+                                      styles.dayText,
+                                      selected && styles.daySelectedText,
+                                      useTodayStyle && styles.dayTodayText,
+                                    ]}
+                                  >
+                                    {cellDate.getDate()}
+                                  </Text>
+                                </View>
+                              )}
+                            </TouchableOpacity>
+                          );
+                        })}
+                      </View>
                     </View>
+
+                    <View style={styles.selectDateFooter}>
+                      <TouchableOpacity
+                        activeOpacity={0.9}
+                        onPress={handleApplyTodoDate}
+                        style={styles.selectDateApplyButton}
+                      >
+                        <Text style={styles.selectDateApplyText}>적용하기</Text>
+                      </TouchableOpacity>
+                    </View>
+                    <YearMonthWheelModal
+                      visible={isTodoYearMonthWheelOpen}
+                      initialYear={todoWheelInitialYear}
+                      initialMonth={todoWheelInitialMonth} // 1~12
+                      onCancel={() => setIsTodoYearMonthWheelOpen(false)}
+                      onConfirm={(year, month) => {
+                        // ✅ 캘린더 커서 이동
+                        setTodoMonthCursor(new Date(year, month - 1, 1));
+
+                        // ✅ draftTodoDate도 같은 '일' 유지하면서 이동 (말일 보정)
+                        setDraftTodoDate((prev) => {
+                          const base = prev ?? new Date();
+                          const day = base.getDate();
+                          const lastDay = new Date(year, month, 0).getDate();
+                          return new Date(
+                            year,
+                            month - 1,
+                            Math.min(day, lastDay),
+                          );
+                        });
+
+                        setIsTodoYearMonthWheelOpen(false);
+                      }}
+                    />
                   </View>
-
-                  <View style={styles.selectDateFooter}>
-                    <TouchableOpacity
-                      activeOpacity={0.9}
-                      onPress={handleApplyTodoDate}
-                      style={styles.selectDateApplyButton}
-                    >
-                      <Text style={styles.selectDateApplyText}>적용하기</Text>
-                    </TouchableOpacity>
-                  </View>
-                  <YearMonthWheelModal
-                    visible={isTodoYearMonthWheelOpen}
-                    initialYear={todoWheelInitialYear}
-                    initialMonth={todoWheelInitialMonth} // 1~12
-                    onCancel={() => setIsTodoYearMonthWheelOpen(false)}
-                    onConfirm={(year, month) => {
-                      // ✅ 캘린더 커서 이동
-                      setTodoMonthCursor(new Date(year, month - 1, 1));
-
-                      // ✅ draftTodoDate도 같은 '일' 유지하면서 이동 (말일 보정)
-                      setDraftTodoDate((prev) => {
-                        const base = prev ?? new Date();
-                        const day = base.getDate();
-                        const lastDay = new Date(year, month, 0).getDate();
-                        return new Date(
-                          year,
-                          month - 1,
-                          Math.min(day, lastDay),
-                        );
-                      });
-
-                      setIsTodoYearMonthWheelOpen(false);
-                    }}
-                  />
-                </View>
-              )}
-            </View>
-          )}
+                )}
+              </View>
+            )}
+          </View>
         </View>
       </BottomSheetView>
     </BottomSheetModal>
