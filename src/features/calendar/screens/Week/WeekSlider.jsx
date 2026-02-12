@@ -12,16 +12,16 @@ export default function WeekSlider({
                                    }) {
     const { width } = useWindowDimensions();
     const listRef = useRef(null);
-    const isSnappingRef = useRef(false);
 
-    const weeks = useMemo(
-        () => [
-            getWeekDays(currentDate.subtract(1, "week")),
-            getWeekDays(currentDate),
-            getWeekDays(currentDate.add(1, "week")),
-        ],
-        [currentDate]
-    );
+    const isSnappingRef = useRef(false);
+    const lockRef = useRef(false);
+
+    const weeks = useMemo(() => {
+        const prev = currentDate.clone().subtract(1, "week");
+        const cur = currentDate.clone();
+        const next = currentDate.clone().add(1, "week");
+        return [getWeekDays(prev), getWeekDays(cur), getWeekDays(next)];
+    }, [currentDate]);
 
     const snapToCenter = useCallback(() => {
         if (!listRef.current) return;
@@ -36,6 +36,32 @@ export default function WeekSlider({
         snapToCenter();
     }, [snapToCenter, weeks]);
 
+    const handleMomentumEnd = useCallback(
+        (e) => {
+            if (isSnappingRef.current) return;
+            if (lockRef.current) return;
+
+            const x = e.nativeEvent.contentOffset.x;
+            const page = Math.round(x / width);
+
+            if (page === 1) return;
+
+            lockRef.current = true;
+
+            const nextDate =
+                page === 0
+                    ? currentDate.clone().subtract(1, "week")
+                    : currentDate.clone().add(1, "week");
+
+            onChangeDate(nextDate);
+
+            requestAnimationFrame(() => {
+                lockRef.current = false;
+            });
+        },
+        [currentDate, onChangeDate, width]
+    );
+
     return (
         <FlatList
             ref={listRef}
@@ -49,18 +75,7 @@ export default function WeekSlider({
                 offset: width * i,
                 index: i,
             })}
-            onMomentumScrollEnd={(e) => {
-                if (isSnappingRef.current) return;
-
-                const page = Math.round(e.nativeEvent.contentOffset.x / width);
-
-                if (page === 0) {
-                    onChangeDate(currentDate.subtract(1, "week"));
-                }
-                if (page === 2) {
-                    onChangeDate(currentDate.add(1, "week"));
-                }
-            }}
+            onMomentumScrollEnd={handleMomentumEnd}
             renderItem={({ item }) => (
                 <WeekRow
                     days={item}
