@@ -11,6 +11,7 @@ import CategoryHeader from "../../components/Category/CategoryHeader";
 import {useCategoriesQuery} from "../../queries/category/useCategoriesQuery";
 import {useReorderCategoriesMutation} from "../../queries/category/useReorderCategoriesMutation";
 import {toast} from "../../../../shared/components/toast/CenterToast";
+import Banner from "../../../../shared/components/Banner";
 
 const EMPTY_CATEGORIES = [];
 
@@ -150,6 +151,20 @@ export default function CategListScreen({navigation}) {
           카테고리는 최대 6개까지 설정 가능해요
         </AppText>
       </View>
+
+      {/* 광고 추가 */}
+      <View
+          style={{
+            position: "absolute",
+            bottom: 46,
+            left: 20,
+            right: 20,
+            alignItems: "center",
+          }}
+      >
+        <Banner />
+      </View>
+
     </SafeAreaView>
   );
 }
