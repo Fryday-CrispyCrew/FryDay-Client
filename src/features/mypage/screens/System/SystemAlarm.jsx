@@ -1,6 +1,6 @@
 import {SafeAreaView} from "react-native-safe-area-context";
 import MyPageHeader from "../../components/MypageHeader";
-import {View, Platform, Linking} from "react-native";
+import {View, Platform, Linking, AppState} from "react-native";
 import ToggleMenu from "../../components/ToggleMenu";
 import * as Notifications from "expo-notifications";
 import {useEffect, useRef, useState, useCallback} from "react";
@@ -73,6 +73,16 @@ export default function SystemAlarm() {
         }, [refetch, syncSystemPermission])
     );
 
+    // 시스템 설정에서 돌아왔을 때 권한 상태 즉시 반영
+    useEffect(() => {
+        const sub = AppState.addEventListener("change", (nextState) => {
+            if (nextState === "active") {
+                syncSystemPermission();
+            }
+        });
+        return () => sub.remove();
+    }, [syncSystemPermission]);
+
     useEffect(() => {
         if (!data) return;
         if (!isInitialSyncRef.current) return;
@@ -95,8 +105,8 @@ export default function SystemAlarm() {
 
     const pushValue = systemAllowed;
     const canControlChildren = systemAllowed;
-    const fryValue = systemAllowed ? fryEnabled : false;
-    const marketingValue = systemAllowed ? marketingEnabled : false;
+    const fryValue = fryEnabled;
+    const marketingValue = marketingEnabled;
 
     const handleTogglePush = useCallback(
         async (next) => {
