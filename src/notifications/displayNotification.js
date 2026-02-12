@@ -5,7 +5,7 @@ import colors from "../shared/styles/colors";
 export async function displayTodoNotification({title, body, data}) {
   await notifee.displayNotification({
     title: title ?? "Fryday",
-    body: body ?? "",
+    body: body ?? "body text",
     data: data ?? {},
 
     android: {
