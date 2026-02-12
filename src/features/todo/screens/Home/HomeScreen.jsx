@@ -538,14 +538,18 @@ const styles = StyleSheet.create({
   iconRow: {
     flexDirection: "row",
     alignItems: "center",
-    gap: 8,
+    gap: 12,
+    // borderWidth: 1,
   },
   iconButton: {
-    paddingVertical: 4,
-    paddingHorizontal: 4,
-    borderRadius: 10,
+    // paddingVertical: 4,
+    // paddingHorizontal: 4,
+    width: 32,
+    height: 32,
+    // borderRadius: 10,
     alignItems: "center",
     justifyContent: "center",
+    // borderWidth: 1,
   },
   iconButtonDisabled: {
     opacity: 0.35,

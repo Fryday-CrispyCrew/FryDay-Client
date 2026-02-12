@@ -43,10 +43,23 @@ export default function CalendarHeader({
         </TouchableOpacity>
       </View>
 
-      <View className="flex-row items-center gap-4">
+      <View
+        // className="flex-row items-center gap-4"
+        style={{
+          flexDirection: "row",
+          alignItems: "center",
+          gap: 12,
+        }}
+      >
         <TouchableOpacity
           onPress={onPressButton}
-          className="w-8 h-8 items-center justify-center"
+          //   className="w-8 h-8 items-center justify-center"
+          style={{
+            width: 32,
+            height: 32,
+            justifyContent: "center",
+            alignItems: "center",
+          }}
         >
           {mode === "week" ? (
             <MonthButton width={32} height={32} />
@@ -58,8 +71,15 @@ export default function CalendarHeader({
         <TouchableOpacity
           onPress={isTodayDisabled ? undefined : onPressToday}
           disabled={isTodayDisabled}
-          className="w-8 h-8 items-center justify-center"
-          style={{opacity: isTodayDisabled ? 0.35 : 1}}
+          //   className="w-8 h-8 items-center justify-center"
+          style={{
+            opacity: isTodayDisabled ? 0.35 : 1,
+            width: 32,
+            height: 32,
+            justifyContent: "center",
+            alignItems: "center",
+            // borderWidth: 1,
+          }}
         >
           <TodayIcon width={24} height={24} />
         </TouchableOpacity>
@@ -70,7 +90,14 @@ export default function CalendarHeader({
               screen: "CategList",
             })
           }
-          className="w-8 h-8 items-center justify-center"
+          //   className="w-8 h-8 items-center justify-center"
+          style={{
+            width: 32,
+            height: 32,
+            justifyContent: "center",
+            alignItems: "center",
+            // borderWidth: 1,
+          }}
         >
           <CategoryIcon width={24} height={24} />
         </TouchableOpacity>
