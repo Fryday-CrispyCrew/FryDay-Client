@@ -3,7 +3,7 @@ import MyPageHeader from "../../components/MypageHeader";
 import {View, Platform, Linking} from "react-native";
 import ToggleMenu from "../../components/ToggleMenu";
 import * as Notifications from "expo-notifications";
-import {useEffect, useState, useCallback} from "react";
+import {useEffect, useRef, useState, useCallback} from "react";
 import {useFocusEffect} from "@react-navigation/native";
 import {useUpdateNotificationSettingsMutation} from "../../../../notifications/queries/useUpdateNotificationSettingsMutation";
 import {useNotificationSettingsQuery} from "../../queries/notification/useNotificationSettingsQuery";
@@ -17,6 +17,7 @@ export default function SystemAlarm() {
     const [systemAllowed, setSystemAllowed] = useState(false);
     const [fryEnabled, setFryEnabled] = useState(false);
     const [marketingEnabled, setMarketingEnabled] = useState(false);
+    const isInitialSyncRef = useRef(true);
 
     const log = useCallback(
         (tag, extra = {}) => {
@@ -60,6 +61,7 @@ export default function SystemAlarm() {
     useFocusEffect(
         useCallback(() => {
             console.log("[system-alarm]", JSON.stringify({tag: "focus"}, null, 2));
+            isInitialSyncRef.current = true;
             (async () => {
                 await syncSystemPermission();
                 const res = await refetch();
@@ -73,6 +75,8 @@ export default function SystemAlarm() {
 
     useEffect(() => {
         if (!data) return;
+        if (!isInitialSyncRef.current) return;
+        isInitialSyncRef.current = false;
         setFryEnabled(Boolean(data.pushNotificationEnabled));
         setMarketingEnabled(Boolean(data.marketingAgreed));
         console.log(
@@ -89,8 +93,8 @@ export default function SystemAlarm() {
         );
     }, [data]);
 
-    const pushValue = systemAllowed ? Boolean(data?.pushNotificationEnabled) : false;
-    const canControlChildren = systemAllowed && Boolean(data?.pushNotificationEnabled);
+    const pushValue = systemAllowed;
+    const canControlChildren = systemAllowed;
     const fryValue = systemAllowed ? fryEnabled : false;
     const marketingValue = systemAllowed ? marketingEnabled : false;
 
@@ -99,136 +103,22 @@ export default function SystemAlarm() {
             log("toggle-push", {next});
 
             if (next) {
-                const allowed = await syncSystemPermission();
+                // 권한 요청
+                const {status} = await Notifications.requestPermissionsAsync();
+                const allowed = status === "granted";
+                setSystemAllowed(allowed);
+
                 if (!allowed) {
                     log("toggle-push-blocked-no-permission", {next});
                     await openSystemSettings();
-                    return;
                 }
-
-                updateSettings.mutate(
-                    {pushNotificationEnabled: true},
-                    {
-                        onSuccess: async (res) => {
-                            console.log(
-                                "[system-alarm]",
-                                JSON.stringify({tag: "updateSettings-success-push-on", res: res ?? null}, null, 2)
-                            );
-                            const r = await refetch();
-                            console.log(
-                                "[system-alarm]",
-                                JSON.stringify({tag: "after-refetch-push-on", data: r?.data ?? null}, null, 2)
-                            );
-                            log("toggle-push-on-done");
-                        },
-                        onError: async (e) => {
-                            console.log(
-                                "[system-alarm]",
-                                JSON.stringify(
-                                    {
-                                        tag: "updateSettings-error-push-on",
-                                        message: e?.message,
-                                        status: e?.response?.status,
-                                        data: e?.response?.data,
-                                    },
-                                    null,
-                                    2
-                                )
-                            );
-                            const r = await refetch();
-                            console.log(
-                                "[system-alarm]",
-                                JSON.stringify({tag: "after-refetch-push-on-error", data: r?.data ?? null}, null, 2)
-                            );
-                            log("toggle-push-on-error");
-                        },
-                    }
-                );
-                return;
+            } else {
+                // iOS/Android: 앱 내에서 권한 해제 불가 → 시스템 설정으로 이동
+                log("toggle-push-off-open-settings");
+                await openSystemSettings();
             }
-
-            setFryEnabled(false);
-            setMarketingEnabled(false);
-
-            updateSettings.mutate(
-                {pushNotificationEnabled: false},
-                {
-                    onSuccess: async (res) => {
-                        console.log(
-                            "[system-alarm]",
-                            JSON.stringify({tag: "updateSettings-success-push-off", res: res ?? null}, null, 2)
-                        );
-                        const r = await refetch();
-                        console.log(
-                            "[system-alarm]",
-                            JSON.stringify({tag: "after-refetch-push-off", data: r?.data ?? null}, null, 2)
-                        );
-                        log("toggle-push-off-done");
-                    },
-                    onError: async (e) => {
-                        console.log(
-                            "[system-alarm]",
-                            JSON.stringify(
-                                {
-                                    tag: "updateSettings-error-push-off",
-                                    message: e?.message,
-                                    status: e?.response?.status,
-                                    data: e?.response?.data,
-                                },
-                                null,
-                                2
-                            )
-                        );
-                        const r = await refetch();
-                        console.log(
-                            "[system-alarm]",
-                            JSON.stringify({tag: "after-refetch-push-off-error", data: r?.data ?? null}, null, 2)
-                        );
-                        log("toggle-push-off-error");
-                    },
-                }
-            );
-
-            createMarketingConsent.mutate(
-                {marketingOptional: false, skipErrorToast: true},
-                {
-                    onSuccess: async (res) => {
-                        console.log(
-                            "[system-alarm]",
-                            JSON.stringify({tag: "marketingConsent-success-push-off", res: res ?? null}, null, 2)
-                        );
-                        const r = await refetch();
-                        console.log(
-                            "[system-alarm]",
-                            JSON.stringify({tag: "after-refetch-marketing-off", data: r?.data ?? null}, null, 2)
-                        );
-                        log("toggle-push-off-marketing-done");
-                    },
-                    onError: async (e) => {
-                        console.log(
-                            "[system-alarm]",
-                            JSON.stringify(
-                                {
-                                    tag: "marketingConsent-error-push-off",
-                                    message: e?.message,
-                                    status: e?.response?.status,
-                                    data: e?.response?.data,
-                                },
-                                null,
-                                2
-                            )
-                        );
-                        const r = await refetch();
-                        console.log(
-                            "[system-alarm]",
-                            JSON.stringify({tag: "after-refetch-marketing-off-error", data: r?.data ?? null}, null, 2)
-                        );
-                        log("toggle-push-off-marketing-error");
-                    },
-                }
-            );
         },
-        [log, syncSystemPermission, openSystemSettings, updateSettings, createMarketingConsent, refetch]
+        [log, openSystemSettings]
     );
 
     const handleToggleFry = useCallback(
