@@ -330,6 +330,7 @@ const TodoEditorSheet = React.forwardRef(function TodoEditorSheet(
 
   const [selectedToolKey, setSelectedToolKey] = useState(null);
   const selectedToolKeyRef = useRef(null);
+  const isToolTransitioningRef = useRef(false);
 
   // 알림 시간(임시 선택 값)
   const [alarmDraftDate, setAlarmDraftDate] = useState(new Date());
@@ -577,10 +578,16 @@ const TodoEditorSheet = React.forwardRef(function TodoEditorSheet(
     setIsMemoFocused(false);
     Keyboard.dismiss();
 
+    // iOS: 시트 리사이즈 중 BottomSheetTextInput이 자동 재포커스되는 것을 방지
+    isToolTransitioningRef.current = true;
+
     // 2) 키보드/시트 인터랙션이 끝난 다음 프레임에 패널 오픈
     InteractionManager.runAfterInteractions(() => {
       requestAnimationFrame(() => {
         setSelectedToolKey(key);
+        setTimeout(() => {
+          isToolTransitioningRef.current = false;
+        }, 400);
       });
     });
   }, []);
@@ -1322,6 +1329,9 @@ const TodoEditorSheet = React.forwardRef(function TodoEditorSheet(
                   placeholder="두근두근, 무엇을 튀겨볼까요?"
                   onFocus={() => {
                     setIsTitleFocused(true);
+
+                    // iOS: 툴 전환 중 시트 리사이즈로 인한 자동 재포커스는 무시
+                    if (isToolTransitioningRef.current) return;
 
                     if (selectedToolKey) {
                       // ✅ 켜져있던 툴/패널 닫기
