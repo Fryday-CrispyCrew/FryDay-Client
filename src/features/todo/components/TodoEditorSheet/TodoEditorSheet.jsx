@@ -332,6 +332,9 @@ const TodoEditorSheet = React.forwardRef(function TodoEditorSheet(
   const selectedToolKeyRef = useRef(null);
   const isToolTransitioningRef = useRef(false);
 
+  // 바텀시트가 완전히 열렸는지 추적
+  const [isSheetReady, setIsSheetReady] = useState(false);
+
   // 알림 시간(임시 선택 값)
   const [alarmDraftDate, setAlarmDraftDate] = useState(new Date());
   // 적용된 알림 시간(저장될 값)
@@ -657,16 +660,34 @@ const TodoEditorSheet = React.forwardRef(function TodoEditorSheet(
     });
   }, []);
 
+  const sheetReadyTimerRef = useRef(null);
+
   const handleSheetAnimate = useCallback(
     (fromIndex, toIndex) => {
-      if (fromIndex === -1 && toIndex >= 0) focusInput();
+      if (fromIndex === -1 && toIndex >= 0) {
+        focusInput();
+        sheetReadyTimerRef.current = setTimeout(() => {
+          setIsSheetReady(true);
+        }, 2000);
+      }
+      if (toIndex === -1) {
+        if (sheetReadyTimerRef.current) {
+          clearTimeout(sheetReadyTimerRef.current);
+          sheetReadyTimerRef.current = null;
+        }
+        setIsSheetReady(false);
+      }
     },
     [focusInput],
   );
 
   const renderBackdrop = useCallback(
     (props) => (
-      <Pressable style={[StyleSheet.absoluteFill]} onPress={onCloseTogether}>
+      <Pressable
+        style={[StyleSheet.absoluteFill]}
+        onPress={onCloseTogether}
+        pointerEvents={isSheetReady ? "auto" : "none"}
+      >
         <BottomSheetBackdrop
           {...props}
           pressBehavior="none"
@@ -676,7 +697,7 @@ const TodoEditorSheet = React.forwardRef(function TodoEditorSheet(
         />
       </Pressable>
     ),
-    [onCloseTogether],
+    [onCloseTogether, isSheetReady],
   );
 
   useEffect(() => {
@@ -1071,6 +1092,7 @@ const TodoEditorSheet = React.forwardRef(function TodoEditorSheet(
     setMemoText(""); // ✅ 닫을 때 메모 입력 초기화
     setEditingText(""); // ✅ 닫을 때 제목 입력 초기화
     setHasAppliedTodoDate(false);
+    setIsSheetReady(false);
     resetEditHydrationRefs(); // ✅ 주입 가드 전체 리셋
     Keyboard.dismiss();
     onDismiss?.();
@@ -1188,6 +1210,7 @@ const TodoEditorSheet = React.forwardRef(function TodoEditorSheet(
     >
       <BottomSheetView>
         <View
+          pointerEvents={isSheetReady ? "auto" : "none"}
           style={[
             styles.container,
             {paddingBottom: isKeyboardVisible ? 0 : insets.bottom},
