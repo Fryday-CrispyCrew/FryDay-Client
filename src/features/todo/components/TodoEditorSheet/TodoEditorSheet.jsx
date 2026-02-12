@@ -43,6 +43,7 @@ import {useUpdateRecurrenceRuleMutation} from "../../queries/sheet/repeat/useUpd
 import {useUpdateTodoDateMutation} from "../../queries/sheet/date/useUpdateTodoDateMutation";
 import {useDeleteTodoRecurrenceMutation} from "../../queries/sheet/repeat/useDeleteTodoRecurrenceMutation";
 import AppText from "../../../../shared/components/AppText";
+import Banner from "../../../../shared/components/Banner";
 
 /**
  * ✅ BottomSheetTextInput만 분리 (IME-safe 로직 포함)
@@ -669,7 +670,7 @@ const TodoEditorSheet = React.forwardRef(function TodoEditorSheet(
         focusInput();
         sheetReadyTimerRef.current = setTimeout(() => {
           setIsSheetReady(true);
-        }, Platform.OS === "ios" ? 800 : 500);
+        }, Platform.OS === "ios" ? 1150 : 500);
       }
       if (toIndex === -1) {
         if (sheetReadyTimerRef.current) {
@@ -696,6 +697,18 @@ const TodoEditorSheet = React.forwardRef(function TodoEditorSheet(
           disappearsOnIndex={-1}
           opacity={0.5}
         />
+        <View
+            pointerEvents="box-none"
+            style={{
+              position: "absolute",
+              top: 80,
+              left: 20,
+              right: 20,
+              alignItems: "center"
+            }}
+        >
+          <Banner />
+        </View>
       </Pressable>
     ),
     [onCloseTogether, isSheetReady],
