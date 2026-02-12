@@ -31,15 +31,11 @@ export default function MyProfileScreen() {
                 {/* 배너 광고 */}
                 <View
                     style={{
-                        width: "100%",
-                        height: 80,
-                        marginTop: 28,
-                        borderWidth: 1,
-                        borderColor: "#4DA3FF",
-                        overflow: "hidden",
+                        alignSelf: "center",
+                        marginTop: 40,
                     }}
                 >
-                    <Banner/>
+                    <Banner />
                 </View>
             </ScrollView>
         </SafeAreaView>

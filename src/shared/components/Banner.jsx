@@ -20,6 +20,8 @@ export default function Banner() {
         <BannerAd
             unitId={TestIds.BANNER}
             size={BannerAdSize.ANCHORED_ADAPTIVE_BANNER}
+            requestOptions={{ requestNonPersonalizedAdsOnly: true }}
         />
     );
+
 }
