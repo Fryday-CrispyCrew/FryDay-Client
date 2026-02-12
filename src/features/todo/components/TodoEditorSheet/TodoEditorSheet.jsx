@@ -669,9 +669,12 @@ const TodoEditorSheet = React.forwardRef(function TodoEditorSheet(
     (fromIndex, toIndex) => {
       if (fromIndex === -1 && toIndex >= 0) {
         focusInput();
-        sheetReadyTimerRef.current = setTimeout(() => {
-          setIsSheetReady(true);
-        }, Platform.OS === "ios" ? 1150 : 500);
+        sheetReadyTimerRef.current = setTimeout(
+          () => {
+            setIsSheetReady(true);
+          },
+          Platform.OS === "ios" ? 1150 : 0,
+        );
       }
       if (toIndex === -1) {
         if (sheetReadyTimerRef.current) {
@@ -699,14 +702,14 @@ const TodoEditorSheet = React.forwardRef(function TodoEditorSheet(
           opacity={0.5}
         />
         <View
-            pointerEvents="box-none"
-            style={{
-              position: "absolute",
-              top: 80,
-              left: 20,
-              right: 20,
-              alignItems: "center"
-            }}
+          pointerEvents="box-none"
+          style={{
+            position: "absolute",
+            top: 80,
+            left: 20,
+            right: 20,
+            alignItems: "center",
+          }}
         >
           <Banner />
         </View>
@@ -1138,7 +1141,6 @@ const TodoEditorSheet = React.forwardRef(function TodoEditorSheet(
     const wasSubmitting = isSubmittingRef.current;
     isSubmittingRef.current = false;
   }, [initialCategoryId, onDismiss, onSubmit]);
-
 
   const otherCategories = useMemo(() => {
     return categories
