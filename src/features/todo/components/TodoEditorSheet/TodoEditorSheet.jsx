@@ -1158,7 +1158,6 @@ const TodoEditorSheet = React.forwardRef(function TodoEditorSheet(
                 key={key}
                 activeOpacity={0.7}
                 style={styles.toolIconButton}
-                onPressIn={() => {}}
                 onPress={() => onSelectTool(key)}
               >
                 <Icon
