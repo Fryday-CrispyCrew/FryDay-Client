@@ -3,11 +3,7 @@ import { ScrollView } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import MyPageHeader from "../../components/MypageHeader";
 import SystemBox from "../../components/SystemBox";
-
-const SYSTEM_NOTICE_MOCK = {
-    title: '이용약관',
-    content: '이용 약관 텍스트 이용 약관 텍스트 이용 약관 텍스트 이용 약관 텍스트 이용 약관 텍스트 이용 약관 텍스트 이용 약관 텍스트 이용 약관 텍스트 이용 약관 텍스트 이용 약관 텍스트 이용 약관 텍스트 이용 약관 텍스트 이용 약관 텍스트 이용 약관 텍스트 이용 약관 텍스트 이용 약관 텍스트 이용 약관 텍스트 이용 약관 텍스트 이용 약관 텍스트 이용 약관 텍스트 이용 약관 텍스트 이용 약관 텍스트 이용 약관 텍스트 이용 약관 텍스트 이용 약관 텍스트 이용 약관 텍스트 이용 약관 텍스트 이용 약관 텍스트 이용 약관 텍스트 이용 약관 텍스트 이용 약관 텍스트 이용 약관 텍스트 이용 약관 텍스트 이용 약관 텍스트 이용 약관 텍스트 이용 약관 텍스트 이용 약관 텍스트 이용 약관 텍스트 이용 약관 텍스트 이용 약관 텍스트 이용 약관 텍스트 이용 약관 텍스트 이용 약관 텍스트 이용 약관 텍스트 이용 약관 텍스트 이용 약관 텍스트 이용 약관 텍스트 이용 약관 텍스트 이용 약관 텍스트 이용 약관 텍스트 이용 약관 텍스트 ',
-};
+import { TERMS_DATA } from "../../../../shared/constants/terms";
 
 export default function SystemUse() {
     return (
@@ -22,10 +18,13 @@ export default function SystemUse() {
                     rowGap: 16,
                 }}
             >
-                <SystemBox
-                    title={SYSTEM_NOTICE_MOCK.title}
-                    content={SYSTEM_NOTICE_MOCK.content}
-                />
+                {TERMS_DATA.map((item) => (
+                    <SystemBox
+                        key={item.key}
+                        title={item.title}
+                        content={item.content}
+                    />
+                ))}
             </ScrollView>
         </SafeAreaView>
     );

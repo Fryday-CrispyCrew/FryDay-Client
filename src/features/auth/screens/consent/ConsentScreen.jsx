@@ -13,6 +13,8 @@ import CheckOff from "../../assets/svg/checkbox-off.svg";
 
 import {useCreateConsentMutation} from "../../queries/consent/useCreateConsentMutation"; // 경로만 프로젝트에 맞게
 import {STEP_KEY, ONBOARDING_STEP} from "../../../../shared/constants/onboardingStep";
+import { TERMS_DATA } from "../../../../shared/constants/terms";
+
 
 // 체크 버튼
 function CheckIcon({checked}) {
@@ -92,16 +94,15 @@ export default function ConsentScreen() {
     }, [agreeTerms, agreePrivacy, agreeMarketing]);
 
     const termsText = useMemo(
-        () =>
-            "이용 약관 텍스트 이용 약관 텍스트 이용 약관 텍스트 이용 약관 텍스트 이용 약관 텍스트 이용 약관 텍스트 이용 약관 텍스트 이용 약관 텍스트 이용 약관 텍스트 이용 약관 텍스트 이용 약관 텍스트 이용 약관 텍스트 이용 약관 텍스트 이용 약관 텍스트 이용 약관 텍스트 이용 약관 텍스트 이용 약관 텍스트 이용 약관 텍스트 이용 약관 텍스트 이용 약관 텍스트 이용 약관 텍스트 이용 약관 텍스트 이용 약관 텍스트 이용 약관 텍스트 이용 약관 텍스트 이용 약관 텍스트 이용 약관 텍스트 이용 약관 텍스트",
+        () => TERMS_DATA.find((v) => v.key === "service")?.content ?? "",
         []
     );
 
     const privacyText = useMemo(
-        () =>
-            "개인정보 수집 및 이용 정책 텍스트 개인정보 수집 및 이용 정책 텍스트 개인정보 수집 및 이용 정책 텍스트 개인정보 수집 및 이용 정책 텍스트 개인정보 수집 및 이용 정책 텍스트 개인정보 수집 및 이용 정책 텍스트 개인정보 수집 및 이용 정책 텍스트 개인정보 수집 및 이용 정책 텍스트 개인정보 수집 및 이용 정책 텍스트 개인정보 수집 및 이용 정책 텍스트 개인정보 수집 및 이용 정책 텍스트 개인정보 수집 및 이용 정책 텍스트 개인정보 수집 및 이용 정책 텍스트 개인정보 수집 및 이용 정책 텍스트 개인정보 수집 및 이용 정책 텍스트 ",
+        () => TERMS_DATA.find((v) => v.key === "privacy")?.content ?? "",
         []
     );
+
 
     const {mutateAsync: setConsent, isPending: isSubmitting} = useCreateConsentMutation();
 

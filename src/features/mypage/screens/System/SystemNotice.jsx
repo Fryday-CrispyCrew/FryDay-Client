@@ -4,11 +4,7 @@ import { SafeAreaView } from "react-native-safe-area-context";
 
 import MyPageHeader from "../../components/MypageHeader";
 import SystemBox from "../../components/SystemBox";
-
-const SYSTEM_NOTICE_MOCK = {
-    title: '2000.00.00',
-    content: '어쩌구 저쩌구 어쩌구 저쩌구 어쩌구 저쩌구 어쩌구 저쩌구 어쩌구 저쩌구 어쩌구 저쩌구',
-};
+import { SYSTEM_NOTICE_LIST } from "../../../../shared/constants/terms";
 
 export default function SystemNotice() {
     return (
@@ -23,14 +19,13 @@ export default function SystemNotice() {
                     rowGap: 16,
                 }}
             >
-                <SystemBox
-                    title={SYSTEM_NOTICE_MOCK.title}
-                    content={SYSTEM_NOTICE_MOCK.content}
-                />
-                <SystemBox
-                    title={SYSTEM_NOTICE_MOCK.title}
-                    content={SYSTEM_NOTICE_MOCK.content}
-                />
+                {SYSTEM_NOTICE_LIST.map((item) => (
+                    <SystemBox
+                        key={item.id}
+                        title={item.title}
+                        content={item.content}
+                    />
+                ))}
             </ScrollView>
         </SafeAreaView>
     );
