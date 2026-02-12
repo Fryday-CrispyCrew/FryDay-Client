@@ -332,9 +332,6 @@ const TodoEditorSheet = React.forwardRef(function TodoEditorSheet(
   const selectedToolKeyRef = useRef(null);
   const isToolTransitioningRef = useRef(false);
 
-  // 바텀시트가 완전히 열렸는지 추적
-  const [isSheetReady, setIsSheetReady] = useState(false);
-
   // 알림 시간(임시 선택 값)
   const [alarmDraftDate, setAlarmDraftDate] = useState(new Date());
   // 적용된 알림 시간(저장될 값)
@@ -662,23 +659,14 @@ const TodoEditorSheet = React.forwardRef(function TodoEditorSheet(
 
   const handleSheetAnimate = useCallback(
     (fromIndex, toIndex) => {
-      if (fromIndex === -1 && toIndex >= 0) {
-        focusInput();
-        setIsSheetReady(true);
-      }
-      // 시트가 닫히는 중이면 비활성화
-      if (toIndex === -1) setIsSheetReady(false);
+      if (fromIndex === -1 && toIndex >= 0) focusInput();
     },
     [focusInput],
   );
 
   const renderBackdrop = useCallback(
     (props) => (
-      <Pressable
-        style={[StyleSheet.absoluteFill]}
-        onPress={onCloseTogether}
-        pointerEvents={isSheetReady ? "auto" : "none"}
-      >
+      <Pressable style={[StyleSheet.absoluteFill]} onPress={onCloseTogether}>
         <BottomSheetBackdrop
           {...props}
           pressBehavior="none"
@@ -688,7 +676,7 @@ const TodoEditorSheet = React.forwardRef(function TodoEditorSheet(
         />
       </Pressable>
     ),
-    [onCloseTogether, isSheetReady],
+    [onCloseTogether],
   );
 
   useEffect(() => {
@@ -1083,7 +1071,6 @@ const TodoEditorSheet = React.forwardRef(function TodoEditorSheet(
     setMemoText(""); // ✅ 닫을 때 메모 입력 초기화
     setEditingText(""); // ✅ 닫을 때 제목 입력 초기화
     setHasAppliedTodoDate(false);
-    setIsSheetReady(false);
     resetEditHydrationRefs(); // ✅ 주입 가드 전체 리셋
     Keyboard.dismiss();
     onDismiss?.();
@@ -1201,7 +1188,6 @@ const TodoEditorSheet = React.forwardRef(function TodoEditorSheet(
     >
       <BottomSheetView>
         <View
-          pointerEvents={isSheetReady ? "auto" : "none"}
           style={[
             styles.container,
             {paddingBottom: isKeyboardVisible ? 0 : insets.bottom},
