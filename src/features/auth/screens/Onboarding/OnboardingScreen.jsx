@@ -1,199 +1,232 @@
-import React, { useMemo, useState, useEffect, useCallback, useRef } from "react";
+import React, {useMemo, useState, useEffect, useCallback, useRef} from "react";
 import {
-    View,
-    Image,
-    TouchableOpacity,
-    Pressable,
-    useWindowDimensions,
+  View,
+  Image,
+  TouchableOpacity,
+  Pressable,
+  useWindowDimensions,
 } from "react-native";
 import * as SecureStore from "expo-secure-store";
 import AsyncStorage from "@react-native-async-storage/async-storage";
-import { SafeAreaView } from "react-native-safe-area-context";
-import { Gesture, GestureDetector } from "react-native-gesture-handler";
+import {SafeAreaView} from "react-native-safe-area-context";
+import {Gesture, GestureDetector} from "react-native-gesture-handler";
 
 import AppText from "../../../../shared/components/AppText";
 import SkipIcon from "../../assets/svg/skip-arrow.svg";
-import { ONBOARDING_STEP, STEP_KEY } from "../../../../shared/constants/onboardingStep";
+import {
+  ONBOARDING_STEP,
+  STEP_KEY,
+} from "../../../../shared/constants/onboardingStep";
 
-import { useCompleteOnboardingMutation } from "../../queries/onboarding/useCompleteOnboardingMutation";
-import { CommonActions } from "@react-navigation/native";
+import {useCompleteOnboardingMutation} from "../../queries/onboarding/useCompleteOnboardingMutation";
+import {CommonActions} from "@react-navigation/native";
 
 const PAGES = [
-    { id: "1", title: "할 일을 미루면 발등에 불이 떨어지죠.", desc: "FryDay에서는 그 불을 튀김기의 열기로 바꿉니다.", image: require("../../assets/png/onboarding-1.png") },
-    { id: "2", title: "투두 튀김을 추가하고", desc: "24시간 안에 바삭하게 완료하세요.", image: require("../../assets/png/onboarding-2.png") },
-    { id: "3", title: "각 투두 튀김마다", desc: "메모, 반복, 알림을 설정할 수 있어요.", image: require("../../assets/png/onboarding-3.png") },
-    { id: "4", title: "원하는 모드로", desc: "투두 튀김들을 확인해 보세요.", image: require("../../assets/png/onboarding-4.png") },
-    { id: "5", title: "한 달 동안의", desc: "투두 튀김 성취도를 확인하세요.", image: require("../../assets/png/onboarding-5.png") },
+  {
+    id: "1",
+    title: "할 일을 미루면 발등에 불이 떨어지죠.",
+    desc: "FryDay에서는 그 불을 튀김기의 열기로 바꿉니다.",
+    image: require("../../assets/png/onboarding-1.png"),
+  },
+  {
+    id: "2",
+    title: "투두 튀김을 추가하고",
+    desc: "24시간 안에 바삭하게 완료하세요.",
+    image: require("../../assets/png/onboarding-2.png"),
+  },
+  {
+    id: "3",
+    title: "각 투두 튀김마다",
+    desc: "메모, 반복, 알림을 설정할 수 있어요.",
+    image: require("../../assets/png/onboarding-3.png"),
+  },
+  {
+    id: "4",
+    title: "원하는 모드로",
+    desc: "투두 튀김들을 확인해 보세요.",
+    image: require("../../assets/png/onboarding-4.png"),
+  },
+  {
+    id: "5",
+    title: "한 달 동안의",
+    desc: "투두 튀김 성취도를 확인하세요.",
+    image: require("../../assets/png/onboarding-5.png"),
+  },
 ];
 
-export default function OnboardingScreen({ navigation }) {
-    const { width, height } = useWindowDimensions();
+export default function OnboardingScreen({navigation}) {
+  const {width, height} = useWindowDimensions();
 
-    const [idx, setIdx] = useState(0);
+  const [idx, setIdx] = useState(0);
 
-    const bottomPadding = useMemo(() => Math.max(20, height * 0.035), [height]);
-    const overlayHeight = useMemo(() => Math.max(96, height * 0.14), [height]);
+  const bottomPadding = useMemo(() => Math.max(20, height * 0.035), [height]);
+  const overlayHeight = useMemo(() => Math.max(96, height * 0.14), [height]);
 
-    const page = PAGES[idx];
-    const isFirst = idx === 0;
-    const isLast = idx === PAGES.length - 1;
+  const page = PAGES[idx];
+  const isFirst = idx === 0;
+  const isLast = idx === PAGES.length - 1;
 
-    const { mutateAsync: completeOnboardingAsync } = useCompleteOnboardingMutation();
+  const {mutateAsync: completeOnboardingAsync} =
+    useCompleteOnboardingMutation();
 
-    useEffect(() => {
-        AsyncStorage.setItem(STEP_KEY, ONBOARDING_STEP.NEEDS_ONBOARDING);
-    }, []);
+  useEffect(() => {
+    AsyncStorage.setItem(STEP_KEY, ONBOARDING_STEP.NEEDS_ONBOARDING);
+  }, []);
 
-    function getRootNav(navigation) {
-        let nav = navigation;
-        while (nav?.getParent?.()) nav = nav.getParent();
-        return nav;
+  function getRootNav(navigation) {
+    let nav = navigation;
+    while (nav?.getParent?.()) nav = nav.getParent();
+    return nav;
+  }
+
+  const onDone = useCallback(async () => {
+    try {
+      const res = await completeOnboardingAsync();
+      console.log("[completeOnboarding] OK", res);
+    } catch (e) {
+      console.log("[completeOnboarding] ERR", e?.status, e?.code, e?.message);
     }
 
-    const onDone = useCallback(async () => {
-        try {
-            const res = await completeOnboardingAsync();
-            console.log("[completeOnboarding] OK", res);
-        } catch (e) {
-            console.log("[completeOnboarding] ERR", e?.status, e?.code, e?.message);
+    await Promise.allSettled([
+      SecureStore.setItemAsync("hasOnboarded", "true"),
+      AsyncStorage.setItem("hasOnboarded", "true"),
+      AsyncStorage.setItem(STEP_KEY, ONBOARDING_STEP.COMPLETED),
+    ]);
+
+    const root = getRootNav(navigation);
+    root.dispatch(
+      CommonActions.reset({
+        index: 0,
+        routes: [{name: "Main"}],
+      }),
+    );
+  }, [completeOnboardingAsync, navigation]);
+
+  const onNext = useCallback(() => {
+    setIdx((prev) => Math.min(prev + 1, PAGES.length - 1));
+  }, []);
+
+  const onPrev = useCallback(() => {
+    setIdx((prev) => Math.max(prev - 1, 0));
+  }, []);
+
+  const onPressSide = useCallback(
+    (e) => {
+      const x = e.nativeEvent.locationX;
+      const mid = width / 2;
+      if (x < mid) {
+        if (!isFirst) onPrev();
+      } else {
+        if (!isLast) onNext();
+      }
+    },
+    [width, isFirst, isLast, onPrev, onNext],
+  );
+
+  const swipe = useMemo(() => {
+    const SWIPE_MIN = 30;
+    return Gesture.Pan()
+      .runOnJS(true)
+      .onEnd((e) => {
+        const dx = e.translationX;
+        if (Math.abs(dx) < SWIPE_MIN) return;
+        if (dx < 0) {
+          if (!isLast) onNext();
+        } else {
+          if (!isFirst) onPrev();
         }
+      });
+  }, [isFirst, isLast, onNext, onPrev]);
 
-        await Promise.allSettled([
-            SecureStore.setItemAsync("hasOnboarded", "true"),
-            AsyncStorage.setItem("hasOnboarded", "true"),
-            AsyncStorage.setItem(STEP_KEY, ONBOARDING_STEP.COMPLETED),
-        ]);
+  const imageTopPadding = useMemo(() => {
+    return Math.min(28, Math.max(12, Math.round(height * 0.022)));
+  }, [height]);
 
-        const root = getRootNav(navigation);
-        root.dispatch(
-            CommonActions.reset({
-                index: 0,
-                routes: [{ name: "Main" }],
-            })
-        );
-    }, [completeOnboardingAsync, navigation]);
+  return (
+    <SafeAreaView edges={["top", "left", "right"]} className="flex-1 bg-wt">
+      <View className="px-5 pt-4 items-end">
+        {!isLast ? (
+          <TouchableOpacity
+            onPress={onDone}
+            activeOpacity={0.5}
+            className="flex-row items-center gap-1"
+          >
+            <AppText variant="H3" className="text-bk">
+              Skip
+            </AppText>
+            <SkipIcon />
+          </TouchableOpacity>
+        ) : (
+          <View style={{height: 24}} />
+        )}
+      </View>
 
-    const onNext = useCallback(() => {
-        setIdx((prev) => Math.min(prev + 1, PAGES.length - 1));
-    }, []);
+      <GestureDetector gesture={swipe}>
+        <Pressable className="flex-1" onPress={onPressSide}>
+          <View
+            className="flex-row justify-center items-center gap-2"
+            style={{marginTop: Math.max(12, height * 0.015)}}
+          >
+            {PAGES.map((_, i) => (
+              <View
+                key={i}
+                className={`${i === idx ? "w-2 h-2 bg-or" : "w-2 h-2 bg-gr200"} rounded-full`}
+              />
+            ))}
+          </View>
 
-    const onPrev = useCallback(() => {
-        setIdx((prev) => Math.max(prev - 1, 0));
-    }, []);
+          <View
+            style={{
+              paddingTop: Math.max(18, height * 0.03),
+              paddingHorizontal: Math.min(32, width * 0.08),
+            }}
+          >
+            <AppText variant="L500" className="text-gr900 text-center mb-2">
+              {page.title}
+            </AppText>
+            <AppText variant="L500" className="text-gr900 text-center">
+              {page.desc}
+            </AppText>
+          </View>
 
-    const onPressSide = useCallback(
-        (e) => {
-            const x = e.nativeEvent.locationX;
-            const mid = width / 2;
-            if (x < mid) {
-                if (!isFirst) onPrev();
-            } else {
-                if (!isLast) onNext();
-            }
-        },
-        [width, isFirst, isLast, onPrev, onNext]
-    );
+          <View
+            className="flex-1"
+            style={{
+              paddingTop: imageTopPadding,
+              paddingHorizontal: Math.min(32, width * 0.07),
+            }}
+          >
+            <Image
+              source={page.image}
+              style={{flex: 1, width: "100%"}}
+              resizeMode="contain"
+            />
+          </View>
+        </Pressable>
+      </GestureDetector>
 
-    const swipe = useMemo(() => {
-        const SWIPE_MIN = 30;
-        return Gesture.Pan()
-            .runOnJS(true)
-            .onEnd((e) => {
-                const dx = e.translationX;
-                if (Math.abs(dx) < SWIPE_MIN) return;
-                if (dx < 0) {
-                    if (!isLast) onNext();
-                } else {
-                    if (!isFirst) onPrev();
-                }
-            });
-    }, [isFirst, isLast, onNext, onPrev]);
-
-    const imageTopPadding = useMemo(() => {
-        return Math.min(28, Math.max(12, Math.round(height * 0.022)));
-    }, [height]);
-
-    return (
-        <SafeAreaView edges={["top", "left", "right"]} className="flex-1 bg-wt">
-            <View className="px-5 pt-4 items-end">
-                {!isLast ? (
-                    <TouchableOpacity
-                        onPress={onDone}
-                        activeOpacity={0.5}
-                        className="flex-row items-center gap-1"
-                    >
-                        <AppText variant="H3" className="text-bk">
-                            Skip
-                        </AppText>
-                        <SkipIcon />
-                    </TouchableOpacity>
-                ) : (
-                    <View style={{ height: 24 }} />
-                )}
-            </View>
-
-            <GestureDetector gesture={swipe}>
-                <Pressable className="flex-1" onPress={onPressSide}>
-                    <View
-                        className="flex-row justify-center items-center gap-2"
-                        style={{ marginTop: Math.max(12, height * 0.015) }}
-                    >
-                        {PAGES.map((_, i) => (
-                            <View
-                                key={i}
-                                className={`${i === idx ? "w-2 h-2 bg-or" : "w-2 h-2 bg-gr200"} rounded-full`}
-                            />
-                        ))}
-                    </View>
-
-                    <View
-                        style={{
-                            paddingTop: Math.max(18, height * 0.03),
-                            paddingHorizontal: Math.min(32, width * 0.08),
-                        }}
-                    >
-                        <AppText variant="L500" className="text-gr900 text-center mb-2">
-                            {page.title}
-                        </AppText>
-                        <AppText variant="L500" className="text-gr900 text-center">
-                            {page.desc}
-                        </AppText>
-                    </View>
-
-                    <View
-                        className="flex-1"
-                        style={{
-                            paddingTop: imageTopPadding,
-                            paddingHorizontal: Math.min(32, width * 0.07),
-                        }}
-                    >
-                        <Image source={page.image} style={{ flex: 1, width: "100%" }} resizeMode="contain" />
-                    </View>
-                </Pressable>
-            </GestureDetector>
-
-            {isLast ? (
-                <View
-                    className="absolute left-0 right-0 bg-wt px-6"
-                    style={{
-                        bottom: 0,
-                        height: overlayHeight,
-                        justifyContent: "center",
-                        paddingBottom: bottomPadding,
-                    }}
-                >
-                    <TouchableOpacity
-                        activeOpacity={0.5}
-                        onPress={onDone}
-                        className="bg-bk rounded-2xl py-4 items-center self-center w-full"
-                        style={{ maxWidth: 420 }}
-                    >
-                        <AppText variant="L600" className="text-wt">
-                            시작하기
-                        </AppText>
-                    </TouchableOpacity>
-                </View>
-            ) : null}
-        </SafeAreaView>
-    );
+      {isLast ? (
+        <View
+          className="absolute left-0 right-0 bg-wt px-6"
+          style={{
+            bottom: 0,
+            height: overlayHeight,
+            justifyContent: "center",
+            paddingBottom: bottomPadding,
+          }}
+        >
+          <TouchableOpacity
+            activeOpacity={0.5}
+            onPress={onDone}
+            className="bg-bk rounded-2xl py-4 items-center self-center w-full"
+            style={{maxWidth: 420}}
+          >
+            <AppText variant="L600" className="text-wt">
+              시작하기
+            </AppText>
+          </TouchableOpacity>
+        </View>
+      ) : null}
+    </SafeAreaView>
+  );
 }

@@ -8,21 +8,20 @@ import dayjs from "dayjs";
  * @returns {Promise<{success:boolean, message:string, data:Array<{date:string, bowlType:string}>, timestamp:string}>}
  */
 export async function getDailyResults(startDate, endDate) {
-    const res = await api.get("/api/daily-results", {
-        params: { startDate, endDate },
-        meta: {skipErrorToast: true},
-    });
-    return res.data;
+  const res = await api.get("/api/daily-results", {
+    params: {startDate, endDate},
+    meta: {skipErrorToast: true},
+  });
+  return res.data;
 }
 
-
 export async function getDailyResultsMap(startDate, endDate) {
-    const body = await getDailyResults(startDate, endDate);
-    const list = Array.isArray(body?.data) ? body.data : [];
+  const body = await getDailyResults(startDate, endDate);
+  const list = Array.isArray(body?.data) ? body.data : [];
 
-    return list.reduce((acc, cur) => {
-        const key = cur?.date ? dayjs(cur.date).format("YYYY-MM-DD") : null;
-        if (key) acc[key] = cur?.bowlType;
-        return acc;
-    }, {});
+  return list.reduce((acc, cur) => {
+    const key = cur?.date ? dayjs(cur.date).format("YYYY-MM-DD") : null;
+    if (key) acc[key] = cur?.bowlType;
+    return acc;
+  }, {});
 }
