@@ -1805,6 +1805,7 @@ const styles = StyleSheet.create({
   },
   alarmPanel: {
     justifyContent: "space-between",
+    minHeight: 335,
     paddingTop: 16,
     paddingBottom: 32,
     // borderWidth: 1,
