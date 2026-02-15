@@ -8,9 +8,9 @@ export async function fcmBackgroundHandler(remoteMessage) {
   const title = remoteMessage.data?.title;
   const body = remoteMessage.data?.body;
   console.log("remoteMessage.data?.title: ", title);
-  // await displayTodoNotification({
-  //   title,
-  //   body,
-  //   data: remoteMessage.data,
-  // });
+  await displayTodoNotification({
+    title,
+    body,
+    data: remoteMessage.data,
+  });
 }
