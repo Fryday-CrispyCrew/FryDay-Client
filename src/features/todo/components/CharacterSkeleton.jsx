@@ -6,7 +6,9 @@ import SkeletonBox from "../../../shared/components/SkeletonBox";
 export default function CharacterSkeleton() {
   return (
     <View style={styles.container}>
-      <SkeletonBox width={140} height={32} borderRadius={14} />
+      <View style={styles.boxArea}>
+        <SkeletonBox width={140} height={32} borderRadius={14} />
+      </View>
       <View style={styles.characterArea}>
         <SkeletonBox width={140} height={140} borderRadius={70} />
       </View>
@@ -21,6 +23,11 @@ const styles = StyleSheet.create({
     alignItems: "center",
     justifyContent: "center",
     gap: 12,
+    // borderWidth: 1,
+  },
+  boxArea: {
+    position: "absolute",
+    top: 0,
   },
   characterArea: {
     alignItems: "center",

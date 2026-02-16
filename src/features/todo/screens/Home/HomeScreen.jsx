@@ -230,7 +230,7 @@ export default function HomeScreen({navigation, route}) {
   }, [date]);
 
   // ✅ 카테고리 조회 (서버)
-  const {data: rawCategories = []} = useCategoriesQuery();
+  const {data: rawCategories = [], isLoading: isCategoriesLoading} = useCategoriesQuery();
 
   // ✅ TodoCard가 기대하는 형태로 매핑 + displayOrder 정렬
   const categories = useMemo(() => {
@@ -246,7 +246,7 @@ export default function HomeScreen({navigation, route}) {
   }, [rawCategories]);
 
   // ✅ 홈 투두 조회 (categoryId 생략 = 전체)
-  const {data: rawTodos = [], isFetched: isHomeTodosFetched} =
+  const {data: rawTodos = [], isFetched: isHomeTodosFetched, isLoading: isTodosLoading} =
     useHomeTodosQuery({
       date,
       categoryId: undefined,
@@ -298,7 +298,8 @@ export default function HomeScreen({navigation, route}) {
     console.log("characterStatus: ", characterStatus);
   }, [characterStatus]);
 
-  const isCharacterBusy = isCharacterLoading;
+  const isBoardLoading = isCategoriesLoading || isTodosLoading;
+  const isCharacterBusy = isCharacterLoading || isBoardLoading;
 
   const lottieKey = useMemo(() => {
     return getLottieKeyFromStatus(characterStatus?.status);
