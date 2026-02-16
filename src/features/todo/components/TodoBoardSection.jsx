@@ -5,6 +5,7 @@ import {NestableScrollContainer} from "react-native-draggable-flatlist";
 import TodoCard from "./TodoCard";
 import TodoEditorSheet from "./TodoEditorSheet/TodoEditorSheet";
 import ErrorImage from "../../../shared/assets/png/error-icon.png";
+import TodoBoardSkeleton from "./TodoBoardSkeleton";
 import {useTodoEditorController} from "../hooks/useTodoEditorController";
 
 import {useCategoriesQuery} from "../queries/category/useCategoriesQuery";
@@ -30,8 +31,11 @@ export default function TodoBoardSection({
 }) {
   const {open, close} = useModalStore();
 
-  const {data: rawCategories = [], isError: isCategoriesError} =
-    useCategoriesQuery();
+  const {
+    data: rawCategories = [],
+    isLoading: isCategoriesLoading,
+    isError: isCategoriesError,
+  } = useCategoriesQuery();
   const categories = useMemo(() => {
     const arr = Array.isArray(rawCategories) ? rawCategories : [];
     return arr
@@ -44,7 +48,11 @@ export default function TodoBoardSection({
       }));
   }, [rawCategories]);
 
-  const {data: rawTodos = [], isError: isTodosError} = useHomeTodosQuery({
+  const {
+    data: rawTodos = [],
+    isLoading: isTodosLoading,
+    isError: isTodosError,
+  } = useHomeTodosQuery({
     date,
     categoryId: undefined,
   });
@@ -166,6 +174,7 @@ export default function TodoBoardSection({
     return toYmd(d);
   })();
 
+  const isBoardLoading = isCategoriesLoading || isTodosLoading;
   const shouldShowBoardError = isCategoriesError && isTodosError;
 
   return (
@@ -185,6 +194,8 @@ export default function TodoBoardSection({
               resizeMode="contain"
             />
           </View>
+        ) : isBoardLoading ? (
+          <TodoBoardSkeleton />
         ) : (
           <TodoCard
             ref={todoCardRef}

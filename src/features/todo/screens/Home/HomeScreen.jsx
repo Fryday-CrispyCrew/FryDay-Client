@@ -19,6 +19,7 @@ import CategoryIcon from "../../assets/svg/Category.svg";
 import ErrorImage from "../../../../shared/assets/png/error-icon.png";
 
 import TodoCard from "../../components/TodoCard";
+import CharacterSkeleton from "../../components/CharacterSkeleton";
 import TodoEditorSheet from "../../components/TodoEditorSheet/TodoEditorSheet";
 import {useTodoEditorController} from "../../hooks/useTodoEditorController";
 
@@ -297,7 +298,7 @@ export default function HomeScreen({navigation, route}) {
     console.log("characterStatus: ", characterStatus);
   }, [characterStatus]);
 
-  const isCharacterBusy = isCharacterLoading || isCharacterFetching;
+  const isCharacterBusy = isCharacterLoading;
 
   const lottieKey = useMemo(() => {
     return getLottieKeyFromStatus(characterStatus?.status);
@@ -476,7 +477,7 @@ export default function HomeScreen({navigation, route}) {
                         />
                       </View>
                     ) : isCharacterBusy ? (
-                      <></>
+                      <CharacterSkeleton />
                     ) : (
                       <>
                         {shouldRenderBack && (
