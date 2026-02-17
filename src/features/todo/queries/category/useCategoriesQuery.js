@@ -6,8 +6,8 @@ import {categoryApi} from "./categoryApi";
 export function useCategoriesQuery(options = {}) {
   return useQuery({
     queryKey: categoryKeys.list(),
-    queryFn: () => new Promise(() => {}), // ⚠️ 디버그: 로딩 상태 유지
-    // queryFn: categoryApi.getCategories,
+    // queryFn: () => new Promise(() => {}),
+    queryFn: categoryApi.getCategories,
     select: (res) => res?.data ?? [], // 화면에서는 카테고리 배열만 바로 쓰기
     ...options,
   });

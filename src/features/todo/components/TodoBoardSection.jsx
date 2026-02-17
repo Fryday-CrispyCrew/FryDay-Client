@@ -1,10 +1,9 @@
 // src/features/todo/components/TodoBoardSection.jsx
 import React, {useMemo, useState, useCallback, useRef} from "react";
-import {Image, StyleSheet, View} from "react-native";
+import {StyleSheet, View} from "react-native";
 import {NestableScrollContainer} from "react-native-draggable-flatlist";
 import TodoCard from "./TodoCard";
 import TodoEditorSheet from "./TodoEditorSheet/TodoEditorSheet";
-import ErrorImage from "../../../shared/assets/png/error-icon.png";
 import TodoBoardSkeleton from "./TodoBoardSkeleton";
 import {useTodoEditorController} from "../hooks/useTodoEditorController";
 
@@ -34,7 +33,6 @@ export default function TodoBoardSection({
   const {
     data: rawCategories = [],
     isLoading: isCategoriesLoading,
-    isError: isCategoriesError,
   } = useCategoriesQuery();
   const categories = useMemo(() => {
     const arr = Array.isArray(rawCategories) ? rawCategories : [];
@@ -51,7 +49,6 @@ export default function TodoBoardSection({
   const {
     data: rawTodos = [],
     isLoading: isTodosLoading,
-    isError: isTodosError,
   } = useHomeTodosQuery({
     date,
     categoryId: undefined,
@@ -175,7 +172,6 @@ export default function TodoBoardSection({
   })();
 
   const isBoardLoading = isCategoriesLoading || isTodosLoading;
-  const shouldShowBoardError = isCategoriesError && isTodosError;
 
   return (
     <>
@@ -186,15 +182,7 @@ export default function TodoBoardSection({
         keyboardShouldPersistTaps="handled"
       >
         {ListHeaderComponent}
-        {shouldShowBoardError ? (
-          <View style={styles.errorContainer}>
-            <Image
-              source={ErrorImage}
-              style={styles.errorImage}
-              resizeMode="contain"
-            />
-          </View>
-        ) : isBoardLoading ? (
+        {isBoardLoading ? (
           <TodoBoardSkeleton />
         ) : (
           <TodoCard
@@ -367,14 +355,4 @@ export default function TodoBoardSection({
   );
 }
 
-const styles = StyleSheet.create({
-  errorContainer: {
-    flex: 1,
-    justifyContent: "center",
-    alignItems: "center",
-  },
-  errorImage: {
-    width: 180,
-    height: 180,
-  },
-});
+const styles = StyleSheet.create({});
