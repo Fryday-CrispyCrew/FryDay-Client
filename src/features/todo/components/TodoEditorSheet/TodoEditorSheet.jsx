@@ -1482,6 +1482,7 @@ const TodoEditorSheet = React.forwardRef(function TodoEditorSheet(
                       setIsIosInlineAlarmPickerOpen={
                         setIsIosInlineAlarmPickerOpen
                       }
+                      todoDateStr={todoDetail?.date}
                       onClosePanel={() => closePanelAndFocusTitle("alarm")}
                       styles={styles}
                     />

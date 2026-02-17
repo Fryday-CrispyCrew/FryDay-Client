@@ -26,6 +26,9 @@ export default function AlarmTimeSettingSection({
   setHasPickedAlarmTime,
   setIsIosInlineAlarmPickerOpen,
 
+  // todo date
+  todoDateStr, // "2026-02-18" 형태의 투두 날짜 문자열
+
   // parent control
   onClosePanel, // 예: () => setSelectedToolKey(null)
 }) {
@@ -72,13 +75,17 @@ export default function AlarmTimeSettingSection({
   }, [setHasPickedAlarmTime, setAlarmTime, setIsIosInlineAlarmPickerOpen]);
 
   const handleApply = useCallback(() => {
-    // ✅ 현재 시간 가져오기
-    const now = new Date();
+    // ✅ 투두 날짜 + 알림 시간을 합산하여 현재 시간과 비교
+    const isAlarmInPast = (timeHHmm) => {
+      if (!todoDateStr || !timeHHmm) return false;
+      const alarmDate = new Date(`${todoDateStr}T${timeHHmm}:00`);
+      return alarmDate <= new Date();
+    };
 
     // ✅ iOS picker가 열려있었다면 무조건 시간이 선택된 것으로 간주
     if (Platform.OS === "ios" && isIosInlineAlarmPickerOpen) {
       // 선택한 시간이 현재 시간 이전인지 확인
-      if (alarmDraftDate <= now) {
+      if (isAlarmInPast(hhmm)) {
         toast.show("알림 시간은 현재 시간 이후로 설정해야 합니다.");
         return;
       }
@@ -99,7 +106,7 @@ export default function AlarmTimeSettingSection({
     }
 
     // ✅ Android에서 시간을 고른 상태면 그 값 적용 (시간 체크)
-    if (alarmDraftDate <= now) {
+    if (isAlarmInPast(hhmm)) {
       toast.show("알림 시간은 현재 시간 이후로 설정해야 합니다.");
       return;
     }
@@ -117,7 +124,7 @@ export default function AlarmTimeSettingSection({
     onClosePanel,
     hasPickedAlarmTime,
     isIosInlineAlarmPickerOpen,
-    alarmDraftDate,
+    todoDateStr,
   ]);
 
   return (
