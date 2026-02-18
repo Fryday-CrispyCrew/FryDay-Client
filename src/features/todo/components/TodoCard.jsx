@@ -51,6 +51,7 @@ function TodoItem({
   onDoToday,
   onDoTomorrow,
   isViewingToday,
+  categoryColor,
 }) {
   const translateX = useSharedValue(0);
   const startX = useSharedValue(0);
@@ -98,7 +99,7 @@ function TodoItem({
         {/* 뒤에 깔린 삭제 버튼 */}
         <View style={styles.todoRightActionContainer}>
           <TouchableOpacity
-            style={styles.todoDeleteButton}
+            style={[styles.todoDeleteButton, {backgroundColor: categoryColor}]}
             activeOpacity={0.7}
             onPress={() => onDelete(item)}
           >
@@ -107,19 +108,19 @@ function TodoItem({
 
           {isViewingToday ? (
             <TouchableOpacity
-              style={styles.todoTodayButton}
+              style={[styles.todoTodayButton, {borderColor: categoryColor}]}
               activeOpacity={0.7}
               onPress={() => onDoTomorrow?.(item)}
             >
-              <TomorrowIcon width={24} height={24} />
+              <TomorrowIcon width={24} height={24} color={categoryColor} />
             </TouchableOpacity>
           ) : (
             <TouchableOpacity
-              style={styles.todoTodayButton}
+              style={[styles.todoTodayButton, {borderColor: categoryColor}]}
               activeOpacity={0.7}
               onPress={() => onDoToday?.(item)}
             >
-              <StartDateIcon width={24} height={24} />
+              <StartDateIcon width={24} height={24} color={categoryColor} />
             </TouchableOpacity>
           )}
         </View>
@@ -158,7 +159,7 @@ function TodoItem({
               onPress={() => onToggleDone(item.id)}
             >
               {item.done ? (
-                <TodoRadioOnIcon width={24} height={24} />
+                <TodoRadioOnIcon width={24} height={24} color={categoryColor} />
               ) : (
                 <TodoRadioOffIcon width={24} height={24} />
               )}
@@ -427,6 +428,7 @@ const TodoCard = React.forwardRef(function TodoCard({
                   onDoToday={handleDoToday}
                   onDoTomorrow={handleDoTomorrow}
                   isViewingToday={isViewingToday}
+                  categoryColor={color}
                   onSwipeOpen={(id) => setSwipedTodoId(id)}
                   onSwipeClose={(id) =>
                     setSwipedTodoId((prev) => (prev === id ? null : prev))
@@ -590,7 +592,6 @@ const styles = StyleSheet.create({
     width: 48,
     height: 35,
     borderRadius: 12,
-    backgroundColor: colors.or,
     alignItems: "center",
     justifyContent: "center",
   },
@@ -600,7 +601,6 @@ const styles = StyleSheet.create({
     borderRadius: 12,
     backgroundColor: "#FFFFFF",
     borderWidth: 2,
-    borderColor: "#FF5B22",
     alignItems: "center",
     justifyContent: "center",
   },
