@@ -1249,7 +1249,7 @@ const TodoEditorSheet = React.forwardRef(function TodoEditorSheet(
       backgroundStyle={{backgroundColor: "#FAFAFA"}}
       handleIndicatorStyle={{backgroundColor: "#D0D0D0", width: "38.4%"}}
       enableContentPanningGesture={false} // ✅ content로는 시트 이동 X (고정)
-      enablePanDownToClose={true}
+      enablePanDownToClose={false}
     >
       <BottomSheetView>
         <View style={{position: "relative"}}>
@@ -1883,7 +1883,7 @@ const styles = StyleSheet.create({
     minHeight: 335,
     paddingTop: 16,
     paddingBottom: 32,
-    // borderWidth: 1,
+    borderWidth: 1,
   },
   alarmTitle: {
     fontFamily: "Pretendard-Medium",
@@ -1891,6 +1891,7 @@ const styles = StyleSheet.create({
     lineHeight: 12 * 1.5,
     color: colors.gr700,
     marginBottom: 10,
+    borderWidth: 1,
   },
   // ===== SelectDate(투두 날짜 변경) =====
   selectDatePanel: {

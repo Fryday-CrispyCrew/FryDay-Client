@@ -146,7 +146,7 @@ export function useTodoEditorController({
       if (nextAppState === "active" && isSheetOpen) {
         // 앱이 다시 활성화될 때 키보드만 닫기
         // → 시트 위치는 keyboardBlurBehavior="restore"가 처리
-        Keyboard.dismiss();
+        // Keyboard.dismiss();
       }
     });
 
