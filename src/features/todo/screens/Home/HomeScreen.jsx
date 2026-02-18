@@ -16,9 +16,10 @@ import {TodoLottie} from "../../assets/lottie"; // HomeScreen 기준 상대경�
 import AppText from "../../../../shared/components/AppText";
 import TodayIcon from "../../assets/svg/Today.svg";
 import CategoryIcon from "../../assets/svg/Category.svg";
-import ErrorImage from "../../../../shared/assets/png/error-icon.png";
+import ErrorImage from "../../../../shared/assets/png/Error.png";
 
 import TodoCard from "../../components/TodoCard";
+import CharacterSkeleton from "../../components/CharacterSkeleton";
 import TodoEditorSheet from "../../components/TodoEditorSheet/TodoEditorSheet";
 import {useTodoEditorController} from "../../hooks/useTodoEditorController";
 
@@ -229,7 +230,11 @@ export default function HomeScreen({navigation, route}) {
   }, [date]);
 
   // ✅ 카테고리 조회 (서버)
-  const {data: rawCategories = []} = useCategoriesQuery();
+  const {
+    data: rawCategories = [],
+    isLoading: isCategoriesLoading,
+    isError: isCategoriesError,
+  } = useCategoriesQuery();
 
   // ✅ TodoCard가 기대하는 형태로 매핑 + displayOrder 정렬
   const categories = useMemo(() => {
@@ -245,11 +250,15 @@ export default function HomeScreen({navigation, route}) {
   }, [rawCategories]);
 
   // ✅ 홈 투두 조회 (categoryId 생략 = 전체)
-  const {data: rawTodos = [], isFetched: isHomeTodosFetched} =
-    useHomeTodosQuery({
-      date,
-      categoryId: undefined,
-    });
+  const {
+    data: rawTodos = [],
+    isFetched: isHomeTodosFetched,
+    isLoading: isTodosLoading,
+    isError: isTodosError,
+  } = useHomeTodosQuery({
+    date,
+    categoryId: undefined,
+  });
 
   useEffect(() => {
     console.log("Categories: ", rawCategories);
@@ -297,7 +306,19 @@ export default function HomeScreen({navigation, route}) {
     console.log("characterStatus: ", characterStatus);
   }, [characterStatus]);
 
-  const isCharacterBusy = isCharacterLoading || isCharacterFetching;
+  const isBoardLoading = isCategoriesLoading || isTodosLoading;
+  const isCharacterBusy = isCharacterLoading || isBoardLoading;
+
+  // 스켈레톤은 로딩이 3초 이상 지속될 때만 노출
+  const [showSkeleton, setShowSkeleton] = useState(false);
+  useEffect(() => {
+    if (!isCharacterBusy) {
+      setShowSkeleton(false);
+      return;
+    }
+    const timer = setTimeout(() => setShowSkeleton(true), 3000);
+    return () => clearTimeout(timer);
+  }, [isCharacterBusy]);
 
   const lottieKey = useMemo(() => {
     return getLottieKeyFromStatus(characterStatus?.status);
@@ -401,6 +422,33 @@ export default function HomeScreen({navigation, route}) {
     }, [route?.params?.initialDate]),
   );
 
+  const isApiError = isCategoriesError || isTodosError || isCharacterError;
+
+  if (isApiError) {
+    return (
+      <SafeAreaView style={styles.safe} edges={["top"]}>
+        <StatusBar barStyle="dark-content" />
+        {shouldInitNotifications && <FCMInitializer />}
+        <View style={styles.errorFullScreen}>
+          {/* <AppText variant="H1" style={styles.oopsText}>
+            Oops!
+          </AppText> */}
+          <Image
+            source={ErrorImage}
+            style={styles.errorFullImage}
+            resizeMode="contain"
+          />
+          <AppText variant="M500" style={styles.errorMessage}>
+            아차차... 정보를 불러오지 못했어요.
+          </AppText>
+          <AppText variant="M500" style={styles.errorMessage}>
+            잠시 후 다시 시도해 주세요!
+          </AppText>
+        </View>
+      </SafeAreaView>
+    );
+  }
+
   return (
     <SafeAreaView style={styles.safe} edges={["top"]}>
       <StatusBar barStyle="dark-content" />
@@ -455,7 +503,7 @@ export default function HomeScreen({navigation, route}) {
               {/* 캐릭터 영역: 스크롤과 함께 이동 */}
               <GestureDetector gesture={panGesture}>
                 <View style={styles.illustrationWrapper}>
-                  {!isCharacterError && <SpeechBubble text={bubbleText} />}
+                  <SpeechBubble text={bubbleText} />
                   <Pressable
                     style={styles.lottieWrapper}
                     onPress={() => {
@@ -467,16 +515,8 @@ export default function HomeScreen({navigation, route}) {
                       );
                     }}
                   >
-                    {isCharacterError ? (
-                      <View style={styles.errorContainer}>
-                        <Image
-                          source={ErrorImage}
-                          style={styles.errorImage}
-                          resizeMode="contain"
-                        />
-                      </View>
-                    ) : isCharacterBusy ? (
-                      <></>
+                    {isCharacterBusy && showSkeleton ? (
+                      <CharacterSkeleton />
                     ) : (
                       <>
                         {shouldRenderBack && (
@@ -573,18 +613,28 @@ const styles = StyleSheet.create({
     // borderWidth: 1,
     maxHeight: "100%",
   },
-  errorContainer: {
-    width: "100%",
-    height: "100%",
+  errorFullScreen: {
+    flex: 1,
     justifyContent: "center",
     alignItems: "center",
   },
-  errorImage: {
-    width: "100%",
-    height: "100%",
-    width: 180,
-    height: 180,
-    // borderWidth: 1,
+  oopsText: {
+    fontSize: 48,
+    fontFamily: "Pretendard-Bold",
+    color: "#222222",
+    marginBottom: -10,
+    zIndex: 1,
+  },
+  errorFullImage: {
+    width: 250,
+    height: 200,
+    marginBottom: 24,
+  },
+  errorMessage: {
+    // fontSize: 14,
+    color: colors.gr500,
+    lineHeight: 18,
+    textAlign: "center",
   },
   spinnerWrapper: {
     position: "absolute",

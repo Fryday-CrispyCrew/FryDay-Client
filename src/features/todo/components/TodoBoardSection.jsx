@@ -1,10 +1,10 @@
 // src/features/todo/components/TodoBoardSection.jsx
-import React, {useMemo, useState, useCallback, useRef} from "react";
-import {Image, StyleSheet, View} from "react-native";
+import React, {useMemo, useState, useCallback, useRef, useEffect} from "react";
+import {StyleSheet, View} from "react-native";
 import {NestableScrollContainer} from "react-native-draggable-flatlist";
 import TodoCard from "./TodoCard";
 import TodoEditorSheet from "./TodoEditorSheet/TodoEditorSheet";
-import ErrorImage from "../../../shared/assets/png/error-icon.png";
+import TodoBoardSkeleton from "./TodoBoardSkeleton";
 import {useTodoEditorController} from "../hooks/useTodoEditorController";
 
 import {useCategoriesQuery} from "../queries/category/useCategoriesQuery";
@@ -30,8 +30,10 @@ export default function TodoBoardSection({
 }) {
   const {open, close} = useModalStore();
 
-  const {data: rawCategories = [], isError: isCategoriesError} =
-    useCategoriesQuery();
+  const {
+    data: rawCategories = [],
+    isLoading: isCategoriesLoading,
+  } = useCategoriesQuery();
   const categories = useMemo(() => {
     const arr = Array.isArray(rawCategories) ? rawCategories : [];
     return arr
@@ -44,7 +46,10 @@ export default function TodoBoardSection({
       }));
   }, [rawCategories]);
 
-  const {data: rawTodos = [], isError: isTodosError} = useHomeTodosQuery({
+  const {
+    data: rawTodos = [],
+    isLoading: isTodosLoading,
+  } = useHomeTodosQuery({
     date,
     categoryId: undefined,
   });
@@ -166,7 +171,18 @@ export default function TodoBoardSection({
     return toYmd(d);
   })();
 
-  const shouldShowBoardError = isCategoriesError && isTodosError;
+  const isBoardLoading = isCategoriesLoading || isTodosLoading;
+
+  // 스켈레톤은 로딩이 3초 이상 지속될 때만 노출
+  const [showBoardSkeleton, setShowBoardSkeleton] = useState(false);
+  useEffect(() => {
+    if (!isBoardLoading) {
+      setShowBoardSkeleton(false);
+      return;
+    }
+    const timer = setTimeout(() => setShowBoardSkeleton(true), 3000);
+    return () => clearTimeout(timer);
+  }, [isBoardLoading]);
 
   return (
     <>
@@ -177,14 +193,8 @@ export default function TodoBoardSection({
         keyboardShouldPersistTaps="handled"
       >
         {ListHeaderComponent}
-        {shouldShowBoardError ? (
-          <View style={styles.errorContainer}>
-            <Image
-              source={ErrorImage}
-              style={styles.errorImage}
-              resizeMode="contain"
-            />
-          </View>
+        {isBoardLoading && showBoardSkeleton ? (
+          <TodoBoardSkeleton />
         ) : (
           <TodoCard
             ref={todoCardRef}
@@ -356,14 +366,4 @@ export default function TodoBoardSection({
   );
 }
 
-const styles = StyleSheet.create({
-  errorContainer: {
-    flex: 1,
-    justifyContent: "center",
-    alignItems: "center",
-  },
-  errorImage: {
-    width: 180,
-    height: 180,
-  },
-});
+const styles = StyleSheet.create({});
