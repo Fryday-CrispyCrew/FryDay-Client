@@ -1990,7 +1990,7 @@ const styles = StyleSheet.create({
   },
 
   selectDateFooter: {
-    marginTop: 16,
+    // marginTop: 16,
     alignItems: "flex-end",
   },
   selectDateApplyButton: {
