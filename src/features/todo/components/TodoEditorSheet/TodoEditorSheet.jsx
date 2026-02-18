@@ -23,6 +23,7 @@ import RepeatIcon from "../../assets/svg/todoEditorSheet/repeat.svg";
 import SelectDateIcon from "../../assets/svg/todoEditorSheet/calendarSelect.svg";
 import {useSafeAreaInsets} from "react-native-safe-area-context";
 import {useRepeatEditorStore} from "../../stores/repeatEditorStore";
+import {useShallow} from "zustand/react/shallow";
 import RepeatSettingsSection from "../RepeatSettingsSection/RepeatSettingsSection";
 import colors from "../../../../shared/styles/colors";
 import AlarmTimeSettingSection from "./AlarmTimeSettingsSection";
@@ -909,6 +910,58 @@ const TodoEditorSheet = React.forwardRef(function TodoEditorSheet(
     JSON.stringify(stableRecurrenceBody(a)) ===
     JSON.stringify(stableRecurrenceBody(b));
 
+  // 반복 store 구독 (hasEditChanges가 반복 변경 시 재계산되도록)
+  const repeatSnapshot = useRepeatEditorStore(useShallow((s) => ({
+    repeatCycle: s.repeatCycle,
+    repeatStartDate: s.repeatStartDate,
+    repeatEndType: s.repeatEndType,
+    repeatEndDate: s.repeatEndDate,
+    repeatAlarm: s.repeatAlarm,
+    repeatAlarmTime: s.repeatAlarmTime,
+    repeatWeekdays: s.repeatWeekdays,
+    repeatMonthDays: s.repeatMonthDays,
+    repeatYearMonths: s.repeatYearMonths,
+    repeatYearDays: s.repeatYearDays,
+  })));
+
+  // edit 모드에서 수정사항이 있는지 체크
+  const hasEditChanges = useMemo(() => {
+    if (mode !== "edit") return true; // create 모드는 항상 true
+    const initial = initialRef.current;
+    if (!initial.todoId) return false; // 아직 초기화 안 됨
+
+    // 제목 변경
+    if (normalizeDesc(initial.description) !== normalizeDesc(editingText)) return true;
+    // 카테고리 변경
+    if (initial.categoryId != null && initial.categoryId !== draftCategoryId) return true;
+    // 메모 변경
+    if (normalizeMemo(initial.memo) !== normalizeMemo(memoText)) return true;
+    // 알림 변경
+    const initialNotifyAt = initial.notifyAt;
+    const currentNotifyAt = hasPickedAlarmTime
+      ? buildNotifyAt({dateStr: todoDetail?.date, timeStr: alarmTime})
+      : null;
+    if (initialNotifyAt !== currentNotifyAt) return true;
+    // 날짜 변경
+    if (hasAppliedTodoDate) {
+      const nextDateStr = toYYYYMMDD(todoDate);
+      if (nextDateStr && nextDateStr !== (todoDetail?.date ?? null)) return true;
+    }
+    // 반복 변경
+    const repeatDraft = useRepeatEditorStore.getState().getRepeatPayload?.();
+    const currentRepeatPayload = buildCreateRecurrencePayload(repeatDraft, {
+      alarmTimeHHmm: hasPickedAlarmTime ? alarmTime : null,
+    });
+    const initialHasRecurrence = !!initial.recurrenceId;
+    const isRepeatCleared = repeatDraft?.repeatCycle === "unset";
+    if (initialHasRecurrence && isRepeatCleared) return true;
+    if (!initial.recurrenceId && !!currentRepeatPayload) return true;
+    if (initial.recurrenceId && currentRepeatPayload &&
+      !isSameRecurrenceBody(initialRecurrencePayloadRef.current, currentRepeatPayload)) return true;
+
+    return false;
+  }, [mode, editingText, draftCategoryId, memoText, hasPickedAlarmTime, alarmTime, todoDetail?.date, hasAppliedTodoDate, todoDate, repeatSnapshot]);
+
   const handleSubmitInternal = useCallback(async () => {
     // create 모드는 기존 흐름 유지(필요하면 create mutation 연결)
     if (mode !== "edit") {
@@ -1218,16 +1271,16 @@ const TodoEditorSheet = React.forwardRef(function TodoEditorSheet(
         <TouchableOpacity
           activeOpacity={0.7}
           onPress={handleSubmitInternal}
-          disabled={!isSubmitEnabled}
+          disabled={!isSubmitEnabled || !hasEditChanges}
           style={[
             styles.submitButton,
-            !isSubmitEnabled && styles.submitButtonDisabled,
+            (!isSubmitEnabled || !hasEditChanges) && styles.submitButtonDisabled,
           ]}
         >
           <ChevronIcon
             direction="right"
             size={24}
-            color={isSubmitEnabled ? colors.gr : colors.gr300}
+            color={isSubmitEnabled && hasEditChanges ? colors.gr : colors.gr300}
             strokeWidth={2.5}
           />
         </TouchableOpacity>
