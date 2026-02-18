@@ -1,5 +1,5 @@
 // src/features/todo/components/TodoBoardSection.jsx
-import React, {useMemo, useState, useCallback, useRef} from "react";
+import React, {useMemo, useState, useCallback, useRef, useEffect} from "react";
 import {StyleSheet, View} from "react-native";
 import {NestableScrollContainer} from "react-native-draggable-flatlist";
 import TodoCard from "./TodoCard";
@@ -173,6 +173,17 @@ export default function TodoBoardSection({
 
   const isBoardLoading = isCategoriesLoading || isTodosLoading;
 
+  // 스켈레톤은 로딩이 3초 이상 지속될 때만 노출
+  const [showBoardSkeleton, setShowBoardSkeleton] = useState(false);
+  useEffect(() => {
+    if (!isBoardLoading) {
+      setShowBoardSkeleton(false);
+      return;
+    }
+    const timer = setTimeout(() => setShowBoardSkeleton(true), 3000);
+    return () => clearTimeout(timer);
+  }, [isBoardLoading]);
+
   return (
     <>
       <NestableScrollContainer
@@ -182,7 +193,7 @@ export default function TodoBoardSection({
         keyboardShouldPersistTaps="handled"
       >
         {ListHeaderComponent}
-        {isBoardLoading ? (
+        {isBoardLoading && showBoardSkeleton ? (
           <TodoBoardSkeleton />
         ) : (
           <TodoCard

@@ -230,7 +230,11 @@ export default function HomeScreen({navigation, route}) {
   }, [date]);
 
   // ✅ 카테고리 조회 (서버)
-  const {data: rawCategories = [], isLoading: isCategoriesLoading, isError: isCategoriesError} = useCategoriesQuery();
+  const {
+    data: rawCategories = [],
+    isLoading: isCategoriesLoading,
+    isError: isCategoriesError,
+  } = useCategoriesQuery();
 
   // ✅ TodoCard가 기대하는 형태로 매핑 + displayOrder 정렬
   const categories = useMemo(() => {
@@ -246,11 +250,15 @@ export default function HomeScreen({navigation, route}) {
   }, [rawCategories]);
 
   // ✅ 홈 투두 조회 (categoryId 생략 = 전체)
-  const {data: rawTodos = [], isFetched: isHomeTodosFetched, isLoading: isTodosLoading, isError: isTodosError} =
-    useHomeTodosQuery({
-      date,
-      categoryId: undefined,
-    });
+  const {
+    data: rawTodos = [],
+    isFetched: isHomeTodosFetched,
+    isLoading: isTodosLoading,
+    isError: isTodosError,
+  } = useHomeTodosQuery({
+    date,
+    categoryId: undefined,
+  });
 
   useEffect(() => {
     console.log("Categories: ", rawCategories);
@@ -300,6 +308,17 @@ export default function HomeScreen({navigation, route}) {
 
   const isBoardLoading = isCategoriesLoading || isTodosLoading;
   const isCharacterBusy = isCharacterLoading || isBoardLoading;
+
+  // 스켈레톤은 로딩이 3초 이상 지속될 때만 노출
+  const [showSkeleton, setShowSkeleton] = useState(false);
+  useEffect(() => {
+    if (!isCharacterBusy) {
+      setShowSkeleton(false);
+      return;
+    }
+    const timer = setTimeout(() => setShowSkeleton(true), 3000);
+    return () => clearTimeout(timer);
+  }, [isCharacterBusy]);
 
   const lottieKey = useMemo(() => {
     return getLottieKeyFromStatus(characterStatus?.status);
@@ -411,9 +430,9 @@ export default function HomeScreen({navigation, route}) {
         <StatusBar barStyle="dark-content" />
         {shouldInitNotifications && <FCMInitializer />}
         <View style={styles.errorFullScreen}>
-          <AppText variant="H1" style={styles.oopsText}>
+          {/* <AppText variant="H1" style={styles.oopsText}>
             Oops!
-          </AppText>
+          </AppText> */}
           <Image
             source={ErrorImage}
             style={styles.errorFullImage}
@@ -496,7 +515,7 @@ export default function HomeScreen({navigation, route}) {
                       );
                     }}
                   >
-                    {isCharacterBusy ? (
+                    {isCharacterBusy && showSkeleton ? (
                       <CharacterSkeleton />
                     ) : (
                       <>
@@ -607,13 +626,14 @@ const styles = StyleSheet.create({
     zIndex: 1,
   },
   errorFullImage: {
-    width: 160,
-    height: 160,
+    width: 250,
+    height: 200,
+    marginBottom: 24,
   },
   errorMessage: {
-    fontSize: 14,
-    color: "#999999",
-    lineHeight: 22,
+    // fontSize: 14,
+    color: colors.gr500,
+    lineHeight: 18,
     textAlign: "center",
   },
   spinnerWrapper: {

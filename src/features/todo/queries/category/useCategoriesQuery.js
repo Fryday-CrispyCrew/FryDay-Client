@@ -8,6 +8,9 @@ export function useCategoriesQuery(options = {}) {
     queryKey: categoryKeys.list(),
     // queryFn: () => new Promise(() => {}),
     queryFn: categoryApi.getCategories,
+    // queryFn: () => {
+    //   throw new Error("[DEBUG] 홈 투두 API 강제 에러");
+    // },
     select: (res) => res?.data ?? [], // 화면에서는 카테고리 배열만 바로 쓰기
     ...options,
   });
