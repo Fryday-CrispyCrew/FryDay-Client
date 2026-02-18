@@ -15,6 +15,7 @@ import CategoryHeader from "../../components/Category/CategoryHeader"; // ✅ �
 import AppText from "../../../../shared/components/AppText";
 import ChevronIcon from "../../../../shared/components/ChevronIcon";
 import ClearIcon from "../../../../shared/assets/svg/Clear.svg"; // ✅ 경로는 네 파일 위치에 맞게 수정
+import CheckIcon from "../../assets/svg/category/Check.svg";
 import colors from "../../../../shared/styles/colors";
 
 import {useModalStore} from "../../../../shared/stores/modal/modalStore";
@@ -312,13 +313,7 @@ export default function CategEditScreen({navigation, route}) {
                     style={styles.paletteItemHit}
                   >
                     <View style={[styles.paletteDot, {backgroundColor: c}]}>
-                      {isSelected && (
-                        <View style={styles.checkOverlay}>
-                          <AppText variant="L600" style={styles.checkText}>
-                            ✓
-                          </AppText>
-                        </View>
-                      )}
+                      {isSelected && <CheckIcon width={15} height={12} />}
                     </View>
                   </TouchableOpacity>
                 );
@@ -521,19 +516,6 @@ const styles = StyleSheet.create({
     justifyContent: "center",
   },
 
-  checkOverlay: {
-    width: 44,
-    height: 44,
-    borderRadius: 22,
-    alignItems: "center",
-    justifyContent: "center",
-  },
-
-  checkText: {
-    color: colors.wt,
-    fontSize: 18,
-    lineHeight: 18,
-  },
   deleteBtn: {
     height: 48,
     borderRadius: 12,
