@@ -1141,7 +1141,7 @@ export default function RepeatSettingsSection({
                 hitSlop={8}
               >
                 {isEndNone ? (
-                  <RadioOn width={18} height={18} />
+                  <RadioOn width={18} height={18} color={colors.or} />
                 ) : (
                   <RadioOff width={18} height={18} />
                 )}

@@ -23,20 +23,8 @@ export function useTodoEditorController({
   const isClosingRef = useRef(false);
   const {open, close} = useModalStore();
 
-  useEffect(() => {
-    const subHide = Keyboard.addListener("keyboardDidHide", () => {
-      // ✅ 키보드는 내려갔는데 시트가 떠있는 잔상(translate)이 남는 케이스 방지
-      // 제출로 인해 닫히는 중이면 snapToIndex 스킵
-      if (isClosingRef.current) return;
-      requestAnimationFrame(() => {
-        bottomSheetRef?.current?.snapToIndex?.(0);
-      });
-    });
-
-    return () => {
-      subHide.remove();
-    };
-  }, [bottomSheetRef]);
+  // keyboardDidHide에서 snapToIndex(0) 제거
+  // → keyboardBlurBehavior="restore"가 시트 위치 복원을 처리함
 
   const [isSheetOpen, setIsSheetOpen] = useState(false);
 
@@ -156,11 +144,9 @@ export function useTodoEditorController({
   useEffect(() => {
     const subscription = AppState.addEventListener("change", (nextAppState) => {
       if (nextAppState === "active" && isSheetOpen) {
-        // 앱이 다시 활성화될 때 키보드 먼저 닫고, 이후 시트를 index 0으로 리셋
-        Keyboard.dismiss();
-        setTimeout(() => {
-          bottomSheetRef.current?.snapToIndex?.(0);
-        }, 100);
+        // 앱이 다시 활성화될 때 키보드만 닫기
+        // → 시트 위치는 keyboardBlurBehavior="restore"가 처리
+        // Keyboard.dismiss();
       }
     });
 

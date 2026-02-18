@@ -13,7 +13,7 @@ export default function DoNotAskAgainCheckbox({checked, onToggle}) {
         다시 묻지 않기
       </AppText>
       {checked ? (
-        <RadioOn width={20} height={20} />
+        <RadioOn width={20} height={20} color={colors.or} />
       ) : (
         <RadioOff width={20} height={20} />
       )}
