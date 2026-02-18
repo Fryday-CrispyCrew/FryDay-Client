@@ -689,11 +689,11 @@ const TodoEditorSheet = React.forwardRef(function TodoEditorSheet(
 
   const renderBackdrop = useCallback(
     (props) => (
-      <View style={StyleSheet.absoluteFill} pointerEvents={isSheetReady ? "auto" : "none"}>
-        <Pressable
-          style={StyleSheet.absoluteFill}
-          onPress={onCloseTogether}
-        >
+      <View
+        style={StyleSheet.absoluteFill}
+        pointerEvents={isSheetReady ? "auto" : "none"}
+      >
+        <Pressable style={StyleSheet.absoluteFill} onPress={onCloseTogether}>
           <BottomSheetBackdrop
             {...props}
             pressBehavior="none"
@@ -1880,29 +1880,29 @@ const styles = StyleSheet.create({
     fontFamily: "Pretendard-Medium",
   },
   alarmPanel: {
-    justifyContent: "space-between",
+    // justifyContent: "space-between",
     minHeight: 335,
-    paddingTop: 16,
+    // paddingTop: 16,
     paddingBottom: 32,
-    borderWidth: 1,
+    // borderWidth: 1,
   },
   alarmTitle: {
     fontFamily: "Pretendard-Medium",
     fontSize: 12,
     lineHeight: 12 * 1.5,
     color: colors.gr700,
-    marginBottom: 10,
-    borderWidth: 1,
+    marginBottom: 12,
+    paddingVertical: 15,
+    // borderWidth: 1,
   },
   // ===== SelectDate(투두 날짜 변경) =====
   selectDatePanel: {
-    paddingTop: 15,
     minHeight: 335,
     // borderWidth: 1,
   },
   selectDateTitle: {
     fontFamily: "Pretendard-Medium",
-    marginBottom: 15,
+    paddingVertical: 15,
     fontSize: 12,
     lineHeight: 12 * 1.5,
     color: colors.gr700,
@@ -1912,7 +1912,7 @@ const styles = StyleSheet.create({
   calendarHeader: {
     flexDirection: "row",
     alignItems: "center",
-    gap: 10,
+    gap: 8,
     // borderWidth: 1,
   },
   monthNavBtn: {
@@ -1990,7 +1990,7 @@ const styles = StyleSheet.create({
   },
 
   selectDateFooter: {
-    marginTop: 16,
+    // marginTop: 16,
     alignItems: "flex-end",
   },
   selectDateApplyButton: {

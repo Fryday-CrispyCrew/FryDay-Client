@@ -271,7 +271,7 @@ const styles = StyleSheet.create({
   },
 
   footer: {
-    marginTop: 18,
+    marginTop: 32,
     alignItems: "flex-end",
   },
 
