@@ -689,20 +689,21 @@ const TodoEditorSheet = React.forwardRef(function TodoEditorSheet(
 
   const renderBackdrop = useCallback(
     (props) => (
-      <Pressable
-        style={[StyleSheet.absoluteFill]}
-        onPress={onCloseTogether}
-        pointerEvents={isSheetReady ? "auto" : "none"}
-      >
-        <BottomSheetBackdrop
-          {...props}
-          pressBehavior="none"
-          appearsOnIndex={0}
-          disappearsOnIndex={-1}
-          opacity={0.5}
-        />
+      <View style={StyleSheet.absoluteFill} pointerEvents={isSheetReady ? "auto" : "none"}>
+        <Pressable
+          style={StyleSheet.absoluteFill}
+          onPress={onCloseTogether}
+        >
+          <BottomSheetBackdrop
+            {...props}
+            pressBehavior="none"
+            appearsOnIndex={0}
+            disappearsOnIndex={-1}
+            opacity={0.5}
+          />
+        </Pressable>
         <View
-          pointerEvents="box-none"
+          pointerEvents="box-auto"
           style={{
             position: "absolute",
             top: 80,
@@ -713,7 +714,7 @@ const TodoEditorSheet = React.forwardRef(function TodoEditorSheet(
         >
           <Banner />
         </View>
-      </Pressable>
+      </View>
     ),
     [onCloseTogether, isSheetReady],
   );
