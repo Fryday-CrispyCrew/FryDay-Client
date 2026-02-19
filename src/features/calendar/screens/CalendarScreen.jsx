@@ -1,8 +1,8 @@
-import React, {useState, useEffect, useCallback} from "react";
-import {View} from "react-native";
-import {SafeAreaView} from "react-native-safe-area-context";
+import React, { useState, useEffect, useCallback } from "react";
+import { View } from "react-native";
+import { SafeAreaView } from "react-native-safe-area-context";
 import dayjs from "dayjs";
-import {useFocusEffect} from "@react-navigation/native";
+import { useFocusEffect } from "@react-navigation/native";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 
 import CalendarHeader from "../components/CalendarHeader";
@@ -12,7 +12,7 @@ import WeekSlider from "./Week/WeekSlider";
 import Dotted from "../assets/svg/Dotted.svg";
 
 import TodoBoardSection from "../../todo/components/TodoBoardSection";
-import {getDailyResultsMap} from "../api/dailyResultsApi";
+import { getDailyResultsMap } from "../api/dailyResultsApi";
 import YearMonthWheelModal from "../../todo/components/RepeatSettingsSection/wheel/YearMonthWheelModal";
 
 function buildTodayState(mode) {
@@ -46,10 +46,10 @@ function buildMonthToWeekState(currentMonthDate) {
   };
 }
 
-export default function CalendarScreen({navigation}) {
+export default function CalendarScreen({ navigation }) {
   const [ready, setReady] = useState(false);
   const [state, setState] = useState(() => buildTodayState("month"));
-  const {mode, currentDate, selectedDate} = state;
+  const { mode, currentDate, selectedDate } = state;
 
   const selectedDateStr = selectedDate.format("YYYY-MM-DD");
   const isViewingToday = selectedDate.isSame(dayjs(), "day");
@@ -63,7 +63,7 @@ export default function CalendarScreen({navigation}) {
       .year(year)
       .month(month - 1)
       .startOf("month");
-    setState((s) => ({...s, currentDate: next}));
+    setState((s) => ({ ...s, currentDate: next }));
     setIsYMModalOpen(false);
   }, []);
 
@@ -101,10 +101,10 @@ export default function CalendarScreen({navigation}) {
 
       if (s.mode === "week" && nextMode === "month") {
         const m = s.currentDate.startOf("month");
-        return {...s, mode: "month", currentDate: m};
+        return { ...s, mode: "month", currentDate: m };
       }
 
-      return {...s, mode: nextMode};
+      return { ...s, mode: nextMode };
     });
   }, []);
 
@@ -114,7 +114,7 @@ export default function CalendarScreen({navigation}) {
 
   const handleSelectMonthDate = useCallback(
     (d) => {
-      setState((s) => ({...s, selectedDate: d}));
+      setState((s) => ({ ...s, selectedDate: d }));
       const dateStr = d.format("YYYY-MM-DD");
 
       requestAnimationFrame(() => {
@@ -122,7 +122,7 @@ export default function CalendarScreen({navigation}) {
           screen: "Todo",
           params: {
             screen: "Home",
-            params: {initialDate: dateStr},
+            params: { initialDate: dateStr },
           },
         });
       });
@@ -132,18 +132,28 @@ export default function CalendarScreen({navigation}) {
 
   useFocusEffect(
     useCallback(() => {
-      const startDate = currentDate.startOf("month").format("YYYY-MM-DD");
+      const monthStart = currentDate.startOf("month");
       const monthEnd = currentDate.endOf("month");
       const today = dayjs();
-      const endDate = (
-        monthEnd.isAfter(today, "day") ? today : monthEnd
-      ).format("YYYY-MM-DD");
+
+      let startDate = monthStart.format("YYYY-MM-DD");
+      let endDate = (monthEnd.isAfter(today, "day") ? today : monthEnd).format(
+        "YYYY-MM-DD",
+      );
+
+      if (dayjs(startDate).isAfter(dayjs(endDate), "day")) {
+        const tmp = startDate;
+        startDate = endDate;
+        endDate = tmp;
+      }
 
       let alive = true;
 
       (async () => {
         try {
+          console.log("[dailyResults] REQ", { startDate, endDate });
           const map = await getDailyResultsMap(startDate, endDate);
+          console.log("[dailyResults] MAP", JSON.stringify(map, null, 2));
           if (alive) setBowlMap(map);
         } catch (e) {
           console.log(
@@ -183,17 +193,21 @@ export default function CalendarScreen({navigation}) {
               <WeekSlider
                 currentDate={currentDate}
                 selectedDate={selectedDate}
-                onSelectDate={(d) => setState((s) => ({...s, selectedDate: d}))}
-                onChangeDate={(d) => setState((s) => ({...s, currentDate: d}))}
+                onSelectDate={(d) =>
+                  setState((s) => ({ ...s, selectedDate: d }))
+                }
+                onChangeDate={(d) =>
+                  setState((s) => ({ ...s, currentDate: d }))
+                }
                 bowlMap={bowlMap}
               />
             </View>
 
             <View className="mt-3 mx-5 shrink-0">
-              <Dotted style={{width: "100%"}} height={1} />
+              <Dotted style={{ width: "100%" }} height={1} />
             </View>
 
-            <View style={{flex: 1, paddingHorizontal: 20}}>
+            <View style={{ flex: 1, paddingHorizontal: 20 }}>
               <TodoBoardSection
                 navigation={navigation}
                 date={selectedDateStr}
@@ -204,7 +218,7 @@ export default function CalendarScreen({navigation}) {
         ) : (
           <MonthView
             currentDate={currentDate}
-            onChangeDate={(d) => setState((s) => ({...s, currentDate: d}))}
+            onChangeDate={(d) => setState((s) => ({ ...s, currentDate: d }))}
             bowlMap={bowlMap}
             selectedDate={selectedDate}
             onSelectDate={handleSelectMonthDate}
