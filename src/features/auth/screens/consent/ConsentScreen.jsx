@@ -1,25 +1,25 @@
-import React, {useCallback, useEffect, useMemo, useState} from "react";
-import {Pressable, ScrollView, TouchableOpacity, View} from "react-native";
-import {SafeAreaView} from "react-native-safe-area-context";
-import {useNavigation, useRoute} from "@react-navigation/native";
+import React, { useCallback, useEffect, useMemo, useState } from "react";
+import { Pressable, ScrollView, TouchableOpacity, View } from "react-native";
+import { SafeAreaView } from "react-native-safe-area-context";
+import { useNavigation, useRoute } from "@react-navigation/native";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 
 import NamingArrow from "../../assets/svg/naming-arrow.svg";
 import AppText from "../../../../shared/components/AppText";
-import {deleteTokens} from "../../../../shared/lib/storage/tokenStorage";
+import { deleteTokens } from "../../../../shared/lib/storage/tokenStorage";
 
 import CheckOn from "../../assets/svg/checkbox-on.svg";
 import CheckOff from "../../assets/svg/checkbox-off.svg";
 
-import {useCreateConsentMutation} from "../../queries/consent/useCreateConsentMutation"; // 경로만 프로젝트에 맞게
+import { useCreateConsentMutation } from "../../queries/consent/useCreateConsentMutation"; // 경로만 프로젝트에 맞게
 import {
   STEP_KEY,
   ONBOARDING_STEP,
 } from "../../../../shared/constants/onboardingStep";
-import {TERMS_DATA} from "../../../../shared/constants/terms";
+import { TERMS_DATA } from "../../../../shared/constants/terms";
 
 // 체크 버튼
-function CheckIcon({checked}) {
+function CheckIcon({ checked }) {
   return checked ? (
     <CheckOn width={24} height={24} />
   ) : (
@@ -28,7 +28,7 @@ function CheckIcon({checked}) {
 }
 
 // 버튼 + 라벨
-function CheckRow({checked, onPress, label}) {
+function CheckRow({ checked, onPress, label }) {
   return (
     <Pressable onPress={onPress} className="flex-row items-center">
       <CheckIcon checked={checked} />
@@ -40,7 +40,7 @@ function CheckRow({checked, onPress, label}) {
 }
 
 // 동의 컴포넌트
-function TermsBox({title, body}) {
+function TermsBox({ title, body }) {
   return (
     <View>
       <AppText variant="M500" className="text-gr500 mb-2">
@@ -50,7 +50,8 @@ function TermsBox({title, body}) {
       <View className="relative rounded-2xl bg-gr">
         <ScrollView
           className="px-4 py-4"
-          style={{height: 120}}
+          contentContainerStyle={{ paddingBottom: 24 }}
+          style={{ height: 120 }}
           showsVerticalScrollIndicator={false}
         >
           <AppText variant="L400" className="text-bk leading-[1.5]">
@@ -83,7 +84,7 @@ export default function ConsentScreen() {
     await AsyncStorage.removeItem(STEP_KEY);
 
     const rootNav = navigation.getParent("root") ?? navigation.getParent();
-    rootNav?.reset({index: 0, routes: [{name: "Auth"}]});
+    rootNav?.reset({ index: 0, routes: [{ name: "Auth" }] });
   }, [navigation, isNewUser]);
 
   const toggleAll = useCallback(() => {
@@ -109,7 +110,7 @@ export default function ConsentScreen() {
     [],
   );
 
-  const {mutateAsync: setConsent, isPending: isSubmitting} =
+  const { mutateAsync: setConsent, isPending: isSubmitting } =
     useCreateConsentMutation();
 
   return (
@@ -129,7 +130,7 @@ export default function ConsentScreen() {
 
       <View
         className="flex-1 px-5 gap-4"
-        contentContainerStyle={{paddingBottom: 0}}
+        contentContainerStyle={{ paddingBottom: 0 }}
       >
         <View className="mt-6">
           <AppText variant="H2" className="text-bk leading-8">
@@ -190,7 +191,7 @@ export default function ConsentScreen() {
 
               navigation.navigate("Naming", {
                 isNewUser,
-                consent: {agreeTerms, agreePrivacy, agreeMarketing},
+                consent: { agreeTerms, agreePrivacy, agreeMarketing },
               });
             }}
             className={`h-14 rounded-2xl items-center justify-center ${
