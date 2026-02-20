@@ -911,18 +911,20 @@ const TodoEditorSheet = React.forwardRef(function TodoEditorSheet(
     JSON.stringify(stableRecurrenceBody(b));
 
   // 반복 store 구독 (hasEditChanges가 반복 변경 시 재계산되도록)
-  const repeatSnapshot = useRepeatEditorStore(useShallow((s) => ({
-    repeatCycle: s.repeatCycle,
-    repeatStartDate: s.repeatStartDate,
-    repeatEndType: s.repeatEndType,
-    repeatEndDate: s.repeatEndDate,
-    repeatAlarm: s.repeatAlarm,
-    repeatAlarmTime: s.repeatAlarmTime,
-    repeatWeekdays: s.repeatWeekdays,
-    repeatMonthDays: s.repeatMonthDays,
-    repeatYearMonths: s.repeatYearMonths,
-    repeatYearDays: s.repeatYearDays,
-  })));
+  const repeatSnapshot = useRepeatEditorStore(
+    useShallow((s) => ({
+      repeatCycle: s.repeatCycle,
+      repeatStartDate: s.repeatStartDate,
+      repeatEndType: s.repeatEndType,
+      repeatEndDate: s.repeatEndDate,
+      repeatAlarm: s.repeatAlarm,
+      repeatAlarmTime: s.repeatAlarmTime,
+      repeatWeekdays: s.repeatWeekdays,
+      repeatMonthDays: s.repeatMonthDays,
+      repeatYearMonths: s.repeatYearMonths,
+      repeatYearDays: s.repeatYearDays,
+    })),
+  );
 
   // edit 모드에서 수정사항이 있는지 체크
   const hasEditChanges = useMemo(() => {
@@ -931,9 +933,11 @@ const TodoEditorSheet = React.forwardRef(function TodoEditorSheet(
     if (!initial.todoId) return false; // 아직 초기화 안 됨
 
     // 제목 변경
-    if (normalizeDesc(initial.description) !== normalizeDesc(editingText)) return true;
+    if (normalizeDesc(initial.description) !== normalizeDesc(editingText))
+      return true;
     // 카테고리 변경
-    if (initial.categoryId != null && initial.categoryId !== draftCategoryId) return true;
+    if (initial.categoryId != null && initial.categoryId !== draftCategoryId)
+      return true;
     // 메모 변경
     if (normalizeMemo(initial.memo) !== normalizeMemo(memoText)) return true;
     // 알림 변경
@@ -945,7 +949,8 @@ const TodoEditorSheet = React.forwardRef(function TodoEditorSheet(
     // 날짜 변경
     if (hasAppliedTodoDate) {
       const nextDateStr = toYYYYMMDD(todoDate);
-      if (nextDateStr && nextDateStr !== (todoDetail?.date ?? null)) return true;
+      if (nextDateStr && nextDateStr !== (todoDetail?.date ?? null))
+        return true;
     }
     // 반복 변경
     const repeatDraft = useRepeatEditorStore.getState().getRepeatPayload?.();
@@ -956,11 +961,29 @@ const TodoEditorSheet = React.forwardRef(function TodoEditorSheet(
     const isRepeatCleared = repeatDraft?.repeatCycle === "unset";
     if (initialHasRecurrence && isRepeatCleared) return true;
     if (!initial.recurrenceId && !!currentRepeatPayload) return true;
-    if (initial.recurrenceId && currentRepeatPayload &&
-      !isSameRecurrenceBody(initialRecurrencePayloadRef.current, currentRepeatPayload)) return true;
+    if (
+      initial.recurrenceId &&
+      currentRepeatPayload &&
+      !isSameRecurrenceBody(
+        initialRecurrencePayloadRef.current,
+        currentRepeatPayload,
+      )
+    )
+      return true;
 
     return false;
-  }, [mode, editingText, draftCategoryId, memoText, hasPickedAlarmTime, alarmTime, todoDetail?.date, hasAppliedTodoDate, todoDate, repeatSnapshot]);
+  }, [
+    mode,
+    editingText,
+    draftCategoryId,
+    memoText,
+    hasPickedAlarmTime,
+    alarmTime,
+    todoDetail?.date,
+    hasAppliedTodoDate,
+    todoDate,
+    repeatSnapshot,
+  ]);
 
   const handleSubmitInternal = useCallback(async () => {
     // create 모드는 기존 흐름 유지(필요하면 create mutation 연결)
@@ -1274,7 +1297,8 @@ const TodoEditorSheet = React.forwardRef(function TodoEditorSheet(
           disabled={!isSubmitEnabled || !hasEditChanges}
           style={[
             styles.submitButton,
-            (!isSubmitEnabled || !hasEditChanges) && styles.submitButtonDisabled,
+            (!isSubmitEnabled || !hasEditChanges) &&
+              styles.submitButtonDisabled,
           ]}
         >
           <ChevronIcon
@@ -1304,6 +1328,7 @@ const TodoEditorSheet = React.forwardRef(function TodoEditorSheet(
       handleIndicatorStyle={{backgroundColor: "#D0D0D0", width: "38.4%"}}
       enableContentPanningGesture={false} // ✅ content로는 시트 이동 X (고정)
       enablePanDownToClose={false}
+      enableHandlePanningGesture={false}
     >
       <BottomSheetView>
         <View style={{position: "relative"}}>
