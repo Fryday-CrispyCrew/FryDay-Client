@@ -9,6 +9,7 @@ import {
   TouchableOpacity,
   Keyboard,
   Platform,
+  AppState,
 } from "react-native";
 import {
   BottomSheetModal,
@@ -390,6 +391,18 @@ const TodoEditorSheet = React.forwardRef(function TodoEditorSheet(
       keyboardDidHideListener.remove();
     };
   }, []);
+
+  // ✅ 앱 백그라운드 → 포그라운드 복귀 시 키보드 닫기 + 바텀시트 하단으로 복원
+  useEffect(() => {
+    const subscription = AppState.addEventListener("change", (nextState) => {
+      if (nextState === "active") {
+        blurAllInputs();
+      }
+    });
+    return () => {
+      subscription.remove();
+    };
+  }, [blurAllInputs]);
 
   // todoId가 string일 수 있으니 숫자로 보정
   const numericTodoId = useMemo(() => {
