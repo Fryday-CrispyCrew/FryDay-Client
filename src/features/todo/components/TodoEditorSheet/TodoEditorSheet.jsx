@@ -519,7 +519,7 @@ const TodoEditorSheet = React.forwardRef(function TodoEditorSheet(
     setHasPickedAlarmTime(!!hhmm); // “알림 설정됨” 상태
     // ✅ 기존 알림 시각이 있으면 picker 초기값도 해당 시각으로 동기화
     if (hhmm) {
-      const [h, m] = hhmm.split(“:”).map(Number);
+      const [h, m] = hhmm.split(":").map(Number);
       const d = new Date();
       d.setHours(h, m, 0, 0);
       setAlarmDraftDate(d);
