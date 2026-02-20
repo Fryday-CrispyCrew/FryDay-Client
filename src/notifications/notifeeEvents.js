@@ -1,15 +1,21 @@
 // src/notifications/notifeeEvents.js
 import notifee, {EventType} from "@notifee/react-native";
 import {logNotificationClick} from "./lib/logNotificationClick";
+import {navigationRef} from "../shared/lib/navigationRef";
 
-export function registerNotifeeForegroundEvents(navigate) {
+export function registerNotifeeForegroundEvents() {
   return notifee.onForegroundEvent(async ({type, detail}) => {
+    console.log("foreground event: ", {type, detail});
     if (type === EventType.PRESS) {
+      console.log("notify pressed");
       const data = detail.notification?.data;
-      await logNotificationClick(data, "foreground");
-      // 예: todoId로 상세 화면 이동
-      if (data?.todoId) {
-        navigate("TodoDetail", {todoId: data.todoId});
+      try {
+        await logNotificationClick(data, "foreground");
+      } catch (e) {
+        console.log("error: ", e);
+      }
+      if (data?.todoId && navigationRef.isReady()) {
+        navigationRef.navigate("TodoDetail", {todoId: data.todoId});
       }
     }
   });

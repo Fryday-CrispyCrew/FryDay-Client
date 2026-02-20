@@ -5,7 +5,7 @@ export function registerNotifeeBackgroundEvent() {
   return notifee.onBackgroundEvent(async ({type, detail}) => {
     if (type === EventType.PRESS) {
       const data = detail.notification?.data;
-      // await logNotificationClick(data, "background");
+      await logNotificationClick(data, "background");
     }
   });
 }

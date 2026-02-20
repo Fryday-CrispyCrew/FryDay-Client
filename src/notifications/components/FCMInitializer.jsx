@@ -8,6 +8,7 @@ import {
   subscribeTokenRefresh,
 } from "../fcmToken";
 import {registerForegroundMessageListener} from "../listeners";
+import {registerNotifeeForegroundEvents} from "../notifeeEvents";
 import {useRegisterFcmTokenMutation} from "../queries/useRegisterFcmTokenMutation";
 import {getDeviceId} from "../lib/getDeviceId";
 import {useUpdateNotificationSettingsMutation} from "../queries/useUpdateNotificationSettingsMutation";
@@ -26,6 +27,7 @@ export default function FCMInitializer() {
 
     let unsubscribeOnMessage;
     let unsubscribeTokenRefresh;
+    let unsubscribeNotifeeEvents;
 
     (async () => {
       // ✅ Cold start: 앱이 종료된 상태에서 알림 클릭으로 진입했는지 확인
@@ -59,11 +61,13 @@ export default function FCMInitializer() {
       });
 
       unsubscribeOnMessage = registerForegroundMessageListener();
+      unsubscribeNotifeeEvents = registerNotifeeForegroundEvents();
     })();
 
     return () => {
       unsubscribeOnMessage?.();
       unsubscribeTokenRefresh?.();
+      unsubscribeNotifeeEvents?.();
     };
   }, []);
 
