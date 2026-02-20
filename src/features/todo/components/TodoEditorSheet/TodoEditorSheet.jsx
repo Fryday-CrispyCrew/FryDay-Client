@@ -517,6 +517,13 @@ const TodoEditorSheet = React.forwardRef(function TodoEditorSheet(
     const hhmm = toHHmm(notifyAt);
     setAlarmTime(hhmm); // 화면 표시용
     setHasPickedAlarmTime(!!hhmm); // “알림 설정됨” 상태
+    // ✅ 기존 알림 시각이 있으면 picker 초기값도 해당 시각으로 동기화
+    if (hhmm) {
+      const [h, m] = hhmm.split(“:”).map(Number);
+      const d = new Date();
+      d.setHours(h, m, 0, 0);
+      setAlarmDraftDate(d);
+    }
 
     // ✅ 반복 설정 주입 (recurrence가 있으면 store 채우기 / 없으면 초기화)
     const recurrence = todoDetail?.recurrence ?? null;
@@ -549,8 +556,11 @@ const TodoEditorSheet = React.forwardRef(function TodoEditorSheet(
 
   useEffect(() => {
     if (isAlarmOpen) {
-      // ✅ 알림 패널에 들어올 때, 아직 저장된 알림이 없으면 "미설정" 상태 유지
-      if (!alarmTime) setHasPickedAlarmTime(false);
+      // ✅ 알림 패널에 들어올 때, 아직 저장된 알림이 없으면 "미설정" 상태 + picker 초기값을 현재 시각으로 갱신
+      if (!alarmTime) {
+        setHasPickedAlarmTime(false);
+        setAlarmDraftDate(new Date());
+      }
       // ✅ 저장된 알림이 있다면(추후 todo 편집 진입 시 주입한다면) 표시 상태로
       if (alarmTime) setHasPickedAlarmTime(true);
     }
