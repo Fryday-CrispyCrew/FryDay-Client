@@ -1,6 +1,8 @@
 // src/notifications/FCMInitializer.jsx
 import React, {useEffect} from "react";
+import {Platform} from "react-native";
 import notifee from "@notifee/react-native";
+import {requestTrackingPermissionsAsync} from "expo-tracking-transparency";
 
 import {initNotifeeChannel} from "../notificationInit";
 import {
@@ -41,6 +43,11 @@ export default function FCMInitializer() {
 
       const deviceId = await getDeviceId(); // ✅ expo-application 기반
       const {enabled, token} = await ensureFcmPermissionAndGetToken();
+
+      // ✅ ATT 권한 요청 (iOS only, 푸시 알림 권한 요청 이후)
+      if (Platform.OS === "ios") {
+        await requestTrackingPermissionsAsync();
+      }
 
       // ✅ 권한 결과를 서버 설정에 반영
       updateNotificationSettingsMutation.mutate({

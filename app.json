@@ -19,6 +19,7 @@
       "bundleIdentifier": "com.crispycrew.fryday.qa",
       "infoPlist": {
         "ITSAppUsesNonExemptEncryption": false,
+        "NSUserTrackingUsageDescription": "맞춤 광고 제공을 위해 사용됩니다.\n허용하시면 관심사에 맞는 광고만 표시됩니다.",
         "LSApplicationQueriesSchemes": [
           "naversearchapp",
           "naversearchthirdlogin"
@@ -128,7 +129,8 @@
           "androidAppId": "ca-app-pub-8539790662098155~6164221426",
           "iosAppId": "ca-app-pub-8539790662098155~3874368925"
         }
-      ]
+      ],
+      "expo-tracking-transparency"
     ],
     "extra": {
       "eas": {
