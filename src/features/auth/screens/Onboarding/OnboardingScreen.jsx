@@ -1,4 +1,10 @@
-import React, {useMemo, useState, useEffect, useCallback, useRef} from "react";
+import React, {
+  useMemo,
+  useState,
+  useEffect,
+  useCallback,
+  useRef,
+} from "react";
 import {
   View,
   Image,
@@ -8,8 +14,8 @@ import {
 } from "react-native";
 import * as SecureStore from "expo-secure-store";
 import AsyncStorage from "@react-native-async-storage/async-storage";
-import {SafeAreaView} from "react-native-safe-area-context";
-import {Gesture, GestureDetector} from "react-native-gesture-handler";
+import { SafeAreaView } from "react-native-safe-area-context";
+import { Gesture, GestureDetector } from "react-native-gesture-handler";
 
 import AppText from "../../../../shared/components/AppText";
 import SkipIcon from "../../assets/svg/skip-arrow.svg";
@@ -18,8 +24,9 @@ import {
   STEP_KEY,
 } from "../../../../shared/constants/onboardingStep";
 
-import {useCompleteOnboardingMutation} from "../../queries/onboarding/useCompleteOnboardingMutation";
-import {CommonActions} from "@react-navigation/native";
+import { useCompleteOnboardingMutation } from "../../queries/onboarding/useCompleteOnboardingMutation";
+import { CommonActions } from "@react-navigation/native";
+import analytics from "@react-native-firebase/analytics";
 
 const PAGES = [
   {
@@ -54,8 +61,8 @@ const PAGES = [
   },
 ];
 
-export default function OnboardingScreen({navigation}) {
-  const {width, height} = useWindowDimensions();
+export default function OnboardingScreen({ navigation }) {
+  const { width, height } = useWindowDimensions();
 
   const [idx, setIdx] = useState(0);
 
@@ -66,7 +73,7 @@ export default function OnboardingScreen({navigation}) {
   const isFirst = idx === 0;
   const isLast = idx === PAGES.length - 1;
 
-  const {mutateAsync: completeOnboardingAsync} =
+  const { mutateAsync: completeOnboardingAsync } =
     useCompleteOnboardingMutation();
 
   useEffect(() => {
@@ -81,6 +88,7 @@ export default function OnboardingScreen({navigation}) {
 
   const onDone = useCallback(async () => {
     try {
+      await analytics().logEvent("onboarding_complete");
       const res = await completeOnboardingAsync();
       console.log("[completeOnboarding] OK", res);
     } catch (e) {
@@ -97,7 +105,7 @@ export default function OnboardingScreen({navigation}) {
     root.dispatch(
       CommonActions.reset({
         index: 0,
-        routes: [{name: "Main"}],
+        routes: [{ name: "Main" }],
       }),
     );
   }, [completeOnboardingAsync, navigation]);
@@ -157,7 +165,7 @@ export default function OnboardingScreen({navigation}) {
             <SkipIcon />
           </TouchableOpacity>
         ) : (
-          <View style={{height: 24}} />
+          <View style={{ height: 24 }} />
         )}
       </View>
 
@@ -165,7 +173,7 @@ export default function OnboardingScreen({navigation}) {
         <Pressable className="flex-1" onPress={onPressSide}>
           <View
             className="flex-row justify-center items-center gap-2"
-            style={{marginTop: Math.max(12, height * 0.015)}}
+            style={{ marginTop: Math.max(12, height * 0.015) }}
           >
             {PAGES.map((_, i) => (
               <View
@@ -198,7 +206,7 @@ export default function OnboardingScreen({navigation}) {
           >
             <Image
               source={page.image}
-              style={{flex: 1, width: "100%"}}
+              style={{ flex: 1, width: "100%" }}
               resizeMode="contain"
             />
           </View>
@@ -219,7 +227,7 @@ export default function OnboardingScreen({navigation}) {
             activeOpacity={0.5}
             onPress={onDone}
             className="bg-bk rounded-2xl py-4 items-center self-center w-full"
-            style={{maxWidth: 420}}
+            style={{ maxWidth: 420 }}
           >
             <AppText variant="L600" className="text-wt">
               시작하기

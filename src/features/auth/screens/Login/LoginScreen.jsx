@@ -1,21 +1,29 @@
-import React, {useMemo, useState} from "react";
-import {View, Image, TouchableOpacity, useWindowDimensions} from "react-native";
-import {SafeAreaView} from "react-native-safe-area-context";
+import React, { useMemo, useState, useEffect } from "react";
+import {
+  View,
+  Image,
+  TouchableOpacity,
+  useWindowDimensions,
+} from "react-native";
+import { SafeAreaView } from "react-native-safe-area-context";
 
 import AppText from "../../../../shared/components/AppText";
 
-import {kakaoGetAccessToken} from "../../lib/kakao";
-import {naverGetAccessToken} from "../../lib/naver";
-import {appleGetIdToken} from "../../lib/apple";
+import { kakaoGetAccessToken } from "../../lib/kakao";
+import { naverGetAccessToken } from "../../lib/naver";
+import { appleGetIdToken } from "../../lib/apple";
 
-import {useCreateAppleLoginMutation} from "../../queries/socialLogin/useCreateAppleLoginMutation";
-import {useCreateSocialLoginMutation} from "../../queries/socialLogin/useCreateSocialLoginMutation";
-import {useCreateConsentMutation} from "../../queries/consent/useCreateConsentMutation";
+import { useCreateAppleLoginMutation } from "../../queries/socialLogin/useCreateAppleLoginMutation";
+import { useCreateSocialLoginMutation } from "../../queries/socialLogin/useCreateSocialLoginMutation";
+import { useCreateConsentMutation } from "../../queries/consent/useCreateConsentMutation";
+import analytics from "@react-native-firebase/analytics";
+
 import {
   ONBOARDING_STEP,
   STEP_KEY,
 } from "../../../../shared/constants/onboardingStep";
 import AsyncStorage from "@react-native-async-storage/async-storage";
+import * as SecureStore from "expo-secure-store";
 
 function nextRoute(status) {
   switch (status) {
@@ -32,17 +40,30 @@ function nextRoute(status) {
   }
 }
 
-export default function LoginScreen({navigation}) {
-  const {width, height} = useWindowDimensions();
+export default function LoginScreen({ navigation }) {
+  const { width, height } = useWindowDimensions();
   const iconSize = useMemo(
     () => Math.max(48, Math.min(56, width * 0.14)),
     [width],
   );
 
-  const {mutateAsync: createConsentAsync} = useCreateConsentMutation();
+  useEffect(() => {
+    const trackFirstAuthView = async () => {
+      const tracked = await SecureStore.getItemAsync("hasTrackedAuthView");
 
-  const {mutateAsync: createSocialLogin} = useCreateSocialLoginMutation();
-  const {mutateAsync: createAppleLogin} = useCreateAppleLoginMutation();
+      if (!tracked) {
+        await analytics().logEvent("auth_view");
+        await SecureStore.setItemAsync("hasTrackedAuthView", "true");
+      }
+    };
+
+    trackFirstAuthView().catch(() => {});
+  }, []);
+
+  const { mutateAsync: createConsentAsync } = useCreateConsentMutation();
+
+  const { mutateAsync: createSocialLogin } = useCreateSocialLoginMutation();
+  const { mutateAsync: createAppleLogin } = useCreateAppleLoginMutation();
 
   const [loading, setLoading] = useState(false);
 
@@ -60,13 +81,16 @@ export default function LoginScreen({navigation}) {
     );
 
     const target = nextRoute(status);
+
+    await analytics().logEvent("login_success", { target });
+
     const rootNav = navigation.getParent("root") ?? navigation.getParent();
     rootNav?.reset({
       index: 0,
       routes: [
         {
           name: target,
-          params: {isNewUser: status === ONBOARDING_STEP.NEEDS_AGREEMENT},
+          params: { isNewUser: status === ONBOARDING_STEP.NEEDS_AGREEMENT },
         },
       ],
     });
@@ -116,7 +140,7 @@ export default function LoginScreen({navigation}) {
     setLoading(true);
     try {
       const idToken = await appleGetIdToken();
-      const data = await createAppleLogin({idToken, skipErrorToast: true});
+      const data = await createAppleLogin({ idToken, skipErrorToast: true });
       await afterLogin(data);
     } catch (e) {
       console.log(e);
@@ -145,11 +169,11 @@ export default function LoginScreen({navigation}) {
 
         <View
           className="flex-[4] justify-start"
-          style={{paddingTop: Math.max(8, height * 0.02)}}
+          style={{ paddingTop: Math.max(8, height * 0.02) }}
         >
           <View
             className="flex-row items-center justify-center mb-6 self-center"
-            style={{width: Math.min(240, width * 0.62)}}
+            style={{ width: Math.min(240, width * 0.62) }}
           >
             <View className="flex-1 h-[1px] bg-wt/25" />
             <AppText variant="M500" className="text-wt/75 mx-4">
@@ -160,7 +184,7 @@ export default function LoginScreen({navigation}) {
 
           <View
             className="flex-row justify-center"
-            style={{columnGap: Math.min(32, width * 0.07), marginBottom: 18}}
+            style={{ columnGap: Math.min(32, width * 0.07), marginBottom: 18 }}
           >
             {[
               {
