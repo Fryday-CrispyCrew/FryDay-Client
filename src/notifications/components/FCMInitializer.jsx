@@ -1,5 +1,8 @@
 // src/notifications/FCMInitializer.jsx
 import React, {useEffect} from "react";
+import {Platform} from "react-native";
+import notifee from "@notifee/react-native";
+import {requestTrackingPermissionsAsync} from "expo-tracking-transparency";
 
 import {initNotifeeChannel} from "../notificationInit";
 import {
@@ -7,9 +10,11 @@ import {
   subscribeTokenRefresh,
 } from "../fcmToken";
 import {registerForegroundMessageListener} from "../listeners";
+import {registerNotifeeForegroundEvents} from "../notifeeEvents";
 import {useRegisterFcmTokenMutation} from "../queries/useRegisterFcmTokenMutation";
 import {getDeviceId} from "../lib/getDeviceId";
 import {useUpdateNotificationSettingsMutation} from "../queries/useUpdateNotificationSettingsMutation";
+import {logNotificationClick} from "../lib/logNotificationClick";
 
 let didInit = false;
 
@@ -24,12 +29,25 @@ export default function FCMInitializer() {
 
     let unsubscribeOnMessage;
     let unsubscribeTokenRefresh;
+    let unsubscribeNotifeeEvents;
 
     (async () => {
+      // ✅ Cold start: 앱이 종료된 상태에서 알림 클릭으로 진입했는지 확인
+      const initialNotification = await notifee.getInitialNotification();
+      if (initialNotification) {
+        const data = initialNotification.notification?.data;
+        await logNotificationClick(data, "cold_start");
+      }
+
       await initNotifeeChannel();
 
       const deviceId = await getDeviceId(); // ✅ expo-application 기반
       const {enabled, token} = await ensureFcmPermissionAndGetToken();
+
+      // ✅ ATT 권한 요청 (iOS only, 푸시 알림 권한 요청 이후)
+      if (Platform.OS === "ios") {
+        await requestTrackingPermissionsAsync();
+      }
 
       // ✅ 권한 결과를 서버 설정에 반영
       updateNotificationSettingsMutation.mutate({
@@ -50,11 +68,13 @@ export default function FCMInitializer() {
       });
 
       unsubscribeOnMessage = registerForegroundMessageListener();
+      unsubscribeNotifeeEvents = registerNotifeeForegroundEvents();
     })();
 
     return () => {
       unsubscribeOnMessage?.();
       unsubscribeTokenRefresh?.();
+      unsubscribeNotifeeEvents?.();
     };
   }, []);
 

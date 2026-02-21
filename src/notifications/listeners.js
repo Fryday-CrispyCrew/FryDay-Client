@@ -17,10 +17,10 @@ export function registerForegroundMessageListener() {
     console.log("remoteMessage.notification.body: ", body);
     console.log("remoteMessage.data.title: ", title);
     console.log("remoteMessage.data.body: ", body);
-    // await displayTodoNotification({
-    //   title,
-    //   body,
-    //   data: remoteMessage.data,
-    // });
+    await displayTodoNotification({
+      title,
+      body,
+      data: remoteMessage.data,
+    });
   });
 }

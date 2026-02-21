@@ -1,0 +1,48 @@
+{
+  "project_info": {
+    "project_number": "703145263808",
+    "project_id": "fryday-b387b",
+    "storage_bucket": "fryday-b387b.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:703145263808:android:4c8abad72b26b64d38a325",
+        "android_client_info": {
+          "package_name": "com.basakan.fryday"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyAiuM99V9I4bQrDrk3DodeQyBrxN8K3fY8"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    },
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:703145263808:android:ec6649c3c7e357f538a325",
+        "android_client_info": {
+          "package_name": "com.bmbx08.FryDay"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyAiuM99V9I4bQrDrk3DodeQyBrxN8K3fY8"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
