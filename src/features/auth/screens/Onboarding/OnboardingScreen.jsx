@@ -90,9 +90,9 @@ export default function OnboardingScreen({ navigation }) {
     try {
       await analytics().logEvent("onboarding_complete");
       const res = await completeOnboardingAsync();
-      console.log("[completeOnboarding] OK", res);
+      // console.log("[completeOnboarding] OK", res);
     } catch (e) {
-      console.log("[completeOnboarding] ERR", e?.status, e?.code, e?.message);
+      // console.log("[completeOnboarding] ERR", e?.status, e?.code, e?.message);
     }
 
     await Promise.allSettled([

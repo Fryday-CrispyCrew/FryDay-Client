@@ -1,5 +1,5 @@
-import React, {useCallback} from "react";
-import {Pressable, TouchableOpacity, View} from "react-native";
+import React, { useCallback } from "react";
+import { Pressable, TouchableOpacity, View } from "react-native";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import AppText from "../../../../shared/components/AppText";
 import {
@@ -7,10 +7,10 @@ import {
   ONBOARDING_STEP,
   MARKETING_CONSENT_KEY,
 } from "../../../../shared/constants/onboardingStep";
-import {useCreateMarketingConsentMutation} from "../../queries/marketing/useCreateMarketingConsentMutation";
+import { useCreateMarketingConsentMutation } from "../../queries/marketing/useCreateMarketingConsentMutation";
 
-export default function MarketingModal({navigation}) {
-  const {mutateAsync: createMarketingConsent, isPending} =
+export default function MarketingModal({ navigation }) {
+  const { mutateAsync: createMarketingConsent, isPending } =
     useCreateMarketingConsentMutation();
 
   const close = useCallback(() => {
@@ -32,30 +32,30 @@ export default function MarketingModal({navigation}) {
         );
 
         const rootNav = navigation.getParent("root") ?? navigation.getParent();
-        rootNav?.reset({index: 0, routes: [{name: "Main"}]});
+        rootNav?.reset({ index: 0, routes: [{ name: "Main" }] });
       } catch (e) {
-        console.log(
-          "[marketing] ERR",
-          e?.response?.status,
-          e?.response?.data,
-          e?.message,
-        );
+        // console.log(
+        //   "[marketing] ERR",
+        //   e?.response?.status,
+        //   e?.response?.data,
+        //   e?.message,
+        // );
       }
     },
     [createMarketingConsent, navigation],
   );
 
   return (
-    <View style={{flex: 1}}>
+    <View style={{ flex: 1 }}>
       <Pressable
         onPress={close}
-        style={{flex: 1}}
+        style={{ flex: 1 }}
         className="bg-bk/40 px-5 items-center justify-center"
       >
         <Pressable
           onPress={() => {}}
           className="w-full bg-wt rounded-3xl overflow-hidden"
-          style={{maxWidth: 420}}
+          style={{ maxWidth: 420 }}
         >
           <View className="px-6 pt-7 pb-6">
             <AppText variant="H3" className="text-bk text-center">

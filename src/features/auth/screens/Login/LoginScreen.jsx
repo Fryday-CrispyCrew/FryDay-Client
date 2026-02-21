@@ -108,10 +108,10 @@ export default function LoginScreen({ navigation }) {
       });
       await afterLogin(data);
     } catch (e) {
-      console.log("ERR status", e?.response?.status);
-      console.log("ERR data", e?.response?.data);
-      console.log("ERR headers", e?.response?.headers);
-      console.log("ERR message", e?.message);
+      // console.log("ERR status", e?.response?.status);
+      // console.log("ERR data", e?.response?.data);
+      // console.log("ERR headers", e?.response?.headers);
+      // console.log("ERR message", e?.message);
     } finally {
       setLoading(false);
     }
@@ -129,7 +129,7 @@ export default function LoginScreen({ navigation }) {
       });
       await afterLogin(data);
     } catch (e) {
-      console.log(e);
+      // console.log(e);
     } finally {
       setLoading(false);
     }
@@ -143,7 +143,7 @@ export default function LoginScreen({ navigation }) {
       const data = await createAppleLogin({ idToken, skipErrorToast: true });
       await afterLogin(data);
     } catch (e) {
-      console.log(e);
+      // console.log(e);
     } finally {
       setLoading(false);
     }
