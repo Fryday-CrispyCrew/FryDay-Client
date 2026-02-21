@@ -14,7 +14,13 @@
       "Bash(RES=\"C:/Users/bmbx0/Desktop/KevinProjects/FryDay-Client/android/app/src/main/res\")",
       "Bash(for:*)",
       "Bash(do file \"$RES/$d/ic_notification.png\")",
-      "Bash(done)"
+      "Bash(done)",
+      "Bash(grep SHA1:*)",
+      "Bash(keytool:*)",
+      "Bash(head:*)",
+      "Bash(eas credentials:*)",
+      "Bash(eas credentials:list:*)",
+      "Bash(eas build:list:*)"
     ]
   }
 }
