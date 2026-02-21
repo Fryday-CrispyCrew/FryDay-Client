@@ -49,3 +49,9 @@ yarn-error.*
 CLAUDE.md
 GEMINI.md
 .claude*
+
+# Firebase
+google-services.json
+GoogleService-Info.plist
+android/app/google-services.json
+ios/GoogleService-Info.plist
