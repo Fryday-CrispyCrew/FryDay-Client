@@ -151,17 +151,17 @@ export default function CalendarScreen({ navigation }) {
 
       (async () => {
         try {
-          console.log("[dailyResults] REQ", { startDate, endDate });
+          // console.log("[dailyResults] REQ", { startDate, endDate });
           const map = await getDailyResultsMap(startDate, endDate);
-          console.log("[dailyResults] MAP", JSON.stringify(map, null, 2));
+          // console.log("[dailyResults] MAP", JSON.stringify(map, null, 2));
           if (alive) setBowlMap(map);
         } catch (e) {
-          console.log(
-            "[dailyResults] ERR",
-            e?.response?.status,
-            JSON.stringify(e?.response?.data, null, 2),
-            e?.message,
-          );
+          // console.log(
+          //   "[dailyResults] ERR",
+          //   e?.response?.status,
+          //   JSON.stringify(e?.response?.data, null, 2),
+          //   e?.message,
+          // );
         }
       })();
 
