@@ -13,6 +13,6 @@ export async function logNotificationClick(data, trigger) {
       notification_id: data?.notificationId ?? null,
     });
   } catch (e) {
-    console.error("[Analytics] notification_click 실패:", e);
+    // console.error("[Analytics] notification_click 실패:", e);
   }
 }

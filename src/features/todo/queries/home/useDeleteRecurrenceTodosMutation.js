@@ -14,7 +14,7 @@ export function useDeleteRecurrenceTodosMutation(options = {}) {
       options?.onSuccess?.(data, variables, context);
     },
     onError: (error) => {
-      console.log("error: ", error.response.data);
+      // console.log("error: ", error.response.data);
     },
     ...options,
   });

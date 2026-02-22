@@ -261,11 +261,11 @@ export default function HomeScreen({navigation, route}) {
   });
 
   useEffect(() => {
-    console.log("Categories: ", rawCategories);
+    // console.log("Categories: ", rawCategories);
   }, [rawCategories]);
 
   useEffect(() => {
-    console.log("Home todos: ", rawTodos);
+    // console.log("Home todos: ", rawTodos);
   }, [rawTodos]);
 
   const SWIPE_THRESHOLD = 50;
@@ -303,7 +303,7 @@ export default function HomeScreen({navigation, route}) {
   } = useTodoCharacterStatusQuery({date}, {enabled: isHomeTodosFetched});
 
   useEffect(() => {
-    console.log("characterStatus: ", characterStatus);
+    // console.log("characterStatus: ", characterStatus);
   }, [characterStatus]);
 
   const isBoardLoading = isCategoriesLoading || isTodosLoading;

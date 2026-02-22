@@ -14,7 +14,7 @@ export function useDeleteTodoMutation(options = {}) {
       options?.onSuccess?.(data, variables, context);
     },
     onError: (error) => {
-      console.log("error: ", error);
+      // console.log("error: ", error);
     },
     ...options,
   });

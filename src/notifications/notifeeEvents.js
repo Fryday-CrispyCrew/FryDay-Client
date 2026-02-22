@@ -5,14 +5,14 @@ import {navigationRef} from "../shared/lib/navigationRef";
 
 export function registerNotifeeForegroundEvents() {
   return notifee.onForegroundEvent(async ({type, detail}) => {
-    console.log("foreground event: ", {type, detail});
+    // console.log("foreground event: ", {type, detail});
     if (type === EventType.PRESS) {
-      console.log("notify pressed");
+      // console.log("notify pressed");
       const data = detail.notification?.data;
       try {
         await logNotificationClick(data, "foreground");
       } catch (e) {
-        console.log("error: ", e);
+        // console.log("error: ", e);
       }
       if (data?.todoId && navigationRef.isReady()) {
         navigationRef.navigate("TodoDetail", {todoId: data.todoId});

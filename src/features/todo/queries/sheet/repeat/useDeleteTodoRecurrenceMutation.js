@@ -21,10 +21,10 @@ export function useDeleteTodoRecurrenceMutation(options = {}) {
       options?.onSuccess?.(data, variables, context);
     },
     onError: (error, variables, context) => {
-      console.log(
-        "delete todo recurrence error:",
-        error?.response?.data ?? error,
-      );
+      // console.log(
+      //   "delete todo recurrence error:",
+      //   error?.response?.data ?? error,
+      // );
       options?.onError?.(error, variables, context);
     },
     ...options,

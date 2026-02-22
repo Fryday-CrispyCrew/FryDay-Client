@@ -46,8 +46,8 @@ export default function FCMInitializer() {
         pushNotificationEnabled: enabled,
       });
 
-      console.log("FCM permission enabled:", enabled);
-      console.log("FCMtoken:", token, "deviceId:", deviceId);
+      // console.log("FCM permission enabled:", enabled);
+      // console.log("FCMtoken:", token, "deviceId:", deviceId);
 
       if (token && deviceId) {
         registerFcmTokenMutation.mutate({fcmToken: token, deviceId});

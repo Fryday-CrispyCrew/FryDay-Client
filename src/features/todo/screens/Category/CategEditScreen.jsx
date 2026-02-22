@@ -84,10 +84,10 @@ export default function CategEditScreen({navigation, route}) {
         navigation.goBack();
       },
       onError: (err) => {
-        console.log("[createCategory] error:", err);
-        console.log("[createCategory] message:", err?.message);
-        console.log("[createCategory] status:", err?.response?.status);
-        console.log("[createCategory] data:", err?.response?.data);
+        // console.log("[createCategory] error:", err);
+        // console.log("[createCategory] message:", err?.message);
+        // console.log("[createCategory] status:", err?.response?.status);
+        // console.log("[createCategory] data:", err?.response?.data);
       },
     });
 
@@ -100,10 +100,10 @@ export default function CategEditScreen({navigation, route}) {
         navigation.goBack();
       },
       onError: (err) => {
-        console.log("[updateCategory] error:", err);
-        console.log("[updateCategory] message:", err?.message);
-        console.log("[updateCategory] status:", err?.response?.status);
-        console.log("[updateCategory] data:", err?.response?.data);
+        // console.log("[updateCategory] error:", err);
+        // console.log("[updateCategory] message:", err?.message);
+        // console.log("[updateCategory] status:", err?.response?.status);
+        // console.log("[updateCategory] data:", err?.response?.data);
       },
     });
 
@@ -116,10 +116,10 @@ export default function CategEditScreen({navigation, route}) {
         navigation.goBack();
       },
       onError: (err) => {
-        console.log("[deleteCategory] error:", err);
-        console.log("[deleteCategory] message:", err?.message);
-        console.log("[deleteCategory] status:", err?.response?.status);
-        console.log("[deleteCategory] data:", err?.response?.data);
+        // console.log("[deleteCategory] error:", err);
+        // console.log("[deleteCategory] message:", err?.message);
+        // console.log("[deleteCategory] status:", err?.response?.status);
+        // console.log("[deleteCategory] data:", err?.response?.data);
       },
     });
 
@@ -177,7 +177,7 @@ export default function CategEditScreen({navigation, route}) {
 
           // ✅ 카테고리는 최소 3개 유지
           if (categoryCount <= 3) {
-            console.log("categorycount: ", categoryCount);
+            // console.log("categorycount: ", categoryCount);
             setTimeout(() => {
               openModal({
                 title: "알림",

@@ -14,10 +14,10 @@ export function useDeleteTodoAlarmMutation(options = {}) {
         queryClient.invalidateQueries({queryKey: sheetKeys.todoDetail(todoId)});
       queryClient.invalidateQueries({queryKey: ["home"]});
       options?.onSuccess?.(data, variables, context);
-      console.log("alarm delete success: ", data);
+      // console.log("alarm delete success: ", data);
     },
     onError: (error) => {
-      console.log("alarm delete error: ", error);
+      // console.log("alarm delete error: ", error);
     },
     ...options,
   });

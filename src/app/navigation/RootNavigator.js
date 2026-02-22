@@ -52,17 +52,17 @@ export default function RootNavigator() {
   if (!ready) return null;
 
   return (
-      <Stack.Navigator
-          id="root"
-          screenOptions={{headerShown: false}}
-          initialRouteName={initialRoute}
-      >
-        <Stack.Screen name="Auth" component={AuthStack} />
-        <Stack.Screen name="Naming" component={NamingStack} />
-        <Stack.Screen name="Consent" component={ConsentStack} />
-        <Stack.Screen name="Onboarding" component={OnboardingStack} />
-        <Stack.Screen name="Category" component={CategoryStack} />
-        <Stack.Screen name="Main" component={MainTabs} />
-      </Stack.Navigator>
+    <Stack.Navigator
+      id="root"
+      screenOptions={{headerShown: false}}
+      initialRouteName={initialRoute}
+    >
+      <Stack.Screen name="Auth" component={AuthStack} />
+      <Stack.Screen name="Naming" component={NamingStack} />
+      <Stack.Screen name="Consent" component={ConsentStack} />
+      <Stack.Screen name="Onboarding" component={OnboardingStack} />
+      <Stack.Screen name="Category" component={CategoryStack} />
+      <Stack.Screen name="Main" component={MainTabs} />
+    </Stack.Navigator>
   );
 }

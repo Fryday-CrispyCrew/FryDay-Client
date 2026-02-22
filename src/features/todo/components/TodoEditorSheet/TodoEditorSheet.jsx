@@ -297,7 +297,7 @@ const TodoEditorSheet = React.forwardRef(function TodoEditorSheet(
   ref,
 ) {
   useEffect(() => {
-    console.log("categories: ", categories);
+    // console.log("categories: ", categories);
   }, [categories]);
 
   const [editingText, setEditingText] = useState(initialValue ?? "");
@@ -433,7 +433,7 @@ const TodoEditorSheet = React.forwardRef(function TodoEditorSheet(
   }, [mode, numericTodoId, todoDetail]);
 
   useEffect(() => {
-    console.log("투두 단건 정보: ", todoDetail);
+    // console.log("투두 단건 정보: ", todoDetail);
   }, [todoDetail]);
 
   // ✅ 초기값 스냅샷 (단건조회 기준)
@@ -1128,12 +1128,12 @@ const TodoEditorSheet = React.forwardRef(function TodoEditorSheet(
             : Array.isArray(repeatPayload?.frequencyValues) &&
               repeatPayload.frequencyValues.length > 0);
 
-        console.log("repeatPayload.type: ", repeatPayload?.type);
-        console.log(
-          "Array.isArray(repeatPayload?.frequencyValues): ",
-          Array.isArray(repeatPayload?.frequencyValues),
-        );
-        console.log("repeatPayload.startDate: ", repeatPayload?.startDate);
+        // console.log("repeatPayload.type: ", repeatPayload?.type);
+        // console.log(
+        //   "Array.isArray(repeatPayload?.frequencyValues): ",
+        //   Array.isArray(repeatPayload?.frequencyValues),
+        // );
+        // console.log("repeatPayload.startDate: ", repeatPayload?.startDate);
         if (!hasRequired) {
           toast.show("반복 설정 정보를 다시 확인해주세요.");
           return;

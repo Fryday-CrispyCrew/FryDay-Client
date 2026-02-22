@@ -7,10 +7,10 @@ export const useRegisterFcmTokenMutation = () => {
     mutationFn: ({fcmToken, deviceId}) =>
       registerFcmToken({fcmToken, deviceId}),
     onSuccess: (data) => {
-      console.log("success", data);
+      // console.log("success", data);
     },
     onError: (err) => {
-      console.log("[FCM] token register failed", err?.response?.data ?? err);
+      // console.log("[FCM] token register failed", err?.response?.data ?? err);
     },
     // 보통 UI에 바로 영향이 없어서 invalidate는 필수 아님
     // onSuccess: () => {}

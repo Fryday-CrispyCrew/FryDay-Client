@@ -40,7 +40,7 @@ export default function AppText({
   const base = TYPO[variant] || "";
 
   if (!base) {
-    console.warn(`[AppText] Unknown variant: ${variant}`);
+    // console.warn(`[AppText] Unknown variant: ${variant}`);
   }
 
   const combinedClass = [base, className].filter(Boolean).join(" ");

@@ -20,7 +20,7 @@ export async function getDeviceId() {
 
     return null;
   } catch (e) {
-    console.log("[FCM] getDeviceId failed", e);
+    // console.log("[FCM] getDeviceId failed", e);
     return null;
   }
 }

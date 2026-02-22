@@ -4,6 +4,7 @@ import {
   Image,
   TouchableOpacity,
   useWindowDimensions,
+  Platform,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 
@@ -197,11 +198,15 @@ export default function LoginScreen({ navigation }) {
                 img: require("../../assets/png/login-naver.png"),
                 onPress: onPressNaver,
               },
-              {
-                label: "Apple",
-                img: require("../../assets/png/login-apple.png"),
-                onPress: onPressApple,
-              },
+              ...(Platform.OS === "ios"
+                ? [
+                    {
+                      label: "Apple",
+                      img: require("../../assets/png/login-apple.png"),
+                      onPress: onPressApple,
+                    },
+                  ]
+                : []),
             ].map((it) => (
               <View key={it.label} className="items-center">
                 <TouchableOpacity

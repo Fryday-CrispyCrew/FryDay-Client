@@ -35,15 +35,15 @@ export default function CategListScreen({navigation}) {
   const [listData, setListData] = useState([]);
 
   useEffect(() => {
-    console.log("data: ", serverCategories);
+    // console.log("data: ", serverCategories);
   }, [serverCategories]);
 
   if (isError) {
     // TanStack Query error는 보통 axios error일 가능성이 높음
-    console.log("[useCategoriesQuery] error:", error);
-    console.log("[useCategoriesQuery] message:", error?.message);
-    console.log("[useCategoriesQuery] status:", error?.response?.status);
-    console.log("[useCategoriesQuery] data:", error?.response?.data);
+    // console.log("[useCategoriesQuery] error:", error);
+    // console.log("[useCategoriesQuery] message:", error?.message);
+    // console.log("[useCategoriesQuery] status:", error?.response?.status);
+    // console.log("[useCategoriesQuery] data:", error?.response?.data);
   }
 
   // ✅ API 응답(data[].name, data[].colorHex, data[].displayOrder ...) → 화면용(item.label, item.color)로 변환
@@ -66,10 +66,10 @@ export default function CategListScreen({navigation}) {
   const {mutate: reorderCategories, isPending: isReordering} =
     useReorderCategoriesMutation({
       onError: (err) => {
-        console.log("[reorderCategories] error:", err);
-        console.log("[reorderCategories] message:", err?.message);
-        console.log("[reorderCategories] status:", err?.response?.status);
-        console.log("[reorderCategories] data:", err?.response?.data);
+        // console.log("[reorderCategories] error:", err);
+        // console.log("[reorderCategories] message:", err?.message);
+        // console.log("[reorderCategories] status:", err?.response?.status);
+        // console.log("[reorderCategories] data:", err?.response?.data);
       },
     });
 

@@ -297,7 +297,7 @@ const TodoCard = React.forwardRef(function TodoCard({
             todo.id === id ? {...todo, done: prevDone} : todo,
           ),
         );
-        console.log("toggle completion failed:", e);
+        // console.log("toggle completion failed:", e);
       }
     },
     [onToggleTodoCompletion],
@@ -370,7 +370,7 @@ const TodoCard = React.forwardRef(function TodoCard({
       try {
         await onReorderTodos?.({ids});
       } catch (e) {
-        console.log("reorder todos failed:", e);
+        // console.log("reorder todos failed:", e);
         // 실패 시 invalidate로 서버 데이터 다시 끌어오게 두는 전략이면 여기서 롤백 생략 가능
       }
     },

@@ -24,7 +24,7 @@ export function useAccountActions(navigation) {
   const logout = useCallback(async () => {
     try {
       const { deviceId, refreshToken } = await readAuthForLogout();
-      console.log("[logout] request", { deviceId, refreshToken });
+      // console.log("[logout] request", { deviceId, refreshToken });
 
       if (deviceId && refreshToken) {
         const res = await logoutAsync({
@@ -32,12 +32,12 @@ export function useAccountActions(navigation) {
           refreshToken,
           skipErrorToast: true,
         });
-        console.log("[logout] response", res);
+        // console.log("[logout] response", res);
       } else {
-        console.log("[logout] missing auth data");
+        // console.log("[logout] missing auth data");
       }
     } catch (e) {
-      console.log("[logout] error", e?.response?.data || e?.message);
+      // console.log("[logout] error", e?.response?.data || e?.message);
     }
 
     await clearAuthAndCache(queryClient);
@@ -49,10 +49,10 @@ export function useAccountActions(navigation) {
 
     try {
       const res = await deleteMyAccountAsync({ skipErrorToast: true });
-      console.log("[delete] response", res);
+      // console.log("[delete] response", res);
       ok = true;
     } catch (e) {
-      console.log("[delete] error", e?.response?.data || e?.message);
+      // console.log("[delete] error", e?.response?.data || e?.message);
     }
 
     try {

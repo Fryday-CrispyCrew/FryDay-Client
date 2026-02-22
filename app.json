@@ -40,8 +40,7 @@
       },
       "edgeToEdgeEnabled": true,
       "package": "com.bmbx08.FryDay",
-      "googleServicesFile": "./google-services.json",
-      "runtimeVersion": "1.0.0"
+      "googleServicesFile": "./google-services.json"
     },
     "web": {
       "favicon": "./assets/fryday-favicon.png",
@@ -137,9 +136,7 @@
         "projectId": "0585f789-8134-49ad-b995-6b872f05c64c"
       }
     },
-    "runtimeVersion": {
-      "policy": "appVersion"
-    },
+    "runtimeVersion": "1.0.0",
     "updates": {
       "url": "https://u.expo.dev/0585f789-8134-49ad-b995-6b872f05c64c"
     },

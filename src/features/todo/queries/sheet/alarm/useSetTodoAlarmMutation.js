@@ -14,10 +14,10 @@ export function useSetTodoAlarmMutation(options = {}) {
         queryClient.invalidateQueries({queryKey: sheetKeys.todoDetail(todoId)});
       queryClient.invalidateQueries({queryKey: ["home"]});
       options?.onSuccess?.(data, variables, context);
-      console.log("set alarm success: ", data);
+      // console.log("set alarm success: ", data);
     },
     onError: (error) => {
-      console.log("set alarm error: ", error?.response.data);
+      // console.log("set alarm error: ", error?.response.data);
     },
     ...options,
   });
