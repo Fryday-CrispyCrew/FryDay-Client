@@ -20,7 +20,18 @@
       "Bash(head:*)",
       "Bash(eas credentials:*)",
       "Bash(eas credentials:list:*)",
-      "Bash(eas build:list:*)"
+      "Bash(eas build:list:*)",
+      "Bash(cp:*)",
+      "Bash(cd:*)",
+      "Bash(cd /c/Users/bmbx0/Desktop/KevinProjects/FryDay-Client && eas build -p android --profile development 2>&1)",
+      "Bash(adb devices:*)",
+      "Bash(/c/Users/bmbx0/AppData/Local/Android/Sdk/platform-tools/adb.exe devices:*)",
+      "Bash(/c/Users/bmbx0/AppData/Local/Android/Sdk/platform-tools/adb.exe shell:*)",
+      "Bash(cd C:\\\\Users\\\\bmbx0\\\\Desktop\\\\KevinProjects\\\\FryDay-Client:*)",
+      "Bash(echo:*)",
+      "Bash(source:*)",
+      "Bash(cmd.exe:*)",
+      "Bash(powershell.exe:*)"
     ]
   }
 }
