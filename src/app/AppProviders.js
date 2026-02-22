@@ -19,6 +19,8 @@ import {BottomSheetModalProvider} from "@gorhom/bottom-sheet";
 import {CenterToastHost} from "../shared/components/toast/CenterToast";
 import ModalHost from "../shared/components/modal/ModalHost";
 import {navigationRef} from "../shared/lib/navigationRef";
+import {getColdStartNotificationPromise} from "../notifications/background/registerBackgroundHandlers";
+import {logNotificationClick} from "../notifications/lib/logNotificationClick";
 
 export default function AppProviders({children}) {
   const [fontsLoaded] = useFonts({
@@ -29,17 +31,18 @@ export default function AppProviders({children}) {
   });
 
   useEffect(() => {
-    // //기기 FCM 토큰 표시
-    // useEffect(() => {
-    //   (async () => {
-    //     try {
-    //       await getFcmToken();
-    //     } catch (e) {
-    //       console.log("getFcmToken error:", e);
-    //     }
-    //   })();
-    // }, []);
+    // Cold start 알림 클릭 로그: FCM 알림과 Notifee 알림 두 경로 모두 커버.
+    // HomeScreen/FCMInitializer에 의존하지 않고 앱 마운트 즉시 처리.
+    getColdStartNotificationPromise()
+      .then((data) => {
+        if (data) {
+          logNotificationClick(data, "cold_start");
+        }
+      })
+      .catch(() => {});
+  }, []);
 
+  useEffect(() => {
     // 네트워크 상태 변화 감지
     const unsubscribeNet = NetInfo.addEventListener((state) => {
       onlineManager.setOnline(Boolean(state.isConnected));

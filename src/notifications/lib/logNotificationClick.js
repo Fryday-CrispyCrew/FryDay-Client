@@ -13,6 +13,6 @@ export async function logNotificationClick(data, trigger) {
       notification_id: data?.notificationId ?? null,
     });
   } catch (e) {
-    // Analytics 실패가 앱 동작에 영향을 주지 않도록 무시
+    console.error("[Analytics] notification_click 실패:", e);
   }
 }
