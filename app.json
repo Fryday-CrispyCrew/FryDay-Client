@@ -39,7 +39,7 @@
         "backgroundColor": "#ffffff"
       },
       "edgeToEdgeEnabled": true,
-      "package": "com.bmbx08.FryDay",
+      "package": "com.crispycrew.fryday",
       "googleServicesFile": "./google-services.json"
     },
     "web": {
