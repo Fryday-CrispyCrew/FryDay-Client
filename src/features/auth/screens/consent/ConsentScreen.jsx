@@ -1,25 +1,25 @@
-import React, { useCallback, useEffect, useMemo, useState } from "react";
-import { Pressable, ScrollView, TouchableOpacity, View } from "react-native";
-import { SafeAreaView } from "react-native-safe-area-context";
-import { useNavigation, useRoute } from "@react-navigation/native";
+import React, {useCallback, useEffect, useMemo, useState} from "react";
+import {Pressable, ScrollView, TouchableOpacity, View} from "react-native";
+import {SafeAreaView, useSafeAreaInsets} from "react-native-safe-area-context";
+import {useNavigation, useRoute} from "@react-navigation/native";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 
 import NamingArrow from "../../assets/svg/naming-arrow.svg";
 import AppText from "../../../../shared/components/AppText";
-import { deleteTokens } from "../../../../shared/lib/storage/tokenStorage";
+import {deleteTokens} from "../../../../shared/lib/storage/tokenStorage";
 
 import CheckOn from "../../assets/svg/checkbox-on.svg";
 import CheckOff from "../../assets/svg/checkbox-off.svg";
 
-import { useCreateConsentMutation } from "../../queries/consent/useCreateConsentMutation"; // 경로만 프로젝트에 맞게
+import {useCreateConsentMutation} from "../../queries/consent/useCreateConsentMutation";
 import {
   STEP_KEY,
   ONBOARDING_STEP,
 } from "../../../../shared/constants/onboardingStep";
-import { TERMS_DATA } from "../../../../shared/constants/terms";
+import {TERMS_DATA} from "../../../../shared/constants/terms";
 
 // 체크 버튼
-function CheckIcon({ checked }) {
+function CheckIcon({checked}) {
   return checked ? (
     <CheckOn width={24} height={24} />
   ) : (
@@ -28,7 +28,7 @@ function CheckIcon({ checked }) {
 }
 
 // 버튼 + 라벨
-function CheckRow({ checked, onPress, label }) {
+function CheckRow({checked, onPress, label}) {
   return (
     <Pressable onPress={onPress} className="flex-row items-center">
       <CheckIcon checked={checked} />
@@ -40,7 +40,7 @@ function CheckRow({ checked, onPress, label }) {
 }
 
 // 동의 컴포넌트
-function TermsBox({ title, body }) {
+function TermsBox({title, body}) {
   return (
     <View>
       <AppText variant="M500" className="text-gr500 mb-2">
@@ -50,8 +50,8 @@ function TermsBox({ title, body }) {
       <View className="relative rounded-2xl bg-gr">
         <ScrollView
           className="px-4 py-4"
-          contentContainerStyle={{ paddingBottom: 24 }}
-          style={{ height: 120 }}
+          contentContainerStyle={{paddingBottom: 24}}
+          style={{height: 120}}
           showsVerticalScrollIndicator={false}
         >
           <AppText variant="L400" className="text-bk leading-[1.5]">
@@ -66,6 +66,8 @@ function TermsBox({ title, body }) {
 export default function ConsentScreen() {
   const navigation = useNavigation();
   const route = useRoute();
+  const insets = useSafeAreaInsets();
+
   const isNewUser = route?.params?.isNewUser ?? false;
 
   const [agreeAll, setAgreeAll] = useState(false);
@@ -84,7 +86,7 @@ export default function ConsentScreen() {
     await AsyncStorage.removeItem(STEP_KEY);
 
     const rootNav = navigation.getParent("root") ?? navigation.getParent();
-    rootNav?.reset({ index: 0, routes: [{ name: "Auth" }] });
+    rootNav?.reset({index: 0, routes: [{name: "Auth"}]});
   }, [navigation, isNewUser]);
 
   const toggleAll = useCallback(() => {
@@ -98,7 +100,7 @@ export default function ConsentScreen() {
   useEffect(() => {
     const nextAll = agreeTerms && agreePrivacy && agreeMarketing;
     if (agreeAll !== nextAll) setAgreeAll(nextAll);
-  }, [agreeTerms, agreePrivacy, agreeMarketing]);
+  }, [agreeTerms, agreePrivacy, agreeMarketing, agreeAll]);
 
   const termsText = useMemo(
     () => TERMS_DATA.find((v) => v.key === "service")?.content ?? "",
@@ -110,8 +112,30 @@ export default function ConsentScreen() {
     [],
   );
 
-  const { mutateAsync: setConsent, isPending: isSubmitting } =
+  const {mutateAsync: setConsent, isPending: isSubmitting} =
     useCreateConsentMutation();
+
+  const onNext = useCallback(async () => {
+    await setConsent({
+      termsRequired: agreeTerms,
+      privacyRequired: agreePrivacy,
+      marketingOptional: agreeMarketing,
+    });
+
+    await AsyncStorage.setItem(STEP_KEY, ONBOARDING_STEP.NEEDS_NICKNAME);
+
+    navigation.navigate("Naming", {
+      isNewUser,
+      consent: {agreeTerms, agreePrivacy, agreeMarketing},
+    });
+  }, [
+    setConsent,
+    agreeTerms,
+    agreePrivacy,
+    agreeMarketing,
+    navigation,
+    isNewUser,
+  ]);
 
   return (
     <SafeAreaView className="flex-1 bg-wt">
@@ -128,9 +152,14 @@ export default function ConsentScreen() {
         </TouchableOpacity>
       </View>
 
-      <View
-        className="flex-1 px-5 gap-4"
-        contentContainerStyle={{ paddingBottom: 0 }}
+      {/* 본문 스크롤 */}
+      <ScrollView
+        className="flex-1 px-5"
+        showsVerticalScrollIndicator={false}
+        contentContainerStyle={{
+          paddingTop: 0,
+          paddingBottom: 16 + 56 + 16 + (insets.bottom || 0),
+        }}
       >
         <View className="mt-6">
           <AppText variant="H2" className="text-bk leading-8">
@@ -173,39 +202,31 @@ export default function ConsentScreen() {
             label="마케팅 정보 수신 동의"
           />
         </View>
+      </ScrollView>
 
-        <View className="mt-10">
-          <Pressable
-            disabled={!canNext || isSubmitting}
-            onPress={async () => {
-              await setConsent({
-                termsRequired: agreeTerms,
-                privacyRequired: agreePrivacy,
-                marketingOptional: agreeMarketing,
-              });
-
-              await AsyncStorage.setItem(
-                STEP_KEY,
-                ONBOARDING_STEP.NEEDS_NICKNAME,
-              );
-
-              navigation.navigate("Naming", {
-                isNewUser,
-                consent: { agreeTerms, agreePrivacy, agreeMarketing },
-              });
-            }}
-            className={`h-14 rounded-2xl items-center justify-center ${
-              canNext && !isSubmitting ? "bg-bk" : "bg-gr200"
-            }`}
+      {/* 하단 고정 버튼 */}
+      <View
+        className="px-5"
+        style={{
+          paddingTop: 12,
+          // paddingBottom: (insets.bottom || 0) + 12,
+          paddingVertical: 12,
+        }}
+      >
+        <Pressable
+          disabled={!canNext || isSubmitting}
+          onPress={onNext}
+          className={`h-14 rounded-2xl items-center justify-center ${
+            canNext && !isSubmitting ? "bg-bk" : "bg-gr200"
+          }`}
+        >
+          <AppText
+            variant="L600"
+            className={canNext && !isSubmitting ? "text-wt" : "text-gr300"}
           >
-            <AppText
-              variant="L600"
-              className={canNext && !isSubmitting ? "text-wt" : "text-gr300"}
-            >
-              다음으로
-            </AppText>
-          </Pressable>
-        </View>
+            다음으로
+          </AppText>
+        </Pressable>
       </View>
     </SafeAreaView>
   );
