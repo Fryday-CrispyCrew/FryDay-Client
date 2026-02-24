@@ -1,4 +1,4 @@
-package com.bmbx08.FryDay
+package com.crispycrew.fryday
 
 import android.app.Application
 import android.content.res.Configuration

@@ -87,9 +87,9 @@ android {
     buildToolsVersion rootProject.ext.buildToolsVersion
     compileSdk rootProject.ext.compileSdkVersion
 
-    namespace 'com.bmbx08.FryDay'
+    namespace 'com.crispycrew.fryday'
     defaultConfig {
-        applicationId 'com.bmbx08.FryDay'
+        applicationId 'com.crispycrew.fryday'
         minSdkVersion rootProject.ext.minSdkVersion
         targetSdkVersion rootProject.ext.targetSdkVersion
         versionCode 1

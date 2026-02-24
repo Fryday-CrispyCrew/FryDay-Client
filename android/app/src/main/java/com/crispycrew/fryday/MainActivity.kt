@@ -1,4 +1,4 @@
-package com.bmbx08.FryDay
+package com.crispycrew.fryday
 import expo.modules.splashscreen.SplashScreenManager
 
 import android.os.Build
