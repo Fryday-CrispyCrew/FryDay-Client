@@ -7,15 +7,15 @@
   "client": [
     {
       "client_info": {
-        "mobilesdk_app_id": "1:703145263808:android:ec6649c3c7e357f538a325",
+        "mobilesdk_app_id": "1:703145263808:android:b24e5cff1981d7f338a325",
         "android_client_info": {
-          "package_name": "com.bmbx08.FryDay"
+          "package_name": "com.crispycrew.fryday"
         }
       },
       "oauth_client": [],
       "api_key": [
         {
-          "current_key": "AIzaSyAiuM99V9I4bQrDrk3DodeQyBrxN8K3fY8"
+          "current_key": "AIzaSyAES06TS9TUkcvLFPW3mNsbqAHRkWicYow"
         }
       ],
       "services": {
