@@ -16,7 +16,7 @@
     "ios": {
       "supportsTablet": true,
       "googleServicesFile": "./GoogleService-Info.plist",
-      "bundleIdentifier": "com.crispycrew.fryday.qa",
+      "bundleIdentifier": "com.crispycrew.fryday",
       "infoPlist": {
         "ITSAppUsesNonExemptEncryption": false,
         "NSUserTrackingUsageDescription": "사용자 관심에 맞는 광고 제공 및 서비스 운영 지원을 위해 사용됩니다.",
