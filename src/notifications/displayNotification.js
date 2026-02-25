@@ -14,7 +14,7 @@ export async function displayTodoNotification({title, body, data}) {
       pressAction: {
         id: "default",
       },
-      smallIcon: "ic_notification",
+      smallIcon: "notification_icon",
       color: colors.or,
     },
 
