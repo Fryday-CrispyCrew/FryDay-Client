@@ -28,6 +28,10 @@
       "appleTeamId": "4378PR9BBA",
       "buildNumber": "14"
     },
+    "notification": {
+      "icon": "./assets/ic_notification.png",
+      "color": "#FF5B22"
+    },
     "android": {
       "splash": {
         "image": "./assets/fryday-splash-logo7.png",
