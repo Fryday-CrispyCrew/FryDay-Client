@@ -1,21 +1,16 @@
-import React, {
-  useMemo,
-  useState,
-  useEffect,
-  useCallback,
-  useRef,
-} from "react";
+import React, { useMemo, useState, useEffect, useCallback } from "react";
 import {
   View,
   Image,
   TouchableOpacity,
-  Pressable,
   useWindowDimensions,
 } from "react-native";
 import * as SecureStore from "expo-secure-store";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { Gesture, GestureDetector } from "react-native-gesture-handler";
+import { CommonActions } from "@react-navigation/native";
+import analytics from "@react-native-firebase/analytics";
 
 import AppText from "../../../../shared/components/AppText";
 import SkipIcon from "../../assets/svg/skip-arrow.svg";
@@ -23,10 +18,7 @@ import {
   ONBOARDING_STEP,
   STEP_KEY,
 } from "../../../../shared/constants/onboardingStep";
-
 import { useCompleteOnboardingMutation } from "../../queries/onboarding/useCompleteOnboardingMutation";
-import { CommonActions } from "@react-navigation/native";
-import analytics from "@react-native-firebase/analytics";
 
 const PAGES = [
   {
@@ -61,13 +53,22 @@ const PAGES = [
   },
 ];
 
+function getRootNav(navigation) {
+  let nav = navigation;
+  while (nav?.getParent?.()) nav = nav.getParent();
+  return nav;
+}
+
 export default function OnboardingScreen({ navigation }) {
   const { width, height } = useWindowDimensions();
-
   const [idx, setIdx] = useState(0);
 
   const bottomPadding = useMemo(() => Math.max(20, height * 0.035), [height]);
   const overlayHeight = useMemo(() => Math.max(96, height * 0.14), [height]);
+  const imageTopPadding = useMemo(
+    () => Math.min(28, Math.max(12, Math.round(height * 0.022))),
+    [height],
+  );
 
   const page = PAGES[idx];
   const isFirst = idx === 0;
@@ -80,20 +81,11 @@ export default function OnboardingScreen({ navigation }) {
     AsyncStorage.setItem(STEP_KEY, ONBOARDING_STEP.NEEDS_ONBOARDING);
   }, []);
 
-  function getRootNav(navigation) {
-    let nav = navigation;
-    while (nav?.getParent?.()) nav = nav.getParent();
-    return nav;
-  }
-
   const onDone = useCallback(async () => {
     try {
       await analytics().logEvent("onboarding_complete");
-      const res = await completeOnboardingAsync();
-      // console.log("[completeOnboarding] OK", res);
-    } catch (e) {
-      // console.log("[completeOnboarding] ERR", e?.status, e?.code, e?.message);
-    }
+      await completeOnboardingAsync();
+    } catch (e) {}
 
     await Promise.allSettled([
       SecureStore.setItemAsync("hasOnboarded", "true"),
@@ -118,26 +110,28 @@ export default function OnboardingScreen({ navigation }) {
     setIdx((prev) => Math.max(prev - 1, 0));
   }, []);
 
-  const onPressSide = useCallback(
-    (e) => {
-      const x = e.nativeEvent.locationX;
-      const mid = width / 2;
-      if (x < mid) {
-        if (!isFirst) onPrev();
-      } else {
-        if (!isLast) onNext();
-      }
-    },
-    [width, isFirst, isLast, onPrev, onNext],
-  );
-
-  const swipe = useMemo(() => {
-    const SWIPE_MIN = 30;
-    return Gesture.Pan()
+  const tap = useMemo(() => {
+    return Gesture.Tap()
       .runOnJS(true)
       .onEnd((e) => {
+        const mid = width / 2;
+        if (e.x < mid) {
+          if (!isFirst) onPrev();
+        } else {
+          if (!isLast) onNext();
+        }
+      });
+  }, [width, isFirst, isLast, onPrev, onNext]);
+
+  // Swipe: "가로 스와이프"만 인식하도록 필터링
+  const swipe = useMemo(() => {
+    return Gesture.Pan()
+      .runOnJS(true)
+      .activeOffsetX([-20, 20])
+      .failOffsetY([-15, 15])
+      .onEnd((e) => {
         const dx = e.translationX;
-        if (Math.abs(dx) < SWIPE_MIN) return;
+        if (Math.abs(dx) < 30) return;
         if (dx < 0) {
           if (!isLast) onNext();
         } else {
@@ -146,9 +140,7 @@ export default function OnboardingScreen({ navigation }) {
       });
   }, [isFirst, isLast, onNext, onPrev]);
 
-  const imageTopPadding = useMemo(() => {
-    return Math.min(28, Math.max(12, Math.round(height * 0.022)));
-  }, [height]);
+  const gesture = useMemo(() => Gesture.Race(swipe, tap), [swipe, tap]);
 
   return (
     <SafeAreaView edges={["top", "left", "right"]} className="flex-1 bg-wt">
@@ -169,8 +161,8 @@ export default function OnboardingScreen({ navigation }) {
         )}
       </View>
 
-      <GestureDetector gesture={swipe}>
-        <Pressable className="flex-1" onPress={onPressSide}>
+      <GestureDetector gesture={gesture}>
+        <View className="flex-1">
           <View
             className="flex-row justify-center items-center gap-2"
             style={{ marginTop: Math.max(12, height * 0.015) }}
@@ -210,7 +202,7 @@ export default function OnboardingScreen({ navigation }) {
               resizeMode="contain"
             />
           </View>
-        </Pressable>
+        </View>
       </GestureDetector>
 
       {isLast ? (
