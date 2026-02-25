@@ -47,6 +47,8 @@
       "bundler": "metro"
     },
     "plugins": [
+      "./plugins/withAndroidNotificationIcon",
+      "./plugins/withNotifeeAndroidRepo",
       "expo-font",
       "expo-secure-store",
       [
