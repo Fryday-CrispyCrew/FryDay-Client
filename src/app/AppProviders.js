@@ -14,6 +14,7 @@ import {queryClient} from "../shared/lib/queryClient";
 import {useFonts} from "expo-font";
 import * as SplashScreen from "expo-splash-screen";
 import {GestureHandlerRootView} from "react-native-gesture-handler";
+import {ReducedMotionConfig, ReduceMotion} from "react-native-reanimated";
 import {SafeAreaProvider} from "react-native-safe-area-context";
 import {BottomSheetModalProvider} from "@gorhom/bottom-sheet";
 import {CenterToastHost} from "../shared/components/toast/CenterToast";
@@ -72,6 +73,7 @@ export default function AppProviders({children}) {
 
   return (
     <GestureHandlerRootView style={{flex: 1}}>
+      <ReducedMotionConfig mode={ReduceMotion.Never} />
       {/* ⭐ 제일 바깥 */}
       <SafeAreaProvider>
         <BottomSheetModalProvider>
