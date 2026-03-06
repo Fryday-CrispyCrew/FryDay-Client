@@ -340,8 +340,6 @@ export default function HomeScreen({navigation, route}) {
     setBubbleText(pickRandom(pool, ""));
   }, [characterStatus?.status, characterUpdatedAt]);
 
-  const shouldRenderBack = lottieKey === "caseE1" || lottieKey === "caseE2";
-
   // ✅ TodoCard가 쓰는 형태로 변환 + displayOrder 정렬
   const todos = useMemo(() => {
     const arr = Array.isArray(rawTodos) ? rawTodos : [];
@@ -518,28 +516,12 @@ export default function HomeScreen({navigation, route}) {
                     {isCharacterBusy && showSkeleton ? (
                       <CharacterSkeleton />
                     ) : (
-                      <>
-                        {shouldRenderBack && (
-                          <LottieView
-                            source={
-                              lottieKey === "caseE1"
-                                ? TodoLottie.caseE1Back
-                                : TodoLottie.caseE2Back
-                            }
-                            autoPlay
-                            loop={false}
-                            style={styles.lottie}
-                          />
-                        )}
-
-                        {/* 메인 캐릭터 */}
-                        <LottieView
-                          source={TodoLottie[lottieKey]}
-                          autoPlay
-                          loop={false}
-                          style={styles.lottie}
-                        />
-                      </>
+                      <LottieView
+                        source={TodoLottie[lottieKey]}
+                        autoPlay
+                        loop={false}
+                        style={styles.lottie}
+                      />
                     )}
                   </Pressable>
                 </View>
