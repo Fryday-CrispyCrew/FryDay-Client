@@ -144,21 +144,22 @@ export default function OnboardingScreen({ navigation }) {
 
   return (
     <SafeAreaView edges={["top", "left", "right"]} className="flex-1 bg-wt">
-      <View className="px-5 pt-4 items-end">
-        {!isLast ? (
-          <TouchableOpacity
-            onPress={onDone}
-            activeOpacity={0.5}
-            className="flex-row items-center gap-1"
-          >
-            <AppText variant="H3" className="text-bk">
-              Skip
-            </AppText>
-            <SkipIcon />
-          </TouchableOpacity>
-        ) : (
-          <View style={{ height: 24 }} />
-        )}
+      <View
+        className="px-5 pt-4 items-end"
+        style={{ minHeight: 44, justifyContent: "center" }}
+      >
+        <TouchableOpacity
+          onPress={isLast ? undefined : onDone}
+          activeOpacity={0.5}
+          className="flex-row items-center gap-1"
+          style={{ opacity: isLast ? 0 : 1 }}
+          disabled={isLast}
+        >
+          <AppText variant="H3" className="text-bk">
+            Skip
+          </AppText>
+          <SkipIcon />
+        </TouchableOpacity>
       </View>
 
       <GestureDetector gesture={gesture}>
