@@ -137,7 +137,7 @@ export default function CalendarScreen({ navigation }) {
       const today = dayjs();
 
       const startDate = monthStart.format("YYYY-MM-DD");
-      const endDate = monthEnd.isSame(today, "month")
+      const endDate = currentDate.isSame(today, "month")
         ? today.format("YYYY-MM-DD")
         : monthEnd.format("YYYY-MM-DD");
 
