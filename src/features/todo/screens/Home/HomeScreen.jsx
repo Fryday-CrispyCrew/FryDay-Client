@@ -1,5 +1,11 @@
 // src/features/todo/screens/Home/HomeScreen.jsx
-import React, {useCallback, useEffect, useMemo, useRef, useState} from "react";
+import React, {
+  useCallback,
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
+} from "react";
 import {
   View,
   StyleSheet,
@@ -9,10 +15,10 @@ import {
   Pressable,
   Image,
 } from "react-native";
-import {Gesture, GestureDetector} from "react-native-gesture-handler";
-import {SafeAreaView} from "react-native-safe-area-context";
+import { Gesture, GestureDetector } from "react-native-gesture-handler";
+import { SafeAreaView } from "react-native-safe-area-context";
 import LottieView from "lottie-react-native";
-import {TodoLottie} from "../../assets/lottie"; // HomeScreen 기준 상대경로 유지
+import { TodoLottie } from "../../assets/lottie"; // HomeScreen 기준 상대경로 유지
 import AppText from "../../../../shared/components/AppText";
 import TodayIcon from "../../assets/svg/Today.svg";
 import CategoryIcon from "../../assets/svg/Category.svg";
@@ -21,27 +27,27 @@ import ErrorImage from "../../../../shared/assets/png/Error.png";
 import TodoCard from "../../components/TodoCard";
 import CharacterSkeleton from "../../components/CharacterSkeleton";
 import TodoEditorSheet from "../../components/TodoEditorSheet/TodoEditorSheet";
-import {useTodoEditorController} from "../../hooks/useTodoEditorController";
+import { useTodoEditorController } from "../../hooks/useTodoEditorController";
 
-import {useHomeTodosQuery} from "../../queries/home/useHomeTodosQuery";
-import {useCategoriesQuery} from "../../queries/category/useCategoriesQuery";
-import {useTodoCharacterStatusQuery} from "../../queries/home/useTodoCharacterStatusQuery";
+import { useHomeTodosQuery } from "../../queries/home/useHomeTodosQuery";
+import { useCategoriesQuery } from "../../queries/category/useCategoriesQuery";
+import { useTodoCharacterStatusQuery } from "../../queries/home/useTodoCharacterStatusQuery";
 
-import {useCreateTodoMutation} from "../../queries/sheet/useCreateTodoMutation";
-import {useMoveTodoTomorrowMutation} from "../../queries/home/useMoveTodoTomorrowMutation";
-import {useMoveTodoTodayMutation} from "../../queries/home/useMoveTodoTodayMutation";
-import {useDeleteTodoMutation} from "../../queries/home/useDeleteTodoMutation";
-import {useToggleTodoCompletionMutation} from "../../queries/home/useToggleTodoCompletionMutation";
-import {useReorderHomeTodosMutation} from "../../queries/home/useReorderHomeTodosMutation";
-import {useDeleteRecurrenceTodosMutation} from "../../queries/home/useDeleteRecurrenceTodosMutation";
+import { useCreateTodoMutation } from "../../queries/sheet/useCreateTodoMutation";
+import { useMoveTodoTomorrowMutation } from "../../queries/home/useMoveTodoTomorrowMutation";
+import { useMoveTodoTodayMutation } from "../../queries/home/useMoveTodoTodayMutation";
+import { useDeleteTodoMutation } from "../../queries/home/useDeleteTodoMutation";
+import { useToggleTodoCompletionMutation } from "../../queries/home/useToggleTodoCompletionMutation";
+import { useReorderHomeTodosMutation } from "../../queries/home/useReorderHomeTodosMutation";
+import { useDeleteRecurrenceTodosMutation } from "../../queries/home/useDeleteRecurrenceTodosMutation";
 
-import {useModalStore} from "../../../../shared/stores/modal/modalStore";
+import { useModalStore } from "../../../../shared/stores/modal/modalStore";
 import colors from "../../../../shared/styles/colors";
 import TodoBoardSection from "../../components/TodoBoardSection";
 import FCMInitializer from "../../../../notifications/components/FCMInitializer";
 
-const {width, height} = Dimensions.get("window");
-import {useFocusEffect} from "@react-navigation/native";
+const { width, height } = Dimensions.get("window");
+import { useFocusEffect } from "@react-navigation/native";
 
 import Dotted from "../../../calendar/assets/svg/Dotted.svg";
 
@@ -107,7 +113,7 @@ function getLottieKeyFromStatus(status) {
 //   );
 // }
 
-function SpeechBubble({text}) {
+function SpeechBubble({ text }) {
   if (!text) return null;
 
   return (
@@ -210,8 +216,8 @@ function pickRandomDifferent(list, prev, fallback = "") {
   return next ?? fallback;
 }
 
-export default function HomeScreen({navigation, route}) {
-  const {open, close} = useModalStore();
+export default function HomeScreen({ navigation, route }) {
+  const { open, close } = useModalStore();
 
   const [shouldInitNotifications, setShouldInitNotifications] = useState(false);
   useEffect(() => {
@@ -300,7 +306,7 @@ export default function HomeScreen({navigation, route}) {
     isLoading: isCharacterLoading, // ✅ 추가
     isFetching: isCharacterFetching, // (선택)
     isError: isCharacterError,
-  } = useTodoCharacterStatusQuery({date}, {enabled: isHomeTodosFetched});
+  } = useTodoCharacterStatusQuery({ date }, { enabled: isHomeTodosFetched });
 
   useEffect(() => {
     // console.log("characterStatus: ", characterStatus);
@@ -360,25 +366,26 @@ export default function HomeScreen({navigation, route}) {
   }, [rawTodos]);
 
   // ✅ 투두 생성 mutation 연결
-  const {mutateAsync: createTodoMutateAsync} = useCreateTodoMutation();
+  const { mutateAsync: createTodoMutateAsync } = useCreateTodoMutation();
   // ✅ "내일하기" mutation 연결
-  const {mutateAsync: moveTodoTomorrowMutateAsync} =
+  const { mutateAsync: moveTodoTomorrowMutateAsync } =
     useMoveTodoTomorrowMutation();
   // ✅ "오늘하기" mutation 연결
-  const {mutateAsync: moveTodoTodayMutateAsync} = useMoveTodoTodayMutation();
-  const {mutateAsync: deleteTodoMutateAsync} = useDeleteTodoMutation();
-  const {mutateAsync: deleteRecurrenceTodosMutateAsync} =
+  const { mutateAsync: moveTodoTodayMutateAsync } = useMoveTodoTodayMutation();
+  const { mutateAsync: deleteTodoMutateAsync } = useDeleteTodoMutation();
+  const { mutateAsync: deleteRecurrenceTodosMutateAsync } =
     useDeleteRecurrenceTodosMutation();
-  const {mutateAsync: toggleCompletionMutateAsync} =
+  const { mutateAsync: toggleCompletionMutateAsync } =
     useToggleTodoCompletionMutation();
-  const {mutateAsync: reorderTodosMutateAsync} = useReorderHomeTodosMutation();
+  const { mutateAsync: reorderTodosMutateAsync } =
+    useReorderHomeTodosMutation();
 
   // ✅ 추가: 현재 편집 중인 todoId
   const [selectedTodoId, setSelectedTodoId] = useState(null);
 
   const editor = useTodoEditorController({
     categories, // ✅ 서버 카테고리로 교체
-    onSubmitTodo: async ({todo, text, categoryId}) => {
+    onSubmitTodo: async ({ todo, text, categoryId }) => {
       // ✅ create 모드
       if (!todo?.id) {
         // 바텀시트 투두 생성 API: description, categoryId로 생성
@@ -491,7 +498,7 @@ export default function HomeScreen({navigation, route}) {
           </TouchableOpacity>
         </View>
       </View>
-      <View style={{flex: 1}}>
+      <View style={{ flex: 1 }}>
         <TodoBoardSection
           navigation={navigation}
           date={date}
@@ -528,7 +535,7 @@ export default function HomeScreen({navigation, route}) {
               </GestureDetector>
               {/* 구분선 */}
               <View>
-                <Dotted style={{width: "100%"}} height={1} />
+                <Dotted style={{ width: "100%" }} height={1} />
               </View>
             </>
           }
@@ -593,7 +600,6 @@ const styles = StyleSheet.create({
     maxHeight: "80%", // ✅ 핵심
     // marginTop: "8%",
     // borderWidth: 1,
-    maxHeight: "100%",
   },
   errorFullScreen: {
     flex: 1,
@@ -749,7 +755,7 @@ const bubbleStyles = StyleSheet.create({
     borderRightWidth: 1,
     borderBottomWidth: 1,
     borderColor: colors.gr200,
-    transform: [{rotate: "45deg"}],
+    transform: [{ rotate: "45deg" }],
     borderBottomRightRadius: 2,
   },
 });
