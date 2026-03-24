@@ -136,16 +136,10 @@ export default function CalendarScreen({ navigation }) {
       const monthEnd = currentDate.endOf("month");
       const today = dayjs();
 
-      let startDate = monthStart.format("YYYY-MM-DD");
-      let endDate = (monthEnd.isAfter(today, "day") ? today : monthEnd).format(
-        "YYYY-MM-DD",
-      );
-
-      if (dayjs(startDate).isAfter(dayjs(endDate), "day")) {
-        const tmp = startDate;
-        startDate = endDate;
-        endDate = tmp;
-      }
+      const startDate = monthStart.format("YYYY-MM-DD");
+      const endDate = monthEnd.isSame(today, "month")
+        ? today.format("YYYY-MM-DD")
+        : monthEnd.format("YYYY-MM-DD");
 
       let alive = true;
 
