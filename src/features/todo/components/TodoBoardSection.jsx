@@ -1,26 +1,32 @@
 // src/features/todo/components/TodoBoardSection.jsx
-import React, {useMemo, useState, useCallback, useRef, useEffect} from "react";
-import {StyleSheet, View} from "react-native";
-import {NestableScrollContainer} from "react-native-draggable-flatlist";
+import React, {
+  useMemo,
+  useState,
+  useCallback,
+  useRef,
+  useEffect,
+} from "react";
+import { StyleSheet, View } from "react-native";
+import { NestableScrollContainer } from "react-native-draggable-flatlist";
 import TodoCard from "./TodoCard";
 import TodoEditorSheet from "./TodoEditorSheet/TodoEditorSheet";
 import TodoBoardSkeleton from "./TodoBoardSkeleton";
-import {useTodoEditorController} from "../hooks/useTodoEditorController";
+import { useTodoEditorController } from "../hooks/useTodoEditorController";
 
-import {useCategoriesQuery} from "../queries/category/useCategoriesQuery";
-import {useHomeTodosQuery} from "../queries/home/useHomeTodosQuery";
+import { useCategoriesQuery } from "../queries/category/useCategoriesQuery";
+import { useHomeTodosQuery } from "../queries/home/useHomeTodosQuery";
 
-import {useCreateTodoMutation} from "../queries/sheet/useCreateTodoMutation";
-import {useMoveTodoTomorrowMutation} from "../queries/home/useMoveTodoTomorrowMutation";
-import {useMoveTodoTodayMutation} from "../queries/home/useMoveTodoTodayMutation";
-import {useDeleteTodoMutation} from "../queries/home/useDeleteTodoMutation";
-import {useToggleTodoCompletionMutation} from "../queries/home/useToggleTodoCompletionMutation";
-import {useReorderHomeTodosMutation} from "../queries/home/useReorderHomeTodosMutation";
-import {useDeleteRecurrenceTodosMutation} from "../queries/home/useDeleteRecurrenceTodosMutation";
+import { useCreateTodoMutation } from "../queries/sheet/useCreateTodoMutation";
+import { useMoveTodoTomorrowMutation } from "../queries/home/useMoveTodoTomorrowMutation";
+import { useMoveTodoTodayMutation } from "../queries/home/useMoveTodoTodayMutation";
+import { useDeleteTodoMutation } from "../queries/home/useDeleteTodoMutation";
+import { useToggleTodoCompletionMutation } from "../queries/home/useToggleTodoCompletionMutation";
+import { useReorderHomeTodosMutation } from "../queries/home/useReorderHomeTodosMutation";
+import { useDeleteRecurrenceTodosMutation } from "../queries/home/useDeleteRecurrenceTodosMutation";
 
 import AsyncStorage from "@react-native-async-storage/async-storage";
-import {useModalStore} from "../../../shared/stores/modal/modalStore";
-import {toast} from "../../../shared/components/toast/CenterToast";
+import { useModalStore } from "../../../shared/stores/modal/modalStore";
+import { toast } from "../../../shared/components/toast/CenterToast";
 
 export default function TodoBoardSection({
   navigation,
@@ -28,12 +34,10 @@ export default function TodoBoardSection({
   isViewingToday,
   ListHeaderComponent,
 }) {
-  const {open, close} = useModalStore();
+  const { open, close } = useModalStore();
 
-  const {
-    data: rawCategories = [],
-    isLoading: isCategoriesLoading,
-  } = useCategoriesQuery();
+  const { data: rawCategories = [], isLoading: isCategoriesLoading } =
+    useCategoriesQuery();
   const categories = useMemo(() => {
     const arr = Array.isArray(rawCategories) ? rawCategories : [];
     return arr
@@ -46,10 +50,7 @@ export default function TodoBoardSection({
       }));
   }, [rawCategories]);
 
-  const {
-    data: rawTodos = [],
-    isLoading: isTodosLoading,
-  } = useHomeTodosQuery({
+  const { data: rawTodos = [], isLoading: isTodosLoading } = useHomeTodosQuery({
     date,
     categoryId: undefined,
   });
@@ -71,16 +72,17 @@ export default function TodoBoardSection({
       }));
   }, [rawTodos]);
 
-  const {mutateAsync: createTodoMutateAsync} = useCreateTodoMutation();
-  const {mutateAsync: moveTodoTomorrowMutateAsync} =
+  const { mutateAsync: createTodoMutateAsync } = useCreateTodoMutation();
+  const { mutateAsync: moveTodoTomorrowMutateAsync } =
     useMoveTodoTomorrowMutation();
-  const {mutateAsync: moveTodoTodayMutateAsync} = useMoveTodoTodayMutation();
-  const {mutateAsync: deleteTodoMutateAsync} = useDeleteTodoMutation();
-  const {mutateAsync: deleteRecurrenceTodosMutateAsync} =
+  const { mutateAsync: moveTodoTodayMutateAsync } = useMoveTodoTodayMutation();
+  const { mutateAsync: deleteTodoMutateAsync } = useDeleteTodoMutation();
+  const { mutateAsync: deleteRecurrenceTodosMutateAsync } =
     useDeleteRecurrenceTodosMutation();
-  const {mutateAsync: toggleCompletionMutateAsync} =
+  const { mutateAsync: toggleCompletionMutateAsync } =
     useToggleTodoCompletionMutation();
-  const {mutateAsync: reorderTodosMutateAsync} = useReorderHomeTodosMutation();
+  const { mutateAsync: reorderTodosMutateAsync } =
+    useReorderHomeTodosMutation();
 
   const [selectedTodoId, setSelectedTodoId] = useState(null);
   const todoCardRef = useRef(null);
@@ -88,7 +90,7 @@ export default function TodoBoardSection({
   const editor = useTodoEditorController({
     categories,
     selectedDate: date, // ✅ 핵심
-    onSubmitTodo: async ({todo, text, categoryId, date}) => {
+    onSubmitTodo: async ({ todo, text, categoryId, date }) => {
       if (!todo?.id) {
         await createTodoMutateAsync({
           description: text,
@@ -125,7 +127,7 @@ export default function TodoBoardSection({
             variant: "outline",
             closeAfterPress: false,
             onPress: async () => {
-              await deleteTodoMutateAsync({todoId});
+              await deleteTodoMutateAsync({ todoId });
               close();
             },
           },
@@ -134,7 +136,7 @@ export default function TodoBoardSection({
             variant: "outline",
             closeAfterPress: false,
             onPress: async () => {
-              await deleteRecurrenceTodosMutateAsync({recurrenceId});
+              await deleteRecurrenceTodosMutateAsync({ recurrenceId });
               close();
             },
           },
@@ -143,7 +145,7 @@ export default function TodoBoardSection({
         return;
       }
 
-      await deleteTodoMutateAsync({todoId});
+      await deleteTodoMutateAsync({ todoId });
     },
     [open, close, deleteTodoMutateAsync, deleteRecurrenceTodosMutateAsync],
   );
@@ -187,8 +189,8 @@ export default function TodoBoardSection({
   return (
     <>
       <NestableScrollContainer
-        style={{flex: 1}}
-        contentContainerStyle={{paddingBottom: 36}}
+        style={{ flex: 1 }}
+        contentContainerStyle={{ paddingBottom: 36 }}
         showsVerticalScrollIndicator={false}
         keyboardShouldPersistTaps="handled"
       >
@@ -219,7 +221,7 @@ export default function TodoBoardSection({
                     date: todayStr,
                   });
                 } else {
-                  await moveTodoTodayMutateAsync({todoId});
+                  await moveTodoTodayMutateAsync({ todoId });
                 }
                 toast.show("해당 튀김을 오늘 튀기기로 설정했어요");
                 return true;
@@ -252,7 +254,7 @@ export default function TodoBoardSection({
                           });
                         } else {
                           // ✅ 미완료 투두: "이동"
-                          await moveTodoTodayMutateAsync({todoId});
+                          await moveTodoTodayMutateAsync({ todoId });
                         }
                         toast.show("해당 튀김을 오늘 튀기기로 설정했어요");
 
@@ -288,7 +290,7 @@ export default function TodoBoardSection({
                     date: tomorrowStr,
                   });
                 } else {
-                  await moveTodoTomorrowMutateAsync({todoId});
+                  await moveTodoTomorrowMutateAsync({ todoId });
                 }
                 toast.show("해당 튀김을 내일 튀기기로 설정했어요");
                 return true;
@@ -321,7 +323,7 @@ export default function TodoBoardSection({
                           });
                         } else {
                           // ✅ 미완료 투두: "이동"
-                          await moveTodoTomorrowMutateAsync({todoId});
+                          await moveTodoTomorrowMutateAsync({ todoId });
                         }
                         toast.show("해당 튀김을 내일 튀기기로 설정했어요");
                         resolve(true);
@@ -342,10 +344,10 @@ export default function TodoBoardSection({
             }}
             onDeleteTodo={handleRequestDeleteTodo}
             onToggleTodoCompletion={async (todoId) => {
-              await toggleCompletionMutateAsync({todoId: Number(todoId)});
+              await toggleCompletionMutateAsync({ todoId: Number(todoId) });
             }}
-            onReorderTodos={async ({ids}) => {
-              await reorderTodosMutateAsync({date, ids});
+            onReorderTodos={async ({ ids }) => {
+              await reorderTodosMutateAsync({ date, ids });
             }}
           />
         )}

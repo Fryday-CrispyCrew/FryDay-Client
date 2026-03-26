@@ -597,7 +597,7 @@ const styles = StyleSheet.create({
     position: "relative",
     width: "72%",
     aspectRatio: 1,
-    maxHeight: "80%", // ✅ 핵심
+    maxHeight: "100%",
     // marginTop: "8%",
     // borderWidth: 1,
   },
@@ -653,7 +653,6 @@ const styles = StyleSheet.create({
   },
 });
 
-// ✅ 바텀 시트 내부 스타일
 const sheetStyles = StyleSheet.create({
   container: {
     flex: 1,
@@ -732,7 +731,7 @@ const bubbleStyles = StyleSheet.create({
     paddingHorizontal: 16,
     paddingVertical: 10,
 
-    // ✅ 텍스트 길면 자동으로 넓어지다가, maxWidth에서 줄바꿈
+    // 텍스트 길면 자동으로 넓어지다가, maxWidth에서 줄바꿈
     // maxWidth: "100%",
   },
   text: {
