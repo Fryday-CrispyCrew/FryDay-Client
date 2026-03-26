@@ -11,7 +11,6 @@ import {
   TouchableOpacity,
   Keyboard,
   Platform,
-  AppState,
   StyleSheet,
 } from "react-native";
 import {
@@ -19,13 +18,10 @@ import {
   BottomSheetModal,
   BottomSheetView,
 } from "@gorhom/bottom-sheet";
-
-import { InteractionManager } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useShallow } from "zustand/react/shallow";
 
 import Banner from "../../../../shared/components/Banner";
-import ChevronIcon from "../../../../shared/components/ChevronIcon";
 import { toast } from "../../../../shared/components/toast/CenterToast";
 
 import MemoIcon from "../../assets/svg/todoEditorSheet/memo.svg";
@@ -36,13 +32,11 @@ import SelectDateIcon from "../../assets/svg/todoEditorSheet/calendarSelect.svg"
 import { useRepeatEditorStore } from "../../stores/repeatEditorStore";
 
 import RepeatSettingsSection from "../RepeatSettingsSection/RepeatSettingsSection";
-import YearMonthWheelModal from "../RepeatSettingsSection/wheel/YearMonthWheelModal";
-import AlarmTimeSettingSection from "./AlarmTimeSettingsSection";
 
 import CategorySelector from "./components/CategorySelector";
-import TitleInputSection from "./components/TitleInputSection";
-import MemoSection from "./components/MemoSection";
-import EditToolsRow from "./components/EditToolsRow";
+import CreateTodoSection from "./CreateTodoSection";
+import EditTodoSection from "./EditTodoSection";
+import AlarmPanel from "./panels/AlarmPanel";
 
 import { useTodoDetailQuery } from "../../queries/sheet/useTodoDetailQuery";
 import { useUpdateTodoCategoryMutation } from "../../queries/sheet/content/useUpdateTodoCategoryMutation";
@@ -55,7 +49,12 @@ import { useUpdateRecurrenceRuleMutation } from "../../queries/sheet/repeat/useU
 import { useUpdateTodoDateMutation } from "../../queries/sheet/date/useUpdateTodoDateMutation";
 import { useDeleteTodoRecurrenceMutation } from "../../queries/sheet/repeat/useDeleteTodoRecurrenceMutation";
 
-const WEEKDAYS = ["일", "월", "화", "수", "목", "금", "토"];
+import useTodoEditorFocus from "./hooks/useTodoEditorFocus";
+import useTodoEditorKeyboard from "./hooks/useTodoEditorKeyboard";
+import useTodoEditorAppState from "./hooks/useTodoEditorAppState";
+import useTodoEditorPanels from "./hooks/useTodoEditorPanels";
+import useTodoEditorDate from "./hooks/useTodoEditorDate";
+import SelectDatePanel from "./components/SelectDatePanel";
 
 const API_TO_WEEKDAY = {
   MONDAY: "mon",
@@ -106,8 +105,9 @@ const hhmmssToHHmm = (t) => {
 
 const parseFrequencyValues = ({ type, frequencyValues }) => {
   const raw = (frequencyValues ?? "").trim();
-  if (!raw)
+  if (!raw) {
     return { weekdays: [], monthDays: [], yearMonths: [], yearDays: [] };
+  }
 
   const parts = raw
     .split(",")
@@ -123,6 +123,7 @@ const parseFrequencyValues = ({ type, frequencyValues }) => {
     const monthDays = parts
       .map((p) => Number(p))
       .filter((n) => Number.isFinite(n) && n >= 1 && n <= 31);
+
     return { weekdays: [], monthDays, yearMonths: [], yearDays: [] };
   }
 
@@ -189,45 +190,6 @@ const mapRecurrenceToRepeatStore = (recurrence) => {
     repeatAlarm,
     repeatAlarmTime,
   };
-};
-
-const isSameDay = (a, b) => {
-  if (!a || !b) return false;
-  return (
-    a.getFullYear() === b.getFullYear() &&
-    a.getMonth() === b.getMonth() &&
-    a.getDate() === b.getDate()
-  );
-};
-
-const addMonths = (date, delta) => {
-  const d = new Date(date);
-  d.setMonth(d.getMonth() + delta);
-  return d;
-};
-
-const startOfDay = (d) => {
-  const x = new Date(d);
-  x.setHours(0, 0, 0, 0);
-  return x;
-};
-
-const buildMonthGrid = (monthDate) => {
-  const y = monthDate.getFullYear();
-  const m = monthDate.getMonth();
-  const first = new Date(y, m, 1);
-  const last = new Date(y, m + 1, 0);
-  const startDow = first.getDay();
-  const daysInMonth = last.getDate();
-  const cells = [];
-
-  for (let i = 0; i < startDow; i++) cells.push(null);
-  for (let day = 1; day <= daysInMonth; day++) {
-    cells.push(new Date(y, m, day));
-  }
-  while (cells.length % 7 !== 0) cells.push(null);
-
-  return cells;
 };
 
 const normalizeMemo = (m) => (m ?? "").trim();
@@ -386,24 +348,16 @@ const TodoEditorSheet = React.forwardRef(function TodoEditorSheet(
 ) {
   const insets = useSafeAreaInsets();
 
-  const inputRef = useRef(null);
-  const memoInputRef = useRef(null);
   const isSubmittingRef = useRef(false);
-  const selectedToolKeyRef = useRef(null);
-  const isToolTransitioningRef = useRef(false);
   const sheetReadyTimerRef = useRef(null);
   const hasInitializedMemoRef = useRef(false);
 
   const [editingText, setEditingText] = useState(initialValue ?? "");
   const [memoText, setMemoText] = useState("");
-  const [isKeyboardVisible, setIsKeyboardVisible] = useState(false);
   const [isTitleFocused, setIsTitleFocused] = useState(false);
   const [isMemoFocused, setIsMemoFocused] = useState(false);
   const [isCategoryOpen, setIsCategoryOpen] = useState(false);
   const [draftCategoryId, setDraftCategoryId] = useState(initialCategoryId);
-  const isSubmitEnabled = editingText.trim().length > 0;
-
-  const [selectedToolKey, setSelectedToolKey] = useState(null);
   const [isSheetReady, setIsSheetReady] = useState(false);
 
   const [alarmDraftDate, setAlarmDraftDate] = useState(new Date());
@@ -412,24 +366,7 @@ const TodoEditorSheet = React.forwardRef(function TodoEditorSheet(
   const [isIosInlineAlarmPickerOpen, setIsIosInlineAlarmPickerOpen] =
     useState(false);
 
-  const [openRepeatDropdownKey, setOpenRepeatDropdownKey] = useState(null);
-
-  const [todoDate, setTodoDate] = useState(new Date());
-  const [draftTodoDate, setDraftTodoDate] = useState(new Date());
-  const [hasAppliedTodoDate, setHasAppliedTodoDate] = useState(false);
-  const [todoMonthCursor, setTodoMonthCursor] = useState(() => {
-    const base = new Date();
-    return new Date(base.getFullYear(), base.getMonth(), 1);
-  });
-
-  const [isTodoYearMonthWheelOpen, setIsTodoYearMonthWheelOpen] =
-    useState(false);
-  const [todoWheelInitialYear, setTodoWheelInitialYear] = useState(
-    todoMonthCursor.getFullYear(),
-  );
-  const [todoWheelInitialMonth, setTodoWheelInitialMonth] = useState(
-    todoMonthCursor.getMonth() + 1,
-  );
+  const isSubmitEnabled = editingText.trim().length > 0;
 
   const repeatSnapshot = useRepeatEditorStore(
     useShallow((s) => ({
@@ -445,6 +382,71 @@ const TodoEditorSheet = React.forwardRef(function TodoEditorSheet(
       repeatYearDays: s.repeatYearDays,
     })),
   );
+
+  const {
+    inputRef,
+    memoInputRef,
+    focusTitleInput,
+    blurMemoOnly,
+    blurAllInputs,
+  } = useTodoEditorFocus({
+    setIsTitleFocused,
+    setIsMemoFocused,
+  });
+
+  const { isKeyboardVisible } = useTodoEditorKeyboard();
+
+  const { isReturningFromBackgroundRef } = useTodoEditorAppState({
+    blurAllInputs,
+  });
+
+  const {
+    selectedToolKey,
+    setSelectedToolKey,
+    openRepeatDropdownKey,
+    toggleRepeatDropdown,
+    isMemoOpen,
+    isAlarmOpen,
+    isRepeatOpen,
+    isSelectDateOpen,
+    closePanelAndFocusTitle,
+    onSelectTool,
+  } = useTodoEditorPanels({
+    mode,
+    blurMemoOnly,
+    focusTitleInput,
+    inputRef,
+    memoInputRef,
+    setIsTitleFocused,
+    setIsMemoFocused,
+    setIsIosInlineAlarmPickerOpen,
+  });
+
+  const {
+    todoDate,
+    setTodoDate,
+    draftTodoDate,
+    setDraftTodoDate,
+    hasAppliedTodoDate,
+    setHasAppliedTodoDate,
+    todoMonthCursor,
+    setTodoMonthCursor,
+    isTodoYearMonthWheelOpen,
+    setIsTodoYearMonthWheelOpen,
+    todoWheelInitialYear,
+    setTodoWheelInitialYear,
+    todoWheelInitialMonth,
+    setTodoWheelInitialMonth,
+    todoMonthGrid,
+    today,
+    isSameDay,
+    addMonths,
+    handlePickTodoDateFromCalendar,
+    handleApplyTodoDate,
+  } = useTodoEditorDate({
+    isSelectDateOpen,
+    closePanelAndFocusTitle,
+  });
 
   const numericTodoId = useMemo(() => {
     const n = Number(todoId);
@@ -490,18 +492,6 @@ const TodoEditorSheet = React.forwardRef(function TodoEditorSheet(
     { key: "select", Icon: SelectDateIcon },
   ];
 
-  const isMemoOpen = mode === "edit" && selectedToolKey === "memo";
-  const isAlarmOpen = mode === "edit" && selectedToolKey === "alarm";
-  const isRepeatOpen = mode === "edit" && selectedToolKey === "repeat";
-  const isSelectDateOpen = mode === "edit" && selectedToolKey === "select";
-
-  const todoMonthGrid = useMemo(
-    () => buildMonthGrid(todoMonthCursor),
-    [todoMonthCursor],
-  );
-
-  const today = useMemo(() => new Date(), []);
-
   const resetEditHydrationRefs = useCallback(() => {
     initialRef.current.todoId = null;
     initialRef.current.recurrenceId = null;
@@ -518,69 +508,22 @@ const TodoEditorSheet = React.forwardRef(function TodoEditorSheet(
   }, [initialCategoryId]);
 
   useEffect(() => {
-    selectedToolKeyRef.current = selectedToolKey;
-  }, [selectedToolKey]);
-
-  useEffect(() => {
-    const show = Keyboard.addListener("keyboardDidShow", () =>
-      setIsKeyboardVisible(true),
-    );
-    const hide = Keyboard.addListener("keyboardDidHide", () =>
-      setIsKeyboardVisible(false),
-    );
-
-    return () => {
-      show.remove();
-      hide.remove();
-    };
-  }, []);
-
-  const blurAllInputs = useCallback(() => {
-    inputRef.current?.blur?.();
-    memoInputRef.current?.blur?.();
-    setIsTitleFocused(false);
-    setIsMemoFocused(false);
-    Keyboard.dismiss();
-  }, []);
-
-  const isReturningFromBackgroundRef = useRef(false);
-
-  useEffect(() => {
-    const subscription = AppState.addEventListener("change", (nextState) => {
-      if (nextState === "inactive" || nextState === "background") {
-        blurAllInputs();
-      }
-    });
-
-    return () => {
-      subscription.remove();
-    };
-  }, [blurAllInputs]);
-
-  useEffect(() => {
-    if (!isRepeatOpen) setOpenRepeatDropdownKey(null);
-  }, [isRepeatOpen]);
-
-  useEffect(() => {
     if (isAlarmOpen) {
       if (!alarmTime) {
         setHasPickedAlarmTime(false);
         setAlarmDraftDate(new Date());
       }
-      if (alarmTime) setHasPickedAlarmTime(true);
+      if (alarmTime) {
+        setHasPickedAlarmTime(true);
+      }
     }
   }, [isAlarmOpen, alarmTime]);
 
   useEffect(() => {
-    if (!isAlarmOpen) setIsIosInlineAlarmPickerOpen(false);
+    if (!isAlarmOpen) {
+      setIsIosInlineAlarmPickerOpen(false);
+    }
   }, [isAlarmOpen]);
-
-  useEffect(() => {
-    if (!isSelectDateOpen) return;
-    const base = todoDate ?? new Date();
-    setDraftTodoDate(base);
-    setTodoMonthCursor(new Date(base.getFullYear(), base.getMonth(), 1));
-  }, [isSelectDateOpen, todoDate]);
 
   useEffect(() => {
     if (mode !== "edit") return;
@@ -596,6 +539,7 @@ const TodoEditorSheet = React.forwardRef(function TodoEditorSheet(
     if (mode !== "edit" || !numericTodoId || !todoDetail) return;
 
     const currentRecurrenceId = todoDetail?.recurrence?.recurrenceId ?? null;
+
     if (
       initialRef.current.todoId === numericTodoId &&
       initialRef.current.recurrenceId === currentRecurrenceId
@@ -620,7 +564,9 @@ const TodoEditorSheet = React.forwardRef(function TodoEditorSheet(
     };
 
     setEditingText(description);
-    if (categoryId != null) setDraftCategoryId(categoryId);
+    if (categoryId != null) {
+      setDraftCategoryId(categoryId);
+    }
     setMemoText(memo);
 
     if (dateStr) {
@@ -660,105 +606,15 @@ const TodoEditorSheet = React.forwardRef(function TodoEditorSheet(
       repeatStore.resetRepeat();
       initialRecurrencePayloadRef.current = null;
     }
-  }, [mode, numericTodoId, todoDetail]);
-
-  const toggleRepeatDropdown = useCallback((key) => {
-    setOpenRepeatDropdownKey((prev) => (prev === key ? null : key));
-  }, []);
-
-  const focusTitleInput = useCallback(() => {
-    InteractionManager.runAfterInteractions(() => {
-      requestAnimationFrame(() => {
-        inputRef.current?.focus?.();
-      });
-    });
-  }, []);
-
-  const blurMemoOnly = useCallback(() => {
-    memoInputRef.current?.blur?.();
-    setIsMemoFocused(false);
-  }, []);
-
-  const closePanelAndFocusTitle = useCallback(
-    (closingKey) => {
-      setSelectedToolKey(null);
-      blurMemoOnly();
-
-      if (closingKey === "alarm") {
-        setIsIosInlineAlarmPickerOpen(false);
-      }
-
-      setIsTitleFocused(true);
-      focusTitleInput();
-    },
-    [blurMemoOnly, focusTitleInput],
-  );
-
-  const openToolAfterKeyboardDismiss = useCallback((key) => {
-    inputRef.current?.blur?.();
-    memoInputRef.current?.blur?.();
-    setIsTitleFocused(false);
-    setIsMemoFocused(false);
-    Keyboard.dismiss();
-
-    isToolTransitioningRef.current = true;
-
-    InteractionManager.runAfterInteractions(() => {
-      requestAnimationFrame(() => {
-        setSelectedToolKey(key);
-        setTimeout(() => {
-          isToolTransitioningRef.current = false;
-        }, 400);
-      });
-    });
-  }, []);
-
-  const onSelectTool = useCallback(
-    (key) => {
-      const current = selectedToolKeyRef.current;
-
-      if (current === key) {
-        if (key === "alarm") setIsIosInlineAlarmPickerOpen(false);
-        setSelectedToolKey(null);
-        setIsTitleFocused(true);
-        focusTitleInput();
-        return;
-      }
-
-      if (key === "memo") {
-        setSelectedToolKey("memo");
-        return;
-      }
-
-      if (key === "alarm") setIsIosInlineAlarmPickerOpen(false);
-      openToolAfterKeyboardDismiss(key);
-    },
-    [focusTitleInput, openToolAfterKeyboardDismiss],
-  );
-
-  const handleSheetAnimate = useCallback(
-    (fromIndex, toIndex) => {
-      if (fromIndex === -1 && toIndex >= 0) {
-        if (!isReturningFromBackgroundRef.current) {
-          focusTitleInput();
-        }
-
-        sheetReadyTimerRef.current = setTimeout(
-          () => setIsSheetReady(true),
-          Platform.OS === "ios" ? 1150 : 0,
-        );
-      }
-
-      if (toIndex === -1) {
-        if (sheetReadyTimerRef.current) {
-          clearTimeout(sheetReadyTimerRef.current);
-          sheetReadyTimerRef.current = null;
-        }
-        setIsSheetReady(false);
-      }
-    },
-    [focusTitleInput],
-  );
+  }, [
+    mode,
+    numericTodoId,
+    todoDetail,
+    setTodoDate,
+    setDraftTodoDate,
+    setTodoMonthCursor,
+    setHasAppliedTodoDate,
+  ]);
 
   const renderBackdrop = useCallback(
     (props) => (
@@ -787,37 +643,19 @@ const TodoEditorSheet = React.forwardRef(function TodoEditorSheet(
     [isSheetReady, onCloseTogether],
   );
 
-  const handlePickCategory = useCallback((categoryId) => {
-    setDraftCategoryId(categoryId);
-    setIsCategoryOpen(false);
-    requestAnimationFrame(() => inputRef.current?.focus?.());
-  }, []);
+  const handlePickCategory = useCallback(
+    (categoryId) => {
+      setDraftCategoryId(categoryId);
+      setIsCategoryOpen(false);
+      requestAnimationFrame(() => inputRef.current?.focus?.());
+    },
+    [inputRef],
+  );
 
   const handleClearText = useCallback(() => {
     setEditingText("");
     requestAnimationFrame(() => inputRef.current?.focus?.());
-  }, []);
-
-  const handlePickTodoDateFromCalendar = useCallback((date) => {
-    if (!date) return;
-
-    const today0 = startOfDay(new Date());
-    const picked0 = startOfDay(date);
-
-    if (picked0 < today0) {
-      toast.show("과거 날짜로는 이동할 수 없어요.");
-      return;
-    }
-
-    setDraftTodoDate(date);
-  }, []);
-
-  const handleApplyTodoDate = useCallback(() => {
-    if (!draftTodoDate) return;
-    setTodoDate(draftTodoDate);
-    setHasAppliedTodoDate(true);
-    closePanelAndFocusTitle("select");
-  }, [draftTodoDate, closePanelAndFocusTitle]);
+  }, [inputRef]);
 
   const handleDismiss = useCallback(() => {
     setIsCategoryOpen(false);
@@ -831,7 +669,13 @@ const TodoEditorSheet = React.forwardRef(function TodoEditorSheet(
     Keyboard.dismiss();
     onDismiss?.();
     isSubmittingRef.current = false;
-  }, [initialCategoryId, onDismiss, resetEditHydrationRefs]);
+  }, [
+    initialCategoryId,
+    onDismiss,
+    resetEditHydrationRefs,
+    setHasAppliedTodoDate,
+    setSelectedToolKey,
+  ]);
 
   const hasEditChanges = useMemo(() => {
     if (mode !== "edit") return true;
@@ -839,25 +683,32 @@ const TodoEditorSheet = React.forwardRef(function TodoEditorSheet(
     const initial = initialRef.current;
     if (!initial.todoId) return false;
 
-    if (normalizeDesc(initial.description) !== normalizeDesc(editingText))
+    if (normalizeDesc(initial.description) !== normalizeDesc(editingText)) {
       return true;
+    }
 
-    if (initial.categoryId != null && initial.categoryId !== draftCategoryId)
+    if (initial.categoryId != null && initial.categoryId !== draftCategoryId) {
       return true;
+    }
 
-    if (normalizeMemo(initial.memo) !== normalizeMemo(memoText)) return true;
+    if (normalizeMemo(initial.memo) !== normalizeMemo(memoText)) {
+      return true;
+    }
 
     const initialNotifyAt = initial.notifyAt;
     const currentNotifyAt = hasPickedAlarmTime
       ? buildNotifyAt({ dateStr: todoDetail?.date, timeStr: alarmTime })
       : null;
 
-    if (initialNotifyAt !== currentNotifyAt) return true;
+    if (initialNotifyAt !== currentNotifyAt) {
+      return true;
+    }
 
     if (hasAppliedTodoDate) {
       const nextDateStr = toYYYYMMDD(todoDate);
-      if (nextDateStr && nextDateStr !== (todoDetail?.date ?? null))
+      if (nextDateStr && nextDateStr !== (todoDetail?.date ?? null)) {
         return true;
+      }
     }
 
     const repeatDraft = useRepeatEditorStore.getState().getRepeatPayload?.();
@@ -957,10 +808,12 @@ const TodoEditorSheet = React.forwardRef(function TodoEditorSheet(
       tasks.push(deleteAlarm({ todoId: numericTodoId }));
     } else if (initialNotifyAt !== currentNotifyAt && currentNotifyAt) {
       const alarmDate = new Date(currentNotifyAt);
+
       if (alarmDate < new Date()) {
         toast.show("알림 시간은 현재 시간 이후로 설정해야 합니다.");
         return;
       }
+
       tasks.push(
         setAlarm({ todoId: numericTodoId, notifyAt: currentNotifyAt }),
       );
@@ -1063,6 +916,30 @@ const TodoEditorSheet = React.forwardRef(function TodoEditorSheet(
     todoId,
   ]);
 
+  const handleSheetAnimate = useCallback(
+    (fromIndex, toIndex) => {
+      if (fromIndex === -1 && toIndex >= 0) {
+        if (!isReturningFromBackgroundRef.current) {
+          focusTitleInput();
+        }
+
+        sheetReadyTimerRef.current = setTimeout(
+          () => setIsSheetReady(true),
+          Platform.OS === "ios" ? 1150 : 0,
+        );
+      }
+
+      if (toIndex === -1) {
+        if (sheetReadyTimerRef.current) {
+          clearTimeout(sheetReadyTimerRef.current);
+          sheetReadyTimerRef.current = null;
+        }
+        setIsSheetReady(false);
+      }
+    },
+    [focusTitleInput, isReturningFromBackgroundRef],
+  );
+
   return (
     <BottomSheetModal
       ref={ref}
@@ -1102,244 +979,78 @@ const TodoEditorSheet = React.forwardRef(function TodoEditorSheet(
               onPickCategory={handlePickCategory}
             />
 
-            <View className="flex-row items-center pb-4">
-              <TitleInputSection
-                mode="create"
+            {mode === "create" ? (
+              <CreateTodoSection
                 inputRef={inputRef}
-                value={editingText}
-                onChangeText={setEditingText}
-                onSubmitEditing={handleSubmitInternal}
-                isFocused={isTitleFocused}
-                setIsFocused={setIsTitleFocused}
-                onClear={handleClearText}
+                editingText={editingText}
+                setEditingText={setEditingText}
+                handleSubmitInternal={handleSubmitInternal}
+                isSubmitEnabled={isSubmitEnabled}
+                isTitleFocused={isTitleFocused}
+                setIsTitleFocused={setIsTitleFocused}
+                handleClearText={handleClearText}
               />
-
-              <TouchableOpacity
-                activeOpacity={0.7}
-                onPress={handleSubmitInternal}
-                disabled={!isSubmitEnabled}
-                className={`ml-2 h-11 w-11 items-center justify-center rounded-full ${
-                  isSubmitEnabled ? "bg-[#FF5B22]" : "bg-[#E4E4E4]"
-                }`}
-              >
-                <ChevronIcon
-                  direction="right"
-                  size={24}
-                  // color={isSubmitEnabled ? colors.gr : colors.gr300}
-                  strokeWidth={2.5}
-                />
-              </TouchableOpacity>
-            </View>
-
-            <MemoSection
-              visible={isMemoOpen}
-              memoInputRef={memoInputRef}
-              value={memoText}
-              onChangeText={(text) => {
-                if (text.length > 100) {
-                  toast.show("메모는 100자까지 입력 가능합니다.");
-                  return;
-                }
-                setMemoText(text);
-              }}
-              isFocused={isMemoFocused}
-              setIsFocused={setIsMemoFocused}
-            />
-
-            {mode === "edit" ? (
-              <EditToolsRow
-                icons={EDIT_TOOL_ICONS}
+            ) : (
+              <EditTodoSection
+                inputRef={inputRef}
+                memoInputRef={memoInputRef}
+                editingText={editingText}
+                setEditingText={setEditingText}
+                memoText={memoText}
+                setMemoText={setMemoText}
+                handleSubmitInternal={handleSubmitInternal}
+                isSubmitEnabled={isSubmitEnabled}
+                hasEditChanges={hasEditChanges}
+                isTitleFocused={isTitleFocused}
+                setIsTitleFocused={setIsTitleFocused}
+                isMemoFocused={isMemoFocused}
+                setIsMemoFocused={setIsMemoFocused}
+                handleClearText={handleClearText}
+                isMemoOpen={isMemoOpen}
                 selectedToolKey={selectedToolKey}
                 onSelectTool={onSelectTool}
-                onSubmit={handleSubmitInternal}
-                submitDisabled={!isSubmitEnabled || !hasEditChanges}
+                EDIT_TOOL_ICONS={EDIT_TOOL_ICONS}
               />
-            ) : null}
-
-            {isAlarmOpen && (
-              <View className="min-h-[335px] pb-8">
-                <View className="py-[15px]">
-                  <ChevronIcon direction="down" size={0} color="transparent" />
-                </View>
-
-                <AlarmTimeSettingSection
-                  alarmDraftDate={alarmDraftDate}
-                  alarmTime={alarmTime}
-                  hasPickedAlarmTime={hasPickedAlarmTime}
-                  isIosInlineAlarmPickerOpen={isIosInlineAlarmPickerOpen}
-                  setAlarmDraftDate={setAlarmDraftDate}
-                  setAlarmTime={setAlarmTime}
-                  setHasPickedAlarmTime={setHasPickedAlarmTime}
-                  setIsIosInlineAlarmPickerOpen={setIsIosInlineAlarmPickerOpen}
-                  todoDateStr={todoDetail?.date}
-                  onClosePanel={() => closePanelAndFocusTitle("alarm")}
-                />
-              </View>
             )}
+            <SelectDatePanel
+              visible={isSelectDateOpen}
+              todoMonthCursor={todoMonthCursor}
+              setTodoMonthCursor={setTodoMonthCursor}
+              draftTodoDate={draftTodoDate}
+              setDraftTodoDate={setDraftTodoDate}
+              today={today}
+              todoMonthGrid={todoMonthGrid}
+              isSameDay={isSameDay}
+              addMonths={addMonths}
+              handlePickDate={handlePickTodoDateFromCalendar}
+              handleApply={handleApplyTodoDate}
+              isWheelOpen={isTodoYearMonthWheelOpen}
+              setIsWheelOpen={setIsTodoYearMonthWheelOpen}
+              wheelYear={todoWheelInitialYear}
+              setWheelYear={setTodoWheelInitialYear}
+              wheelMonth={todoWheelInitialMonth}
+              setWheelMonth={setTodoWheelInitialMonth}
+            />
+
+            <AlarmPanel
+              visible={isAlarmOpen}
+              alarmDraftDate={alarmDraftDate}
+              alarmTime={alarmTime}
+              hasPickedAlarmTime={hasPickedAlarmTime}
+              isIosInlineAlarmPickerOpen={isIosInlineAlarmPickerOpen}
+              setAlarmDraftDate={setAlarmDraftDate}
+              setAlarmTime={setAlarmTime}
+              setHasPickedAlarmTime={setHasPickedAlarmTime}
+              setIsIosInlineAlarmPickerOpen={setIsIosInlineAlarmPickerOpen}
+              todoDateStr={todoDetail?.date}
+              onClosePanel={() => closePanelAndFocusTitle("alarm")}
+            />
 
             <RepeatSettingsSection
               visible={isRepeatOpen}
               openKey={openRepeatDropdownKey}
               onToggleOpenKey={toggleRepeatDropdown}
             />
-
-            {isSelectDateOpen && (
-              <View className="min-h-[335px]">
-                <View className="py-[15px]">
-                  <View className="text-gr700" />
-                </View>
-
-                <View>
-                  <View className="flex-row items-center gap-2">
-                    <TouchableOpacity
-                      activeOpacity={0.7}
-                      onPress={() =>
-                        setTodoMonthCursor((d) => addMonths(d, -1))
-                      }
-                      className="h-6 w-6 items-center justify-center"
-                      hitSlop={8}
-                    >
-                      <ChevronIcon
-                        direction="left"
-                        size={18}
-                        color="#666666"
-                        strokeWidth={2}
-                      />
-                    </TouchableOpacity>
-
-                    <TouchableOpacity
-                      activeOpacity={0.7}
-                      onPress={() => {
-                        setTodoWheelInitialYear(todoMonthCursor.getFullYear());
-                        setTodoWheelInitialMonth(
-                          todoMonthCursor.getMonth() + 1,
-                        );
-                        setIsTodoYearMonthWheelOpen(true);
-                      }}
-                      hitSlop={8}
-                    >
-                      <View>
-                        <ChevronIcon
-                          direction="down"
-                          size={0}
-                          color="transparent"
-                        />
-                      </View>
-                    </TouchableOpacity>
-
-                    <TouchableOpacity
-                      activeOpacity={0.7}
-                      onPress={() => setTodoMonthCursor((d) => addMonths(d, 1))}
-                      className="h-6 w-6 items-center justify-center"
-                      hitSlop={8}
-                    >
-                      <ChevronIcon
-                        direction="right"
-                        size={18}
-                        color="#666666"
-                        strokeWidth={2}
-                      />
-                    </TouchableOpacity>
-                  </View>
-
-                  <View className="mb-3 mt-4 flex-row">
-                    {WEEKDAYS.map((w, idx) => (
-                      <View
-                        key={w}
-                        className="items-center justify-center"
-                        style={{ width: `${100 / 7.01}%` }}
-                      >
-                        <View>
-                          <ChevronIcon
-                            direction="down"
-                            size={0}
-                            color="transparent"
-                          />
-                        </View>
-                      </View>
-                    ))}
-                  </View>
-
-                  <View
-                    className="min-h-[150px] flex-row flex-wrap"
-                    style={{ rowGap: 12 }}
-                  >
-                    {todoMonthGrid.map((cellDate, i) => {
-                      const isEmpty = !cellDate;
-                      const selected = cellDate
-                        ? isSameDay(cellDate, draftTodoDate)
-                        : false;
-                      const isToday = cellDate
-                        ? isSameDay(cellDate, today)
-                        : false;
-                      const useTodayStyle = isToday && !selected;
-
-                      return (
-                        <TouchableOpacity
-                          key={`todo-d-${i}`}
-                          disabled={isEmpty}
-                          activeOpacity={0.85}
-                          onPress={() =>
-                            handlePickTodoDateFromCalendar(cellDate)
-                          }
-                          className="items-center justify-center"
-                          style={{ width: `${100 / 7.01}%` }}
-                        >
-                          {isEmpty ? (
-                            <View className="h-5 w-full" />
-                          ) : (
-                            <View
-                              className={[
-                                "h-5 w-full items-center justify-center",
-                                selected
-                                  ? "aspect-square rounded-full border border-[#FF5B22]"
-                                  : "",
-                                useTodayStyle
-                                  ? "aspect-square rounded-full bg-[#FF5B22]"
-                                  : "",
-                              ].join(" ")}
-                            />
-                          )}
-                        </TouchableOpacity>
-                      );
-                    })}
-                  </View>
-                </View>
-
-                <View className="mt-4 items-end">
-                  <TouchableOpacity
-                    activeOpacity={0.9}
-                    onPress={handleApplyTodoDate}
-                    className="h-11 w-[100px] items-center justify-center rounded-2xl bg-[#FF5B22]"
-                  >
-                    <View>
-                      <ChevronIcon
-                        direction="down"
-                        size={0}
-                        color="transparent"
-                      />
-                    </View>
-                  </TouchableOpacity>
-                </View>
-
-                <YearMonthWheelModal
-                  visible={isTodoYearMonthWheelOpen}
-                  initialYear={todoWheelInitialYear}
-                  initialMonth={todoWheelInitialMonth}
-                  onCancel={() => setIsTodoYearMonthWheelOpen(false)}
-                  onConfirm={(year, month) => {
-                    setTodoMonthCursor(new Date(year, month - 1, 1));
-                    setDraftTodoDate((prev) => {
-                      const base = prev ?? new Date();
-                      const day = base.getDate();
-                      const lastDay = new Date(year, month, 0).getDate();
-                      return new Date(year, month - 1, Math.min(day, lastDay));
-                    });
-                    setIsTodoYearMonthWheelOpen(false);
-                  }}
-                />
-              </View>
-            )}
           </View>
         </View>
       </BottomSheetView>

@@ -80,8 +80,8 @@ export default function TitleInputSection({
 
   const wrapperClass =
     mode === "create"
-      ? "flex-1 rounded-2xl bg-[#FAFAFA] px-4 h-[46px] justify-center border border-gr100 relative"
-      : `rounded-2xl bg-[#FAFAFA] px-4 min-h-[44px] justify-center border border-gr100 relative ${
+      ? "flex-1 rounded-2xl bg-[#FAFAFA] px-4 h-[44px] justify-center border border-gr100 relative"
+      : `rounded-2xl bg-[#FAFAFA] px-4 h-[44px] justify-center border border-gr100 relative ${
           isMemoOpen ? "rounded-b-none" : ""
         }`;
 
