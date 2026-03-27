@@ -1,4 +1,3 @@
-// src/features/todo/screens/Home/HomeScreen.jsx
 import React, {
   useCallback,
   useEffect,
@@ -8,27 +7,27 @@ import React, {
 } from "react";
 import {
   View,
-  StyleSheet,
-  Dimensions,
   StatusBar,
   TouchableOpacity,
   Pressable,
   Image,
+  ScrollView,
 } from "react-native";
 import { Gesture, GestureDetector } from "react-native-gesture-handler";
 import { SafeAreaView } from "react-native-safe-area-context";
 import LottieView from "lottie-react-native";
-import { TodoLottie } from "../../assets/lottie"; // HomeScreen 기준 상대경로 유지
+import { useFocusEffect } from "@react-navigation/native";
+
+import { TodoLottie } from "../../assets/lottie";
 import AppText from "../../../../shared/components/AppText";
 import TodayIcon from "../../assets/svg/Today.svg";
 import CategoryIcon from "../../assets/svg/Category.svg";
 import ErrorImage from "../../../../shared/assets/png/Error.png";
-
-import TodoCard from "../../components/TodoCard";
 import CharacterSkeleton from "../../components/CharacterSkeleton";
-import TodoEditorSheet from "../../components/TodoEditorSheet/TodoEditorSheet";
-import { useTodoEditorController } from "../../hooks/useTodoEditorController";
+import TodoBoardSection from "../../components/TodoBoardSection";
+import FCMInitializer from "../../../../notifications/components/FCMInitializer";
 
+import { useTodoEditorController } from "../../hooks/useTodoEditorController";
 import { useHomeTodosQuery } from "../../queries/home/useHomeTodosQuery";
 import { useCategoriesQuery } from "../../queries/category/useCategoriesQuery";
 import { useTodoCharacterStatusQuery } from "../../queries/home/useTodoCharacterStatusQuery";
@@ -43,15 +42,8 @@ import { useDeleteRecurrenceTodosMutation } from "../../queries/home/useDeleteRe
 
 import { useModalStore } from "../../../../shared/stores/modal/modalStore";
 import colors from "../../../../shared/styles/colors";
-import TodoBoardSection from "../../components/TodoBoardSection";
-import FCMInitializer from "../../../../notifications/components/FCMInitializer";
-
-const { width, height } = Dimensions.get("window");
-import { useFocusEffect } from "@react-navigation/native";
-
 import Dotted from "../../../calendar/assets/svg/Dotted.svg";
 
-// ✅ 오늘 날짜(로컬 기준) YYYY-MM-DD
 function formatYYYYMMDD(dateObj) {
   const y = dateObj.getFullYear();
   const m = String(dateObj.getMonth() + 1).padStart(2, "0");
@@ -83,9 +75,9 @@ function getLottieKeyFromStatus(status) {
     case "CASE_D":
       return "caseD";
     case "CASE_E1":
-      return "caseE1"; // ✅ 너의 파일명 규칙
+      return "caseE1";
     case "CASE_E2":
-      return "caseE2"; // ✅ 너의 파일명 규칙
+      return "caseE2";
     case "CASE_F":
       return "caseF";
     case "CASE_G":
@@ -93,40 +85,37 @@ function getLottieKeyFromStatus(status) {
     case "CASE_H":
       return "caseH";
     default:
-      // return "caseA"; // fallback
       return null;
   }
 }
-
-// function CheerBubble({text}) {
-//   if (!text) return null;
-
-//   return (
-//     <View style={bubbleStyles.wrap} pointerEvents="none">
-//       <View style={bubbleStyles.box}>
-//         <AppText variant="M500" className="text-bk" style={bubbleStyles.text}>
-//           {text}
-//         </AppText>
-//       </View>
-//       <View style={bubbleStyles.tail} />
-//     </View>
-//   );
-// }
 
 function SpeechBubble({ text }) {
   if (!text) return null;
 
   return (
-    <View style={bubbleStyles.wrap} pointerEvents="none">
-      <View style={bubbleStyles.bubble}>
-        <AppText variant="M500" style={bubbleStyles.text}>
+    <View
+      className="absolute left-0 right-0 items-center"
+      style={{ top: "3%", zIndex: 10 }}
+      pointerEvents="none"
+    >
+      <View className="relative rounded-[14px] border border-gr200 bg-wt px-4 py-[10px]">
+        <AppText
+          variant="M500"
+          className="text-center text-[12px] leading-[18px] text-gr900"
+          style={{ fontFamily: "Pretendard-Medium" }}
+        >
           {text}
         </AppText>
-
-        {/* 꼬리 */}
-        {/* <View style={bubbleStyles.tail} /> */}
       </View>
-      <View style={bubbleStyles.tail} />
+
+      <View
+        className="absolute h-2 w-2 rounded-br-[2px] border-b border-r border-gr200 bg-wt"
+        style={{
+          bottom: -4,
+          left: "48.5%",
+          transform: [{ rotate: "45deg" }],
+        }}
+      />
     </View>
   );
 }
@@ -220,14 +209,15 @@ export default function HomeScreen({ navigation, route }) {
   const { open, close } = useModalStore();
 
   const [shouldInitNotifications, setShouldInitNotifications] = useState(false);
+  const [bubbleText, setBubbleText] = useState("");
+  const [currentDate, setCurrentDate] = useState(() => new Date());
+  const [selectedTodoId, setSelectedTodoId] = useState(null);
+  const [parentScrollEnabled, setParentScrollEnabled] = useState(true);
+
   useEffect(() => {
-    // 홈 화면이 처음 마운트될 때만 true로 바꿔서 초기화 1회 실행
     setShouldInitNotifications(true);
   }, []);
 
-  const [bubbleText, setBubbleText] = useState("");
-
-  const [currentDate, setCurrentDate] = useState(() => new Date());
   const date = useMemo(() => formatYYYYMMDD(currentDate), [currentDate]);
   const header = useMemo(() => formatKoreanHeader(currentDate), [currentDate]);
 
@@ -235,14 +225,12 @@ export default function HomeScreen({ navigation, route }) {
     return date === formatYYYYMMDD(new Date());
   }, [date]);
 
-  // ✅ 카테고리 조회 (서버)
   const {
     data: rawCategories = [],
     isLoading: isCategoriesLoading,
     isError: isCategoriesError,
   } = useCategoriesQuery();
 
-  // ✅ TodoCard가 기대하는 형태로 매핑 + displayOrder 정렬
   const categories = useMemo(() => {
     const arr = Array.isArray(rawCategories) ? rawCategories : [];
     return arr
@@ -251,11 +239,9 @@ export default function HomeScreen({ navigation, route }) {
       .map((c) => ({
         categoryId: c.id,
         label: c.name,
-        color: c.colorHex, // 화면 표시용 hex
       }));
   }, [rawCategories]);
 
-  // ✅ 홈 투두 조회 (categoryId 생략 = 전체)
   const {
     data: rawTodos = [],
     isFetched: isHomeTodosFetched,
@@ -266,57 +252,38 @@ export default function HomeScreen({ navigation, route }) {
     categoryId: undefined,
   });
 
-  useEffect(() => {
-    // console.log("Categories: ", rawCategories);
-  }, [rawCategories]);
-
-  useEffect(() => {
-    // console.log("Home todos: ", rawTodos);
-  }, [rawTodos]);
-
   const SWIPE_THRESHOLD = 50;
-  const onSwipeChangeDate = useCallback(
-    (dx) => {
-      // ✅ 요청대로: 우로 스와이프(음수) = 전날, 좌로 스와이프(양수) = 다음날
-      if (dx >= SWIPE_THRESHOLD) {
-        setCurrentDate((prev) => addDays(prev, -1));
-      } else if (dx <= -SWIPE_THRESHOLD) {
-        setCurrentDate((prev) => addDays(prev, +1));
-      }
-    },
-    [setCurrentDate],
-  );
+
+  const onSwipeChangeDate = useCallback((dx) => {
+    if (dx >= SWIPE_THRESHOLD) {
+      setCurrentDate((prev) => addDays(prev, -1));
+    } else if (dx <= -SWIPE_THRESHOLD) {
+      setCurrentDate((prev) => addDays(prev, 1));
+    }
+  }, []);
 
   const panGesture = useMemo(() => {
-    return (
-      Gesture.Pan()
-        .runOnJS(true) // ✅ 추가
-        // ✅ 가로 스와이프 잡기
-        .activeOffsetX([-12, 12])
-        .failOffsetY([-10, 10])
-        .onEnd((e) => {
-          onSwipeChangeDate(e.translationX);
-        })
-    );
+    return Gesture.Pan()
+      .runOnJS(true)
+      .activeOffsetX([-12, 12])
+      .failOffsetY([-10, 10])
+      .onEnd((e) => {
+        onSwipeChangeDate(e.translationX);
+      });
   }, [onSwipeChangeDate]);
 
   const {
-    data: characterStatus, // { status, imageCode, description }
+    data: characterStatus,
     dataUpdatedAt: characterUpdatedAt,
-    isLoading: isCharacterLoading, // ✅ 추가
-    isFetching: isCharacterFetching, // (선택)
+    isLoading: isCharacterLoading,
     isError: isCharacterError,
   } = useTodoCharacterStatusQuery({ date }, { enabled: isHomeTodosFetched });
-
-  useEffect(() => {
-    // console.log("characterStatus: ", characterStatus);
-  }, [characterStatus]);
 
   const isBoardLoading = isCategoriesLoading || isTodosLoading;
   const isCharacterBusy = isCharacterLoading || isBoardLoading;
 
-  // 스켈레톤은 로딩이 3초 이상 지속될 때만 노출
   const [showSkeleton, setShowSkeleton] = useState(false);
+
   useEffect(() => {
     if (!isCharacterBusy) {
       setShowSkeleton(false);
@@ -328,32 +295,21 @@ export default function HomeScreen({ navigation, route }) {
 
   const lottieKey = useMemo(() => {
     return getLottieKeyFromStatus(characterStatus?.status);
-    // return getLottieKeyFromStatus("CASE_E1");
-  }, [characterStatus?.status]);
-
-  const isShadowGR = useMemo(() => {
-    return (
-      characterStatus?.status === "CASE_A" ||
-      characterStatus?.status === "CASE_F"
-    );
   }, [characterStatus?.status]);
 
   useEffect(() => {
     const status = characterStatus?.status;
     const pool = BUBBLE_MENTS[status] ?? null;
-
-    // ✅ 쿼리가 호출(갱신)될 때마다 새로운 랜덤 멘트로 갱신
     setBubbleText(pickRandom(pool, ""));
   }, [characterStatus?.status, characterUpdatedAt]);
 
-  // ✅ TodoCard가 쓰는 형태로 변환 + displayOrder 정렬
   const todos = useMemo(() => {
     const arr = Array.isArray(rawTodos) ? rawTodos : [];
     return arr
       .slice()
       .sort((a, b) => (a?.displayOrder ?? 0) - (b?.displayOrder ?? 0))
       .map((t) => ({
-        id: String(t.id), // DraggableFlatList keyExtractor용 string
+        id: String(t.id),
         title: t.description ?? "",
         done: t.status === "COMPLETED",
         categoryId: t.categoryId,
@@ -365,12 +321,9 @@ export default function HomeScreen({ navigation, route }) {
       }));
   }, [rawTodos]);
 
-  // ✅ 투두 생성 mutation 연결
   const { mutateAsync: createTodoMutateAsync } = useCreateTodoMutation();
-  // ✅ "내일하기" mutation 연결
   const { mutateAsync: moveTodoTomorrowMutateAsync } =
     useMoveTodoTomorrowMutation();
-  // ✅ "오늘하기" mutation 연결
   const { mutateAsync: moveTodoTodayMutateAsync } = useMoveTodoTodayMutation();
   const { mutateAsync: deleteTodoMutateAsync } = useDeleteTodoMutation();
   const { mutateAsync: deleteRecurrenceTodosMutateAsync } =
@@ -380,31 +333,21 @@ export default function HomeScreen({ navigation, route }) {
   const { mutateAsync: reorderTodosMutateAsync } =
     useReorderHomeTodosMutation();
 
-  // ✅ 추가: 현재 편집 중인 todoId
-  const [selectedTodoId, setSelectedTodoId] = useState(null);
-
   const editor = useTodoEditorController({
-    categories, // ✅ 서버 카테고리로 교체
+    categories,
     onSubmitTodo: async ({ todo, text, categoryId }) => {
-      // ✅ create 모드
       if (!todo?.id) {
-        // 바텀시트 투두 생성 API: description, categoryId로 생성
         await createTodoMutateAsync({
           description: text,
           categoryId,
-          date, // ✅ 홈에서 보고 있는 날짜로 생성 (YYYY-MM-DD)
+          date,
         });
         return;
       }
-
-      // ✅ edit 모드(추후 update mutation 연결 자리)
-      // await updateTodoMutateAsync({ todoId: todo.id, ... })
     },
   });
 
-  // 캘린더 연동
-  const appliedInitialDateRef = useRef(null); // 마지막으로 적용한 initialDate
-  const skipResetOnceRef = useRef(false); // 캘린더에서 넘어온 직후 1회 리셋 방지
+  const appliedInitialDateRef = useRef(null);
 
   useFocusEffect(
     useCallback(() => {
@@ -414,39 +357,90 @@ export default function HomeScreen({ navigation, route }) {
         const [y, m, d] = String(dateStr).split("-").map(Number);
         if (y && m && d) {
           appliedInitialDateRef.current = dateStr;
-          skipResetOnceRef.current = true;
           setCurrentDate(new Date(y, m - 1, d));
         }
-        return;
       }
-      if (skipResetOnceRef.current) {
-        skipResetOnceRef.current = false;
-        return;
-      }
-      setCurrentDate(new Date());
     }, [route?.params?.initialDate]),
   );
 
   const isApiError = isCategoriesError || isTodosError || isCharacterError;
 
+  const boardHeader = useMemo(() => {
+    return (
+      <>
+        <GestureDetector gesture={panGesture}>
+          <View
+            className="w-full items-center justify-center pt-[13px]"
+            style={{ height: 247 }}
+          >
+            <SpeechBubble text={bubbleText} />
+
+            <Pressable
+              className="relative w-[72%]"
+              style={{ aspectRatio: 1, maxHeight: "100%" }}
+              onPress={() => {
+                const status = characterStatus?.status;
+                const pool = BUBBLE_MENTS[status] ?? null;
+
+                setBubbleText((prev) =>
+                  pickRandomDifferent(pool, prev, "대충 응원하는 문구"),
+                );
+              }}
+            >
+              {isCharacterBusy && showSkeleton ? (
+                <CharacterSkeleton />
+              ) : (
+                <LottieView
+                  source={TodoLottie[lottieKey]}
+                  autoPlay
+                  loop={false}
+                  style={{
+                    position: "absolute",
+                    width: "100%",
+                    height: "100%",
+                  }}
+                />
+              )}
+            </Pressable>
+          </View>
+        </GestureDetector>
+
+        <View>
+          <Dotted style={{ width: "100%" }} height={1} />
+        </View>
+      </>
+    );
+  }, [
+    panGesture,
+    bubbleText,
+    characterStatus?.status,
+    isCharacterBusy,
+    showSkeleton,
+    lottieKey,
+  ]);
+
   if (isApiError) {
     return (
-      <SafeAreaView style={styles.safe} edges={["top"]}>
+      <SafeAreaView className="flex-1 bg-wt px-5" edges={["top"]}>
         <StatusBar barStyle="dark-content" />
         {shouldInitNotifications && <FCMInitializer />}
-        <View style={styles.errorFullScreen}>
-          {/* <AppText variant="H1" style={styles.oopsText}>
-            Oops!
-          </AppText> */}
+
+        <View className="flex-1 items-center justify-center">
           <Image
             source={ErrorImage}
-            style={styles.errorFullImage}
+            className="mb-6 h-[200px] w-[250px]"
             resizeMode="contain"
           />
-          <AppText variant="M500" style={styles.errorMessage}>
+          <AppText
+            variant="M500"
+            className="text-center leading-[18px] text-gr500"
+          >
             아차차... 정보를 불러오지 못했어요.
           </AppText>
-          <AppText variant="M500" style={styles.errorMessage}>
+          <AppText
+            variant="M500"
+            className="text-center leading-[18px] text-gr500"
+          >
             잠시 후 다시 시도해 주세요!
           </AppText>
         </View>
@@ -455,11 +449,14 @@ export default function HomeScreen({ navigation, route }) {
   }
 
   return (
-    <SafeAreaView style={styles.safe} edges={["top"]}>
+    <SafeAreaView className="flex-1 bg-wt" edges={["top"]}>
       <StatusBar barStyle="dark-content" />
       {shouldInitNotifications && <FCMInitializer />}
-      {/* topBar: 날짜 + 우측 SVG 아이콘들 */}
-      <View style={styles.topBar}>
+
+      <View
+        className="w-full flex-row items-center justify-between"
+        style={{ paddingVertical: 16, paddingHorizontal: 20 }}
+      >
         <View>
           <AppText variant="M500" className="text-gr500">
             {header.yearText}
@@ -469,14 +466,23 @@ export default function HomeScreen({ navigation, route }) {
           </AppText>
         </View>
 
-        <View style={styles.iconRow}>
+        <View
+          style={{
+            flexDirection: "row",
+            alignItems: "center",
+            gap: 12,
+          }}
+        >
           <TouchableOpacity
             activeOpacity={isViewingToday ? 1 : 0.5}
             disabled={isViewingToday}
-            style={[
-              styles.iconButton,
-              isViewingToday && styles.iconButtonDisabled,
-            ]}
+            style={{
+              opacity: isViewingToday ? 0.35 : 1,
+              width: 32,
+              height: 32,
+              justifyContent: "center",
+              alignItems: "center",
+            }}
             onPress={() => {
               if (isViewingToday) return;
               setCurrentDate(new Date());
@@ -487,7 +493,12 @@ export default function HomeScreen({ navigation, route }) {
 
           <TouchableOpacity
             activeOpacity={0.5}
-            style={styles.iconButton}
+            style={{
+              width: 32,
+              height: 32,
+              justifyContent: "center",
+              alignItems: "center",
+            }}
             onPress={() =>
               navigation.navigate("Category", {
                 screen: "CategList",
@@ -498,263 +509,22 @@ export default function HomeScreen({ navigation, route }) {
           </TouchableOpacity>
         </View>
       </View>
-      <View style={{ flex: 1 }}>
+
+      <ScrollView
+        scrollEnabled={parentScrollEnabled}
+        showsVerticalScrollIndicator={false}
+        keyboardShouldPersistTaps="handled"
+        className="px-5"
+      >
         <TodoBoardSection
           navigation={navigation}
           date={date}
           isViewingToday={isViewingToday}
-          ListHeaderComponent={
-            <>
-              {/* 캐릭터 영역: 스크롤과 함께 이동 */}
-              <GestureDetector gesture={panGesture}>
-                <View style={styles.illustrationWrapper}>
-                  <SpeechBubble text={bubbleText} />
-                  <Pressable
-                    style={styles.lottieWrapper}
-                    onPress={() => {
-                      const status = characterStatus?.status;
-                      const pool = BUBBLE_MENTS[status] ?? null;
-
-                      setBubbleText((prev) =>
-                        pickRandomDifferent(pool, prev, "대충 응원하는 문구"),
-                      );
-                    }}
-                  >
-                    {isCharacterBusy && showSkeleton ? (
-                      <CharacterSkeleton />
-                    ) : (
-                      <LottieView
-                        source={TodoLottie[lottieKey]}
-                        autoPlay
-                        loop={false}
-                        style={styles.lottie}
-                      />
-                    )}
-                  </Pressable>
-                </View>
-              </GestureDetector>
-              {/* 구분선 */}
-              <View>
-                <Dotted style={{ width: "100%" }} height={1} />
-              </View>
-            </>
-          }
+          todos={todos}
+          setParentScrollEnabled={setParentScrollEnabled}
+          ListHeaderComponent={boardHeader}
         />
-      </View>
+      </ScrollView>
     </SafeAreaView>
   );
 }
-
-const styles = StyleSheet.create({
-  safe: {
-    flex: 1,
-    backgroundColor: "#FAFAFA",
-    paddingHorizontal: 20,
-  },
-  topBar: {
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "space-between",
-    // height: "10%",
-    paddingVertical: 16,
-  },
-  todoScroll: {
-    flex: 1, // ✅ 남은 영역을 TodoCard 스크롤이 차지
-  },
-  todoScrollContent: {
-    paddingBottom: 36, // ✅ 맨 아래 여백(탭바/홈바 겹침 방지)
-  },
-  iconRow: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 12,
-    // borderWidth: 1,
-  },
-  iconButton: {
-    // paddingVertical: 4,
-    // paddingHorizontal: 4,
-    width: 32,
-    height: 32,
-    // borderRadius: 10,
-    alignItems: "center",
-    justifyContent: "center",
-    // borderWidth: 1,
-  },
-  iconButtonDisabled: {
-    opacity: 0.35,
-  },
-  illustrationWrapper: {
-    width: "100%",
-    // height: height * 0.377,
-    alignItems: "center",
-    justifyContent: "center",
-    // borderWidth: 1,
-    // height: height * 0.312,
-    height: 247,
-    paddingTop: 13,
-  },
-  lottieWrapper: {
-    position: "relative",
-    width: "72%",
-    aspectRatio: 1,
-    maxHeight: "100%",
-    // marginTop: "8%",
-    // borderWidth: 1,
-  },
-  errorFullScreen: {
-    flex: 1,
-    justifyContent: "center",
-    alignItems: "center",
-  },
-  oopsText: {
-    fontSize: 48,
-    fontFamily: "Pretendard-Bold",
-    color: "#222222",
-    marginBottom: -10,
-    zIndex: 1,
-  },
-  errorFullImage: {
-    width: 250,
-    height: 200,
-    marginBottom: 24,
-  },
-  errorMessage: {
-    // fontSize: 14,
-    color: colors.gr500,
-    lineHeight: 18,
-    textAlign: "center",
-  },
-  spinnerWrapper: {
-    position: "absolute",
-    top: 0,
-    left: 0,
-    right: 0,
-    bottom: 0,
-    alignItems: "center",
-    justifyContent: "center",
-  },
-
-  lottie: {
-    position: "absolute",
-    width: "100%",
-    height: "100%",
-  },
-  shadowWrapper: {
-    width: "60%",
-    // height: "100%",
-    aspectRatio: 15,
-    // borderWidth: 1,
-  },
-  dashedDivider: {
-    // marginVertical: 18,
-    borderBottomWidth: 1,
-    borderBottomColor: colors.gr200,
-    borderStyle: "dashed",
-  },
-});
-
-const sheetStyles = StyleSheet.create({
-  container: {
-    flex: 1,
-    paddingHorizontal: 20,
-    paddingTop: 8,
-    paddingBottom: 16,
-  },
-  categoryRow: {
-    flexDirection: "row",
-    marginBottom: 12,
-  },
-  categoryChip: {
-    paddingHorizontal: 16,
-    paddingVertical: 7,
-    borderRadius: 999,
-    backgroundColor: "#F0F0F0",
-  },
-  categoryText: {
-    fontSize: 13,
-    color: "#B0B0B0",
-  },
-  inputRow: {
-    flexDirection: "row",
-    alignItems: "center",
-  },
-  inputWrapper: {
-    flex: 1,
-    borderRadius: 16,
-    backgroundColor: "#FFFFFF",
-    paddingHorizontal: 16,
-    paddingVertical: 6,
-    // height: 44,
-    // shadowColor: "#000",
-    // shadowOpacity: 0.04,
-    // shadowRadius: 6,
-    // shadowOffset: {width: 0, height: 2},
-    // elevation: 4,
-  },
-  input: {
-    fontFamily: "Pretendard-Medium",
-    fontSize: 12,
-    // fontSize: 15,
-    color: "#333333",
-  },
-  submitButton: {
-    marginLeft: 8,
-    width: 44,
-    height: 44,
-    borderRadius: 22,
-    backgroundColor: "#E4E4E4",
-    alignItems: "center",
-    justifyContent: "center",
-  },
-  submitIcon: {
-    fontSize: 18,
-    color: "#888888",
-  },
-});
-
-const bubbleStyles = StyleSheet.create({
-  wrap: {
-    position: "absolute",
-    top: "3%", // 🔥 튀김 위에 얹고 싶으면 여기 조절
-    // top: 0,
-    left: 0,
-    right: 0,
-    alignItems: "center",
-    zIndex: 10,
-  },
-  bubble: {
-    position: "relative",
-    backgroundColor: colors.wt,
-    borderWidth: 1,
-    borderColor: colors.gr200,
-    borderRadius: 14,
-    paddingHorizontal: 16,
-    paddingVertical: 10,
-
-    // 텍스트 길면 자동으로 넓어지다가, maxWidth에서 줄바꿈
-    // maxWidth: "100%",
-  },
-  text: {
-    textAlign: "center",
-    fontFamily: "Pretendard-Medium",
-    fontSize: 12,
-    lineHeight: 12 * 1.5,
-    color: colors.gr900,
-    // borderWidth: 1,
-  },
-  tail: {
-    position: "absolute",
-    bottom: -4,
-    left: "48.5%",
-    // marginLeft: 20,
-    // right: "0%",
-    width: 8,
-    height: 8,
-    backgroundColor: colors.wt,
-    borderRightWidth: 1,
-    borderBottomWidth: 1,
-    borderColor: colors.gr200,
-    transform: [{ rotate: "45deg" }],
-    borderBottomRightRadius: 2,
-  },
-});
