@@ -637,8 +637,8 @@ export default function TodoBoardSection({
           );
         })}
 
-        <View>
-          <Dotted style={{ width: "100%", marginVertical: 18 }} height={1} />
+        <View className="mx-5 mt-3">
+          <Dotted width="100%" height={1} />
         </View>
 
         {categories.length < 6 ? (

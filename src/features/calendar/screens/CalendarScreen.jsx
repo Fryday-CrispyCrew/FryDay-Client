@@ -203,8 +203,8 @@ export default function CalendarScreen({ navigation }) {
               />
             </View>
 
-            <View className="mt-3 mx-5 shrink-0">
-              <Dotted style={{ width: "100%" }} height={1} />
+            <View className="mx-5 mt-3">
+              <Dotted width="100%" height={1} />
             </View>
 
             <ScrollView
