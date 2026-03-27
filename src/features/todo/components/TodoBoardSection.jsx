@@ -116,7 +116,7 @@ function TodoItem({
             onPress={() => onPressItem?.(item)}
           >
             <AppText variant="M500" className="text-bk">
-              {item.title}
+              {item.title ?? item.description ?? ""}
             </AppText>
           </TouchableOpacity>
 
@@ -397,7 +397,7 @@ export default function TodoBoardSection({
       if (skip === "true") {
         if (isDone) {
           await createTodoMutateAsync({
-            description: todo?.title ?? "",
+            description: todo?.title ?? todo?.description ?? "",
             categoryId: todo?.categoryId,
             date: todayStr,
           });
