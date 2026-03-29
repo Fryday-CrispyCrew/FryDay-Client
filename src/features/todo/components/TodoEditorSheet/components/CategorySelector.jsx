@@ -1,6 +1,7 @@
 import { ScrollView, TouchableOpacity, View } from "react-native";
 import AppText from "../../../../../shared/components/AppText";
 import ChevronIcon from "../../../../../shared/components/ChevronIcon";
+import colors from "../../../../../shared/styles/colors";
 
 export default function CategorySelector({
   categories = [],
@@ -34,7 +35,12 @@ export default function CategorySelector({
       </View>
 
       {!isCategoryOpen && (
-        <ChevronIcon direction="right" size={14} strokeWidth={2.5} />
+        <ChevronIcon
+          direction="right"
+          size={14}
+          strokeWidth={2.5}
+          color={colors?.gr500}
+        />
       )}
 
       {isCategoryOpen && (
