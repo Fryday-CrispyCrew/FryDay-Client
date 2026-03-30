@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback } from "react";
+import React, { useState, useEffect, useCallback, useMemo } from "react";
 import { ScrollView, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import dayjs from "dayjs";
@@ -59,9 +59,27 @@ export default function CalendarScreen({ navigation }) {
   const openYMModal = useCallback(() => setIsYMModalOpen(true), []);
   const closeYMModal = useCallback(() => setIsYMModalOpen(false), []);
 
-  const { data: todos = [], isLoading: isTodosLoading } = useHomeTodosQuery({
+  const { data: rawTodos = [], isLoading: isTodosLoading } = useHomeTodosQuery({
     date: selectedDateStr,
   });
+
+  const todos = useMemo(() => {
+    const arr = Array.isArray(rawTodos) ? rawTodos : [];
+    return arr
+      .slice()
+      .sort((a, b) => (a?.displayOrder ?? 0) - (b?.displayOrder ?? 0))
+      .map((t) => ({
+        id: String(t.id),
+        title: t.description ?? "",
+        done: t.status === "COMPLETED",
+        categoryId: t.categoryId,
+        displayOrder: t.displayOrder,
+        date: t.date,
+        recurrenceId: t.recurrenceId,
+        occurrenceDate: t.occurrenceDate,
+        memo: t.memo ?? "",
+      }));
+  }, [rawTodos]);
   const [parentScrollEnabled, setParentScrollEnabled] = useState(true);
 
   const handleConfirmYM = useCallback((year, month) => {
