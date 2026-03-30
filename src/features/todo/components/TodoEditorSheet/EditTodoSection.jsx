@@ -62,11 +62,10 @@ export default function EditTodoSection({
       />
 
       <EditToolsRow
-        icons={EDIT_TOOL_ICONS}
         selectedToolKey={selectedToolKey}
         onSelectTool={onSelectTool}
         onSubmit={handleSubmitInternal}
-        submitDisabled={!isSubmitEnabled || !hasEditChanges}
+        disabled={!isSubmitEnabled || !hasEditChanges}
       />
     </>
   );
