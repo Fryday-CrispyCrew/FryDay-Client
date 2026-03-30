@@ -15,6 +15,7 @@ function InputBase({
   onBlur,
   className = "",
   style,
+  editable = true,
 }) {
   return (
     <BottomSheetTextInput
@@ -27,6 +28,8 @@ function InputBase({
       maxLength={maxLength}
       onBlur={onBlur}
       onFocus={onFocus}
+      editable={editable}
+      showSoftInputOnFocus={editable}
       className={className}
       autoFocus={false}
       style={[
@@ -58,6 +61,7 @@ export default function TitleInputSection({
   onClear,
   isMemoOpen = false,
   onFocusExtra,
+  editable = true,
 }) {
   const [localValue, setLocalValue] = React.useState(value ?? "");
 
@@ -90,27 +94,27 @@ export default function TitleInputSection({
       className={wrapperClass}
       style={isFocused ? { borderColor: "#EAEAEA" } : null}
     >
-      <InputBase
-        inputRef={inputRef}
-        value={localValue}
-        onChangeText={handleChangeText}
-        onSubmitEditing={onSubmitEditing}
-        onFocus={() => {
-          setIsFocused?.(true);
-          onFocusExtra?.();
-
-          requestAnimationFrame(() => {
-            inputRef.current?.focus();
-          });
-        }}
-        onBlur={() => setIsFocused?.(false)}
-        className={
-          mode === "create"
-            ? "h-full text-[12px] text-gr900"
-            : "h-full text-[12px] text-gr700"
-        }
-        style={mode === "edit" ? { color: colors.gr700 } : null}
-      />
+      <View pointerEvents={editable ? "auto" : "none"}>
+        <InputBase
+          inputRef={inputRef}
+          value={localValue}
+          onChangeText={handleChangeText}
+          onSubmitEditing={onSubmitEditing}
+          editable={editable}
+          onFocus={() => {
+            if (!editable) return;
+            setIsFocused?.(true);
+            onFocusExtra?.();
+          }}
+          onBlur={() => setIsFocused?.(false)}
+          className={
+            mode === "create"
+              ? "h-full text-[12px] text-gr900"
+              : "h-full text-[12px] text-gr700"
+          }
+          style={mode === "edit" ? { color: colors.gr700 } : null}
+        />
+      </View>
 
       {!!localValue?.length && (
         <TouchableOpacity

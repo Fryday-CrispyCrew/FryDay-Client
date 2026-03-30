@@ -24,6 +24,13 @@ export default function EditTodoSection({
   onSelectTool,
   EDIT_TOOL_ICONS,
 }) {
+  React.useEffect(() => {
+    if (isMemoOpen) {
+      requestAnimationFrame(() => {
+        memoInputRef.current?.focus();
+      });
+    }
+  }, [isMemoOpen]);
   return (
     <>
       <TitleInputSection
@@ -36,6 +43,7 @@ export default function EditTodoSection({
         setIsFocused={setIsTitleFocused}
         onClear={handleClearText}
         isMemoOpen={isMemoOpen}
+        editable={!selectedToolKey}
       />
 
       <MemoSection
