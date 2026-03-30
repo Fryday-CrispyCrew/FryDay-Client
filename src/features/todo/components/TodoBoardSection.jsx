@@ -649,7 +649,7 @@ export default function TodoBoardSection({
                 screen: "CategEdit",
               })
             }
-            className="self-start rounded-3xl border border-[#FF5B22] px-2.5 py-1.5"
+            className="self-start rounded-3xl border border-[#FF5B22] mt-[18px] px-2.5 py-1.5"
           >
             <View className="flex-row items-center gap-1">
               <AppText variant="M600" style={{ color: colors?.or }}>
