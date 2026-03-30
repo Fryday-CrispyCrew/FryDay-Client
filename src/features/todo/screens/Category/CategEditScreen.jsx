@@ -1,5 +1,4 @@
-// src/features/todo/screens/Category/CategEditScreen.jsx
-import React, {useMemo, useState} from "react";
+import React, { useMemo, useState } from "react";
 import {
   View,
   StyleSheet,
@@ -9,37 +8,36 @@ import {
   Platform,
   ActivityIndicator,
 } from "react-native";
-import {SafeAreaView} from "react-native-safe-area-context";
+import { SafeAreaView } from "react-native-safe-area-context";
 
-import CategoryHeader from "../../components/Category/CategoryHeader"; // ✅ 경로는 프로젝트 구조에 맞게 조정
+import CategoryHeader from "../../components/Category/CategoryHeader";
 import AppText from "../../../../shared/components/AppText";
 import ChevronIcon from "../../../../shared/components/ChevronIcon";
-import ClearIcon from "../../../../shared/assets/svg/Clear.svg"; // ✅ 경로는 네 파일 위치에 맞게 수정
+import ClearIcon from "../../../../shared/assets/svg/Clear.svg";
 import CheckIcon from "../../assets/svg/category/Check.svg";
 import colors from "../../../../shared/styles/colors";
 
-import {useModalStore} from "../../../../shared/stores/modal/modalStore";
-import {useCreateCategoryMutation} from "../../queries/category/useCreateCategoryMutation";
-import {useUpdateCategoryMutation} from "../../queries/category/useUpdateCategoryMutation";
-import {useDeleteCategoryMutation} from "../../queries/category/useDeleteCategoryMutation";
-import {queryClient} from "../../../../shared/lib/queryClient";
-import {categoryKeys} from "../../queries/category/categoryKeys";
+import { useModalStore } from "../../../../shared/stores/modal/modalStore";
+import { useCreateCategoryMutation } from "../../queries/category/useCreateCategoryMutation";
+import { useUpdateCategoryMutation } from "../../queries/category/useUpdateCategoryMutation";
+import { useDeleteCategoryMutation } from "../../queries/category/useDeleteCategoryMutation";
+import { queryClient } from "../../../../shared/lib/queryClient";
+import { categoryKeys } from "../../queries/category/categoryKeys";
 
 const MAX_NAME_LEN = 8;
 
 const COLOR_OPTIONS = [
-  colors.or, // orange
-  colors.br, // brown
-  colors.lg, // green
-  colors.vl, // purple
-  colors.dp, // pink
-  colors.cb, // blue
-  colors.mb, // beige/brown
-  colors.mt, // mint
-  colors.pk, // light pink
+  colors.or,
+  colors.br,
+  colors.lg,
+  colors.vl,
+  colors.dp,
+  colors.cb,
+  colors.mb,
+  colors.mt,
+  colors.pk,
 ];
 
-// ✅ hex → colorCode 매핑 (명세서용)
 const COLOR_CODE_MAP = {
   [colors.or]: "OR",
   [colors.br]: "BR",
@@ -52,14 +50,13 @@ const COLOR_CODE_MAP = {
   [colors.pk]: "PK",
 };
 
-export default function CategEditScreen({navigation, route}) {
-  const mode = route?.params?.mode ?? "create"; // "create" | "edit"
+export default function CategEditScreen({ navigation, route }) {
+  const mode = route?.params?.mode ?? "create";
   const editingCategory = route?.params?.category ?? null;
   const categoryCount = route?.params?.categoryCount ?? 0;
 
   const isEdit = mode === "edit";
 
-  // ✅ edit이면 기존 값으로 초기화, create면 빈 값
   const [name, setName] = useState(
     isEdit ? (editingCategory?.label ?? editingCategory?.name ?? "") : "",
   );
@@ -68,58 +65,32 @@ export default function CategEditScreen({navigation, route}) {
       ? (editingCategory?.color ?? editingCategory?.colorHex ?? null)
       : null,
   );
-
   const [isColorOpen, setIsColorOpen] = useState(false);
+  const [isInputFocused, setIsInputFocused] = useState(false);
 
   const openModal = useModalStore((s) => s.open);
 
-  const {mutate: createCategory, isPending: isCreating} =
+  const { mutate: createCategory, isPending: isCreating } =
     useCreateCategoryMutation({
       onSuccess: async () => {
-        // ✅ 생성 성공 → 목록 화면으로 이동
-        // navigation?.navigate?.("CategList");
-        // await queryClient.invalidateQueries({queryKey: categoryKeys.list()});
-        await queryClient.refetchQueries({queryKey: categoryKeys.list()});
-        // navigation?.navigate?.("CategList");
+        await queryClient.refetchQueries({ queryKey: categoryKeys.list() });
         navigation.goBack();
-      },
-      onError: (err) => {
-        // console.log("[createCategory] error:", err);
-        // console.log("[createCategory] message:", err?.message);
-        // console.log("[createCategory] status:", err?.response?.status);
-        // console.log("[createCategory] data:", err?.response?.data);
       },
     });
 
-  const {mutate: updateCategory, isPending: isUpdating} =
+  const { mutate: updateCategory, isPending: isUpdating } =
     useUpdateCategoryMutation({
       onSuccess: async () => {
-        // ✅ 수정 성공 → 목록으로 복귀(또는 navigate("CategList")도 가능)
-        await queryClient.refetchQueries({queryKey: categoryKeys.list()});
-        // navigation?.navigate?.("CategList");
+        await queryClient.refetchQueries({ queryKey: categoryKeys.list() });
         navigation.goBack();
-      },
-      onError: (err) => {
-        // console.log("[updateCategory] error:", err);
-        // console.log("[updateCategory] message:", err?.message);
-        // console.log("[updateCategory] status:", err?.response?.status);
-        // console.log("[updateCategory] data:", err?.response?.data);
       },
     });
 
-  const {mutate: deleteCategory, isPending: isDeleting} =
+  const { mutate: deleteCategory, isPending: isDeleting } =
     useDeleteCategoryMutation({
       onSuccess: async () => {
-        // ✅ 삭제 성공 → 목록으로 이동(혹은 goBack)
-        await queryClient.refetchQueries({queryKey: categoryKeys.list()});
-        // navigation?.navigate?.("CategList");
+        await queryClient.refetchQueries({ queryKey: categoryKeys.list() });
         navigation.goBack();
-      },
-      onError: (err) => {
-        // console.log("[deleteCategory] error:", err);
-        // console.log("[deleteCategory] message:", err?.message);
-        // console.log("[deleteCategory] status:", err?.response?.status);
-        // console.log("[deleteCategory] data:", err?.response?.data);
       },
     });
 
@@ -128,9 +99,6 @@ export default function CategEditScreen({navigation, route}) {
     [],
   );
 
-  // ✅ create: 이름+컬러 둘 다 필요
-  // ✅ edit: (보통은) 이름만 있어도 되지만, 현재 UX가 “컬러도 선택해야”가 아니라
-  //         “기존 컬러가 이미 선택되어 있음”이므로 selectedColor null이면 안 됨.
   const isSubmitEnabled =
     (name?.trim?.() ?? "").length > 0 && selectedColor != null;
 
@@ -141,12 +109,12 @@ export default function CategEditScreen({navigation, route}) {
   const onPressSave = () => {
     if (!isSubmitEnabled || isUpdating) return;
 
-    const colorCode = COLOR_CODE_MAP[selectedColor]; // ✅ "BR", "OR", ...
+    const colorCode = COLOR_CODE_MAP[selectedColor];
 
     updateCategory({
-      categoryId: editingCategory?.id, // ✅ path variable
+      categoryId: editingCategory?.id,
       name: name.trim(),
-      color: colorCode, // ✅ 명세서: color는 코드 문자열
+      color: colorCode,
     });
   };
 
@@ -157,7 +125,7 @@ export default function CategEditScreen({navigation, route}) {
 
     createCategory({
       name: name.trim(),
-      color: colorCode, // ✅ "BR", "OR", "LG" 형태로 전송
+      color: colorCode,
     });
   };
 
@@ -168,16 +136,13 @@ export default function CategEditScreen({navigation, route}) {
         "카테고리에 속한 모든 투두가 함께 삭제돼요!\n정말 카테고리를 삭제할까요?",
       closeOnBackdrop: true,
       showClose: true,
-
       primary: {
         label: "네, 삭제할래요",
         variant: "outline",
         onPress: () => {
           if (isDeleting) return;
 
-          // ✅ 카테고리는 최소 3개 유지
           if (categoryCount <= 3) {
-            // console.log("categorycount: ", categoryCount);
             setTimeout(() => {
               openModal({
                 title: "알림",
@@ -195,18 +160,14 @@ export default function CategEditScreen({navigation, route}) {
           }
 
           deleteCategory({
-            categoryId: editingCategory?.id, // ✅ path variable
+            categoryId: editingCategory?.id,
           });
         },
-        // closeAfterPress: false, // ✅ API 완료 후 닫고 싶으면 false로 바꾸고 store.close()를 직접 호출
       },
-
       secondary: {
         label: "아니요, 그만 둘래요",
         variant: "outline",
-        onPress: () => {
-          // 닫기는 ModalHost가 자동 처리함
-        },
+        onPress: () => {},
       },
     });
   };
@@ -216,31 +177,30 @@ export default function CategEditScreen({navigation, route}) {
       <KeyboardAvoidingView
         style={styles.flex}
         behavior={Platform.OS === "ios" ? "padding" : undefined}
-        // behavior={"padding"}
       >
-        <View style={styles.headerWrap}>
+        <View className="px-5">
           <CategoryHeader
             variant={isEdit ? "edit" : "create"}
             onPressBack={() => navigation?.goBack?.()}
           />
         </View>
 
-        {/* Content */}
-        <View style={styles.content}>
-          {/* 이름 */}
+        <View className="flex-1 px-5 pt-1.5">
           <AppText variant="L600" style={styles.sectionTitle}>
             이름
           </AppText>
 
-          <View style={styles.inputBox}>
+          <View className="mt-3 h-12 flex-row items-center rounded-2xl bg-white px-3">
             <TextInput
               value={name}
               onChangeText={onChangeName}
               placeholder="카테고리 이름을 입력해 주세요"
-              placeholderTextColor={colors?.gr400 ?? "#BDBDBD"}
+              placeholderTextColor={colors?.gr300 ?? "#BDBDBD"}
               style={styles.input}
               returnKeyType="done"
               maxLength={MAX_NAME_LEN}
+              onFocus={() => setIsInputFocused(true)}
+              onBlur={() => setIsInputFocused(false)}
             />
 
             {!!name?.length && (
@@ -248,7 +208,7 @@ export default function CategEditScreen({navigation, route}) {
                 activeOpacity={0.7}
                 onPress={() => setName("")}
                 hitSlop={10}
-                style={styles.clearButton}
+                className="ml-2 h-7 w-7 items-center justify-center rounded-full"
               >
                 <ClearIcon
                   width={18}
@@ -263,29 +223,27 @@ export default function CategEditScreen({navigation, route}) {
             {helperText}
           </AppText>
 
-          {/* 컬러 */}
-          <View style={{height: 26}} />
+          <View style={{ height: 26 }} />
 
           <TouchableOpacity
             activeOpacity={0.7}
             onPress={() => setIsColorOpen((prev) => !prev)}
-            // hitSlop={10}
           >
-            <View style={styles.colorRowHeader}>
+            <View className="mt-[18px] flex-row items-center justify-between">
               <AppText variant="L600" style={styles.sectionTitle}>
                 컬러
               </AppText>
-              <View style={styles.colorRight}>
+
+              <View className="flex-row items-center h-8">
                 <View
                   style={[
                     styles.colorDot,
                     {
-                      backgroundColor: selectedColor ?? "transparent", // ✅ 선택 전 placeholder
+                      backgroundColor: selectedColor ?? "transparent",
                     },
                   ]}
                 />
-
-                <View style={{width: 8}} />
+                <View style={{ width: 8 }} />
                 <ChevronIcon
                   direction={isColorOpen ? "up" : "down"}
                   size={18}
@@ -296,10 +254,8 @@ export default function CategEditScreen({navigation, route}) {
             </View>
           </TouchableOpacity>
 
-          {/* ✅ 여기 아래에 컬러 팔레트(드롭다운) 넣으면 됨
-              create 화면 스샷은 닫힌 상태라 현재는 렌더 안 함 */}
           {isColorOpen && (
-            <View style={styles.paletteWrap}>
+            <View className="mt-3 flex-row flex-wrap justify-between py-4">
               {COLOR_OPTIONS.map((c) => {
                 const isSelected = c === selectedColor;
 
@@ -310,9 +266,9 @@ export default function CategEditScreen({navigation, route}) {
                     onPress={() => {
                       setSelectedColor(c);
                     }}
-                    style={styles.paletteItemHit}
+                    className="mb-12 w-[30%] items-center"
                   >
-                    <View style={[styles.paletteDot, {backgroundColor: c}]}>
+                    <View style={[styles.paletteDot, { backgroundColor: c }]}>
                       {isSelected && <CheckIcon width={15} height={12} />}
                     </View>
                   </TouchableOpacity>
@@ -322,7 +278,6 @@ export default function CategEditScreen({navigation, route}) {
           )}
         </View>
 
-        {/* Bottom Buttons */}
         <View style={styles.bottomArea}>
           {isEdit ? (
             <>
@@ -332,7 +287,6 @@ export default function CategEditScreen({navigation, route}) {
                 disabled={!isSubmitEnabled || isUpdating}
                 style={[
                   styles.submitBtn,
-                  !isSubmitEnabled && styles.submitBtnDisabled,
                   (!isSubmitEnabled || isUpdating) && styles.submitBtnDisabled,
                 ]}
               >
@@ -351,7 +305,7 @@ export default function CategEditScreen({navigation, route}) {
                 )}
               </TouchableOpacity>
 
-              <View style={{height: 12}} />
+              <View style={{ height: 12 }} />
 
               <TouchableOpacity
                 activeOpacity={0.8}
@@ -396,74 +350,34 @@ export default function CategEditScreen({navigation, route}) {
 }
 
 const styles = StyleSheet.create({
-  flex: {flex: 1},
+  flex: { flex: 1 },
   safe: {
     flex: 1,
     backgroundColor: colors.gr,
-  },
-
-  headerWrap: {
-    paddingHorizontal: 20,
-  },
-
-  content: {
-    flex: 1,
-    paddingHorizontal: 20,
-    paddingTop: 6,
   },
 
   sectionTitle: {
     color: colors?.bk ?? "#141312",
   },
 
-  inputBox: {
-    marginTop: 12,
-    height: 48,
-    borderRadius: 16,
-    backgroundColor: colors.wt,
-    paddingHorizontal: 12,
-    flexDirection: "row",
-    alignItems: "center",
-  },
   input: {
     flex: 1,
-    padding: 0,
-    margin: 0,
     fontFamily: "Pretendard-Medium",
     fontSize: 14,
-    lineHeight: 14 * 1.5,
-    color: colors?.bk ?? "#111111",
-  },
-  clearButton: {
-    width: 28,
-    height: 28,
-    borderRadius: 14,
-    alignItems: "center",
-    justifyContent: "center",
-  },
-  clearText: {
-    color: colors?.gr500 ?? "#8A8989",
-    fontSize: 18,
     lineHeight: 18,
+    color: colors?.bk ?? "#111111",
+    paddingVertical: 0,
+    paddingHorizontal: 0,
+    margin: 0,
+    includeFontPadding: false,
+    textAlignVertical: "center",
   },
 
   helperText: {
     marginTop: 8,
-    // fontSize: 11,
     color: colors?.gr500 ?? "#8A8989",
   },
 
-  colorRowHeader: {
-    marginTop: 18,
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "space-between",
-  },
-  colorRight: {
-    flexDirection: "row",
-    alignItems: "center",
-    height: 32,
-  },
   colorDot: {
     width: 18,
     height: 18,
@@ -484,28 +398,17 @@ const styles = StyleSheet.create({
     alignItems: "center",
     justifyContent: "center",
   },
+
   submitBtnDisabled: {
-    backgroundColor: colors.gr200, // 스샷처럼 연한 회색
+    backgroundColor: colors.gr200,
   },
+
   submitText: {
     color: colors.wt,
   },
+
   submitTextDisabled: {
     color: colors.gr300,
-  },
-  paletteWrap: {
-    marginTop: 12,
-    paddingVertical: 16,
-    flexDirection: "row",
-    flexWrap: "wrap",
-    justifyContent: "space-between",
-    rowGap: 48,
-    // borderWidth: 1,
-  },
-
-  paletteItemHit: {
-    width: "30%", // 3열 정렬용 (space-between과 조합)
-    alignItems: "center",
   },
 
   paletteDot: {
@@ -525,6 +428,7 @@ const styles = StyleSheet.create({
     alignItems: "center",
     justifyContent: "center",
   },
+
   deleteText: {
     color: colors.bk,
   },

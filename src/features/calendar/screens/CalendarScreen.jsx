@@ -1,5 +1,5 @@
-import React, { useState, useEffect, useCallback } from "react";
-import { View } from "react-native";
+import React, { useState, useEffect, useCallback, useMemo } from "react";
+import { ScrollView, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import dayjs from "dayjs";
 import { useFocusEffect } from "@react-navigation/native";
@@ -14,6 +14,7 @@ import Dotted from "../assets/svg/Dotted.svg";
 import TodoBoardSection from "../../todo/components/TodoBoardSection";
 import { getDailyResultsMap } from "../api/dailyResultsApi";
 import YearMonthWheelModal from "../../todo/components/RepeatSettingsSection/wheel/YearMonthWheelModal";
+import { useHomeTodosQuery } from "../../todo/queries/home/useHomeTodosQuery";
 
 function buildTodayState(mode) {
   const today = dayjs();
@@ -57,6 +58,29 @@ export default function CalendarScreen({ navigation }) {
   const [isYMModalOpen, setIsYMModalOpen] = useState(false);
   const openYMModal = useCallback(() => setIsYMModalOpen(true), []);
   const closeYMModal = useCallback(() => setIsYMModalOpen(false), []);
+
+  const { data: rawTodos = [], isLoading: isTodosLoading } = useHomeTodosQuery({
+    date: selectedDateStr,
+  });
+
+  const todos = useMemo(() => {
+    const arr = Array.isArray(rawTodos) ? rawTodos : [];
+    return arr
+      .slice()
+      .sort((a, b) => (a?.displayOrder ?? 0) - (b?.displayOrder ?? 0))
+      .map((t) => ({
+        id: String(t.id),
+        title: t.description ?? "",
+        done: t.status === "COMPLETED",
+        categoryId: t.categoryId,
+        displayOrder: t.displayOrder,
+        date: t.date,
+        recurrenceId: t.recurrenceId,
+        occurrenceDate: t.occurrenceDate,
+        memo: t.memo ?? "",
+      }));
+  }, [rawTodos]);
+  const [parentScrollEnabled, setParentScrollEnabled] = useState(true);
 
   const handleConfirmYM = useCallback((year, month) => {
     const next = dayjs()
@@ -197,17 +221,23 @@ export default function CalendarScreen({ navigation }) {
               />
             </View>
 
-            <View className="mt-3 mx-5 shrink-0">
-              <Dotted style={{ width: "100%" }} height={1} />
+            <View className="mx-5 mt-3">
+              <Dotted width="100%" height={1} />
             </View>
 
-            <View style={{ flex: 1, paddingHorizontal: 20 }}>
+            <ScrollView
+              style={{ flex: 1, paddingHorizontal: 20 }}
+              scrollEnabled={parentScrollEnabled}
+              keyboardShouldPersistTaps="handled"
+            >
               <TodoBoardSection
                 navigation={navigation}
                 date={selectedDateStr}
                 isViewingToday={isViewingToday}
+                todos={todos}
+                setParentScrollEnabled={setParentScrollEnabled}
               />
-            </View>
+            </ScrollView>
           </>
         ) : (
           <MonthView

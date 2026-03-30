@@ -14,9 +14,11 @@ const MAP = {
 export default function ChevronIcon({
   direction = "down", // "up" | "down" | "left" | "right"
   size = 16,
-  color = colors.gr700,
+  color = "#FFFFFF",
   strokeWidth = 1.5,
 }) {
   const Icon = MAP[direction] ?? ChevronDown;
-  return <Icon size={size} color={color} strokeWidth={strokeWidth} />;
+  return (
+    <Icon size={size} strokeWidth={strokeWidth} {...(color ? { color } : {})} />
+  );
 }
