@@ -945,12 +945,12 @@ const TodoEditorSheet = React.forwardRef(function TodoEditorSheet(
       ref={ref}
       index={0}
       enableDynamicSizing
-      maxDynamicContentSize={700}
+      maxDynamicContentSize={550}
       backdropComponent={renderBackdrop}
       onDismiss={handleDismiss}
       onAnimate={handleSheetAnimate}
       keyboardBehavior="interactive"
-      keyboardBlurBehavior="none"
+      keyboardBlurBehavior="restore"
       backgroundStyle={{ backgroundColor: "#FAFAFA" }}
       handleIndicatorStyle={{ backgroundColor: "#D0D0D0", width: "38.4%" }}
       enableContentPanningGesture={false}
