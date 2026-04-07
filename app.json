@@ -40,7 +40,10 @@
       },
       "edgeToEdgeEnabled": true,
       "package": "com.crispycrew.fryday",
-      "googleServicesFile": "./google-services.json"
+      "googleServicesFile": "./google-services.json",
+      "permissions": [
+        "com.google.android.gms.permission.AD_ID"
+      ]
     },
     "web": {
       "favicon": "./assets/fryday-favicon.png",
@@ -133,8 +136,12 @@
       ],
       "expo-tracking-transparency"
     ],
-
     "runtimeVersion": "1.0.0",
-    "owner": "frydayapp"
+    "owner": "frydayapp",
+    "extra": {
+      "eas": {
+        "projectId": "b09394fd-f3d2-47a7-8e21-5defac5e7c27"
+      }
+    }
   }
 }
