@@ -780,7 +780,7 @@ const TodoEditorSheet = React.forwardRef(function TodoEditorSheet(
       normalizeDesc(initial.description) !== currentDescription &&
       currentDescription.length > 0
     ) {
-      tasks.push(
+      tasks.push(() =>
         updateDescription({
           todoId: numericTodoId,
           description: currentDescription,
@@ -792,7 +792,7 @@ const TodoEditorSheet = React.forwardRef(function TodoEditorSheet(
       initial.categoryId != null &&
       initial.categoryId !== currentCategoryId
     ) {
-      tasks.push(
+      tasks.push(() =>
         updateCategory({
           todoId: numericTodoId,
           categoryId: currentCategoryId,
@@ -801,11 +801,13 @@ const TodoEditorSheet = React.forwardRef(function TodoEditorSheet(
     }
 
     if (normalizeMemo(initial.memo) !== currentMemo) {
-      tasks.push(updateMemo({ todoId: numericTodoId, memo: currentMemo }));
+      tasks.push(() =>
+        updateMemo({ todoId: numericTodoId, memo: currentMemo }),
+      );
     }
 
     if (initialNotifyAt && !currentNotifyAt) {
-      tasks.push(deleteAlarm({ todoId: numericTodoId }));
+      tasks.push(() => deleteAlarm({ todoId: numericTodoId }));
     } else if (initialNotifyAt !== currentNotifyAt && currentNotifyAt) {
       const alarmDate = new Date(currentNotifyAt);
 
@@ -814,7 +816,7 @@ const TodoEditorSheet = React.forwardRef(function TodoEditorSheet(
         return;
       }
 
-      tasks.push(
+      tasks.push(() =>
         setAlarm({ todoId: numericTodoId, notifyAt: currentNotifyAt }),
       );
     }
@@ -834,7 +836,7 @@ const TodoEditorSheet = React.forwardRef(function TodoEditorSheet(
       !isSameRecurrenceBody(initialRecurrencePayloadRef.current, repeatPayload);
 
     if (initialHasRecurrence && isRepeatCleared) {
-      tasks.push(deleteTodoRecurrence({ todoId: Number(todoId) }));
+      tasks.push(() => deleteTodoRecurrence({ todoId: Number(todoId) }));
     } else {
       if (shouldCreateRecurrence) {
         const hasRequired =
@@ -850,7 +852,7 @@ const TodoEditorSheet = React.forwardRef(function TodoEditorSheet(
           return;
         }
 
-        tasks.push(
+        tasks.push(() =>
           createRecurrence({
             todoId: numericTodoId,
             ...repeatPayload,
@@ -859,7 +861,7 @@ const TodoEditorSheet = React.forwardRef(function TodoEditorSheet(
       }
 
       if (shouldUpdateRecurrence) {
-        tasks.push(
+        tasks.push(() =>
           updateRecurrenceRule({
             recurrenceId: initialRecurrenceId,
             ...repeatPayload,
@@ -873,7 +875,7 @@ const TodoEditorSheet = React.forwardRef(function TodoEditorSheet(
       const nextDateStr = toYYYYMMDD(todoDate);
 
       if (nextDateStr && nextDateStr !== initialDateStr) {
-        tasks.push(
+        tasks.push(() =>
           updateTodoDate({ todoId: numericTodoId, date: nextDateStr }),
         );
       }
@@ -885,10 +887,14 @@ const TodoEditorSheet = React.forwardRef(function TodoEditorSheet(
     }
 
     try {
-      await Promise.all(tasks);
+      for (const task of tasks) {
+        await task();
+      }
       onEditSuccess?.(draftCategoryId);
       onCloseAfterSubmit?.();
-    } catch (e) {}
+    } catch (e) {
+      console.log("submit error", e);
+    }
   }, [
     mode,
     editingText,
