@@ -29,6 +29,7 @@
       "buildNumber": "14"
     },
     "android": {
+      "versionCode": 5,
       "splash": {
         "image": "./assets/fryday-splash-logo7.png",
         "resizeMode": "contain",
