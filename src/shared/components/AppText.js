@@ -10,7 +10,7 @@ const TYPO = {
   H3: "font-pretendard-semibold text-h3",
 
   // Body XL
-  XL400: "font-pretendard-regular text-body-xl",
+  XL400: "font-pretendard-regular text-body-xl ",
   XL500: "font-pretendard-medium text-body-xl",
   pointM : "font-pretendard-bold text-body-xl",
 
@@ -20,8 +20,8 @@ const TYPO = {
   L600: "font-pretendard-semibold text-body-l",
 
   // Body M
-  M400: "font-pretendard-regular text-body-m",
-  M500: "font-pretendard-medium text-body-m",
+  M400: "font-pretendard-regular text-body-m leading-[21px] tracking-[-0.2px]",
+  M500: "font-pretendard-medium text-body-m leading-[21px] tracking-[-0.2px]",
   M600: "font-pretendard-semibold text-body-m",
 
   // Body S

@@ -3,20 +3,22 @@ import { TouchableOpacity, View } from "react-native";
 import { BottomSheetTextInput } from "@gorhom/bottom-sheet";
 import ClearIcon from "../../../../../shared/assets/svg/Clear.svg";
 import colors from "../../../../../shared/styles/colors";
+import {toast} from "../../../../../shared/components/toast/CenterToast";
 
 function InputBase({
-  inputRef,
-  value,
-  onChangeText,
-  onSubmitEditing,
-  placeholder = "두근두근, 무엇을 튀겨볼까요?",
-  maxLength = 20,
-  onFocus,
-  onBlur,
-  className = "",
-  style,
-  editable = true,
-}) {
+                     inputRef,
+                     value,
+                     onChangeText,
+                     onSubmitEditing,
+                     placeholder = "두근두근, 무엇을 튀겨볼까요?",
+                     maxLength = 40,
+                     onFocus,
+                     onBlur,
+                     className = "",
+                     style,
+                     editable = true,
+                     onLimitPress,
+                   }) {
   return (
     <BottomSheetTextInput
       ref={inputRef}
@@ -26,6 +28,14 @@ function InputBase({
       placeholder={placeholder}
       placeholderTextColor="#C6C6C6"
       maxLength={maxLength}
+      onKeyPress={({ nativeEvent }) => {
+        if (
+          value?.length >= maxLength &&
+          nativeEvent.key !== "Backspace"
+        ) {
+          onLimitPress?.();
+        }
+      }}
       onBlur={onBlur}
       onFocus={onFocus}
       editable={editable}
@@ -101,6 +111,11 @@ export default function TitleInputSection({
           onChangeText={handleChangeText}
           onSubmitEditing={onSubmitEditing}
           editable={editable}
+          onLimitPress={() => {
+            toast.show("투두는 40자까지 입력 가능해요", {
+              position: "center",
+            });
+          }}
           onFocus={() => {
             if (!editable) return;
             setIsFocused?.(true);
