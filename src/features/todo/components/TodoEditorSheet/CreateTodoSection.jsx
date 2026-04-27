@@ -2,6 +2,7 @@ import React from "react";
 import { TouchableOpacity, View } from "react-native";
 import ChevronIcon from "../../../../shared/components/ChevronIcon";
 import TitleInputSection from "./components/TitleInputSection";
+import colors from "../../../../shared/styles/colors";
 
 export default function CreateTodoSection({
   inputRef,
@@ -11,7 +12,7 @@ export default function CreateTodoSection({
   isSubmitEnabled,
   isTitleFocused,
   setIsTitleFocused,
-  handleClearText,
+  handleClearText, selectedColor,
 }) {
   return (
     <View className="flex-row items-center pb-4">
@@ -31,10 +32,20 @@ export default function CreateTodoSection({
         onPress={handleSubmitInternal}
         disabled={!isSubmitEnabled}
         className={`ml-2 h-11 w-11 items-center justify-center rounded-full ${
-          isSubmitEnabled ? "bg-[#FF5B22]" : "bg-[#E4E4E4]"
+          isSubmitEnabled ? "" : "bg-[#E4E4E4]"
         }`}
+        style={
+          isSubmitEnabled
+            ? { backgroundColor: selectedColor || "#FF5B22" }
+            : null
+        }
       >
-        <ChevronIcon direction="right" size={24} strokeWidth={2.5} />
+        <ChevronIcon
+          direction="right"
+          size={24}
+          strokeWidth={2.5}
+          color={isSubmitEnabled ? "#FFFFFF" : colors.gr300}
+        />
       </TouchableOpacity>
     </View>
   );

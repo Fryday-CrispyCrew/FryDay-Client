@@ -19,6 +19,7 @@ export default function EditToolsRow({
   onSelectTool,
   onSubmit,
   disabled,
+  selectedColor,
 }) {
   return (
     <View className="mt-4 mb-4 flex-row items-center justify-between">
@@ -48,13 +49,18 @@ export default function EditToolsRow({
         onPress={onSubmit}
         disabled={disabled}
         className={`ml-2 w-11 h-11 rounded-full items-center justify-center ${
-          disabled ? "bg-[#E4E4E4]" : "bg-[#FF5B22]"
+          disabled ? "bg-[#E4E4E4]" : ""
         }`}
+        style={
+          !disabled
+            ? { backgroundColor: selectedColor || "#FF5B22" }
+            : null
+        }
       >
         <ChevronIcon
           direction="right"
           size={24}
-          color={disabled ? colors.gr300 : colors.gr}
+          color={disabled ? colors.gr300 : "#FFFFFF"}
           strokeWidth={2.5}
         />
       </TouchableOpacity>

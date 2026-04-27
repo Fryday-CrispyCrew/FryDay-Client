@@ -23,6 +23,7 @@ export default function EditTodoSection({
   selectedToolKey,
   onSelectTool,
   EDIT_TOOL_ICONS,
+  selectedCategoryColor,
 }) {
   React.useEffect(() => {
     if (isMemoOpen) {
@@ -66,6 +67,7 @@ export default function EditTodoSection({
         onSelectTool={onSelectTool}
         onSubmit={handleSubmitInternal}
         disabled={!isSubmitEnabled || !hasEditChanges}
+        selectedColor={selectedCategoryColor}
       />
     </>
   );

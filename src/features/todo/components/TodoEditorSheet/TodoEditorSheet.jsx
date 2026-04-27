@@ -64,7 +64,7 @@ const API_TO_WEEKDAY = {
   FRIDAY: "fri",
   SATURDAY: "sat",
   SUNDAY: "sun",
-};
+}
 
 const WEEKDAY_TO_API = {
   mon: "MONDAY",
@@ -946,6 +946,13 @@ const TodoEditorSheet = React.forwardRef(function TodoEditorSheet(
     [focusTitleInput, isReturningFromBackgroundRef],
   );
 
+  const selectedCategoryColor = useMemo(() => {
+    const found = categories.find(
+      (c) => c.categoryId === draftCategoryId
+    );
+    return found?.color;
+  }, [categories, draftCategoryId]);
+
   return (
     <BottomSheetModal
       ref={ref}
@@ -995,6 +1002,7 @@ const TodoEditorSheet = React.forwardRef(function TodoEditorSheet(
                 isTitleFocused={isTitleFocused}
                 setIsTitleFocused={setIsTitleFocused}
                 handleClearText={handleClearText}
+                selectedColor={selectedCategoryColor}
               />
             ) : (
               <EditTodoSection
@@ -1016,6 +1024,7 @@ const TodoEditorSheet = React.forwardRef(function TodoEditorSheet(
                 selectedToolKey={selectedToolKey}
                 onSelectTool={onSelectTool}
                 EDIT_TOOL_ICONS={EDIT_TOOL_ICONS}
+                selectedCategoryColor={selectedCategoryColor}
               />
             )}
             <SelectDatePanel
