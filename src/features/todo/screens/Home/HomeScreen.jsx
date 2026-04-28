@@ -43,6 +43,8 @@ import { useDeleteRecurrenceTodosMutation } from "../../queries/home/useDeleteRe
 import { useModalStore } from "../../../../shared/stores/modal/modalStore";
 import colors from "../../../../shared/styles/colors";
 import Dotted from "../../../calendar/assets/svg/Dotted.svg";
+import BorderButton from "../../../../shared/components/BorderButton";
+import BackIcon from "../../../../shared/assets/svg/Back.svg"
 
 function formatYYYYMMDD(dateObj) {
   const y = dateObj.getFullYear();
@@ -473,40 +475,30 @@ export default function HomeScreen({ navigation, route }) {
             gap: 12,
           }}
         >
-          <TouchableOpacity
-            activeOpacity={isViewingToday ? 1 : 0.5}
-            disabled={isViewingToday}
-            style={{
-              opacity: isViewingToday ? 0.35 : 1,
-              width: 32,
-              height: 32,
-              justifyContent: "center",
-              alignItems: "center",
-            }}
-            onPress={() => {
-              if (isViewingToday) return;
-              setCurrentDate(new Date());
-            }}
-          >
-            <TodayIcon width={24} height={24} />
-          </TouchableOpacity>
+          {!isViewingToday && (
+            <BorderButton
+              text="오늘 날짜로"
+              icon={<BackIcon width={14} height={14} />}
+              onPress={() => setCurrentDate(new Date())}
+            />
+          )}
 
-          <TouchableOpacity
-            activeOpacity={0.5}
-            style={{
-              width: 32,
-              height: 32,
-              justifyContent: "center",
-              alignItems: "center",
-            }}
-            onPress={() =>
-              navigation.navigate("Category", {
-                screen: "CategList",
-              })
-            }
-          >
-            <CategoryIcon width={24} height={24} />
-          </TouchableOpacity>
+          {/*<TouchableOpacity*/}
+          {/*  activeOpacity={0.5}*/}
+          {/*  style={{*/}
+          {/*    width: 32,*/}
+          {/*    height: 32,*/}
+          {/*    justifyContent: "center",*/}
+          {/*    alignItems: "center",*/}
+          {/*  }}*/}
+          {/*  onPress={() =>*/}
+          {/*    navigation.navigate("Category", {*/}
+          {/*      screen: "CategList",*/}
+          {/*    })*/}
+          {/*  }*/}
+          {/*>*/}
+          {/*  <CategoryIcon width={24} height={24} />*/}
+          {/*</TouchableOpacity>*/}
         </View>
       </View>
 

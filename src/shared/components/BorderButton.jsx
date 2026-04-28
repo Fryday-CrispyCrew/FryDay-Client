@@ -12,7 +12,7 @@ export default function BorderButton({
                                      }) {
   return (
     <TouchableOpacity
-      activeOpacity={0.8}
+      activeOpacity={0.7}
       onPress={onPress}
       style={{
         borderRadius: 24,
@@ -38,7 +38,7 @@ export default function BorderButton({
           {text}
         </AppText>
 
-        {icon && <View style={{ marginLeft: 6 }}>{icon}</View>}
+        {icon && <View style={{ marginLeft: 4 }}>{icon}</View>}
       </View>
     </TouchableOpacity>
   );
