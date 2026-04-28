@@ -87,7 +87,7 @@ export default function OnboardingReviewScreen({ navigation }) {
           <View
             style={{
               position: "absolute",
-              top: Platform.OS === "ios" ? 72 : 60,
+              top: Platform.OS === "ios" ? 72 : 80,
               right: 20,
             }}
           >
