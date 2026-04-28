@@ -34,7 +34,6 @@ import { useRepeatEditorStore } from "../../stores/repeatEditorStore";
 import RepeatSettingsSection from "../RepeatSettingsSection/RepeatSettingsSection";
 
 import CategorySelector from "./components/CategorySelector";
-import CreateTodoSection from "./CreateTodoSection";
 import EditTodoSection from "./EditTodoSection";
 import AlarmPanel from "./panels/AlarmPanel";
 
@@ -748,30 +747,64 @@ const TodoEditorSheet = React.forwardRef(function TodoEditorSheet(
   ]);
 
   const handleSubmitInternal = useCallback(async () => {
+    const text = normalizeDesc(editingText);
+    if (!text) return;
+    if (isSubmittingRef.current) return;
+
     if (mode !== "edit") {
       const text = (editingText ?? "").trim();
       if (!text) return;
       if (isSubmittingRef.current) return;
 
       isSubmittingRef.current = true;
-      onSubmit?.(draftCategoryId, text);
+
+      const dateStr = toYYYYMMDD(todoDate);
+
+      const notifyAt = hasPickedAlarmTime
+        ? buildNotifyAt({
+          dateStr,
+          timeStr: alarmTime,
+        })
+        : null;
+
+      const repeatDraft = useRepeatEditorStore.getState().getRepeatPayload?.();
+
+      const recurrence = buildCreateRecurrencePayload(repeatDraft, {
+        alarmTimeHHmm: hasPickedAlarmTime ? alarmTime : null,
+      });
+
+      await onSubmit?.({
+        categoryId: draftCategoryId,
+        description: text,
+        date: dateStr,
+        memo: normalizeMemo(memoText),
+        notifyAt,
+        recurrence,
+      });
 
       Keyboard.dismiss();
       requestAnimationFrame(() => {
         ref?.current?.dismiss?.();
       });
+
       return;
     }
 
     if (!numericTodoId) return;
 
+    isSubmittingRef.current = true;
+
     const initial = initialRef.current;
     const currentDescription = normalizeDesc(editingText);
     const currentCategoryId = draftCategoryId;
     const currentMemo = normalizeMemo(memoText);
+
     const initialNotifyAt = initial.notifyAt;
     const currentNotifyAt = hasPickedAlarmTime
-      ? buildNotifyAt({ dateStr: todoDetail?.date, timeStr: alarmTime })
+      ? buildNotifyAt({
+        dateStr: todoDetail?.date,
+        timeStr: alarmTime,
+      })
       : null;
 
     const tasks = [];
@@ -788,10 +821,7 @@ const TodoEditorSheet = React.forwardRef(function TodoEditorSheet(
       );
     }
 
-    if (
-      initial.categoryId != null &&
-      initial.categoryId !== currentCategoryId
-    ) {
+    if (initial.categoryId != null && initial.categoryId !== currentCategoryId) {
       tasks.push(() =>
         updateCategory({
           todoId: numericTodoId,
@@ -801,9 +831,7 @@ const TodoEditorSheet = React.forwardRef(function TodoEditorSheet(
     }
 
     if (normalizeMemo(initial.memo) !== currentMemo) {
-      tasks.push(() =>
-        updateMemo({ todoId: numericTodoId, memo: currentMemo }),
-      );
+      tasks.push(() => updateMemo({ todoId: numericTodoId, memo: currentMemo }));
     }
 
     if (initialNotifyAt && !currentNotifyAt) {
@@ -813,15 +841,20 @@ const TodoEditorSheet = React.forwardRef(function TodoEditorSheet(
 
       if (alarmDate < new Date()) {
         toast.show("알림 시간은 현재 시간 이후로 설정해야 합니다.");
+        isSubmittingRef.current = false;
         return;
       }
 
       tasks.push(() =>
-        setAlarm({ todoId: numericTodoId, notifyAt: currentNotifyAt }),
+        setAlarm({
+          todoId: numericTodoId,
+          notifyAt: currentNotifyAt,
+        }),
       );
     }
 
     const repeatDraft = useRepeatEditorStore.getState().getRepeatPayload?.();
+
     const repeatPayload = buildCreateRecurrencePayload(repeatDraft, {
       alarmTimeHHmm: hasPickedAlarmTime ? alarmTime : null,
     });
@@ -829,14 +862,16 @@ const TodoEditorSheet = React.forwardRef(function TodoEditorSheet(
     const initialRecurrenceId = initial.recurrenceId;
     const initialHasRecurrence = !!initialRecurrenceId;
     const isRepeatCleared = repeatDraft?.repeatCycle === "unset";
+
     const shouldCreateRecurrence = !initialRecurrenceId && !!repeatPayload;
+
     const shouldUpdateRecurrence =
       !!initialRecurrenceId &&
       !!repeatPayload &&
       !isSameRecurrenceBody(initialRecurrencePayloadRef.current, repeatPayload);
 
     if (initialHasRecurrence && isRepeatCleared) {
-      tasks.push(() => deleteTodoRecurrence({ todoId: Number(todoId) }));
+      tasks.push(() => deleteTodoRecurrence({ todoId: numericTodoId }));
     } else {
       if (shouldCreateRecurrence) {
         const hasRequired =
@@ -845,10 +880,11 @@ const TodoEditorSheet = React.forwardRef(function TodoEditorSheet(
           (repeatPayload.type === "DAILY"
             ? true
             : Array.isArray(repeatPayload?.frequencyValues) &&
-              repeatPayload.frequencyValues.length > 0);
+            repeatPayload.frequencyValues.length > 0);
 
         if (!hasRequired) {
           toast.show("반복 설정 정보를 다시 확인해주세요.");
+          isSubmittingRef.current = false;
           return;
         }
 
@@ -876,12 +912,16 @@ const TodoEditorSheet = React.forwardRef(function TodoEditorSheet(
 
       if (nextDateStr && nextDateStr !== initialDateStr) {
         tasks.push(() =>
-          updateTodoDate({ todoId: numericTodoId, date: nextDateStr }),
+          updateTodoDate({
+            todoId: numericTodoId,
+            date: nextDateStr,
+          }),
         );
       }
     }
 
     if (tasks.length === 0) {
+      isSubmittingRef.current = false;
       onCloseAfterSubmit?.();
       return;
     }
@@ -890,21 +930,23 @@ const TodoEditorSheet = React.forwardRef(function TodoEditorSheet(
       for (const task of tasks) {
         await task();
       }
+
       onEditSuccess?.(draftCategoryId);
       onCloseAfterSubmit?.();
     } catch (e) {
-      console.log("submit error", e);
+      console.log("edit submit error", e);
+      isSubmittingRef.current = false;
     }
   }, [
     mode,
     editingText,
     draftCategoryId,
     memoText,
+    todoDate,
     hasPickedAlarmTime,
     alarmTime,
     todoDetail?.date,
     hasAppliedTodoDate,
-    todoDate,
     numericTodoId,
     updateDescription,
     updateCategory,
@@ -919,7 +961,6 @@ const TodoEditorSheet = React.forwardRef(function TodoEditorSheet(
     onEditSuccess,
     onCloseAfterSubmit,
     ref,
-    todoId,
   ]);
 
   const handleSheetAnimate = useCallback(
@@ -992,41 +1033,27 @@ const TodoEditorSheet = React.forwardRef(function TodoEditorSheet(
               onPickCategory={handlePickCategory}
             />
 
-            {mode === "create" ? (
-              <CreateTodoSection
-                inputRef={inputRef}
-                editingText={editingText}
-                setEditingText={setEditingText}
-                handleSubmitInternal={handleSubmitInternal}
-                isSubmitEnabled={isSubmitEnabled}
-                isTitleFocused={isTitleFocused}
-                setIsTitleFocused={setIsTitleFocused}
-                handleClearText={handleClearText}
-                selectedColor={selectedCategoryColor}
-              />
-            ) : (
-              <EditTodoSection
-                inputRef={inputRef}
-                memoInputRef={memoInputRef}
-                editingText={editingText}
-                setEditingText={setEditingText}
-                memoText={memoText}
-                setMemoText={setMemoText}
-                handleSubmitInternal={handleSubmitInternal}
-                isSubmitEnabled={isSubmitEnabled}
-                hasEditChanges={hasEditChanges}
-                isTitleFocused={isTitleFocused}
-                setIsTitleFocused={setIsTitleFocused}
-                isMemoFocused={isMemoFocused}
-                setIsMemoFocused={setIsMemoFocused}
-                handleClearText={handleClearText}
-                isMemoOpen={isMemoOpen}
-                selectedToolKey={selectedToolKey}
-                onSelectTool={onSelectTool}
-                EDIT_TOOL_ICONS={EDIT_TOOL_ICONS}
-                selectedCategoryColor={selectedCategoryColor}
-              />
-            )}
+            <EditTodoSection
+              mode={mode}
+              inputRef={inputRef}
+              memoInputRef={memoInputRef}
+              editingText={editingText}
+              setEditingText={setEditingText}
+              memoText={memoText}
+              setMemoText={setMemoText}
+              handleSubmitInternal={handleSubmitInternal}
+              isSubmitEnabled={isSubmitEnabled}
+              hasEditChanges={hasEditChanges}
+              isTitleFocused={isTitleFocused}
+              setIsTitleFocused={setIsTitleFocused}
+              isMemoFocused={isMemoFocused}
+              setIsMemoFocused={setIsMemoFocused}
+              handleClearText={handleClearText}
+              isMemoOpen={isMemoOpen}
+              selectedToolKey={selectedToolKey}
+              onSelectTool={onSelectTool}
+              selectedCategoryColor={selectedCategoryColor}
+            />
             <SelectDatePanel
               visible={isSelectDateOpen}
               todoMonthCursor={todoMonthCursor}
@@ -1048,7 +1075,7 @@ const TodoEditorSheet = React.forwardRef(function TodoEditorSheet(
             />
 
             <AlarmPanel
-              visible={isAlarmOpen}
+              visible={selectedToolKey === "alarm"}
               alarmDraftDate={alarmDraftDate}
               alarmTime={alarmTime}
               hasPickedAlarmTime={hasPickedAlarmTime}
@@ -1057,7 +1084,7 @@ const TodoEditorSheet = React.forwardRef(function TodoEditorSheet(
               setAlarmTime={setAlarmTime}
               setHasPickedAlarmTime={setHasPickedAlarmTime}
               setIsIosInlineAlarmPickerOpen={setIsIosInlineAlarmPickerOpen}
-              todoDateStr={todoDetail?.date}
+              todoDateStr={mode === "edit" ? todoDetail?.date : toYYYYMMDD(todoDate)}
               onClosePanel={() => closePanelAndFocusTitle("alarm")}
             />
 

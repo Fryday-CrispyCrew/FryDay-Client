@@ -21,10 +21,10 @@ export default function useTodoEditorPanels({
     selectedToolKeyRef.current = selectedToolKey;
   }, [selectedToolKey]);
 
-  const isMemoOpen = mode === "edit" && selectedToolKey === "memo";
-  const isAlarmOpen = mode === "edit" && selectedToolKey === "alarm";
-  const isRepeatOpen = mode === "edit" && selectedToolKey === "repeat";
-  const isSelectDateOpen = mode === "edit" && selectedToolKey === "select";
+  const isMemoOpen = selectedToolKey === "memo";
+  const isAlarmOpen = selectedToolKey === "alarm";
+  const isRepeatOpen = selectedToolKey === "repeat";
+  const isSelectDateOpen = selectedToolKey === "select";
 
   useEffect(() => {
     if (!isRepeatOpen) {

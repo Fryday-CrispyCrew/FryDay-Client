@@ -33,6 +33,10 @@ import colors from "../../../shared/styles/colors";
 import { Swipeable } from "react-native-gesture-handler";
 import BorderButton from "../../../shared/components/BorderButton";
 import CategoryIcon from "../../../shared/assets/svg/Category.svg";
+import { useUpdateTodoMemoMutation } from "../queries/sheet/content/useUpdateTodoMemoMutation";
+import { useSetTodoAlarmMutation } from "../queries/sheet/alarm/useSetTodoAlarmMutation";
+import { useCreateTodoRecurrenceMutation } from "../queries/sheet/repeat/useCreateTodoRecurrenceMutation";
+import { useUpdateTodoDateMutation } from "../queries/sheet/date/useUpdateTodoDateMutation";
 
 function Chevron({ isOpen, color }) {
   return (
@@ -247,17 +251,76 @@ export default function TodoBoardSection({
   const { mutateAsync: reorderTodosMutateAsync } =
     useReorderHomeTodosMutation();
 
+  const { mutateAsync: updateMemoMutateAsync } =
+    useUpdateTodoMemoMutation();
+
+  const { mutateAsync: setAlarmMutateAsync } =
+    useSetTodoAlarmMutation();
+
+  const { mutateAsync: createRecurrenceMutateAsync } =
+    useCreateTodoRecurrenceMutation();
+
+  const { mutateAsync: updateTodoDateMutateAsync } =
+    useUpdateTodoDateMutation();
+
   const editor = useTodoEditorController({
     categories,
     selectedDate: date,
-    onSubmitTodo: async ({ todo, text, categoryId, date: submitDate }) => {
+
+    onSubmitTodo: async ({
+                           todo,
+                           text,
+                           categoryId,
+                           date: submitDate,
+                           memo,
+                           notifyAt,
+                           recurrence,
+                         }) => {
       if (!todo?.id) {
-        await createTodoMutateAsync({
+        const created = await createTodoMutateAsync({
           description: text,
           categoryId,
           date: submitDate,
         });
-        setOpenMap((prev) => ({ ...prev, [categoryId]: true }));
+
+        const todoId = created?.data?.id ?? created?.id;
+
+        if (!todoId) return;
+
+        if (memo?.trim()) {
+          await updateMemoMutateAsync({
+            todoId,
+            memo: memo.trim(),
+          });
+        }
+
+        if (notifyAt) {
+          await setAlarmMutateAsync({
+            todoId,
+            notifyAt,
+          });
+        }
+
+        if (recurrence) {
+          await createRecurrenceMutateAsync({
+            todoId,
+            ...recurrence,
+          });
+        }
+
+        if (submitDate) {
+          await updateTodoDateMutateAsync({
+            todoId,
+            date: submitDate,
+          });
+        }
+
+        setOpenMap((prev) => ({
+          ...prev,
+          [categoryId]: true,
+        }));
+
+        return;
       }
     },
   });
@@ -656,28 +719,6 @@ export default function TodoBoardSection({
               })}
           />
         </View>
-
-
-        {/*{categories.length < 6 ? (*/}
-        {/*  <TouchableOpacity*/}
-        {/*    activeOpacity={0.8}*/}
-        {/*    onPress={() =>*/}
-        {/*      navigation.navigate("Category", {*/}
-        {/*        screen: "CategEdit",*/}
-        {/*      })*/}
-        {/*    }*/}
-        {/*    className="self-start rounded-3xl border border-[#FF5B22] mt-[18px] px-2.5 py-1.5"*/}
-        {/*  >*/}
-        {/*    <View className="flex-row items-center gap-1">*/}
-        {/*      <AppText variant="M600" style={{ color: colors?.or }}>*/}
-        {/*        새 카테고리*/}
-        {/*      </AppText>*/}
-        {/*      <PlusIcon width={14} height={14} color={colors?.or} />*/}
-        {/*    </View>*/}
-        {/*  </TouchableOpacity>*/}
-        {/*) : (*/}
-        {/*  <View className="h-3" />*/}
-        {/*)}*/}
       </View>
 
       <TodoEditorSheet

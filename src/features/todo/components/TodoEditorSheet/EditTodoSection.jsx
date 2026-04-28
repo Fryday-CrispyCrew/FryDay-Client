@@ -4,6 +4,7 @@ import MemoSection from "./components/MemoSection";
 import EditToolsRow from "./components/EditToolsRow";
 
 export default function EditTodoSection({
+                                          mode = "edit",
                                           inputRef,
                                           memoInputRef,
                                           editingText,
@@ -21,7 +22,6 @@ export default function EditTodoSection({
                                           isMemoOpen,
                                           selectedToolKey,
                                           onSelectTool,
-                                          EDIT_TOOL_ICONS,
                                           selectedCategoryColor,
                                         }) {
   React.useEffect(() => {
@@ -60,7 +60,7 @@ export default function EditTodoSection({
         selectedToolKey={selectedToolKey}
         onSelectTool={onSelectTool}
         onSubmit={handleSubmitInternal}
-        disabled={!isSubmitEnabled || !hasEditChanges}
+        disabled={!isSubmitEnabled || (mode === "edit" && !hasEditChanges)}
         selectedColor={selectedCategoryColor}
       />
     </>
