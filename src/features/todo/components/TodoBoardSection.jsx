@@ -31,6 +31,8 @@ import { useModalStore } from "../../../shared/stores/modal/modalStore";
 import { toast } from "../../../shared/components/toast/CenterToast";
 import colors from "../../../shared/styles/colors";
 import { Swipeable } from "react-native-gesture-handler";
+import BorderButton from "../../../shared/components/BorderButton";
+import CategoryIcon from "../../../shared/assets/svg/Category.svg";
 
 function Chevron({ isOpen, color }) {
   return (
@@ -641,26 +643,41 @@ export default function TodoBoardSection({
           <Dotted width="100%" height={1} />
         </View>
 
-        {categories.length < 6 ? (
-          <TouchableOpacity
-            activeOpacity={0.8}
+        <View className="mt-[18px]">
+          <BorderButton
+            icon={<CategoryIcon/>}
+            text={"카테고리 관리"}
+            borderColor={colors.gr100}
+            iconPosition="left"
+            backgroundColor={colors.gr100}
             onPress={() =>
               navigation.navigate("Category", {
-                screen: "CategEdit",
-              })
-            }
-            className="self-start rounded-3xl border border-[#FF5B22] mt-[18px] px-2.5 py-1.5"
-          >
-            <View className="flex-row items-center gap-1">
-              <AppText variant="M600" style={{ color: colors?.or }}>
-                새 카테고리
-              </AppText>
-              <PlusIcon width={14} height={14} color={colors?.or} />
-            </View>
-          </TouchableOpacity>
-        ) : (
-          <View className="h-3" />
-        )}
+                screen: "CategList",
+              })}
+          />
+        </View>
+
+
+        {/*{categories.length < 6 ? (*/}
+        {/*  <TouchableOpacity*/}
+        {/*    activeOpacity={0.8}*/}
+        {/*    onPress={() =>*/}
+        {/*      navigation.navigate("Category", {*/}
+        {/*        screen: "CategEdit",*/}
+        {/*      })*/}
+        {/*    }*/}
+        {/*    className="self-start rounded-3xl border border-[#FF5B22] mt-[18px] px-2.5 py-1.5"*/}
+        {/*  >*/}
+        {/*    <View className="flex-row items-center gap-1">*/}
+        {/*      <AppText variant="M600" style={{ color: colors?.or }}>*/}
+        {/*        새 카테고리*/}
+        {/*      </AppText>*/}
+        {/*      <PlusIcon width={14} height={14} color={colors?.or} />*/}
+        {/*    </View>*/}
+        {/*  </TouchableOpacity>*/}
+        {/*) : (*/}
+        {/*  <View className="h-3" />*/}
+        {/*)}*/}
       </View>
 
       <TodoEditorSheet
