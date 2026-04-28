@@ -169,8 +169,12 @@ function CategoryHeader({
       <TouchableOpacity
         activeOpacity={0.8}
         onPress={() => onToggleSection(category.categoryId)}
-        style={{ backgroundColor: color }}
-        className="flex-row items-center rounded-full px-2.5 py-1.5"
+        style={{
+          backgroundColor: color,
+          borderColor: color,
+          borderRadius: 24,
+        }}
+        className="flex-row items-center border px-2.5 py-1.5"
       >
         <AppText variant="M600" style={{ color: colors.wt }}>
           {category.label}
