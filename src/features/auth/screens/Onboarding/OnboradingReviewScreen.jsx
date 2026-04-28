@@ -92,7 +92,7 @@ export default function OnboardingReviewScreen({ navigation }) {
             }}
           >
             <BorderButton
-              text={isLast ? "스킵하기" : "시작하기"} // 문구 물어보기
+              text={isLast ? "시작하기" : "스킵하기"} // 문구 물어보기
               textColor={colors.wt}
               borderColor={colors.wt}
               icon={
