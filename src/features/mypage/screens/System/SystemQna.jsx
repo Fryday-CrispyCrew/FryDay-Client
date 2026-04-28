@@ -1,8 +1,10 @@
 import { SafeAreaView } from "react-native-safe-area-context";
 import MyPageHeader from "../../components/MypageHeader";
-import { ScrollView, View } from "react-native";
+import { ScrollView, TouchableOpacity, View } from "react-native";
 import React from "react";
 import QnaBox from "../../components/QnaBox";
+import AppText from "../../../../shared/components/AppText";
+import PlayIcon from "../../assets/svg/Play.svg";
 
 const SYSTEM_NOTICE_MOCK = [
   {
@@ -37,7 +39,7 @@ const SYSTEM_NOTICE_MOCK = [
   },
 ];
 
-export default function SystemQna() {
+export default function SystemQna({navigation}) {
   return (
     <SafeAreaView className="flex-1 bg-gr" edges={["top", "bottom"]}>
       <MyPageHeader showBackButton title="자주 묻는 질문" />
@@ -51,7 +53,26 @@ export default function SystemQna() {
           {SYSTEM_NOTICE_MOCK.map((item, idx) => (
             <QnaBox key={idx} title={item.title} content={item.content} />
           ))}
+          <View className="mt-6">
+            <AppText variant="M500" className="text-gr500">
+              더 자세한 방법이 궁금하다면?
+            </AppText>
+            <TouchableOpacity
+              activeOpacity={0.8}
+              onPress={() => navigation.navigate("OnboardingReview")}
+              className="mt-4 flex-row items-center justify-center rounded-[16px] bg-gr200 py-3"
+            >
+              <View className="mr-2">
+                <PlayIcon width={20} height={20} />
+              </View>
+
+              <AppText variant="L600" className="text-gr900">
+                튜토리얼 다시보기
+              </AppText>
+            </TouchableOpacity>
+          </View>
         </View>
+
       </ScrollView>
     </SafeAreaView>
   );
