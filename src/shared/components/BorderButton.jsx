@@ -8,7 +8,8 @@ export default function BorderButton({
                                        iconPosition = "right",
                                        borderColor = colors.or,
                                        textColor = colors.or,
-                                       backgroundColor = "transparent", // 추가
+                                       backgroundColor = "transparent",
+                                       textVariant = "M600",
                                        onPress,
                                      }) {
   return (
@@ -19,7 +20,7 @@ export default function BorderButton({
         borderRadius: 24,
         borderWidth: 1,
         borderColor,
-        backgroundColor, // 적용
+        backgroundColor,
         paddingHorizontal: 10,
         paddingVertical: 6,
         alignSelf: "flex-start",
@@ -30,7 +31,7 @@ export default function BorderButton({
           <View style={{ marginRight: 4 }}>{icon}</View>
         )}
 
-        <AppText variant="M600" style={{ color: textColor }}>
+        <AppText variant={textVariant} style={{ color: textColor }}>
           {text}
         </AppText>
 

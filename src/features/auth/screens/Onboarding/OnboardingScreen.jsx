@@ -125,25 +125,23 @@ export default function OnboardingScreen({ navigation }) {
             fadeDuration={0}
           />
 
-          <View
-            style={{
-              position: "absolute",
-              top: Platform.OS === "ios" ? 72 : 80,
-              right: 20,
-            }}
-          >
-            <BorderButton
-              text={isLast ? "시작하기" : "스킵하기"}
-              textColor={colors.wt}
-              borderColor={colors.wt}
-              icon={
-                !isLast ? (
-                  <CloseIcon width={14} height={14} color={colors.wt} />
-                ) : null
-              }
-              onPress={onDone}
-            />
-          </View>
+          {!isFirst && (
+            <View
+              style={{
+                position: "absolute",
+                top: Platform.OS === "ios" ? 76 : 80,
+                right: 20,
+              }}
+            >
+              <BorderButton
+                textVariant="L600"
+                text={isLast ? "시작하기" : "스킵하기"}
+                textColor={colors.wt}
+                borderColor={colors.wt}
+                onPress={onDone}
+              />
+            </View>
+          )}
         </View>
       </GestureDetector>
     </SafeAreaView>

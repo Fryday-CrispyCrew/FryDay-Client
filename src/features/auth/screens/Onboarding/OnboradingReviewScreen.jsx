@@ -70,7 +70,10 @@ export default function OnboardingReviewScreen({ navigation }) {
   const gesture = useMemo(() => Gesture.Race(swipe, tap), [swipe, tap]);
 
   return (
-    <SafeAreaView edges={["left", "right"]} className="flex-1">
+    <SafeAreaView
+      edges={Platform.OS === "android" ? ["bottom"] : []}
+      className="flex-1 bg-wt"
+    >
       <GestureDetector gesture={gesture}>
         <View style={{ flex: 1, backgroundColor: "#4E4D4C" }}>
           <Image
@@ -79,7 +82,7 @@ export default function OnboardingReviewScreen({ navigation }) {
               width: "100%",
               height: "100%",
             }}
-            resizeMode="contain"
+            resizeMode="cover"
             resizeMethod="resize"
             fadeDuration={0}
           />
@@ -87,19 +90,15 @@ export default function OnboardingReviewScreen({ navigation }) {
           <View
             style={{
               position: "absolute",
-              top: Platform.OS === "ios" ? 72 : 80,
+              top: Platform.OS === "ios" ? 76 : 60,
               right: 20,
             }}
           >
             <BorderButton
-              text={isLast ? "시작하기" : "스킵하기"} // 문구 물어보기
+              textVariant="L600"
+              text={isLast ? "시작하기" : "그만보기"}
               textColor={colors.wt}
               borderColor={colors.wt}
-              icon={
-                !isLast ? (
-                  <CloseIcon width={14} height={14} color={colors.wt} />
-                ) : null
-              }
               onPress={onClose}
             />
           </View>
