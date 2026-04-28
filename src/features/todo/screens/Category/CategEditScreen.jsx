@@ -142,11 +142,11 @@ export default function CategEditScreen({ navigation, route }) {
         onPress: () => {
           if (isDeleting) return;
 
-          if (categoryCount <= 3) {
+          if (categoryCount <= 1) {
             setTimeout(() => {
               openModal({
                 title: "알림",
-                description: "카테고리는 최소 3개를 유지해야 해요!",
+                description: "카테고리는 최소 1개를 유지해야 해요!",
                 closeOnBackdrop: true,
                 showClose: true,
                 primary: {
