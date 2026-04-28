@@ -3,9 +3,9 @@ import AppText from "../../../shared/components/AppText";
 
 import MonthButton from "../assets/svg/Month.svg";
 import WeeklyButton from "../assets/svg/Weekly.svg";
-import CategoryIcon from "../../todo/assets/svg/Category.svg";
-import TodayIcon from "../../todo/assets/svg/Today.svg";
 import dayjs from "dayjs";
+import BorderButton from "../../../shared/components/BorderButton";
+import BackIcon from "../../../shared/assets/svg/Back.svg"
 
 export default function CalendarHeader({
   date,
@@ -68,39 +68,14 @@ export default function CalendarHeader({
           )}
         </TouchableOpacity>
 
-        <TouchableOpacity
-          onPress={isTodayDisabled ? undefined : onPressToday}
-          disabled={isTodayDisabled}
-          //   className="w-8 h-8 items-center justify-center"
-          style={{
-            opacity: isTodayDisabled ? 0.35 : 1,
-            width: 32,
-            height: 32,
-            justifyContent: "center",
-            alignItems: "center",
-            // borderWidth: 1,
-          }}
-        >
-          <TodayIcon width={24} height={24} />
-        </TouchableOpacity>
+        {!isTodayDisabled && (
+          <BorderButton
+            text="오늘 날짜로"
+            icon={<BackIcon width={14} height={14} />}
+            onPress={onPressToday}
+          />
+        )}
 
-        <TouchableOpacity
-          onPress={() =>
-            navigation.navigate("Category", {
-              screen: "CategList",
-            })
-          }
-          //   className="w-8 h-8 items-center justify-center"
-          style={{
-            width: 32,
-            height: 32,
-            justifyContent: "center",
-            alignItems: "center",
-            // borderWidth: 1,
-          }}
-        >
-          <CategoryIcon width={24} height={24} />
-        </TouchableOpacity>
       </View>
     </View>
   );
