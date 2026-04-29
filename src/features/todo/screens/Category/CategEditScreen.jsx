@@ -388,7 +388,7 @@ const styles = StyleSheet.create({
   bottomArea: {
     paddingHorizontal: 20,
     paddingBottom: 24,
-    backgroundColor: colors.wt,
+    backgroundColor: colors.gr,
   },
 
   submitBtn: {
