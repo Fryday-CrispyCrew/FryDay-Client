@@ -110,7 +110,10 @@ export default function OnboardingScreen({ navigation }) {
   const gesture = useMemo(() => Gesture.Race(swipe, tap), [swipe, tap]);
 
   return (
-    <SafeAreaView edges={["left", "right"]} className="flex-1 bg-wt">
+    <SafeAreaView
+      edges={Platform.OS === "android" ? ["bottom"] : []}
+      className="flex-1 bg-wt"
+    >
       <GestureDetector gesture={gesture}>
         <View style={{ flex: 1, backgroundColor: "#4E4D4C" }}>
           <Image
@@ -120,7 +123,7 @@ export default function OnboardingScreen({ navigation }) {
               height: "100%",
               // transform: [{ translateY: Platform.OS === "android" ? 0 : 0 }],
             }}
-            resizeMode="contain"
+            resizeMode="cover"
             resizeMethod="resize"
             fadeDuration={0}
           />
@@ -129,7 +132,7 @@ export default function OnboardingScreen({ navigation }) {
             <View
               style={{
                 position: "absolute",
-                top: Platform.OS === "ios" ? 76 : 80,
+                top: Platform.OS === "ios" ? 76 : 60,
                 right: 20,
               }}
             >
