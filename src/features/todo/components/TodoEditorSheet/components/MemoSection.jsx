@@ -1,34 +1,16 @@
-import React, { useRef } from "react";
+import React from "react";
 import { View } from "react-native";
 import { BottomSheetTextInput } from "@gorhom/bottom-sheet";
-import { toast } from "../../../../../shared/components/toast/CenterToast";
-import colors from "../../../../../shared/styles/colors";
 
 export default function MemoSection({
-                                      visible,
-                                      memoInputRef,
-                                      value,
-                                      onChangeText,
-                                      isFocused,
-                                      setIsFocused,
-                                    }) {
-  const currentTextRef = useRef(value ?? "");
-
+  visible,
+  memoInputRef,
+  value,
+  onChangeText,
+  isFocused,
+  setIsFocused,
+}) {
   if (!visible) return null;
-
-  const handleChangeText = (text) => {
-    currentTextRef.current = text;
-    onChangeText(text);
-  };
-
-  const handleKeyPress = ({ nativeEvent }) => {
-    if (
-      currentTextRef.current.length >= 100 &&
-      nativeEvent.key !== "Backspace"
-    ) {
-      toast.show("메모는 100자까지 입력 가능합니다.");
-    }
-  };
 
   return (
     <View
@@ -36,28 +18,23 @@ export default function MemoSection({
       style={isFocused ? { borderColor: "#EAEAEA" } : null}
     >
       <BottomSheetTextInput
-
         ref={memoInputRef}
-        defaultValue={value ?? ""}
-        onChangeText={handleChangeText}
-        onKeyPress={handleKeyPress}
-        maxLength={100}
+        value={value ?? ""}
+        onChangeText={onChangeText}
         placeholder="기억해야 할 메모를 입력해 주세요."
         placeholderTextColor="#C6C6C6"
+        maxLength={101}
         multiline
         blurOnSubmit={false}
         scrollEnabled
         onFocus={() => setIsFocused(true)}
         onBlur={() => setIsFocused(false)}
+        className="py-0 text-[12px] text-gr700"
         style={{
           fontFamily: "Pretendard-Medium",
-          fontSize: 12,
           lineHeight: 18,
           maxHeight: 54,
           textAlignVertical: "top",
-          paddingTop: 0,
-          paddingBottom: 0,
-          color:colors.gr700
         }}
       />
     </View>
