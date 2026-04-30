@@ -50,13 +50,7 @@ export default function EditTodoSection({
         visible={isMemoOpen}
         memoInputRef={memoInputRef}
         value={memoText}
-        onChangeText={(text) => {
-          if (text.length > 100) {
-            toast.show("메모는 100자까지 입력 가능합니다.");
-            return;
-          }
-          setMemoText(text);
-        }}
+        onChangeText={setMemoText}
         isFocused={isMemoFocused}
         setIsFocused={setIsMemoFocused}
       />
