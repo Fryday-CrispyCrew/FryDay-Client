@@ -70,7 +70,7 @@ export default function CalendarHeader({
 
         {!isTodayDisabled && (
           <BorderButton
-            text="오늘 날짜로"
+            text="오늘로"
             icon={<BackIcon width={14} height={14} />}
             onPress={onPressToday}
           />

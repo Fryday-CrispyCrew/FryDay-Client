@@ -477,7 +477,7 @@ export default function HomeScreen({ navigation, route }) {
         >
           {!isViewingToday && (
             <BorderButton
-              text="오늘 날짜로"
+              text="오늘로"
               icon={<BackIcon width={14} height={14} />}
               onPress={() => setCurrentDate(new Date())}
             />
