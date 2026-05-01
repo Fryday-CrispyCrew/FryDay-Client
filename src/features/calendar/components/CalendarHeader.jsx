@@ -6,6 +6,7 @@ import WeeklyButton from "../assets/svg/Weekly.svg";
 import dayjs from "dayjs";
 import BorderButton from "../../../shared/components/BorderButton";
 import BackIcon from "../../../shared/assets/svg/Back.svg"
+import colors from "../../../shared/styles/colors";
 
 export default function CalendarHeader({
   date,
@@ -51,22 +52,6 @@ export default function CalendarHeader({
           gap: 12,
         }}
       >
-        <TouchableOpacity
-          onPress={onPressButton}
-          //   className="w-8 h-8 items-center justify-center"
-          style={{
-            width: 32,
-            height: 32,
-            justifyContent: "center",
-            alignItems: "center",
-          }}
-        >
-          {mode === "week" ? (
-            <MonthButton width={32} height={32} />
-          ) : (
-            <WeeklyButton width={24} height={24} />
-          )}
-        </TouchableOpacity>
 
         {!isTodayDisabled && (
           <BorderButton
@@ -75,6 +60,26 @@ export default function CalendarHeader({
             onPress={onPressToday}
           />
         )}
+          {mode === "week" ? (
+            <BorderButton
+              text="월별 보기"
+              borderColor={colors.gr200}
+              backgroundColor={colors.gr100}
+              textColor={colors.gr900}
+              textVariant={"M600"}
+              icon={<MonthButton width={14} height={14} />}
+              onPress={onPressButton}/>
+
+          ) : (
+            <BorderButton
+              text="주별 보기"
+              borderColor={colors.gr200}
+              backgroundColor={colors.gr100}
+              textColor={colors.gr900}
+              textVariant={"M600"}
+              icon={<WeeklyButton width={14} height={14} />}
+              onPress={onPressButton}/>
+          )}
 
       </View>
     </View>
