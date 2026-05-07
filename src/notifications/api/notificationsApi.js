@@ -8,6 +8,12 @@ export async function registerFcmToken({fcmToken, deviceId}) {
   const {data} = await api.post("/api/users/me/fcm-token", {
     fcmToken,
     deviceId,
-  });
+  },
+      {
+        meta: {
+          skipErrorToast: true,
+        },
+      },
+  );
   return data;
 }
