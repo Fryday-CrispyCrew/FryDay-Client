@@ -10,6 +10,7 @@ import {
   deleteTokens,
 } from "./storage/tokenStorage";
 import { resetToAuth } from "./navigationRef";
+import { useServerStatusStore } from "../stores/serverStatusStore";
 
 
 const baseURL =
@@ -38,6 +39,16 @@ api.interceptors.request.use(
     return config;
   },
   (error) => Promise.reject(error),
+);
+api.interceptors.response.use(
+  (response) => response,
+  (error) => {
+    if (error?.response?.status >= 500) {
+      useServerStatusStore.getState().openServerError();
+    }
+
+    return Promise.reject(error);
+  },
 );
 
 /* =========================

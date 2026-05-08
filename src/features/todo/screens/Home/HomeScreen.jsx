@@ -45,6 +45,8 @@ import colors from "../../../../shared/styles/colors";
 import Dotted from "../../../calendar/assets/svg/Dotted.svg";
 import BorderButton from "../../../../shared/components/BorderButton";
 import BackIcon from "../../../../shared/assets/svg/Back.svg"
+import { useServerStatusStore } from "../../../../shared/stores/serverStatusStore";
+import ServerMaintenanceScreen from "../../../../shared/screens/ServerMaintenanceScreen";
 
 function formatYYYYMMDD(dateObj) {
   const y = dateObj.getFullYear();
@@ -215,8 +217,10 @@ export default function HomeScreen({ navigation, route }) {
   const [currentDate, setCurrentDate] = useState(() => new Date());
   const [selectedTodoId, setSelectedTodoId] = useState(null);
   const [parentScrollEnabled, setParentScrollEnabled] = useState(true);
+  const isServerError = useServerStatusStore((s) => s.isServerError);
 
   useEffect(() => {
+    // useServerStatusStore.getState().openServerError(); 점검 화면 테스트
     setShouldInitNotifications(true);
   }, []);
 
@@ -421,33 +425,8 @@ export default function HomeScreen({ navigation, route }) {
     lottieKey,
   ]);
 
-  if (isApiError) {
-    return (
-      <SafeAreaView className="flex-1 bg-wt px-5" edges={["top"]}>
-        <StatusBar barStyle="dark-content" />
-        {shouldInitNotifications && <FCMInitializer />}
-
-        <View className="flex-1 items-center justify-center">
-          <Image
-            source={ErrorImage}
-            className="mb-6 h-[200px] w-[250px]"
-            resizeMode="contain"
-          />
-          <AppText
-            variant="M500"
-            className="text-center leading-[18px] text-gr500"
-          >
-            아차차... 정보를 불러오지 못했어요.
-          </AppText>
-          <AppText
-            variant="M500"
-            className="text-center leading-[18px] text-gr500"
-          >
-            잠시 후 다시 시도해 주세요!
-          </AppText>
-        </View>
-      </SafeAreaView>
-    );
+  if (isApiError || isServerError) {
+    return <ServerMaintenanceScreen />;
   }
 
   return (
