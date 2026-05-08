@@ -8,9 +8,7 @@ import React, {
 import {
   View,
   StatusBar,
-  TouchableOpacity,
   Pressable,
-  Image,
   ScrollView,
 } from "react-native";
 import { Gesture, GestureDetector } from "react-native-gesture-handler";
@@ -20,9 +18,6 @@ import { useFocusEffect } from "@react-navigation/native";
 
 import { TodoLottie } from "../../assets/lottie";
 import AppText from "../../../../shared/components/AppText";
-import TodayIcon from "../../assets/svg/Today.svg";
-import CategoryIcon from "../../assets/svg/Category.svg";
-import ErrorImage from "../../../../shared/assets/png/Error.png";
 import CharacterSkeleton from "../../components/CharacterSkeleton";
 import TodoBoardSection from "../../components/TodoBoardSection";
 import FCMInitializer from "../../../../notifications/components/FCMInitializer";
@@ -41,7 +36,6 @@ import { useReorderHomeTodosMutation } from "../../queries/home/useReorderHomeTo
 import { useDeleteRecurrenceTodosMutation } from "../../queries/home/useDeleteRecurrenceTodosMutation";
 
 import { useModalStore } from "../../../../shared/stores/modal/modalStore";
-import colors from "../../../../shared/styles/colors";
 import Dotted from "../../../calendar/assets/svg/Dotted.svg";
 import BorderButton from "../../../../shared/components/BorderButton";
 import BackIcon from "../../../../shared/assets/svg/Back.svg"
