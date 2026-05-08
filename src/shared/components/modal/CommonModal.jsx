@@ -1,24 +1,30 @@
 // src/shared/components/modal/CommonModal.jsx
 import React from "react";
-import {View, Text, TouchableOpacity, StyleSheet} from "react-native";
+import { View, TouchableOpacity } from "react-native";
 import BaseModal from "./BaseModal";
 import colors from "../../styles/colors";
 import AppText from "../AppText";
 
-function Button({label, onPress, variant = "primary"}) {
+function Button({ label, onPress, variant = "primary" }) {
   const isPrimary = variant === "primary";
+
   return (
     <TouchableOpacity
       activeOpacity={0.85}
       onPress={onPress}
-      style={[styles.btn, isPrimary ? styles.btnPrimary : styles.btnOutline]}
+      className={[
+        "h-[48px] items-center justify-center rounded-2xl",
+        isPrimary
+          ? "bg-bk"
+          : "border border-bk bg-wt",
+      ].join(" ")}
     >
       <AppText
         variant="L500"
-        style={[
-          styles.btnText,
-          isPrimary ? styles.btnTextPrimary : styles.btnTextOutline,
-        ]}
+        style={{
+          lineHeight: 14 * 1.5,
+          color: isPrimary ? colors.wt : colors.bk,
+        }}
       >
         {label}
       </AppText>
@@ -27,22 +33,22 @@ function Button({label, onPress, variant = "primary"}) {
 }
 
 export default function CommonModal({
-  visible,
-  title,
-  description,
-  onClose,
+                                      visible,
+                                      title,
+                                      description,
+                                      onClose,
 
-  // ✅ buttons
-  primary,
-  secondary,
+                                      primary,
+                                      secondary,
+                                      buttons,
 
-  // ✅ optional slot (checkbox, extra info, etc.)
-  footerSlot,
+                                      footerSlot,
 
-  // ✅ backdrop click behavior
-  closeOnBackdrop = true,
-  showClose = true,
-}) {
+                                      closeOnBackdrop = true,
+                                      showClose = true,
+                                    }) {
+  const buttonList = buttons ?? [primary, secondary].filter(Boolean);
+
   return (
     <BaseModal
       visible={visible}
@@ -52,56 +58,31 @@ export default function CommonModal({
       showClose={showClose}
     >
       {!!description && (
-        <AppText variant="L500" style={styles.desc}>
+        <AppText
+          variant="L500"
+          className="text-center text-gr700"
+          style={{ lineHeight: 14 * 1.5 }}
+        >
           {description}
         </AppText>
       )}
 
-      <View style={styles.btnStack}>
-        {primary && (
+      <View className={[description ? "mt-6" : "mt-2", "gap-3"].join(" ")}>
+        {buttonList.map((button, index) => (
           <Button
-            label={primary.label}
-            onPress={primary.onPress}
-            variant={primary.variant ?? "primary"}
+            key={`${button.label}-${index}`}
+            label={button.label}
+            onPress={button.onPress}
+            variant={button.variant ?? (index === 0 && !buttons ? "primary" : "outline")}
           />
-        )}
-        {secondary && (
-          <Button
-            label={secondary.label}
-            onPress={secondary.onPress}
-            variant={secondary.variant ?? "outline"}
-          />
-        )}
+        ))}
       </View>
 
-      {!!footerSlot && <View style={styles.footer}>{footerSlot}</View>}
+      {!!footerSlot && (
+        <View className="mt-2 items-end">
+          {footerSlot}
+        </View>
+      )}
     </BaseModal>
   );
 }
-
-const styles = StyleSheet.create({
-  desc: {
-    lineHeight: 14 * 1.5,
-    color: colors.gr700,
-    textAlign: "center",
-    // marginTop: 6,
-    // borderWidth: 1,
-  },
-  btnStack: {marginTop: 24, gap: 12},
-  footer: {marginTop: 8, alignItems: "flex-end"},
-  btn: {
-    height: 48,
-    borderRadius: 16,
-    alignItems: "center",
-    justifyContent: "center",
-  },
-  btnPrimary: {backgroundColor: colors.bk},
-  btnOutline: {
-    borderWidth: 1,
-    borderColor: colors.bk,
-    backgroundColor: colors.wt,
-  },
-  btnText: {lineHeight: 14 * 1.5, color: colors.bk},
-  btnTextPrimary: {color: colors.wt},
-  btnTextOutline: {color: colors.bk},
-});

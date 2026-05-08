@@ -44,9 +44,7 @@ import { useUpdateTodoMemoMutation } from "../../queries/sheet/content/useUpdate
 import { useSetTodoAlarmMutation } from "../../queries/sheet/alarm/useSetTodoAlarmMutation";
 import { useDeleteTodoAlarmMutation } from "../../queries/sheet/alarm/useDeleteTodoAlarmMutation";
 import { useCreateTodoRecurrenceMutation } from "../../queries/sheet/repeat/useCreateTodoRecurrenceMutation";
-import { useUpdateRecurrenceRuleMutation } from "../../queries/sheet/repeat/useUpdateRecurrenceRuleMutation";
 import { useUpdateTodoDateMutation } from "../../queries/sheet/date/useUpdateTodoDateMutation";
-import { useDeleteTodoRecurrenceMutation } from "../../queries/sheet/repeat/useDeleteTodoRecurrenceMutation";
 
 import useTodoEditorFocus from "./hooks/useTodoEditorFocus";
 import useTodoEditorKeyboard from "./hooks/useTodoEditorKeyboard";
@@ -467,11 +465,7 @@ const TodoEditorSheet = React.forwardRef(function TodoEditorSheet(
   const { mutateAsync: setAlarm } = useSetTodoAlarmMutation();
   const { mutateAsync: deleteAlarm } = useDeleteTodoAlarmMutation();
   const { mutateAsync: createRecurrence } = useCreateTodoRecurrenceMutation();
-  const { mutateAsync: updateRecurrenceRule } =
-    useUpdateRecurrenceRuleMutation();
   const { mutateAsync: updateTodoDate } = useUpdateTodoDateMutation();
-  const { mutateAsync: deleteTodoRecurrence } =
-    useDeleteTodoRecurrenceMutation();
 
   const initialRef = useRef({
     description: "",
@@ -748,10 +742,16 @@ const TodoEditorSheet = React.forwardRef(function TodoEditorSheet(
 
   const handleSubmitInternal = useCallback(async () => {
     const text = normalizeDesc(editingText);
-    if (!text) return;
-    if (isSubmittingRef.current) return;
+
+    if (!text) {
+      return;
+    }
+    if (isSubmittingRef.current) {
+      return;
+    }
 
     if (mode !== "edit") {
+
       const text = (editingText ?? "").trim();
       if (!text) return;
       if (isSubmittingRef.current) return;
@@ -807,6 +807,49 @@ const TodoEditorSheet = React.forwardRef(function TodoEditorSheet(
       })
       : null;
 
+    if (currentNotifyAt) {
+      const alarmDate = new Date(currentNotifyAt);
+
+      if (alarmDate < new Date()) {
+        toast.show("알림 시간은 현재 시간 이후로 설정해야 합니다.");
+        isSubmittingRef.current = false;
+        return;
+      }
+    }
+
+    const repeatDraft = useRepeatEditorStore.getState().getRepeatPayload?.();
+
+    const repeatPayload = buildCreateRecurrencePayload(repeatDraft, {
+      alarmTimeHHmm: hasPickedAlarmTime ? alarmTime : null,
+    });
+
+    if (todoDetail?.recurrence) {
+      const nextDateStr = hasAppliedTodoDate
+        ? toYYYYMMDD(todoDate)
+        : todoDetail?.date;
+
+      const isRepeatCleared = repeatDraft?.repeatCycle === "unset";
+
+      await onSubmit?.({
+        todo: {
+          ...todoDetail,
+          id: numericTodoId,
+          recurrenceId: todoDetail?.recurrence?.recurrenceId ?? todoDetail?.recurrenceId ?? true,
+        },
+        text: currentDescription,
+        description: currentDescription,
+        title: currentDescription,
+        categoryId: currentCategoryId,
+        date: nextDateStr,
+        memo: currentMemo,
+        notifyAt: currentNotifyAt,
+        recurrence: isRepeatCleared ? null : repeatPayload,
+      });
+
+      isSubmittingRef.current = false;
+      return;
+    }
+
     const tasks = [];
 
     if (
@@ -837,14 +880,6 @@ const TodoEditorSheet = React.forwardRef(function TodoEditorSheet(
     if (initialNotifyAt && !currentNotifyAt) {
       tasks.push(() => deleteAlarm({ todoId: numericTodoId }));
     } else if (initialNotifyAt !== currentNotifyAt && currentNotifyAt) {
-      const alarmDate = new Date(currentNotifyAt);
-
-      if (alarmDate < new Date()) {
-        toast.show("알림 시간은 현재 시간 이후로 설정해야 합니다.");
-        isSubmittingRef.current = false;
-        return;
-      }
-
       tasks.push(() =>
         setAlarm({
           todoId: numericTodoId,
@@ -853,57 +888,27 @@ const TodoEditorSheet = React.forwardRef(function TodoEditorSheet(
       );
     }
 
-    const repeatDraft = useRepeatEditorStore.getState().getRepeatPayload?.();
+    if (repeatPayload) {
+      const hasRequired =
+        repeatPayload?.type &&
+        repeatPayload?.startDate &&
+        (repeatPayload.type === "DAILY"
+          ? true
+          : Array.isArray(repeatPayload?.frequencyValues) &&
+          repeatPayload.frequencyValues.length > 0);
 
-    const repeatPayload = buildCreateRecurrencePayload(repeatDraft, {
-      alarmTimeHHmm: hasPickedAlarmTime ? alarmTime : null,
-    });
-
-    const initialRecurrenceId = initial.recurrenceId;
-    const initialHasRecurrence = !!initialRecurrenceId;
-    const isRepeatCleared = repeatDraft?.repeatCycle === "unset";
-
-    const shouldCreateRecurrence = !initialRecurrenceId && !!repeatPayload;
-
-    const shouldUpdateRecurrence =
-      !!initialRecurrenceId &&
-      !!repeatPayload &&
-      !isSameRecurrenceBody(initialRecurrencePayloadRef.current, repeatPayload);
-
-    if (initialHasRecurrence && isRepeatCleared) {
-      tasks.push(() => deleteTodoRecurrence({ todoId: numericTodoId }));
-    } else {
-      if (shouldCreateRecurrence) {
-        const hasRequired =
-          repeatPayload?.type &&
-          repeatPayload?.startDate &&
-          (repeatPayload.type === "DAILY"
-            ? true
-            : Array.isArray(repeatPayload?.frequencyValues) &&
-            repeatPayload.frequencyValues.length > 0);
-
-        if (!hasRequired) {
-          toast.show("반복 설정 정보를 다시 확인해주세요.");
-          isSubmittingRef.current = false;
-          return;
-        }
-
-        tasks.push(() =>
-          createRecurrence({
-            todoId: numericTodoId,
-            ...repeatPayload,
-          }),
-        );
+      if (!hasRequired) {
+        toast.show("반복 설정 정보를 다시 확인해주세요.");
+        isSubmittingRef.current = false;
+        return;
       }
 
-      if (shouldUpdateRecurrence) {
-        tasks.push(() =>
-          updateRecurrenceRule({
-            recurrenceId: initialRecurrenceId,
-            ...repeatPayload,
-          }),
-        );
-      }
+      tasks.push(() =>
+        createRecurrence({
+          todoId: numericTodoId,
+          ...repeatPayload,
+        }),
+      );
     }
 
     if (hasAppliedTodoDate) {
@@ -954,8 +959,6 @@ const TodoEditorSheet = React.forwardRef(function TodoEditorSheet(
     deleteAlarm,
     setAlarm,
     createRecurrence,
-    updateRecurrenceRule,
-    deleteTodoRecurrence,
     updateTodoDate,
     onSubmit,
     onEditSuccess,
