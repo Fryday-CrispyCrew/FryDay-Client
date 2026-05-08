@@ -395,7 +395,7 @@ export default function HomeScreen({ navigation, route }) {
             >
               {isCharacterBusy && showSkeleton ? (
                 <CharacterSkeleton />
-              ) : (
+              ) : TodoLottie[lottieKey] ? (
                 <LottieView
                   source={TodoLottie[lottieKey]}
                   autoPlay
@@ -406,7 +406,7 @@ export default function HomeScreen({ navigation, route }) {
                     height: "100%",
                   }}
                 />
-              )}
+              ) : null}
             </Pressable>
           </View>
         </GestureDetector>
