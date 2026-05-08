@@ -387,26 +387,31 @@ export default function TodoBoardSection({
 
       const instanceId = Number(todo.id);
 
+      const payload = {};
+
       const nextTitle =
         description ||
         title ||
         text ||
-        todo?.title ||
-        todo?.description ||
         "";
 
-      const payload = {
-        title: nextTitle,
-        memo: memo?.trim() ?? "",
-        isAlarmEnabled: !!notifyAt,
-        alarmTime: notifyAt ? String(notifyAt).split("T")[1] : null,
-      };
+      if (nextTitle && nextTitle !== (todo?.title || todo?.description || "")) {
+        payload.title = nextTitle;
+      }
 
-      if (recurrence) {
-        payload.type = recurrence.type;
-        payload.frequencyValues = recurrence.frequencyValues;
-        payload.startDate = recurrence.startDate ?? submitDate;
-        payload.endDate = recurrence.endDate;
+      const nextMemo = memo?.trim() ?? "";
+      const prevMemo = todo?.memo?.trim() ?? "";
+
+      if (nextMemo !== prevMemo) {
+        payload.memo = nextMemo;
+      }
+
+      const nextAlarmTime = notifyAt ? String(notifyAt).split("T")[1] : null;
+      const prevAlarmTime = todo?.alarmTime ?? todo?.alarm?.notifyAt ?? null;
+
+      if (nextAlarmTime !== prevAlarmTime) {
+        payload.isAlarmEnabled = !!nextAlarmTime;
+        payload.alarmTime = nextAlarmTime;
       }
 
       if (isRecurringTodo(todo)) {
