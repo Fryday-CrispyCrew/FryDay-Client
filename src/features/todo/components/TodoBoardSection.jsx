@@ -423,13 +423,13 @@ export default function TodoBoardSection({
         return;
       }
 
-      console.log("instance update payload", {
-        instanceId,
-        body: {
-          scope: INSTANCE_SCOPE.THIS,
-          payload,
-        },
-      });
+      // console.log("instance update payload", {
+      //   instanceId,
+      //   body: {
+      //     scope: INSTANCE_SCOPE.THIS,
+      //     payload,
+      //   },
+      // });
 
       await updateTodoInstanceMutateAsync({
         instanceId,
