@@ -11,8 +11,12 @@ export function useDeleteTodoInstanceMutation(options = {}) {
     onSuccess: (data, variables, context) => {
       queryClient.invalidateQueries({ queryKey: sheetKeys.all });
       queryClient.invalidateQueries({ queryKey: homeKeys.all });
+
+      queryClient.removeQueries({
+        queryKey: sheetKeys.todoDetail(variables.instanceId),
+      });
+
       options?.onSuccess?.(data, variables, context);
     },
-    ...options,
   });
 }

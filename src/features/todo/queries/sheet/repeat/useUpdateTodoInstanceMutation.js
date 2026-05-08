@@ -11,11 +11,12 @@ export function useUpdateTodoInstanceMutation(options = {}) {
     onSuccess: (data, variables, context) => {
       queryClient.invalidateQueries({ queryKey: sheetKeys.all });
       queryClient.invalidateQueries({ queryKey: homeKeys.all });
-      options?.onSuccess?.(data, variables, context);
-    },
 
-    onError: (e) => {
-      console.log("update instance error", e?.response?.data || e);
+      queryClient.removeQueries({
+        queryKey: sheetKeys.todoDetail(variables.instanceId),
+      });
+
+      options?.onSuccess?.(data, variables, context);
     },
 
     ...options,

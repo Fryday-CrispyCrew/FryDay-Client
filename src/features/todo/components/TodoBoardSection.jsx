@@ -413,6 +413,13 @@ export default function TodoBoardSection({
         payload.isAlarmEnabled = !!nextAlarmTime;
         payload.alarmTime = nextAlarmTime;
       }
+      if (recurrence?.startDate) {
+        payload.startDate = recurrence.startDate;
+      }
+
+      if (recurrence?.endDate) {
+        payload.endDate = recurrence.endDate;
+      }
 
       if (isRecurringTodo(todo)) {
         openRecurringEditModal({
