@@ -30,7 +30,18 @@ export default function MainTabs() {
   return (
     <Tab.Navigator
       initialRouteName="Todo"
-      tabBar={(props) => <CustomTabBar {...props} />}
+      tabBar={(props) => {
+        const focusedRoute = props.state.routes[props.state.index];
+
+        const nestedRouteName =
+          focusedRoute.state?.routes?.[focusedRoute.state?.index]?.name;
+
+        if (nestedRouteName === "OnboardingReview") {
+          return null;
+        }
+
+        return <CustomTabBar {...props} />;
+      }}
       screenOptions={{ headerShown: false }}
     >
       <Tab.Screen name="Todo" component={TodoStack} />

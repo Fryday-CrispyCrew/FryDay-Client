@@ -25,12 +25,20 @@ import { useMoveTodoTodayMutation } from "../queries/home/useMoveTodoTodayMutati
 import { useDeleteTodoMutation } from "../queries/home/useDeleteTodoMutation";
 import { useToggleTodoCompletionMutation } from "../queries/home/useToggleTodoCompletionMutation";
 import { useReorderHomeTodosMutation } from "../queries/home/useReorderHomeTodosMutation";
-import { useDeleteRecurrenceTodosMutation } from "../queries/home/useDeleteRecurrenceTodosMutation";
 
 import { useModalStore } from "../../../shared/stores/modal/modalStore";
 import { toast } from "../../../shared/components/toast/CenterToast";
 import colors from "../../../shared/styles/colors";
 import { Swipeable } from "react-native-gesture-handler";
+import BorderButton from "../../../shared/components/BorderButton";
+import CategoryIcon from "../../../shared/assets/svg/Category.svg";
+import { useUpdateTodoMemoMutation } from "../queries/sheet/content/useUpdateTodoMemoMutation";
+import { useSetTodoAlarmMutation } from "../queries/sheet/alarm/useSetTodoAlarmMutation";
+import { useCreateTodoRecurrenceMutation } from "../queries/sheet/repeat/useCreateTodoRecurrenceMutation";
+import { useUpdateTodoDateMutation } from "../queries/sheet/date/useUpdateTodoDateMutation";
+import { useDeleteTodoInstanceMutation } from "../queries/sheet/repeat/useDeleteTodoInstanceMutation";
+import { useUpdateTodoInstanceMutation } from "../queries/sheet/repeat/useUpdateTodoInstanceMutation";
+
 
 function Chevron({ isOpen, color }) {
   return (
@@ -116,7 +124,7 @@ function TodoItem({
             onPress={() => onPressItem?.(item)}
           >
             <AppText variant="M500" className="text-bk">
-              {item.title ?? item.description ?? ""}
+              {item.title || item.description || item.name || ""}
             </AppText>
           </TouchableOpacity>
 
@@ -163,8 +171,12 @@ function CategoryHeader({
       <TouchableOpacity
         activeOpacity={0.8}
         onPress={() => onToggleSection(category.categoryId)}
-        style={{ backgroundColor: color }}
-        className="flex-row items-center rounded-full px-2.5 py-1.5"
+        style={{
+          backgroundColor: color,
+          borderColor: color,
+          borderRadius: 24,
+        }}
+        className="flex-row items-center border px-2.5 py-1.5"
       >
         <AppText variant="M600" style={{ color: colors.wt }}>
           {category.label}
@@ -238,25 +250,201 @@ export default function TodoBoardSection({
     useMoveTodoTomorrowMutation();
   const { mutateAsync: moveTodoTodayMutateAsync } = useMoveTodoTodayMutation();
   const { mutateAsync: deleteTodoMutateAsync } = useDeleteTodoMutation();
-  const { mutateAsync: deleteRecurrenceTodosMutateAsync } =
-    useDeleteRecurrenceTodosMutation();
   const { mutateAsync: toggleCompletionMutateAsync } =
     useToggleTodoCompletionMutation();
   const { mutateAsync: reorderTodosMutateAsync } =
     useReorderHomeTodosMutation();
 
+  const { mutateAsync: updateMemoMutateAsync } =
+    useUpdateTodoMemoMutation();
+
+  const { mutateAsync: setAlarmMutateAsync } =
+    useSetTodoAlarmMutation();
+
+  const { mutateAsync: createRecurrenceMutateAsync } =
+    useCreateTodoRecurrenceMutation();
+
+  const { mutateAsync: updateTodoDateMutateAsync } =
+    useUpdateTodoDateMutation();
+
+  const { mutateAsync: deleteTodoInstanceMutateAsync } =
+    useDeleteTodoInstanceMutation();
+
+  const { mutateAsync: updateTodoInstanceMutateAsync } =
+    useUpdateTodoInstanceMutation();
+
+  const isRecurringTodo = (todo) => {
+    const rid = todo?.recurrenceId;
+    return rid !== null && rid !== undefined && Number(rid) !== 0;
+  };
+
+  const INSTANCE_SCOPE = {
+    THIS: "THIS",
+    THIS_AND_FUTURE: "THIS_AND_FUTURE",
+    ALL: "ALL",
+  };
+
+  const openRecurringEditModal = useCallback(
+    ({ todo, payload, onDone }) => {
+      const instanceId = Number(todo?.id);
+      if (!instanceId) return;
+
+      const handleUpdate = async (scope) => {
+        const body = {
+          scope,
+          payload,
+        };
+
+        await updateTodoInstanceMutateAsync({
+          instanceId,
+          body,
+        });
+
+        onDone?.();
+        close();
+      };
+
+      open({
+        title: "반복 일정 수정",
+        showClose: true,
+        closeOnBackdrop: true,
+        buttons: [
+          {
+            label: "이 투두만 수정",
+            variant: "outline",
+            onPress: () => handleUpdate(INSTANCE_SCOPE.THIS),
+          },
+          {
+            label: "이 투두 포함 이후 모든 투두 수정",
+            variant: "outline",
+            onPress: () => handleUpdate(INSTANCE_SCOPE.THIS_AND_FUTURE),
+          },
+          {
+            label: "모든 투두 수정",
+            variant: "outline",
+            onPress: () => handleUpdate(INSTANCE_SCOPE.ALL),
+          },
+        ],
+      });
+    },
+    [open, close, updateTodoInstanceMutateAsync],
+  );
+
   const editor = useTodoEditorController({
     categories,
     selectedDate: date,
-    onSubmitTodo: async ({ todo, text, categoryId, date: submitDate }) => {
+
+    onSubmitTodo: async ({
+                           todo,
+                           text,
+                           title,
+                           description,
+                           categoryId,
+                           date: submitDate,
+                           memo,
+                           notifyAt,
+                           recurrence,
+                           onDone,
+                         }) => {
       if (!todo?.id) {
-        await createTodoMutateAsync({
+        const created = await createTodoMutateAsync({
           description: text,
           categoryId,
           date: submitDate,
         });
-        setOpenMap((prev) => ({ ...prev, [categoryId]: true }));
+
+        const todoId = created?.data?.id ?? created?.id;
+        if (!todoId) return;
+
+        if (memo?.trim()) {
+          await updateMemoMutateAsync({
+            todoId,
+            memo: memo.trim(),
+          });
+        }
+
+        if (notifyAt) {
+          await setAlarmMutateAsync({
+            todoId,
+            notifyAt,
+          });
+        }
+
+        if (recurrence) {
+          await createRecurrenceMutateAsync({
+            todoId,
+            ...recurrence,
+          });
+        }
+
+        setOpenMap((prev) => ({
+          ...prev,
+          [categoryId]: true,
+        }));
+
+        return;
       }
+
+      const instanceId = Number(todo.id);
+
+      const payload = {};
+
+      const nextTitle =
+        description ||
+        title ||
+        text ||
+        "";
+
+      if (nextTitle && nextTitle !== (todo?.title || todo?.description || "")) {
+        payload.title = nextTitle;
+      }
+
+      const nextMemo = memo?.trim() ?? "";
+      const prevMemo = todo?.memo?.trim() ?? "";
+
+      if (nextMemo !== prevMemo) {
+        payload.memo = nextMemo;
+      }
+
+      const nextAlarmTime = notifyAt ? String(notifyAt).split("T")[1] : null;
+      const prevAlarmTime = todo?.alarmTime ?? todo?.alarm?.notifyAt ?? null;
+
+      if (nextAlarmTime !== prevAlarmTime) {
+        payload.isAlarmEnabled = !!nextAlarmTime;
+        payload.alarmTime = nextAlarmTime;
+      }
+      if (recurrence?.startDate) {
+        payload.startDate = recurrence.startDate;
+      }
+
+      if (recurrence?.endDate) {
+        payload.endDate = recurrence.endDate;
+      }
+
+      if (isRecurringTodo(todo)) {
+        openRecurringEditModal({
+          todo,
+          payload,
+          onDone,
+        });
+        return;
+      }
+
+      // console.log("instance update payload", {
+      //   instanceId,
+      //   body: {
+      //     scope: INSTANCE_SCOPE.THIS,
+      //     payload,
+      //   },
+      // });
+
+      await updateTodoInstanceMutateAsync({
+        instanceId,
+        body: {
+          scope: INSTANCE_SCOPE.THIS,
+          payload,
+        },
+      });
     },
   });
 
@@ -282,50 +470,59 @@ export default function TodoBoardSection({
     [categories],
   );
 
-  const isRecurringTodo = (todo) => {
-    const rid = todo?.recurrenceId;
-    return rid !== null && rid !== undefined && Number(rid) !== 0;
-  };
-
   const handleRequestDeleteTodo = useCallback(
     async (todo) => {
-      const todoId = Number(todo?.id);
-      if (!todoId) return;
+      const instanceId = Number(todo?.id);
+      if (!instanceId) return;
 
       if (isRecurringTodo(todo)) {
-        const recurrenceId = Number(todo.recurrenceId);
-
         open({
           title: "반복 일정 삭제",
-          description: "어떤 반복 일정을 삭제할까요?",
           showClose: true,
           closeOnBackdrop: true,
-          primary: {
-            label: "이번 투두만 삭제할래요",
-            variant: "outline",
-            closeAfterPress: false,
-            onPress: async () => {
-              await deleteTodoMutateAsync({ todoId });
-              close();
+          buttons: [
+            {
+              label: "이 투두만 삭제",
+              variant: "outline",
+              onPress: async () => {
+                await deleteTodoInstanceMutateAsync({
+                  instanceId,
+                  body: { scope: INSTANCE_SCOPE.THIS },
+                });
+                close();
+              },
             },
-          },
-          secondary: {
-            label: "모든 반복 투두를 삭제할래요",
-            variant: "outline",
-            closeAfterPress: false,
-            onPress: async () => {
-              await deleteRecurrenceTodosMutateAsync({ recurrenceId });
-              close();
+            {
+              label: "이 투두 포함 이후 모든 투두 삭제",
+              variant: "outline",
+              onPress: async () => {
+                await deleteTodoInstanceMutateAsync({
+                  instanceId,
+                  body: { scope: INSTANCE_SCOPE.THIS_AND_FUTURE },
+                });
+                close();
+              },
             },
-          },
+            {
+              label: "모든 투두 삭제",
+              variant: "outline",
+              onPress: async () => {
+                await deleteTodoInstanceMutateAsync({
+                  instanceId,
+                  body: { scope: INSTANCE_SCOPE.ALL },
+                });
+                close();
+              },
+            },
+          ],
         });
 
         return;
       }
 
-      await deleteTodoMutateAsync({ todoId });
+      await deleteTodoMutateAsync({ todoId: instanceId });
     },
-    [open, close, deleteTodoMutateAsync, deleteRecurrenceTodosMutateAsync],
+    [open, close, deleteTodoMutateAsync, deleteTodoInstanceMutateAsync],
   );
 
   const handlePressTodoInput = useCallback(
@@ -641,26 +838,19 @@ export default function TodoBoardSection({
           <Dotted width="100%" height={1} />
         </View>
 
-        {categories.length < 6 ? (
-          <TouchableOpacity
-            activeOpacity={0.8}
+        <View className="mt-[18px]">
+          <BorderButton
+            icon={<CategoryIcon/>}
+            text={"카테고리 관리"}
+            borderColor={colors.gr100}
+            iconPosition="left"
+            backgroundColor={colors.gr100}
             onPress={() =>
               navigation.navigate("Category", {
-                screen: "CategEdit",
-              })
-            }
-            className="self-start rounded-3xl border border-[#FF5B22] mt-[18px] px-2.5 py-1.5"
-          >
-            <View className="flex-row items-center gap-1">
-              <AppText variant="M600" style={{ color: colors?.or }}>
-                새 카테고리
-              </AppText>
-              <PlusIcon width={14} height={14} color={colors?.or} />
-            </View>
-          </TouchableOpacity>
-        ) : (
-          <View className="h-3" />
-        )}
+                screen: "CategList",
+              })}
+          />
+        </View>
       </View>
 
       <TodoEditorSheet

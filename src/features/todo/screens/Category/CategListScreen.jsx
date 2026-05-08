@@ -172,7 +172,7 @@ export default function CategListScreen({navigation}) {
 const styles = StyleSheet.create({
   safe: {
     flex: 1,
-    backgroundColor: "#FAFAFA",
+    backgroundColor: colors.gr,
     paddingHorizontal: 20,
   },
 

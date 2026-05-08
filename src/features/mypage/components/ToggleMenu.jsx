@@ -15,7 +15,7 @@ export default function ToggleMenu({
                     <AppText variant="L500" className="text-bk">
                         {title}
                     </AppText>
-                    <AppText variant="S500" className="text-gr500 py-1">
+                    <AppText variant="M400" className="text-gr500 py-1">
                         {content}
                     </AppText>
                 </View>

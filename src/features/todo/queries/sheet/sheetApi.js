@@ -116,11 +116,25 @@ export const sheetApi = {
     return res.data;
   },
 
-  // 반복 해제: DELETE /api/todos/{todoId}/recurrence
-  // 해당 투두만 남고, 원본 포함 나머지 반복 투두는 삭제되며 단건 투두로 유지
+
   deleteTodoRecurrence: async ({todoId}) => {
     // console.log("반복 설정 해제");
     const res = await api.delete(`/api/todos/${todoId}/recurrence`);
     return res.data;
   },
+
+
+  updateTodoInstance : async ({instanceId, body}) => {
+    const res = await api.patch(`/api/todos/instances/${instanceId}`, body);
+    return res.data;
+  },
+
+  deleteTodoInstance : async ({instanceId, body}) => {
+    const res = await api.delete(`/api/todos/instances/${instanceId}`,
+      {
+        data : body,
+      });
+    return res.data;
+  }
+
 };

@@ -42,7 +42,8 @@ export default function NamingScreen({navigation, route}) {
 
   const onChangeNickname = (text) => {
     const raw = text ?? "";
-    const filtered = raw.replace(/[^가-힣ㄱ-ㅎㅏ-ㅣa-zA-Z0-9\s]/g, "");
+    const filtered = raw.replace(/[^가-힣ㄱ-ㅎㅏ-ㅣa-zA-Z0-9\sㆍ]/g,
+      "");
     const limited = filtered.slice(0, NICKNAME_MAX);
     setDraft(limited);
     if (nicknameError) setNicknameError(null);

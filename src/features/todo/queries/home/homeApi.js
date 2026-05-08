@@ -1,6 +1,4 @@
-// src/features/todo/queries/home/homeApi.js
 import api from "../../../../shared/lib/api";
-// ✅ 위 경로는 예시야. 실제 api.js 위치에 맞게 수정해줘.
 
 export const homeApi = {
   // GET /api/todos?date={date}&categoryId={categoryId}
@@ -11,15 +9,15 @@ export const homeApi = {
         ...(categoryId ? {categoryId} : {}),
       },
     });
-    return res.data; // { success, message, data: [...], timestamp }
+    return res.data;
   },
 
-  // GET /api/todos/character-status (명세는 query 없지만 예시는 ?date= 로 호출됨)
+  // GET /api/todos/character-status
   getCharacterStatus: async ({date} = {}) => {
     const res = await api.get("/api/todos/character-status", {
       params: date ? {date} : {},
     });
-    return res.data; // { success, message, data: {...}, timestamp }
+    return res.data;
   },
 
   // POST /api/todos/{todoId}/completion

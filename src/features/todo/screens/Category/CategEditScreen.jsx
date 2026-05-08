@@ -24,7 +24,7 @@ import { useDeleteCategoryMutation } from "../../queries/category/useDeleteCateg
 import { queryClient } from "../../../../shared/lib/queryClient";
 import { categoryKeys } from "../../queries/category/categoryKeys";
 
-const MAX_NAME_LEN = 8;
+const MAX_NAME_LEN = 12;
 
 const COLOR_OPTIONS = [
   colors.or,
@@ -111,6 +111,13 @@ export default function CategEditScreen({ navigation, route }) {
 
     const colorCode = COLOR_CODE_MAP[selectedColor];
 
+    // console.log("카테고리 수정 요청", {
+    //   categoryId: editingCategory?.id,
+    //   name: name.trim(),
+    //   length: name.trim().length,
+    //   color: colorCode,
+    // });
+
     updateCategory({
       categoryId: editingCategory?.id,
       name: name.trim(),
@@ -122,6 +129,12 @@ export default function CategEditScreen({ navigation, route }) {
     if (!isSubmitEnabled || isCreating) return;
 
     const colorCode = COLOR_CODE_MAP[selectedColor];
+
+    // console.log("카테고리 생성 요청", {
+    //   name: name.trim(),
+    //   length: name.trim().length,
+    //   color: colorCode,
+    // });
 
     createCategory({
       name: name.trim(),
@@ -142,11 +155,11 @@ export default function CategEditScreen({ navigation, route }) {
         onPress: () => {
           if (isDeleting) return;
 
-          if (categoryCount <= 3) {
+          if (categoryCount <= 1) {
             setTimeout(() => {
               openModal({
                 title: "알림",
-                description: "카테고리는 최소 3개를 유지해야 해요!",
+                description: "카테고리는 최소 1개를 유지해야 해요!",
                 closeOnBackdrop: true,
                 showClose: true,
                 primary: {
@@ -388,7 +401,7 @@ const styles = StyleSheet.create({
   bottomArea: {
     paddingHorizontal: 20,
     paddingBottom: 24,
-    backgroundColor: colors.wt,
+    backgroundColor: colors.gr,
   },
 
   submitBtn: {

@@ -108,10 +108,10 @@ export default function EditProfile({ navigation }) {
         const raw = text ?? "";
 
         // 한글 완성형 + 자모 + 영문 + 숫자 + 공백 허용
-        const filtered = raw.replace(
-            /[^가-힣ㄱ-ㅎㅏ-ㅣa-zA-Z0-9\s]/g,
-            ""
-        );
+      const filtered = raw.replace(
+        /[^가-힣ㄱ-ㅎㅏ-ㅣa-zA-Z0-9\sㆍ]/g,
+        ""
+      );
 
         const limited = filtered.slice(0, NICKNAME_MAX);
 

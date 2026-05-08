@@ -3,9 +3,10 @@ import AppText from "../../../shared/components/AppText";
 
 import MonthButton from "../assets/svg/Month.svg";
 import WeeklyButton from "../assets/svg/Weekly.svg";
-import CategoryIcon from "../../todo/assets/svg/Category.svg";
-import TodayIcon from "../../todo/assets/svg/Today.svg";
 import dayjs from "dayjs";
+import BorderButton from "../../../shared/components/BorderButton";
+import BackIcon from "../../../shared/assets/svg/Back.svg"
+import colors from "../../../shared/styles/colors";
 
 export default function CalendarHeader({
   date,
@@ -51,56 +52,35 @@ export default function CalendarHeader({
           gap: 12,
         }}
       >
-        <TouchableOpacity
-          onPress={onPressButton}
-          //   className="w-8 h-8 items-center justify-center"
-          style={{
-            width: 32,
-            height: 32,
-            justifyContent: "center",
-            alignItems: "center",
-          }}
-        >
+
+        {!isTodayDisabled && (
+          <BorderButton
+            text="오늘로"
+            icon={<BackIcon width={14} height={14} />}
+            onPress={onPressToday}
+          />
+        )}
           {mode === "week" ? (
-            <MonthButton width={32} height={32} />
+            <BorderButton
+              text="월별 보기"
+              borderColor={colors.gr200}
+              backgroundColor={colors.gr100}
+              textColor={colors.gr900}
+              textVariant={"M600"}
+              icon={<MonthButton width={14} height={14} />}
+              onPress={onPressButton}/>
+
           ) : (
-            <WeeklyButton width={24} height={24} />
+            <BorderButton
+              text="주별 보기"
+              borderColor={colors.gr200}
+              backgroundColor={colors.gr100}
+              textColor={colors.gr900}
+              textVariant={"M600"}
+              icon={<WeeklyButton width={14} height={14} />}
+              onPress={onPressButton}/>
           )}
-        </TouchableOpacity>
 
-        <TouchableOpacity
-          onPress={isTodayDisabled ? undefined : onPressToday}
-          disabled={isTodayDisabled}
-          //   className="w-8 h-8 items-center justify-center"
-          style={{
-            opacity: isTodayDisabled ? 0.35 : 1,
-            width: 32,
-            height: 32,
-            justifyContent: "center",
-            alignItems: "center",
-            // borderWidth: 1,
-          }}
-        >
-          <TodayIcon width={24} height={24} />
-        </TouchableOpacity>
-
-        <TouchableOpacity
-          onPress={() =>
-            navigation.navigate("Category", {
-              screen: "CategList",
-            })
-          }
-          //   className="w-8 h-8 items-center justify-center"
-          style={{
-            width: 32,
-            height: 32,
-            justifyContent: "center",
-            alignItems: "center",
-            // borderWidth: 1,
-          }}
-        >
-          <CategoryIcon width={24} height={24} />
-        </TouchableOpacity>
       </View>
     </View>
   );

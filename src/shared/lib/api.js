@@ -10,6 +10,7 @@ import {
   deleteTokens,
 } from "./storage/tokenStorage";
 import { resetToAuth } from "./navigationRef";
+import { useServerStatusStore } from "../stores/serverStatusStore";
 
 
 const baseURL =
@@ -38,6 +39,25 @@ api.interceptors.request.use(
     return config;
   },
   (error) => Promise.reject(error),
+);
+api.interceptors.response.use(
+  (response) => response,
+  (error) => {
+    const status = error?.response?.status;
+    const errorCode = error?.response?.data?.errorCode;
+
+    const isMaintenanceError =
+      errorCode === "SERVICE_UNAVAILABLE" ||
+      status === 502 ||
+      error?.message === "Network Error" ||
+      error?.code === "ECONNABORTED";
+
+    if (isMaintenanceError) {
+      useServerStatusStore.getState().openServerError();
+    }
+
+    return Promise.reject(error);
+  },
 );
 
 /* =========================
@@ -96,7 +116,7 @@ api.interceptors.response.use(
       return Promise.reject(error);
     }
 
-    if (error.response?.status === 403 && !originalRequest._retry) {
+    if ([401, 403].includes(error.response?.status) && !originalRequest._retry) {
       originalRequest._retry = true;
 
       let newAccessToken;
@@ -126,10 +146,21 @@ api.interceptors.response.use(
     const isRetryRequest = Boolean(originalRequest?._retry);
     const isSessionExpired = Boolean(error?.isSessionExpired);
 
+    const status = error?.response?.status;
+    const errorCode = error?.response?.data?.errorCode;
+
+    const isMaintenanceError =
+      errorCode === "SERVICE_UNAVAILABLE" ||
+      status === 502 ||
+      error?.message === "Network Error" ||
+      error?.code === "ECONNABORTED";
+
     const shouldSkipToast =
       skipErrorToast ||
       isSessionExpired ||
-      (isRetryRequest && method === "get"); // 백그라운드 refetch 재시도 실패 시 토스트 생략
+      isMaintenanceError ||
+      ([401, 403].includes(status) && isRetryRequest) ||
+      (isRetryRequest && method === "get");
 
     if (!shouldSkipToast) {
       if (method === "get")
@@ -138,31 +169,6 @@ api.interceptors.response.use(
         toast.show(TOAST_MESSAGES.MUTATION_ERROR, {position: "center"});
       }
     }
-
-    // if (!shouldSkipToast) {
-    //   // ✅ 1순위: 백엔드에서 내려준 에러 메시지가 있으면 그걸 먼저 노출
-    //   // (서버 구현에 따라 키가 다를 수 있어 범용적으로 몇 가지를 확인)
-    //   const data = error?.response?.data;
-
-    //   const backendMessage =
-    //     (typeof data?.message === "string" && data.message.trim()) ||
-    //     (typeof data?.error === "string" && data.error.trim()) ||
-    //     (typeof data?.detail === "string" && data.detail.trim()) ||
-    //     (typeof data?.msg === "string" && data.msg.trim()) ||
-    //     "";
-
-    //   if (backendMessage) {
-    //     toast.show(backendMessage, {position: "center"});
-    //   } else {
-    //     // ✅ 2순위: 기존 고정 문구
-    //     if (method === "get") {
-    //       toast.show(TOAST_MESSAGES.GET_ERROR, {position: "center"});
-    //     } else if (["post", "put", "patch", "delete"].includes(method)) {
-    //       toast.show(TOAST_MESSAGES.MUTATION_ERROR, {position: "center"});
-    //     }
-    //   }
-    // }
-
     return Promise.reject(error);
   },
 );

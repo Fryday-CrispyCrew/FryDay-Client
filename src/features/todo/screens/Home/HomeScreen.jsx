@@ -8,9 +8,7 @@ import React, {
 import {
   View,
   StatusBar,
-  TouchableOpacity,
   Pressable,
-  Image,
   ScrollView,
 } from "react-native";
 import { Gesture, GestureDetector } from "react-native-gesture-handler";
@@ -20,9 +18,6 @@ import { useFocusEffect } from "@react-navigation/native";
 
 import { TodoLottie } from "../../assets/lottie";
 import AppText from "../../../../shared/components/AppText";
-import TodayIcon from "../../assets/svg/Today.svg";
-import CategoryIcon from "../../assets/svg/Category.svg";
-import ErrorImage from "../../../../shared/assets/png/Error.png";
 import CharacterSkeleton from "../../components/CharacterSkeleton";
 import TodoBoardSection from "../../components/TodoBoardSection";
 import FCMInitializer from "../../../../notifications/components/FCMInitializer";
@@ -41,8 +36,11 @@ import { useReorderHomeTodosMutation } from "../../queries/home/useReorderHomeTo
 import { useDeleteRecurrenceTodosMutation } from "../../queries/home/useDeleteRecurrenceTodosMutation";
 
 import { useModalStore } from "../../../../shared/stores/modal/modalStore";
-import colors from "../../../../shared/styles/colors";
 import Dotted from "../../../calendar/assets/svg/Dotted.svg";
+import BorderButton from "../../../../shared/components/BorderButton";
+import BackIcon from "../../../../shared/assets/svg/Back.svg"
+import { useServerStatusStore } from "../../../../shared/stores/serverStatusStore";
+import ServerMaintenanceScreen from "../../../../shared/screens/ServerMaintenanceScreen";
 
 function formatYYYYMMDD(dateObj) {
   const y = dateObj.getFullYear();
@@ -213,8 +211,10 @@ export default function HomeScreen({ navigation, route }) {
   const [currentDate, setCurrentDate] = useState(() => new Date());
   const [selectedTodoId, setSelectedTodoId] = useState(null);
   const [parentScrollEnabled, setParentScrollEnabled] = useState(true);
+  const isServerError = useServerStatusStore((s) => s.isServerError);
 
   useEffect(() => {
+    // useServerStatusStore.getState().openServerError(); 점검 화면 테스트
     setShouldInitNotifications(true);
   }, []);
 
@@ -389,7 +389,7 @@ export default function HomeScreen({ navigation, route }) {
             >
               {isCharacterBusy && showSkeleton ? (
                 <CharacterSkeleton />
-              ) : (
+              ) : TodoLottie[lottieKey] ? (
                 <LottieView
                   source={TodoLottie[lottieKey]}
                   autoPlay
@@ -400,7 +400,7 @@ export default function HomeScreen({ navigation, route }) {
                     height: "100%",
                   }}
                 />
-              )}
+              ) : null}
             </Pressable>
           </View>
         </GestureDetector>
@@ -419,33 +419,8 @@ export default function HomeScreen({ navigation, route }) {
     lottieKey,
   ]);
 
-  if (isApiError) {
-    return (
-      <SafeAreaView className="flex-1 bg-wt px-5" edges={["top"]}>
-        <StatusBar barStyle="dark-content" />
-        {shouldInitNotifications && <FCMInitializer />}
-
-        <View className="flex-1 items-center justify-center">
-          <Image
-            source={ErrorImage}
-            className="mb-6 h-[200px] w-[250px]"
-            resizeMode="contain"
-          />
-          <AppText
-            variant="M500"
-            className="text-center leading-[18px] text-gr500"
-          >
-            아차차... 정보를 불러오지 못했어요.
-          </AppText>
-          <AppText
-            variant="M500"
-            className="text-center leading-[18px] text-gr500"
-          >
-            잠시 후 다시 시도해 주세요!
-          </AppText>
-        </View>
-      </SafeAreaView>
-    );
+  if (isApiError || isServerError) {
+    return <ServerMaintenanceScreen />;
   }
 
   return (
@@ -473,40 +448,30 @@ export default function HomeScreen({ navigation, route }) {
             gap: 12,
           }}
         >
-          <TouchableOpacity
-            activeOpacity={isViewingToday ? 1 : 0.5}
-            disabled={isViewingToday}
-            style={{
-              opacity: isViewingToday ? 0.35 : 1,
-              width: 32,
-              height: 32,
-              justifyContent: "center",
-              alignItems: "center",
-            }}
-            onPress={() => {
-              if (isViewingToday) return;
-              setCurrentDate(new Date());
-            }}
-          >
-            <TodayIcon width={24} height={24} />
-          </TouchableOpacity>
+          {!isViewingToday && (
+            <BorderButton
+              text="오늘로"
+              icon={<BackIcon width={14} height={14} />}
+              onPress={() => setCurrentDate(new Date())}
+            />
+          )}
 
-          <TouchableOpacity
-            activeOpacity={0.5}
-            style={{
-              width: 32,
-              height: 32,
-              justifyContent: "center",
-              alignItems: "center",
-            }}
-            onPress={() =>
-              navigation.navigate("Category", {
-                screen: "CategList",
-              })
-            }
-          >
-            <CategoryIcon width={24} height={24} />
-          </TouchableOpacity>
+          {/*<TouchableOpacity*/}
+          {/*  activeOpacity={0.5}*/}
+          {/*  style={{*/}
+          {/*    width: 32,*/}
+          {/*    height: 32,*/}
+          {/*    justifyContent: "center",*/}
+          {/*    alignItems: "center",*/}
+          {/*  }}*/}
+          {/*  onPress={() =>*/}
+          {/*    navigation.navigate("Category", {*/}
+          {/*      screen: "CategList",*/}
+          {/*    })*/}
+          {/*  }*/}
+          {/*>*/}
+          {/*  <CategoryIcon width={24} height={24} />*/}
+          {/*</TouchableOpacity>*/}
         </View>
       </View>
 

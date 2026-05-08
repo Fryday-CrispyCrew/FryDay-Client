@@ -2,35 +2,36 @@ import React from "react";
 import TitleInputSection from "./components/TitleInputSection";
 import MemoSection from "./components/MemoSection";
 import EditToolsRow from "./components/EditToolsRow";
-import { toast } from "../../../../shared/components/toast/CenterToast";
 
 export default function EditTodoSection({
-  inputRef,
-  memoInputRef,
-  editingText,
-  setEditingText,
-  memoText,
-  setMemoText,
-  handleSubmitInternal,
-  isSubmitEnabled,
-  hasEditChanges,
-  isTitleFocused,
-  setIsTitleFocused,
-  isMemoFocused,
-  setIsMemoFocused,
-  handleClearText,
-  isMemoOpen,
-  selectedToolKey,
-  onSelectTool,
-  EDIT_TOOL_ICONS,
-}) {
+                                          mode = "edit",
+                                          inputRef,
+                                          memoInputRef,
+                                          editingText,
+                                          setEditingText,
+                                          memoText,
+                                          setMemoText,
+                                          handleSubmitInternal,
+                                          isSubmitEnabled,
+                                          hasEditChanges,
+                                          isTitleFocused,
+                                          setIsTitleFocused,
+                                          isMemoFocused,
+                                          setIsMemoFocused,
+                                          handleClearText,
+                                          isMemoOpen,
+                                          selectedToolKey,
+                                          onSelectTool,
+                                          selectedCategoryColor,
+                                        }) {
   React.useEffect(() => {
     if (isMemoOpen) {
       requestAnimationFrame(() => {
         memoInputRef.current?.focus();
       });
     }
-  }, [isMemoOpen]);
+  }, [isMemoOpen, memoInputRef]);
+
   return (
     <>
       <TitleInputSection
@@ -59,7 +60,8 @@ export default function EditTodoSection({
         selectedToolKey={selectedToolKey}
         onSelectTool={onSelectTool}
         onSubmit={handleSubmitInternal}
-        disabled={!isSubmitEnabled || !hasEditChanges}
+        disabled={!isSubmitEnabled || (mode === "edit" && !hasEditChanges)}
+        selectedColor={selectedCategoryColor}
       />
     </>
   );

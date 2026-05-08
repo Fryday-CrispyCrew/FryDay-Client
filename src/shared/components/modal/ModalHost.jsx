@@ -58,6 +58,17 @@ export default function ModalHost() {
             }
           : null
       }
+      buttons={
+        props.buttons
+          ? props.buttons.map((button) => ({
+            ...button,
+            onPress: () => {
+              button.onPress?.(doNotAskAgain);
+              if (button.closeAfterPress !== false) close();
+            },
+          }))
+          : null
+      }
     />
   );
 }

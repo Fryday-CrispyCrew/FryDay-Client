@@ -15,7 +15,7 @@ export default function SystemNotice() {
   }, [data]);
 
   return (
-    <SafeAreaView className="flex-1 bg-gr" edges={["top"]}>
+    <SafeAreaView className="flex-1 bg-gr" edges={["top", "bottom"]}>
       <MyPageHeader showBackButton title="공지 사항" />
 
       {isLoading ? (
