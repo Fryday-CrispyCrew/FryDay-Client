@@ -24,7 +24,7 @@ import { useDeleteCategoryMutation } from "../../queries/category/useDeleteCateg
 import { queryClient } from "../../../../shared/lib/queryClient";
 import { categoryKeys } from "../../queries/category/categoryKeys";
 
-const MAX_NAME_LEN = 8;
+const MAX_NAME_LEN = 12;
 
 const COLOR_OPTIONS = [
   colors.or,
