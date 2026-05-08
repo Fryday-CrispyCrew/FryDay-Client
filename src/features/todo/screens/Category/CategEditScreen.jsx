@@ -111,6 +111,13 @@ export default function CategEditScreen({ navigation, route }) {
 
     const colorCode = COLOR_CODE_MAP[selectedColor];
 
+    console.log("카테고리 수정 요청", {
+      categoryId: editingCategory?.id,
+      name: name.trim(),
+      length: name.trim().length,
+      color: colorCode,
+    });
+
     updateCategory({
       categoryId: editingCategory?.id,
       name: name.trim(),
@@ -122,6 +129,12 @@ export default function CategEditScreen({ navigation, route }) {
     if (!isSubmitEnabled || isCreating) return;
 
     const colorCode = COLOR_CODE_MAP[selectedColor];
+
+    console.log("카테고리 생성 요청", {
+      name: name.trim(),
+      length: name.trim().length,
+      color: colorCode,
+    });
 
     createCategory({
       name: name.trim(),

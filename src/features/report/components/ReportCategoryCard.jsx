@@ -181,13 +181,12 @@ function BarChart({ data }) {
 
     const allZeroSF = data.length > 0 && data.every((d) => (d.success ?? 0) === 0 && (d.fail ?? 0) === 0);
 
-    const splitCategoryName = (name) => {
-        if (name.length <= 4) return name;
-        return `${name.slice(0, 4)}\n${name.slice(4)}`;
-    };
+  const splitCategoryName = (name) => {
+    return name.match(/.{1,4}/g)?.join('\n') ?? name;
+  };
 
     return (
-        <View className="h-60" style={{ maxHeight: height * 0.45, width: cardWidth }}>
+        <View className="h-64" style={{ maxHeight: height * 0.45, width: cardWidth }}>
             <GridLayer />
 
             <View
@@ -225,7 +224,7 @@ function BarChart({ data }) {
             <View
                 className="absolute flex-row bg-wt"
                 style={{
-                    height: 32,
+                    height: 44,
                     left: plotLeft,
                     right: plotRightPadding,
                     bottom: 12,
@@ -292,10 +291,9 @@ function LineChart({ data }) {
             .join(' ');
     };
 
-    const splitCategoryName = (name) => {
-        if (name.length <= 4) return name;
-        return `${name.slice(0, 4)}\n${name.slice(4)}`;
-    };
+  const splitCategoryName = (name) => {
+    return name.match(/.{1,4}/g)?.join('\n') ?? name;
+  };
 
     const labelVariant = (d) => {
         if (allZeroSF) return 'S500';
@@ -311,7 +309,7 @@ function LineChart({ data }) {
     };
 
     return (
-        <View className="h-60" style={{ maxHeight: height * 0.45, width: cardWidth }}>
+        <View className="h-64" style={{ maxHeight: height * 0.45, width: cardWidth }}>
             <GridLayer />
 
             <View
@@ -379,10 +377,12 @@ function LineChart({ data }) {
             <View
                 className="absolute flex-row bg-wt"
                 style={{
-                    height: 32,
+                    height: 44,
                     left: plotLeft,
                     right: plotRightPadding,
                     bottom: 10,
+                  alignItems: 'center',
+                  justifyContent: 'center',
                 }}
             >
                 {data.map((d, i) => (
