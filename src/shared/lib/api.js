@@ -43,7 +43,16 @@ api.interceptors.request.use(
 api.interceptors.response.use(
   (response) => response,
   (error) => {
-    if (error?.response?.status >= 500) {
+    const status = error?.response?.status;
+    const errorCode = error?.response?.data?.errorCode;
+
+    const isMaintenanceError =
+      errorCode === "SERVICE_UNAVAILABLE" ||
+      status === 502 ||
+      error?.message === "Network Error" ||
+      error?.code === "ECONNABORTED";
+
+    if (isMaintenanceError) {
       useServerStatusStore.getState().openServerError();
     }
 
@@ -137,10 +146,20 @@ api.interceptors.response.use(
     const isRetryRequest = Boolean(originalRequest?._retry);
     const isSessionExpired = Boolean(error?.isSessionExpired);
 
+    const status = error?.response?.status;
+    const errorCode = error?.response?.data?.errorCode;
+
+    const isMaintenanceError =
+      errorCode === "SERVICE_UNAVAILABLE" ||
+      status === 502 ||
+      error?.message === "Network Error" ||
+      error?.code === "ECONNABORTED";
+
     const shouldSkipToast =
       skipErrorToast ||
       isSessionExpired ||
-      ([401, 403].includes(error?.response?.status) && isRetryRequest) ||
+      isMaintenanceError ||
+      ([401, 403].includes(status) && isRetryRequest) ||
       (isRetryRequest && method === "get");
 
     if (!shouldSkipToast) {
