@@ -31,19 +31,23 @@ export default function WheelColumn({
   const onMomentumEnd = useCallback(
     (e) => {
       const y = e.nativeEvent.contentOffset.y;
-      const idx = Math.round(y / itemHeight);
 
-        if (isDisabled?.(idx)) {
-            ref.current?.scrollToOffset({
-                offset: selectedIndex * itemHeight,
-                animated: true,
-            });
-            return;
-        }
+      const idx = Math.max(
+        0,
+        Math.min(data.length - 1, Math.round(y / itemHeight))
+      );
+
+      if (isDisabled?.(idx)) {
+        ref.current?.scrollToOffset({
+          offset: selectedIndex * itemHeight,
+          animated: true,
+        });
+        return;
+      }
 
       onChangeIndex?.(idx);
     },
-    [itemHeight, onChangeIndex, isDisabled, selectedIndex]
+    [data.length, itemHeight, onChangeIndex, isDisabled, selectedIndex]
   );
 
   const handleSelect = (index) => {
@@ -69,6 +73,7 @@ export default function WheelColumn({
         bounces={false}
         contentContainerStyle={{paddingVertical: padding}}
         onMomentumScrollEnd={onMomentumEnd}
+        onScrollEndDrag={onMomentumEnd}
         getItemLayout={(_, index) => ({
           length: itemHeight,
           offset: itemHeight * index,
