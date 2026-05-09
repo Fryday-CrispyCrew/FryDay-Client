@@ -131,8 +131,16 @@ export default function YearMonthWheelModal({
                 data={years}
                 selectedIndex={yearIdx}
                 onChangeIndex={(idx) => {
+                  const nextYear = years[idx];
+                  const nextMonths = available
+                    ? available.monthsByYear.get(nextYear) ?? []
+                    : range(1, 12);
+
+                  const currentMonth = months[monthIdx];
+                  const nextMonthIdx = nextMonths.indexOf(currentMonth);
+
                   setYearIdx(idx);
-                  setMonthIdx(0);
+                  setMonthIdx(nextMonthIdx >= 0 ? nextMonthIdx : 0);
                 }}
                 renderLabel={(y) => `${y}년`}
                 containerStyle={styles.wheelColBox}
