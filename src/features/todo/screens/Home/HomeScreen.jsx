@@ -419,7 +419,7 @@ export default function HomeScreen({ navigation, route }) {
     lottieKey,
   ]);
 
-  if (isApiError || isServerError) {
+  if (isServerError) {
     return <ServerMaintenanceScreen />;
   }
 
