@@ -96,10 +96,10 @@ function SpeechBubble({ text }) {
       style={{ top: "3%", zIndex: 10 }}
       pointerEvents="none"
     >
-      <View className="relative rounded-[14px] border border-gr200 bg-wt px-4 py-[10px]">
+      <View className="relative rounded-[14px] border border-gr200 bg-wt px-4 py-[8px]">
         <AppText
           variant="M500"
-          className="text-center text-[12px] leading-[18px] text-gr900"
+          className="text-center text-[12px] text-gr900"
           style={{ fontFamily: "Pretendard-Medium" }}
         >
           {text}
