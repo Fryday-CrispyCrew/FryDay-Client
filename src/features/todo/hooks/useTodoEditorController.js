@@ -35,11 +35,17 @@ export function useTodoEditorController({
 
   const closeEditorTogether = useCallback(() => {
     isClosingRef.current = true;
+    bottomSheetRef.current?.dismiss?.();
+  }, []);
+
+  const closeEditorAfterSubmit = useCallback(() => {
+    isClosingRef.current = true;
     Keyboard.dismiss();
     bottomSheetRef.current?.dismiss?.();
   }, []);
 
   const requestCloseEditorTogether = useCallback(() => {
+    Keyboard.dismiss();
     open({
       title: "투두 설정 그만두기",
       description:
@@ -181,7 +187,7 @@ export function useTodoEditorController({
       mode: sheetMode,
       initialValue: editingTodo?.title ?? "",
       onCloseTogether: requestCloseEditorTogether,
-      onCloseAfterSubmit: closeEditorTogether,
+      onCloseAfterSubmit: closeEditorAfterSubmit,
       onDismiss,
       categoryLabel: sheetCategory?.label ?? "카테고리",
       categories,
@@ -192,6 +198,7 @@ export function useTodoEditorController({
       categories,
       requestCloseEditorTogether,
       closeEditorTogether,
+      closeEditorAfterSubmit,
       editingTodo,
       handleSubmit,
       onDismiss,

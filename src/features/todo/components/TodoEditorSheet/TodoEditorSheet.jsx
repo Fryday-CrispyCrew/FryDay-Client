@@ -659,7 +659,6 @@ const TodoEditorSheet = React.forwardRef(function TodoEditorSheet(
     setHasAppliedTodoDate(false);
     setIsSheetReady(false);
     resetEditHydrationRefs();
-    Keyboard.dismiss();
     onDismiss?.();
     isSubmittingRef.current = false;
   }, [
@@ -782,10 +781,7 @@ const TodoEditorSheet = React.forwardRef(function TodoEditorSheet(
         recurrence,
       });
 
-      Keyboard.dismiss();
-      requestAnimationFrame(() => {
-        ref?.current?.dismiss?.();
-      });
+      onCloseAfterSubmit?.();
 
       return;
     }
@@ -935,7 +931,6 @@ const TodoEditorSheet = React.forwardRef(function TodoEditorSheet(
       for (const task of tasks) {
         await task();
       }
-
       onEditSuccess?.(draftCategoryId);
       onCloseAfterSubmit?.();
     } catch (e) {
@@ -963,20 +958,20 @@ const TodoEditorSheet = React.forwardRef(function TodoEditorSheet(
     onSubmit,
     onEditSuccess,
     onCloseAfterSubmit,
-    ref,
   ]);
 
   const handleSheetAnimate = useCallback(
     (fromIndex, toIndex) => {
       if (fromIndex === -1 && toIndex >= 0) {
-        if (!isReturningFromBackgroundRef.current) {
-          focusTitleInput();
-        }
+        sheetReadyTimerRef.current = setTimeout(() => {
+          setIsSheetReady(true);
 
-        sheetReadyTimerRef.current = setTimeout(
-          () => setIsSheetReady(true),
-          Platform.OS === "ios" ? 1150 : 0,
-        );
+          if (!isReturningFromBackgroundRef.current) {
+            requestAnimationFrame(() => {
+              focusTitleInput();
+            });
+          }
+        }, Platform.OS === "ios" ? 300 : 100);
       }
 
       if (toIndex === -1) {
@@ -1002,7 +997,7 @@ const TodoEditorSheet = React.forwardRef(function TodoEditorSheet(
       ref={ref}
       index={0}
       enableDynamicSizing
-      maxDynamicContentSize={550}
+      maxDynamicContentSize={650}
       backdropComponent={renderBackdrop}
       onDismiss={handleDismiss}
       onAnimate={handleSheetAnimate}
