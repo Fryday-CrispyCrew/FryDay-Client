@@ -382,7 +382,13 @@ export default function RepeatSettingsSection({
   const shouldShowRepeatReset =
     isRepeatCycleSet || isRepeatStartSet || isRepeatEndSet || isRepeatAlarmSet;
 
+  const setIsCancelRecurrence = useRepeatEditorStore(
+    (s) => s.setIsCancelRecurrence,
+  );
+
   const handleResetRepeatAll = useCallback(() => {
+    setIsCancelRecurrence(true);
+
     setRepeatCycle("unset");
     setRepeatWeekdays([]);
     setRepeatMonthDays([]);
@@ -398,6 +404,7 @@ export default function RepeatSettingsSection({
 
     if (openKey !== null) onToggleOpenKey(openKey);
   }, [
+    setIsCancelRecurrence,
     setRepeatCycle,
     setRepeatWeekdays,
     setRepeatMonthDays,

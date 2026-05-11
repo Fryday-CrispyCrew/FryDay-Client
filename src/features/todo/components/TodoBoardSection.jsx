@@ -38,7 +38,7 @@ import { useCreateTodoRecurrenceMutation } from "../queries/sheet/repeat/useCrea
 import { useUpdateTodoDateMutation } from "../queries/sheet/date/useUpdateTodoDateMutation";
 import { useDeleteTodoInstanceMutation } from "../queries/sheet/repeat/useDeleteTodoInstanceMutation";
 import { useUpdateTodoInstanceMutation } from "../queries/sheet/repeat/useUpdateTodoInstanceMutation";
-
+import { useCancelTodoInstanceMutation } from "../queries/sheet/repeat/useCancelTodoInstanceMutation";
 
 function Chevron({ isOpen, color }) {
   return (
@@ -273,6 +273,9 @@ export default function TodoBoardSection({
   const { mutateAsync: updateTodoInstanceMutateAsync } =
     useUpdateTodoInstanceMutation();
 
+  const { mutateAsync: cancelTodoInstanceMutateAsync } =
+    useCancelTodoInstanceMutation();
+
   const isRecurringTodo = (todo) => {
     const rid = todo?.recurrenceId;
     return rid !== null && rid !== undefined && Number(rid) !== 0;
@@ -285,20 +288,25 @@ export default function TodoBoardSection({
   };
 
   const openRecurringEditModal = useCallback(
-    ({ todo, payload, onDone }) => {
+    ({ todo, payload, onDone, isCancelRecurrence = false }) => {
       const instanceId = Number(todo?.id);
       if (!instanceId) return;
 
       const handleUpdate = async (scope) => {
-        const body = {
-          scope,
-          payload,
-        };
-
-        await updateTodoInstanceMutateAsync({
-          instanceId,
-          body,
-        });
+        if (isCancelRecurrence) {
+          await cancelTodoInstanceMutateAsync({
+            instanceId,
+            body: { scope },
+          });
+        } else {
+          await updateTodoInstanceMutateAsync({
+            instanceId,
+            body: {
+              scope,
+              payload,
+            },
+          });
+        }
 
         onDone?.();
         close();
@@ -327,7 +335,7 @@ export default function TodoBoardSection({
         ],
       });
     },
-    [open, close, updateTodoInstanceMutateAsync],
+    [open, close, updateTodoInstanceMutateAsync, cancelTodoInstanceMutateAsync],
   );
 
   const editor = useTodoEditorController({
@@ -345,6 +353,7 @@ export default function TodoBoardSection({
                            notifyAt,
                            recurrence,
                            onDone,
+                           isCancelRecurrence,
                          }) => {
       if (!todo?.id) {
         const created = await createTodoMutateAsync({
@@ -426,6 +435,7 @@ export default function TodoBoardSection({
           todo,
           payload,
           onDone,
+          isCancelRecurrence,
         });
         return;
       }

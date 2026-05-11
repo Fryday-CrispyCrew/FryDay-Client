@@ -377,8 +377,11 @@ const TodoEditorSheet = React.forwardRef(function TodoEditorSheet(
       repeatMonthDays: s.repeatMonthDays,
       repeatYearMonths: s.repeatYearMonths,
       repeatYearDays: s.repeatYearDays,
+      isCancelRecurrence: s.isCancelRecurrence,
     })),
   );
+
+  const isCancelRecurrence = repeatSnapshot.isCancelRecurrence;
 
   const {
     inputRef,
@@ -757,31 +760,37 @@ const TodoEditorSheet = React.forwardRef(function TodoEditorSheet(
 
       isSubmittingRef.current = true;
 
-      const dateStr = toYYYYMMDD(todoDate);
+      try {
+        const dateStr = toYYYYMMDD(todoDate);
 
-      const notifyAt = hasPickedAlarmTime
-        ? buildNotifyAt({
-          dateStr,
-          timeStr: alarmTime,
-        })
-        : null;
+        const notifyAt = hasPickedAlarmTime
+          ? buildNotifyAt({
+            dateStr,
+            timeStr: alarmTime,
+          })
+          : null;
 
-      const repeatDraft = useRepeatEditorStore.getState().getRepeatPayload?.();
+        const repeatDraft = useRepeatEditorStore.getState().getRepeatPayload?.();
 
-      const recurrence = buildCreateRecurrencePayload(repeatDraft, {
-        alarmTimeHHmm: hasPickedAlarmTime ? alarmTime : null,
-      });
+        const recurrence = buildCreateRecurrencePayload(repeatDraft, {
+          alarmTimeHHmm: hasPickedAlarmTime ? alarmTime : null,
+        });
 
-      await onSubmit?.({
-        categoryId: draftCategoryId,
-        description: text,
-        date: dateStr,
-        memo: normalizeMemo(memoText),
-        notifyAt,
-        recurrence,
-      });
+        await onSubmit?.({
+          categoryId: draftCategoryId,
+          description: text,
+          date: dateStr,
+          memo: normalizeMemo(memoText),
+          notifyAt,
+          recurrence,
+        });
 
-      onCloseAfterSubmit?.();
+        onCloseAfterSubmit?.();
+      } catch (e) {
+        console.log("create todo error", e);
+      } finally {
+        isSubmittingRef.current = false;
+      }
 
       return;
     }
@@ -830,7 +839,8 @@ const TodoEditorSheet = React.forwardRef(function TodoEditorSheet(
         todo: {
           ...todoDetail,
           id: numericTodoId,
-          recurrenceId: todoDetail?.recurrence?.recurrenceId ?? todoDetail?.recurrenceId ?? true,
+          recurrenceId:
+            todoDetail?.recurrence?.recurrenceId ?? todoDetail?.recurrenceId ?? true,
         },
         text: currentDescription,
         description: currentDescription,
@@ -840,6 +850,7 @@ const TodoEditorSheet = React.forwardRef(function TodoEditorSheet(
         memo: currentMemo,
         notifyAt: currentNotifyAt,
         recurrence: isRepeatCleared ? null : repeatPayload,
+        isCancelRecurrence,
       });
 
       isSubmittingRef.current = false;
@@ -958,6 +969,7 @@ const TodoEditorSheet = React.forwardRef(function TodoEditorSheet(
     onSubmit,
     onEditSuccess,
     onCloseAfterSubmit,
+    isCancelRecurrence,
   ]);
 
   const handleSheetAnimate = useCallback(

@@ -1,18 +1,19 @@
 import {create} from "zustand";
 
 const initialState = {
-  repeatStartDate: null, // ✅ 미설정
-  repeatEndType: "unset", // ✅ "unset" | "none" | "date"
-  repeatEndDate: null, // ✅ 미설정
-  repeatCycle: "unset", // "unset" | "daily" | "weekly" | "monthly" | "yearly"
-  repeatAlarm: "unset", // "unset" | "sameTime" | "morning9" | "custom"
-  repeatAlarmTime: null, // ✅ "HH:mm" (예: "07:30") / custom일 때만 사용
+  repeatStartDate: null,
+  repeatEndType: "unset",
+  repeatEndDate: null,
+  repeatCycle: "unset",
+  repeatAlarm: "unset",
+  repeatAlarmTime: null,
 
-  // ✅ 반복 주기별 상세 선택값
-  repeatWeekdays: [], // ["mon","tue"...]
-  repeatMonthDays: [], // [1, 12, 28...]
-  repeatYearMonths: [], // [1..12]
-  repeatYearDays: [], // [1..31]
+  repeatWeekdays: [],
+  repeatMonthDays: [],
+  repeatYearMonths: [],
+  repeatYearDays: [],
+
+  isCancelRecurrence: false,
 };
 
 export const useRepeatEditorStore = create((set, get) => ({
@@ -29,6 +30,7 @@ export const useRepeatEditorStore = create((set, get) => ({
   setRepeatMonthDays: (days) => set({repeatMonthDays: days}),
   setRepeatYearMonths: (months) => set({repeatYearMonths: months}),
   setRepeatYearDays: (days) => set({repeatYearDays: days}),
+  setIsCancelRecurrence: (value) => set({ isCancelRecurrence: value }),
 
   // ✅ 한 번에 세팅 (예: 기존 todo 편집 진입 시)
   setRepeatAll: (partial) => set((s) => ({...s, ...partial})),
