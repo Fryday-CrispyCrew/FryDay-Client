@@ -166,6 +166,9 @@ export function useTodoEditorController({
           memo: isPayload ? payloadOrCategoryId.memo : undefined,
           notifyAt: isPayload ? payloadOrCategoryId.notifyAt : undefined,
           recurrence: isPayload ? payloadOrCategoryId.recurrence : undefined,
+          isCancelRecurrence: isPayload
+            ? payloadOrCategoryId.isCancelRecurrence
+            : false,
         });
       }
 

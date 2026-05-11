@@ -1,12 +1,10 @@
 // src/features/todo/queries/sheet/sheetApi.js
 import api from "../../../../shared/lib/api";
-// ✅ 위 경로는 예시야. 실제 api.js 위치에 맞게 조정해줘.
 
 export const sheetApi = {
   // 투두 생성: POST /api/todos
   createTodo: async ({description, categoryId, date}) => {
     const body = {description, categoryId};
-    // date는 optional (없으면 서버가 "오늘"로 생성) :contentReference[oaicite:1]{index=1}
     if (date) body.date = date; // "YYYY-MM-DD"
     const res = await api.post("/api/todos", body);
     return res.data;
@@ -123,6 +121,10 @@ export const sheetApi = {
     return res.data;
   },
 
+  cancelTodoInstance: async ({instanceId, body}) => {
+    const res = await api.patch(`/api/todos/instances/${instanceId}/cancel-recurrence`, body);
+    return res.data;
+  },
 
   updateTodoInstance : async ({instanceId, body}) => {
     const res = await api.patch(`/api/todos/instances/${instanceId}`, body);
