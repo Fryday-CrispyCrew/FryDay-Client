@@ -340,6 +340,7 @@ const TodoEditorSheet = React.forwardRef(function TodoEditorSheet(
     categories = [],
     initialCategoryId = 0,
     todoId = null,
+    selectedDate,
   },
   ref,
 ) {
@@ -446,6 +447,7 @@ const TodoEditorSheet = React.forwardRef(function TodoEditorSheet(
   } = useTodoEditorDate({
     isSelectDateOpen,
     closePanelAndFocusTitle,
+    selectedDate,
   });
 
   const numericTodoId = useMemo(() => {

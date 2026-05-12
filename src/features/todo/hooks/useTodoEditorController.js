@@ -188,6 +188,7 @@ export function useTodoEditorController({
     () => ({
       ref: bottomSheetRef,
       mode: sheetMode,
+      selectedDate,
       initialValue: editingTodo?.title ?? "",
       onCloseTogether: requestCloseEditorTogether,
       onCloseAfterSubmit: closeEditorAfterSubmit,

@@ -43,14 +43,20 @@ const buildMonthGrid = (monthDate) => {
 
 export default function useTodoEditorDate({
   isSelectDateOpen,
-  closePanelAndFocusTitle,
+  closePanelAndFocusTitle, selectedDate,
 }) {
-  const [todoDate, setTodoDate] = useState(new Date());
-  const [draftTodoDate, setDraftTodoDate] = useState(new Date());
+  const getInitialDate = () => {
+    if (!selectedDate) return new Date();
+    const [y, m, d] = String(selectedDate).split("-").map(Number);
+    return new Date(y, m - 1, d);
+  };
+
+  const [todoDate, setTodoDate] = useState(getInitialDate);
+  const [draftTodoDate, setDraftTodoDate] = useState(getInitialDate);
   const [hasAppliedTodoDate, setHasAppliedTodoDate] = useState(false);
 
   const [todoMonthCursor, setTodoMonthCursor] = useState(() => {
-    const base = new Date();
+    const base = getInitialDate();
     return new Date(base.getFullYear(), base.getMonth(), 1);
   });
 
@@ -69,6 +75,19 @@ export default function useTodoEditorDate({
   );
 
   const today = useMemo(() => new Date(), []);
+
+  useEffect(() => {
+    if (!selectedDate) return;
+
+    const next = getInitialDate();
+
+    setTodoDate(next);
+    setDraftTodoDate(next);
+    setTodoMonthCursor(new Date(next.getFullYear(), next.getMonth(), 1));
+    setTodoWheelInitialYear(next.getFullYear());
+    setTodoWheelInitialMonth(next.getMonth() + 1);
+    setHasAppliedTodoDate(false);
+  }, [selectedDate]);
 
   useEffect(() => {
     if (!isSelectDateOpen) return;
