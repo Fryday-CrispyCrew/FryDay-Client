@@ -4,6 +4,7 @@ import {
   StyleSheet,
   TextInput,
   TouchableOpacity,
+  Keyboard,
   KeyboardAvoidingView,
   Platform,
   ActivityIndicator,
@@ -189,7 +190,7 @@ export default function CategEditScreen({ navigation, route }) {
     <SafeAreaView style={styles.safe} edges={["top", "bottom"]}>
       <KeyboardAvoidingView
         style={styles.flex}
-        behavior={Platform.OS === "ios" ? "padding" : undefined}
+        // behavior={Platform.OS === "ios" ? "padding" : undefined}
       >
         <View className="px-5">
           <CategoryHeader
@@ -277,6 +278,7 @@ export default function CategEditScreen({ navigation, route }) {
                     key={c}
                     activeOpacity={0.8}
                     onPress={() => {
+                      Keyboard.dismiss();
                       setSelectedColor(c);
                     }}
                     className="mb-12 w-[30%] items-center"
