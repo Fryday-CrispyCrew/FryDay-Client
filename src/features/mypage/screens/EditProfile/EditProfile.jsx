@@ -109,7 +109,7 @@ export default function EditProfile({ navigation }) {
 
         // 한글 완성형 + 자모 + 영문 + 숫자 + 공백 허용
       const filtered = raw.replace(
-        /[^가-힣ㄱ-ㅎㅏ-ㅣa-zA-Z0-9\sㆍ]/g,
+        /[^가-힣ㄱ-ㅎㅏ-ㅣa-zA-Z0-9\sㆍᆢ]/g,
         ""
       );
 
