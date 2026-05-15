@@ -16,17 +16,13 @@ export default function MemoSection({
   if (!visible) return null;
 
   const handleChangeText = (text) => {
-    currentTextRef.current = text;
-    onChangeText(text);
-  };
-
-  const handleKeyPress = ({ nativeEvent }) => {
-    if (
-      currentTextRef.current.length >= 100 &&
-      nativeEvent.key !== "Backspace"
-    ) {
+    const chars = [...text];
+    if (chars.length > 100) {
       toast.show("메모는 100자까지 입력 가능합니다.");
     }
+    const sliced = chars.slice(0, 100).join("");
+    currentTextRef.current = sliced;
+    onChangeText(sliced);
   };
 
   return (
@@ -37,10 +33,9 @@ export default function MemoSection({
       <BottomSheetTextInput
 
         ref={memoInputRef}
-        defaultValue={value ?? ""}
+        value={value}
         onChangeText={handleChangeText}
-        onKeyPress={handleKeyPress}
-        maxLength={100}
+        maxLength={101}
         placeholder="기억해야 할 메모를 입력해 주세요."
         placeholderTextColor="#C6C6C6"
         multiline
