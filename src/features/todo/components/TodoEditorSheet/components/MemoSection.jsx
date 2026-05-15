@@ -27,9 +27,7 @@ export default function MemoSection({
 
   return (
     <View
-      className="rounded-2xl rounded-t-none bg-[#FAFAFA] px-4 py-3 border border-[#F2F2F2]"
-      style={isFocused ? { borderColor: "#EAEAEA" } : null}
-    >
+      className="rounded-2xl rounded-t-none bg-[#FAFAFA] px-4 py-3 border border-gr100 border-t-0">
       <BottomSheetTextInput
 
         ref={memoInputRef}
