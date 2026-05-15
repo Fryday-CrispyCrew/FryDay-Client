@@ -104,7 +104,11 @@ export default function CategEditScreen({ navigation, route }) {
     (name?.trim?.() ?? "").length > 0 && selectedColor != null;
 
   const onChangeName = (text) => {
-    setName(text.slice(0, MAX_NAME_LEN));
+    const sliced = [...text].slice(0, 12).join("");
+
+    if (sliced !== name) {
+      setName(sliced);
+    }
   };
 
   const onPressSave = () => {
@@ -212,7 +216,7 @@ export default function CategEditScreen({ navigation, route }) {
               placeholderTextColor={colors?.gr300 ?? "#BDBDBD"}
               style={styles.input}
               returnKeyType="done"
-              maxLength={MAX_NAME_LEN}
+              maxLength={MAX_NAME_LEN+1}
               onFocus={() => setIsInputFocused(true)}
               onBlur={() => setIsInputFocused(false)}
             />
