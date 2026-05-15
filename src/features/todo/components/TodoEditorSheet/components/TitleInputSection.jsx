@@ -27,10 +27,10 @@ function InputBase({
       onSubmitEditing={onSubmitEditing}
       placeholder={placeholder}
       placeholderTextColor="#C6C6C6"
-      maxLength={maxLength}
+      maxLength={maxLength+1}
       onKeyPress={({ nativeEvent }) => {
         if (
-          value?.length >= maxLength &&
+          value?.length > maxLength &&
           nativeEvent.key !== "Backspace"
         ) {
           onLimitPress?.();
@@ -72,6 +72,7 @@ export default function TitleInputSection({
   isMemoOpen = false,
   onFocusExtra,
   editable = true,
+  maxLength = 40,
 }) {
   const [localValue, setLocalValue] = React.useState(value ?? "");
 
@@ -81,10 +82,19 @@ export default function TitleInputSection({
 
   const handleChangeText = React.useCallback(
     (text) => {
-      setLocalValue(text);
-      onChangeText?.(text);
+      const chars = [...text];
+
+      if (chars.length > maxLength) {
+        toast.show("투두는 40자까지 입력 가능해요", {
+          position: "center",
+        });
+      }
+      const sliced = [...text].slice(0, maxLength).join("");
+
+      setLocalValue(sliced);
+      onChangeText?.(sliced);
     },
-    [onChangeText],
+    [maxLength, onChangeText],
   );
 
   const handleClear = React.useCallback(() => {
