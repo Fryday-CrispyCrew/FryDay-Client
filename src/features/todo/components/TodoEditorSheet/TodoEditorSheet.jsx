@@ -663,6 +663,10 @@ const TodoEditorSheet = React.forwardRef(function TodoEditorSheet(
     setEditingText("");
     setHasAppliedTodoDate(false);
     setIsSheetReady(false);
+    setAlarmTime(null);
+    setHasPickedAlarmTime(false);
+    setAlarmDraftDate(new Date());
+    setIsIosInlineAlarmPickerOpen(false);
     resetEditHydrationRefs();
     onDismiss?.();
     isSubmittingRef.current = false;
