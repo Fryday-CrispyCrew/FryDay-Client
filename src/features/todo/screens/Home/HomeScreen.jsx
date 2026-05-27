@@ -56,9 +56,19 @@ function addDays(dateObj, delta) {
 }
 
 function formatKoreanHeader(dateObj) {
+  const dayNames = [
+    "일요일",
+    "월요일",
+    "화요일",
+    "수요일",
+    "목요일",
+    "금요일",
+    "토요일",
+  ];
+
   return {
-    yearText: `${dateObj.getFullYear()}년`,
     dateText: `${dateObj.getMonth() + 1}월 ${dateObj.getDate()}일`,
+    dayText: dayNames[dateObj.getDay()],
   };
 }
 
@@ -434,7 +444,7 @@ export default function HomeScreen({ navigation, route }) {
       >
         <View>
           <AppText variant="M500" className="text-gr500">
-            {header.yearText}
+            {header.dayText}
           </AppText>
           <AppText variant="H3" className="text-bk">
             {header.dateText}
