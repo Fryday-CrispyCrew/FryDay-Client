@@ -75,9 +75,13 @@ export default function TitleInputSection({
   maxLength = 40,
 }) {
   const [localValue, setLocalValue] = React.useState(value ?? "");
+  const lastEmittedRef = React.useRef(value ?? "");
 
   React.useEffect(() => {
-    setLocalValue(value ?? "");
+    if (value !== lastEmittedRef.current) {
+      lastEmittedRef.current = value ?? "";
+      setLocalValue(value ?? "");
+    }
   }, [value]);
 
   const handleChangeText = React.useCallback(
@@ -89,8 +93,9 @@ export default function TitleInputSection({
           position: "center",
         });
       }
-      const sliced = [...text].slice(0, maxLength).join("");
+      const sliced = chars.slice(0, maxLength).join("");
 
+      lastEmittedRef.current = sliced;
       setLocalValue(sliced);
       onChangeText?.(sliced);
     },
@@ -98,6 +103,7 @@ export default function TitleInputSection({
   );
 
   const handleClear = React.useCallback(() => {
+    lastEmittedRef.current = "";
     setLocalValue("");
     onClear?.();
   }, [onClear]);
