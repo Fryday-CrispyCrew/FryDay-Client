@@ -64,7 +64,7 @@ function TodoItem({
   categoryColor,
 }) {
   const renderRightActions = () => (
-    <View className="flex-row items-center pr-[2px]">
+    <View className="flex-row items-center pr-[2px] pl-[6px]">
       <TouchableOpacity
         style={{ backgroundColor: categoryColor }}
         className="mr-1.5 h-[35px] w-12 items-center justify-center rounded-xl"
