@@ -12,7 +12,7 @@ import WeekSlider from "./Week/WeekSlider";
 import Dotted from "../assets/svg/Dotted.svg";
 
 import TodoBoardSection from "../../todo/components/TodoBoardSection";
-import { getDailyResultsMap } from "../api/dailyResultsApi";
+import { useDailyResultsQuery } from "../queries/useDailyResultQuery";
 import YearMonthWheelModal from "../../todo/components/RepeatSettingsSection/wheel/YearMonthWheelModal";
 import { useHomeTodosQuery } from "../../todo/queries/home/useHomeTodosQuery";
 
@@ -91,7 +91,19 @@ export default function CalendarScreen({ navigation }) {
     setIsYMModalOpen(false);
   }, []);
 
-  const [bowlMap, setBowlMap] = useState({});
+  const { startDate, endDate } = useMemo(() => {
+    const monthStart = currentDate.startOf("month");
+    const monthEnd = currentDate.endOf("month");
+    const today = dayjs();
+    return {
+      startDate: monthStart.format("YYYY-MM-DD"),
+      endDate: currentDate.isSame(today, "month")
+        ? today.format("YYYY-MM-DD")
+        : monthEnd.format("YYYY-MM-DD"),
+    };
+  }, [currentDate]);
+
+  const { data: bowlMap = {}, refetch } = useDailyResultsQuery({ startDate, endDate });
 
   useFocusEffect(
     useCallback(() => {
@@ -152,41 +164,6 @@ export default function CalendarScreen({ navigation }) {
       });
     },
     [navigation],
-  );
-
-  useFocusEffect(
-    useCallback(() => {
-      const monthStart = currentDate.startOf("month");
-      const monthEnd = currentDate.endOf("month");
-      const today = dayjs();
-
-      const startDate = monthStart.format("YYYY-MM-DD");
-      const endDate = currentDate.isSame(today, "month")
-        ? today.format("YYYY-MM-DD")
-        : monthEnd.format("YYYY-MM-DD");
-
-      let alive = true;
-
-      (async () => {
-        try {
-          // console.log("[dailyResults] REQ", { startDate, endDate });
-          const map = await getDailyResultsMap(startDate, endDate);
-          // console.log("[dailyResults] MAP", JSON.stringify(map, null, 2));
-          if (alive) setBowlMap(map);
-        } catch (e) {
-          // console.log(
-          //   "[dailyResults] ERR",
-          //   e?.response?.status,
-          //   JSON.stringify(e?.response?.data, null, 2),
-          //   e?.message,
-          // );
-        }
-      })();
-
-      return () => {
-        alive = false;
-      };
-    }, [currentDate]),
   );
 
   if (!ready) return <SafeAreaView className="flex-1 bg-wt" edges={["top"]} />;
