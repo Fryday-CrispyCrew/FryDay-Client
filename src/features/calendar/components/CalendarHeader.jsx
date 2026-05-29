@@ -49,7 +49,7 @@ export default function CalendarHeader({
         style={{
           flexDirection: "row",
           alignItems: "center",
-          gap: 12,
+          gap: 4,
         }}
       >
 
