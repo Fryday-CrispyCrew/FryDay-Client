@@ -6,6 +6,7 @@ export const CALENDAR_ICONS = {
   MORE: require("../assets/png/Many.png"),
   FULL: require("../assets/png/Full.png"),
   BURNT: require("../assets/png/Burn.png"),
+  COOKING: require("../assets/png/Cooking.png"),
 };
 
 /**

@@ -64,7 +64,7 @@ function TodoItem({
   categoryColor,
 }) {
   const renderRightActions = () => (
-    <View className="flex-row items-center pr-[2px]">
+    <View className="flex-row items-center pr-[2px] pl-[6px]">
       <TouchableOpacity
         style={{ backgroundColor: categoryColor }}
         className="mr-1.5 h-[35px] w-12 items-center justify-center rounded-xl"
@@ -844,8 +844,8 @@ export default function TodoBoardSection({
           );
         })}
 
-        <View className="mx-5 mt-3">
-          <Dotted width="100%" height={1} />
+        <View className=" mt-3">
+          <Dotted width="100%" height={1} preserveAspectRatio="none"/>
         </View>
 
         <View className="mt-[18px]">

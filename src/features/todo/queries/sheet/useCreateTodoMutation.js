@@ -1,6 +1,7 @@
 // src/features/todo/queries/sheet/useCreateTodoMutation.js
 import {useMutation, useQueryClient} from "@tanstack/react-query";
 import {sheetApi} from "./sheetApi";
+import {calendarKeys} from "../../../calendar/queries/calendarKey";
 
 export function useCreateTodoMutation(options = {}) {
   const queryClient = useQueryClient();
@@ -9,6 +10,7 @@ export function useCreateTodoMutation(options = {}) {
     mutationFn: sheetApi.createTodo,
     onSuccess: (data, variables, context) => {
       queryClient.invalidateQueries({queryKey: ["home"]});
+      queryClient.invalidateQueries({queryKey: calendarKeys.dailyResults()});
       options?.onSuccess?.(data, variables, context);
     },
     ...options,

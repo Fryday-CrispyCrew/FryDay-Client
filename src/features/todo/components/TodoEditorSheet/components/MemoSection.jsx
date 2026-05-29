@@ -12,7 +12,16 @@ export default function MemoSection({
   isFocused,
   setIsFocused,
 }) {
-  const currentTextRef = useRef(value ?? "");
+  const [localValue, setLocalValue] = React.useState(value ?? "");
+  const lastEmittedRef = useRef(value ?? "");
+
+  React.useEffect(() => {
+    if (value !== lastEmittedRef.current) {
+      lastEmittedRef.current = value ?? "";
+      setLocalValue(value ?? "");
+    }
+  }, [value]);
+
   if (!visible) return null;
 
   const handleChangeText = (text) => {
@@ -21,7 +30,9 @@ export default function MemoSection({
       toast.show("메모는 100자까지 입력 가능합니다.");
     }
     const sliced = chars.slice(0, 100).join("");
-    currentTextRef.current = sliced;
+
+    lastEmittedRef.current = sliced;
+    setLocalValue(sliced);
     onChangeText(sliced);
   };
 
@@ -31,7 +42,7 @@ export default function MemoSection({
       <BottomSheetTextInput
 
         ref={memoInputRef}
-        value={value}
+        value={localValue}
         onChangeText={handleChangeText}
         maxLength={101}
         placeholder="기억해야 할 메모를 입력해 주세요."
