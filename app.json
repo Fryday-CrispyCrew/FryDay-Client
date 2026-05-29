@@ -3,7 +3,7 @@
     "name": "FryDay",
     "slug": "FryDay",
     "scheme": "fryday",
-    "version": "1.1.1",
+    "version": "1.1.2",
     "orientation": "portrait",
     "icon": "./assets/fryday-icon.png",
     "userInterfaceStyle": "light",
@@ -137,7 +137,7 @@
       ],
       "expo-tracking-transparency"
     ],
-    "runtimeVersion": "1.1.1",
+    "runtimeVersion": "1.1.2",
     "owner": "frydayapp",
     "extra": {
       "eas": {
