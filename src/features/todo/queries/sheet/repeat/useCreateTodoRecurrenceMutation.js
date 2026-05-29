@@ -2,6 +2,7 @@
 import {useMutation, useQueryClient} from "@tanstack/react-query";
 import {sheetApi} from "../sheetApi";
 import {sheetKeys} from "../sheetKeys";
+import {calendarKeys} from "../../../../calendar/queries/calendarKey";
 
 export function useCreateTodoRecurrenceMutation(options = {}) {
   const queryClient = useQueryClient();
@@ -13,6 +14,7 @@ export function useCreateTodoRecurrenceMutation(options = {}) {
       if (todoId)
         queryClient.invalidateQueries({queryKey: sheetKeys.todoDetail(todoId)});
       queryClient.invalidateQueries({queryKey: ["home"]});
+      queryClient.invalidateQueries({queryKey: calendarKeys.dailyResults()});
       options?.onSuccess?.(data, variables, context);
     },
     onError: (error) => {
