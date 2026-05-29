@@ -415,8 +415,8 @@ export default function HomeScreen({ navigation, route }) {
           </View>
         </GestureDetector>
 
-        <View className="mx-5 mt-3">
-          <Dotted width="100%" height={1} />
+        <View className="mt-3">
+          <Dotted width="100%" height={1} preserveAspectRatio="none" />
         </View>
       </>
     );

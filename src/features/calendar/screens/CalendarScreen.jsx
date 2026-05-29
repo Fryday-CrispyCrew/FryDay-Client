@@ -222,7 +222,7 @@ export default function CalendarScreen({ navigation }) {
             </View>
 
             <View className="mx-5 mt-3">
-              <Dotted width="100%" height={1} />
+              <Dotted width="100%" height={1} preserveAspectRatio="none"/>
             </View>
 
             <ScrollView
