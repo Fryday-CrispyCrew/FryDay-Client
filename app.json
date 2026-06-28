@@ -17,6 +17,11 @@
       "supportsTablet": true,
       "googleServicesFile": "./GoogleService-Info.plist",
       "bundleIdentifier": "com.crispycrew.fryday",
+      "entitlements": {
+        "com.apple.security.application-groups": [
+          "group.com.fryday.shared"
+        ]
+      },
       "infoPlist": {
         "ITSAppUsesNonExemptEncryption": false,
         "NSUserTrackingUsageDescription": "사용자 관심에 맞는 광고 제공 및 서비스 운영 지원을 위해 사용됩니다.",
@@ -55,6 +60,7 @@
       "./plugins/withNotifeeAndroidRepo",
       "expo-font",
       "expo-secure-store",
+      "@bacons/apple-targets",
       [
         "@react-native-community/datetimepicker",
         {
@@ -135,7 +141,8 @@
           "iosAppId": "ca-app-pub-8539790662098155~3874368925"
         }
       ],
-      "expo-tracking-transparency"
+      "expo-tracking-transparency",
+      "@bacons/apple-targets"
     ],
     "runtimeVersion": "1.1.2",
     "owner": "frydayapp",
