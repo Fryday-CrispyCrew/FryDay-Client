@@ -60,7 +60,6 @@
       "./plugins/withNotifeeAndroidRepo",
       "expo-font",
       "expo-secure-store",
-      "@bacons/apple-targets",
       [
         "@react-native-community/datetimepicker",
         {
