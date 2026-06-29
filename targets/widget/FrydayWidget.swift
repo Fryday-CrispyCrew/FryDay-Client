@@ -35,7 +35,7 @@ struct TodoWidgetView: View {
             Text(entry.dateString)
                 .font(.caption)
                 .foregroundColor(.secondary)
-            Text("구석구석")
+            Text("Fryday")
                 .font(.headline)
             Text("위젯 테스트")
                 .font(.caption2)
@@ -51,7 +51,7 @@ struct FrydayWidget: Widget {
         StaticConfiguration(kind: "FrydayWidget", provider: TodoProvider()) { entry in
             TodoWidgetView(entry: entry)
         }
-        .configurationDisplayName("구석구석")
+        .configurationDisplayName("Fryday")
         .description("오늘의 투두를 확인해요")
         .supportedFamilies([.systemSmall, .systemMedium])
     }
