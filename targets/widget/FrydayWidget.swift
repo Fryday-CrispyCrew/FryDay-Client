@@ -31,12 +31,21 @@ struct TodoProvider: TimelineProvider {
         fmt.locale = Locale(identifier: "ko_KR")
         fmt.dateFormat = "M월 d일 (E)"
 
+        // isLoggedIn 키가 명시적으로 false일 때만 disconnected
+        // 키가 없으면 기본 connected
+        let isConnected: Bool = {
+            guard let d = defaults, d.object(forKey: "isLoggedIn") != nil else {
+                return true
+            }
+            return d.bool(forKey: "isLoggedIn")
+        }()
+
         return TodoEntry(
             date: Date(),
             dateString: fmt.string(from: Date()),
-            doneCount: defaults?.integer(forKey: "doneCount") ?? 0,
-            doingCount: defaults?.integer(forKey: "doingCount") ?? 0,
-            isConnected: defaults?.bool(forKey: "isLoggedIn") ?? true
+            doneCount: 13,
+            doingCount: 0,
+            isConnected: true
         )
     }
 }
@@ -50,6 +59,7 @@ struct FrydayWidget: Widget {
         .configurationDisplayName("FryDay")
         .description("오늘의 투두를 확인해요")
         .supportedFamilies([.systemSmall])
+        .contentMarginsDisabled()
     }
 }
 

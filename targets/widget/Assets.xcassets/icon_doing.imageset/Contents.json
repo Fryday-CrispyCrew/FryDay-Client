@@ -1,0 +1,12 @@
+{
+  "images" : [
+    {
+      "filename" : "icon_doing.png",
+      "idiom" : "universal"
+    }
+  ],
+  "info" : {
+    "version" : 1,
+    "author" : "xcode"
+  }
+}

@@ -10,16 +10,29 @@ struct WidgetHeader: View {
         VStack(alignment: .trailing, spacing: 4) {
             Text(dateString)
                 .font(.caption)
-                .foregroundColor(.secondary)
+                .foregroundColor(AppColor.Gray.gr500)
 
             HStack(spacing: 8) {
-                Label("\(doneCount)", image: "icon_done")
-                    .labelStyle(.iconText)
-                Label("\(doingCount)", image: "icon_doing")
-                    .labelStyle(.iconText)
+                HStack(spacing: 4) {
+                    Image("icon_done")
+                        .resizable()
+                        .scaledToFit()
+                        .frame(width: 16, height: 16)
+                    Text("\(doneCount)")
+                        .foregroundColor(AppColor.Category.OR)
+                }
+                HStack(spacing: 4) {
+                    Image("icon_doing")
+                        .resizable()
+                        .scaledToFit()
+                        .frame(width: 16, height: 16)
+                    Text("\(doingCount)")
+                        .foregroundColor(AppColor.Gray.gr700)
+                }
             }
-            .font(.caption.bold())
+            .font(.caption)
         }
+        .fixedSize()
     }
 }
 
