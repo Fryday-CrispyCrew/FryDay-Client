@@ -1,5 +1,6 @@
 // WidgetHeader.swift
 import SwiftUI
+import WidgetKit
 
 struct WidgetHeader: View {
     let dateString: String
@@ -15,7 +16,9 @@ struct WidgetHeader: View {
             HStack(spacing: 8) {
                 HStack(spacing: 4) {
                     Image("icon_done")
+                        .renderingMode(.original)
                         .resizable()
+                        .widgetAccentedRenderingMode(.fullColor)
                         .scaledToFit()
                         .frame(width: 16, height: 16)
                     Text("\(doneCount)")
@@ -23,7 +26,9 @@ struct WidgetHeader: View {
                 }
                 HStack(spacing: 4) {
                     Image("icon_doing")
+                        .renderingMode(.original)
                         .resizable()
+                        .widgetAccentedRenderingMode(.fullColor)
                         .scaledToFit()
                         .frame(width: 16, height: 16)
                     Text("\(doingCount)")

@@ -1,12 +1,6 @@
 import SwiftUI
 import WidgetKit
 
-// 위젯 틴트/투명 모드에서 원본 색상 유지 (iOS 18+)
-extension View {
-    func keepOriginalColor() -> some View {
-        self.widgetAccentedRenderingMode(.fullColor)
-    }
-}
 
 struct SmallWidgetView: View {
     var entry: TodoEntry
@@ -28,8 +22,8 @@ struct SmallWidgetView: View {
             Image(characterImageName)
                 .renderingMode(.original)
                 .resizable()
+                .widgetAccentedRenderingMode(.fullColor)
                 .scaledToFit()
-                .keepOriginalColor()
                 .frame(width: geo.size.width * 0.85)
                 .padding(.leading, 0)
                 .padding(.bottom, 0)
