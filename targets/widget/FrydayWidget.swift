@@ -41,22 +41,39 @@ struct TodoProvider: TimelineProvider {
             return d.bool(forKey: "isLoggedIn")
         }()
 
+        // App Group에서 완료된 todo ID 집합 읽기
+        let completedIds = Set(defaults?.stringArray(forKey: "completedTodoIds") ?? [])
+
+        // 프리뷰 투두에 완료 상태 반영
+        let todos = TodoProvider.previewTodos.map { todo in
+            TodoItem(
+                id: todo.id,
+                title: todo.title,
+                categoryCode: todo.categoryCode,
+                isDone: completedIds.contains(todo.id)
+            )
+        }
+
+        let doneCount = todos.filter { $0.isDone }.count
+        let doingCount = todos.filter { !$0.isDone }.count
+
         return TodoEntry(
             date: Date(),
             dateString: fmt.string(from: Date()),
-            doneCount: 4,
-            doingCount: 0,
-            isConnected: true,
-            todos: TodoProvider.previewTodos
+            doneCount: doneCount,
+            doingCount: doingCount,
+            isConnected: isConnected,
+            todos: todos
         )
     }
 
     // 임시 프리뷰용 투두 (백엔드 연동 전까지)
+    // 기본은 미완료 상태 — 위젯에서 탭하면 완료로 전환
     static let previewTodos: [TodoItem] = [
-        TodoItem(title: "연우님 기획 차력쇼 감상", categoryCode: "OR"),
-        TodoItem(title: "연우님 기획 차력쇼 감상", categoryCode: "BR"),
-        TodoItem(title: "연우님 기획 차력쇼 감상", categoryCode: "PK"),
-        TodoItem(title: "연우님 기획 차력쇼 감상", categoryCode: "MT"),
+        TodoItem(id: "todo-1", title: "연우님 기획 차력쇼 감상", categoryCode: "OR", isDone: false),
+        TodoItem(id: "todo-2", title: "연우님 기획 차력쇼 감상", categoryCode: "BR", isDone: false),
+        TodoItem(id: "todo-3", title: "연우님 기획 차력쇼 감상", categoryCode: "PK", isDone: false),
+        TodoItem(id: "todo-4", title: "연우님 기획 차력쇼 감상", categoryCode: "MT", isDone: false),
     ]
 }
 
@@ -119,7 +136,16 @@ struct FrydayWidget: Widget {
 #Preview("Medium · Full", as: .systemMedium) {
     FrydayWidget()
 } timeline: {
-    TodoEntry(date: Date(), dateString: "5월 23일 (토)", doneCount: 10, doingCount: 0, isConnected: true, todos: TodoProvider.previewTodos)
+    // 모두 완료 상태
+    let done = TodoProvider.previewTodos.map { TodoItem(id: $0.id, title: $0.title, categoryCode: $0.categoryCode, isDone: true) }
+    TodoEntry(date: Date(), dateString: "5월 23일 (토)", doneCount: done.count, doingCount: 0, isConnected: true, todos: done)
+}
+
+#Preview("Medium · Frying", as: .systemMedium) {
+    FrydayWidget()
+} timeline: {
+    // 하는 중 (전부 미완료)
+    TodoEntry(date: Date(), dateString: "5월 23일 (토)", doneCount: 0, doingCount: 4, isConnected: true, todos: TodoProvider.previewTodos)
 }
 
 #Preview("Medium · Empty", as: .systemMedium) {

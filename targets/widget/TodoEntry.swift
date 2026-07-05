@@ -3,9 +3,10 @@ import Foundation
 
 // 위젯에 표시할 투두 1건
 struct TodoItem: Identifiable {
-    let id = UUID()
+    let id: String             // 백엔드 투두 ID (Intent에서 사용)
     let title: String
     let categoryCode: String   // 예: "OR", "BR", "LG" 등 — 백엔드에서 내려오는 카테고리 코드
+    let isDone: Bool           // 완료 여부 (토글용)
 }
 
 struct TodoEntry: TimelineEntry {
