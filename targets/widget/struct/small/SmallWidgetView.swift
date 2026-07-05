@@ -1,16 +1,10 @@
 import SwiftUI
 import WidgetKit
 
-// iOS 18+ 에서만 위젯 틴트 모드 무시 (원본 색상 유지)
-// iOS 17 이하는 modifier 자체가 없으므로 그냥 통과
+// 위젯 틴트/투명 모드에서 원본 색상 유지 (iOS 18+)
 extension View {
-    @ViewBuilder
-    func fullColorIfAvailable() -> some View {
-        if #available(iOS 18.0, *) {
-            self.widgetAccentedRenderingMode(.fullColor)
-        } else {
-            self
-        }
+    func keepOriginalColor() -> some View {
+        self.widgetAccentedRenderingMode(.fullColor)
     }
 }
 
@@ -32,9 +26,10 @@ struct SmallWidgetView: View {
     private var contentView: some View {
         GeometryReader { geo in
             Image(characterImageName)
+                .renderingMode(.original)
                 .resizable()
                 .scaledToFit()
-                .fullColorIfAvailable()
+                .keepOriginalColor()
                 .frame(width: geo.size.width * 0.85)
                 .padding(.leading, 0)
                 .padding(.bottom, 0)
