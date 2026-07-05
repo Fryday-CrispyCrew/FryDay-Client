@@ -34,6 +34,23 @@ enum AppColor {
         static let PK = dynamic(light: 0xF06B9C, dark: 0xFF76A8)
         /// MB — Light: #AA7459 / Dark: #BC7958
         static let MB = dynamic(light: 0xAA7459, dark: 0xBC7958)
+
+        /// 백엔드 카테고리 코드 문자열 → Color
+        /// 알 수 없는 코드는 OR로 fallback
+        static func color(for code: String) -> Color {
+            switch code.uppercased() {
+            case "OR": return OR
+            case "BR": return BR
+            case "LG": return LG
+            case "CB": return CB
+            case "DP": return DP
+            case "MT": return MT
+            case "VL": return VL
+            case "PK": return PK
+            case "MB": return MB
+            default:   return OR
+            }
+        }
     }
 
     // MARK: Gray Scale
@@ -80,3 +97,4 @@ private extension UIColor {
         self.init(red: r, green: g, blue: b, alpha: 1)
     }
 }
+

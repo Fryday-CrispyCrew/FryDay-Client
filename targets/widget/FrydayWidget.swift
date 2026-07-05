@@ -10,7 +10,8 @@ struct TodoProvider: TimelineProvider {
             dateString: "1월 1일 (수)",
             doneCount: 10,
             doingCount: 0,
-            isConnected: true
+            isConnected: true,
+            todos: TodoProvider.previewTodos
         )
     }
 
@@ -43,10 +44,34 @@ struct TodoProvider: TimelineProvider {
         return TodoEntry(
             date: Date(),
             dateString: fmt.string(from: Date()),
-            doneCount: 13,
+            doneCount: 4,
             doingCount: 0,
-            isConnected: true
+            isConnected: true,
+            todos: TodoProvider.previewTodos
         )
+    }
+
+    // 임시 프리뷰용 투두 (백엔드 연동 전까지)
+    static let previewTodos: [TodoItem] = [
+        TodoItem(title: "연우님 기획 차력쇼 감상", categoryCode: "OR"),
+        TodoItem(title: "연우님 기획 차력쇼 감상", categoryCode: "BR"),
+        TodoItem(title: "연우님 기획 차력쇼 감상", categoryCode: "PK"),
+        TodoItem(title: "연우님 기획 차력쇼 감상", categoryCode: "MT"),
+    ]
+}
+
+// 위젯 크기별 뷰 분기
+struct FrydayWidgetEntryView: View {
+    @Environment(\.widgetFamily) var family
+    let entry: TodoEntry
+
+    var body: some View {
+        switch family {
+        case .systemMedium:
+            MediumWidgetView(entry: entry)
+        default:
+            SmallWidgetView(entry: entry)
+        }
     }
 }
 
@@ -54,61 +79,57 @@ struct TodoProvider: TimelineProvider {
 struct FrydayWidget: Widget {
     var body: some WidgetConfiguration {
         StaticConfiguration(kind: "FrydayWidget", provider: TodoProvider()) { entry in
-            SmallWidgetView(entry: entry)
+            FrydayWidgetEntryView(entry: entry)
         }
         .configurationDisplayName("FryDay")
         .description("오늘의 투두를 확인해요")
-        .supportedFamilies([.systemSmall])
+        .supportedFamilies([.systemSmall, .systemMedium])
         .contentMarginsDisabled()
     }
 }
 
-// MARK: - Previews (4가지 상태)
+// MARK: - Small Previews (4가지 상태)
 
-#Preview("Full", as: .systemSmall) {
+#Preview("Small · Full", as: .systemSmall) {
     FrydayWidget()
 } timeline: {
-    TodoEntry(
-        date: Date(),
-        dateString: "1월 1일 (수)",
-        doneCount: 10,
-        doingCount: 0,
-        isConnected: true
-    )
+    TodoEntry(date: Date(), dateString: "1월 1일 (수)", doneCount: 10, doingCount: 0, isConnected: true, todos: TodoProvider.previewTodos)
 }
 
-#Preview("Frying", as: .systemSmall) {
+#Preview("Small · Frying", as: .systemSmall) {
     FrydayWidget()
 } timeline: {
-    TodoEntry(
-        date: Date(),
-        dateString: "1월 1일 (수)",
-        doneCount: 0,
-        doingCount: 10,
-        isConnected: true
-    )
+    TodoEntry(date: Date(), dateString: "1월 1일 (수)", doneCount: 0, doingCount: 10, isConnected: true, todos: [])
 }
 
-#Preview("Empty", as: .systemSmall) {
+#Preview("Small · Empty", as: .systemSmall) {
     FrydayWidget()
 } timeline: {
-    TodoEntry(
-        date: Date(),
-        dateString: "1월 1일 (수)",
-        doneCount: 0,
-        doingCount: 0,
-        isConnected: true
-    )
+    TodoEntry(date: Date(), dateString: "1월 1일 (수)", doneCount: 0, doingCount: 0, isConnected: true, todos: [])
 }
 
-#Preview("Error", as: .systemSmall) {
+#Preview("Small · Error", as: .systemSmall) {
     FrydayWidget()
 } timeline: {
-    TodoEntry(
-        date: Date(),
-        dateString: "1월 1일 (수)",
-        doneCount: 0,
-        doingCount: 0,
-        isConnected: false
-    )
+    TodoEntry(date: Date(), dateString: "1월 1일 (수)", doneCount: 0, doingCount: 0, isConnected: false, todos: [])
+}
+
+// MARK: - Medium Previews (3가지 상태)
+
+#Preview("Medium · Full", as: .systemMedium) {
+    FrydayWidget()
+} timeline: {
+    TodoEntry(date: Date(), dateString: "5월 23일 (토)", doneCount: 10, doingCount: 0, isConnected: true, todos: TodoProvider.previewTodos)
+}
+
+#Preview("Medium · Empty", as: .systemMedium) {
+    FrydayWidget()
+} timeline: {
+    TodoEntry(date: Date(), dateString: "5월 23일 (토)", doneCount: 0, doingCount: 0, isConnected: true, todos: [])
+}
+
+#Preview("Medium · Error", as: .systemMedium) {
+    FrydayWidget()
+} timeline: {
+    TodoEntry(date: Date(), dateString: "5월 23일 (토)", doneCount: 0, doingCount: 0, isConnected: false, todos: [])
 }
