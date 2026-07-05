@@ -1,39 +1,34 @@
 import WidgetKit
 import SwiftUI
+import AppIntents
 
-struct TodoProvider: TimelineProvider {
-    private let appGroupID = "group.com.fryday.shared"
+// MARK: - Provider (AppIntent 기반, 하나로 통합)
+
+struct TodoProvider: AppIntentTimelineProvider {
+    typealias Entry = TodoEntry
+    typealias Intent = FrydayConfigIntent
 
     func placeholder(in context: Context) -> TodoEntry {
-        TodoEntry(
-            date: Date(),
-            dateString: "1월 1일 (수)",
-            doneCount: 10,
-            doingCount: 0,
-            isConnected: true,
-            todos: TodoProvider.previewTodos
-        )
+        Self.makeEntry(style: .character)
     }
 
-    func getSnapshot(in context: Context, completion: @escaping (TodoEntry) -> Void) {
-        completion(makeEntry())
+    func snapshot(for configuration: FrydayConfigIntent, in context: Context) async -> TodoEntry {
+        Self.makeEntry(style: configuration.style)
     }
 
-    func getTimeline(in context: Context, completion: @escaping (Timeline<TodoEntry>) -> Void) {
-        // 15분마다 새로고침
+    func timeline(for configuration: FrydayConfigIntent, in context: Context) async -> Timeline<TodoEntry> {
         let next = Calendar.current.date(byAdding: .minute, value: 15, to: Date()) ?? Date()
-        completion(Timeline(entries: [makeEntry()], policy: .after(next)))
+        return Timeline(entries: [Self.makeEntry(style: configuration.style)], policy: .after(next))
     }
 
-    private func makeEntry() -> TodoEntry {
+    static func makeEntry(style: WidgetStyle) -> TodoEntry {
+        let appGroupID = "group.com.fryday.shared"
         let defaults = UserDefaults(suiteName: appGroupID)
 
         let fmt = DateFormatter()
         fmt.locale = Locale(identifier: "ko_KR")
         fmt.dateFormat = "M월 d일 (E)"
 
-        // isLoggedIn 키가 명시적으로 false일 때만 disconnected
-        // 키가 없으면 기본 connected
         let isConnected: Bool = {
             guard let d = defaults, d.object(forKey: "isLoggedIn") != nil else {
                 return true
@@ -41,11 +36,8 @@ struct TodoProvider: TimelineProvider {
             return d.bool(forKey: "isLoggedIn")
         }()
 
-        // App Group에서 완료된 todo ID 집합 읽기
         let completedIds = Set(defaults?.stringArray(forKey: "completedTodoIds") ?? [])
-
-        // 프리뷰 투두에 완료 상태 반영
-        let todos = TodoProvider.previewTodos.map { todo in
+        let todos = Self.previewTodos.map { todo in
             TodoItem(
                 id: todo.id,
                 title: todo.title,
@@ -63,21 +55,23 @@ struct TodoProvider: TimelineProvider {
             doneCount: doneCount,
             doingCount: doingCount,
             isConnected: isConnected,
-            todos: todos
+            todos: todos,
+            style: style
         )
     }
 
-    // 임시 프리뷰용 투두 (백엔드 연동 전까지)
-    // 기본은 미완료 상태 — 위젯에서 탭하면 완료로 전환
     static let previewTodos: [TodoItem] = [
         TodoItem(id: "todo-1", title: "연우님 기획 차력쇼 감상", categoryCode: "OR", isDone: false),
         TodoItem(id: "todo-2", title: "연우님 기획 차력쇼 감상", categoryCode: "BR", isDone: false),
         TodoItem(id: "todo-3", title: "연우님 기획 차력쇼 감상", categoryCode: "PK", isDone: false),
         TodoItem(id: "todo-4", title: "연우님 기획 차력쇼 감상", categoryCode: "MT", isDone: false),
+        TodoItem(id: "todo-5", title: "연우님 기획 차력쇼 감상", categoryCode: "LG", isDone: false),
+        TodoItem(id: "todo-6", title: "연우님 기획 차력쇼 감상", categoryCode: "CB", isDone: false),
     ]
 }
 
-// 위젯 크기별 뷰 분기
+// MARK: - Entry View — 크기 + 스타일 분기
+
 struct FrydayWidgetEntryView: View {
     @Environment(\.widgetFamily) var family
     let entry: TodoEntry
@@ -85,17 +79,28 @@ struct FrydayWidgetEntryView: View {
     var body: some View {
         switch family {
         case .systemMedium:
-            MediumWidgetView(entry: entry)
+            switch entry.style {
+            case .character:
+                MediumWidgetView(entry: entry)
+            case .list:
+                MediumTodoListView(entry: entry)
+            }
         default:
             SmallWidgetView(entry: entry)
         }
     }
 }
 
+// MARK: - Widget (단 하나) — Small + Medium 지원, Medium은 편집으로 스타일 전환
+
 @main
 struct FrydayWidget: Widget {
     var body: some WidgetConfiguration {
-        StaticConfiguration(kind: "FrydayWidget", provider: TodoProvider()) { entry in
+        AppIntentConfiguration(
+            kind: "FrydayWidget",
+            intent: FrydayConfigIntent.self,
+            provider: TodoProvider()
+        ) { entry in
             FrydayWidgetEntryView(entry: entry)
         }
         .configurationDisplayName("FryDay")
@@ -105,7 +110,7 @@ struct FrydayWidget: Widget {
     }
 }
 
-// MARK: - Small Previews (4가지 상태)
+// MARK: - Previews
 
 #Preview("Small · Full", as: .systemSmall) {
     FrydayWidget()
@@ -113,49 +118,14 @@ struct FrydayWidget: Widget {
     TodoEntry(date: Date(), dateString: "1월 1일 (수)", doneCount: 10, doingCount: 0, isConnected: true, todos: TodoProvider.previewTodos)
 }
 
-#Preview("Small · Frying", as: .systemSmall) {
+#Preview("Medium 캐릭터형", as: .systemMedium) {
     FrydayWidget()
 } timeline: {
-    TodoEntry(date: Date(), dateString: "1월 1일 (수)", doneCount: 0, doingCount: 10, isConnected: true, todos: [])
+    TodoEntry(date: Date(), dateString: "5월 23일 (토)", doneCount: 0, doingCount: 4, isConnected: true, todos: Array(TodoProvider.previewTodos.prefix(4)), style: .character)
 }
 
-#Preview("Small · Empty", as: .systemSmall) {
+#Preview("Medium 리스트형", as: .systemMedium) {
     FrydayWidget()
 } timeline: {
-    TodoEntry(date: Date(), dateString: "1월 1일 (수)", doneCount: 0, doingCount: 0, isConnected: true, todos: [])
-}
-
-#Preview("Small · Error", as: .systemSmall) {
-    FrydayWidget()
-} timeline: {
-    TodoEntry(date: Date(), dateString: "1월 1일 (수)", doneCount: 0, doingCount: 0, isConnected: false, todos: [])
-}
-
-// MARK: - Medium Previews (3가지 상태)
-
-#Preview("Medium · Full", as: .systemMedium) {
-    FrydayWidget()
-} timeline: {
-    // 모두 완료 상태
-    let done = TodoProvider.previewTodos.map { TodoItem(id: $0.id, title: $0.title, categoryCode: $0.categoryCode, isDone: true) }
-    TodoEntry(date: Date(), dateString: "5월 23일 (토)", doneCount: done.count, doingCount: 0, isConnected: true, todos: done)
-}
-
-#Preview("Medium · Frying", as: .systemMedium) {
-    FrydayWidget()
-} timeline: {
-    // 하는 중 (전부 미완료)
-    TodoEntry(date: Date(), dateString: "5월 23일 (토)", doneCount: 0, doingCount: 4, isConnected: true, todos: TodoProvider.previewTodos)
-}
-
-#Preview("Medium · Empty", as: .systemMedium) {
-    FrydayWidget()
-} timeline: {
-    TodoEntry(date: Date(), dateString: "5월 23일 (토)", doneCount: 0, doingCount: 0, isConnected: true, todos: [])
-}
-
-#Preview("Medium · Error", as: .systemMedium) {
-    FrydayWidget()
-} timeline: {
-    TodoEntry(date: Date(), dateString: "5월 23일 (토)", doneCount: 0, doingCount: 0, isConnected: false, todos: [])
+    TodoEntry(date: Date(), dateString: "5월 23일 (토)", doneCount: 0, doingCount: 6, isConnected: true, todos: TodoProvider.previewTodos, style: .list)
 }

@@ -16,6 +16,7 @@ struct TodoEntry: TimelineEntry {
     let doingCount: Int
     let isConnected: Bool
     let todos: [TodoItem]
+    var style: WidgetStyle = .character
 
     var state: WidgetState {
         if !isConnected { return .error }
