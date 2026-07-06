@@ -62,6 +62,22 @@ enum TodoEntryBuilder {
         )
     }
 
+    // App Group을 읽지 않는 즉시 반환 placeholder (Error 상태로 실제 UI 표시)
+    static func staticPlaceholder(style: WidgetStyle) -> TodoEntry {
+        let fmt = DateFormatter()
+        fmt.locale = Locale(identifier: "ko_KR")
+        fmt.dateFormat = "M월 d일 (E)"
+        return TodoEntry(
+            date: Date(),
+            dateString: fmt.string(from: Date()),
+            doneCount: 0,
+            doingCount: 0,
+            isConnected: false,
+            todos: [],
+            style: style
+        )
+    }
+
     static let previewTodos: [TodoItem] = [
         TodoItem(id: "todo-1", title: "연우님 기획 차력쇼 감상", categoryCode: "OR", isDone: false),
         TodoItem(id: "todo-2", title: "연우님 기획 차력쇼 감상", categoryCode: "BR", isDone: false),
@@ -76,7 +92,7 @@ enum TodoEntryBuilder {
 
 struct SmallProvider: TimelineProvider {
     func placeholder(in context: Context) -> TodoEntry {
-        TodoEntryBuilder.makeEntry(style: .character)
+        TodoEntryBuilder.staticPlaceholder(style: .character)
     }
 
     func getSnapshot(in context: Context, completion: @escaping (TodoEntry) -> Void) {
@@ -94,7 +110,7 @@ struct MediumCharProvider: AppIntentTimelineProvider {
     typealias Intent = FrydayCharConfigIntent
 
     func placeholder(in context: Context) -> TodoEntry {
-        TodoEntryBuilder.makeEntry(style: .character)
+        TodoEntryBuilder.staticPlaceholder(style: .character)
     }
 
     func snapshot(for configuration: FrydayCharConfigIntent, in context: Context) async -> TodoEntry {
@@ -112,7 +128,7 @@ struct MediumListProvider: AppIntentTimelineProvider {
     typealias Intent = FrydayListConfigIntent
 
     func placeholder(in context: Context) -> TodoEntry {
-        TodoEntryBuilder.makeEntry(style: .list)
+        TodoEntryBuilder.staticPlaceholder(style: .list)
     }
 
     func snapshot(for configuration: FrydayListConfigIntent, in context: Context) async -> TodoEntry {
@@ -155,7 +171,7 @@ struct FrydayWidgetSmall: Widget {
             provider: SmallProvider()
         ) { entry in
             FrydayWidgetEntryView(entry: entry)
-                .unredacted()
+                .environment(\.redactionReasons, [])
         }
         .configurationDisplayName("FryDay")
         .description("오늘의 투두를 확인해요")
@@ -172,7 +188,7 @@ struct FrydayWidgetMediumChar: Widget {
             provider: MediumCharProvider()
         ) { entry in
             FrydayWidgetEntryView(entry: entry)
-                .unredacted()
+                .environment(\.redactionReasons, [])
         }
         .configurationDisplayName("FryDay 캐릭터형")
         .description("캐릭터와 함께 오늘의 투두를 확인해요")
@@ -189,7 +205,7 @@ struct FrydayWidgetMediumList: Widget {
             provider: MediumListProvider()
         ) { entry in
             FrydayWidgetEntryView(entry: entry)
-                .unredacted()
+                .environment(\.redactionReasons, [])
         }
         .configurationDisplayName("FryDay 리스트형")
         .description("최대 6개의 투두를 리스트로 확인해요")
