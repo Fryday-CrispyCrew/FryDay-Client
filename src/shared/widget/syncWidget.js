@@ -39,7 +39,7 @@ export function syncTodosToWidget(todosByDate = {}) {
       payload[date] = (todos ?? []).map(toWidgetTodo);
     }
     storage.set("todosByDateJson", JSON.stringify(payload));
-    ExtensionStorage.reloadWidget();
+    ExtensionStorage.reloadWidget("FrydayWidget");
   } catch (e) {
     console.warn("[syncWidget] syncTodosToWidget failed:", e);
   }
@@ -50,7 +50,7 @@ export function syncLoginToWidget(isLoggedIn) {
 
   try {
     storage.set("isLoggedIn", isLoggedIn ? 1 : 0);
-    ExtensionStorage.reloadWidget();
+    ExtensionStorage.reloadWidget("FrydayWidget");
   } catch (e) {
     console.warn("[syncWidget] syncLoginToWidget failed:", e);
   }
@@ -63,7 +63,7 @@ export function clearWidgetForLogout() {
     storage.set("isLoggedIn", 0);
     storage.remove("todosByDateJson");
     storage.remove("pendingToggleIds");
-    ExtensionStorage.reloadWidget();
+    ExtensionStorage.reloadWidget("FrydayWidget");
   } catch (e) {
     console.warn("[syncWidget] clearWidgetForLogout failed:", e);
   }

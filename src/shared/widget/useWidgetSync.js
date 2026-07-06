@@ -20,6 +20,32 @@ function dateOffset(days) {
   return d;
 }
 
+function sortByHomeOrder(todos, rawCategories) {
+  if (!Array.isArray(todos) || !Array.isArray(rawCategories)) return [];
+
+  const orderMap = new Map();
+  const colorMap = new Map();
+  rawCategories.forEach((c) => {
+    orderMap.set(Number(c.id), c.displayOrder ?? 0);
+    colorMap.set(Number(c.id), c.colorHex);
+  });
+
+  const positionMap = new Map();
+  todos.forEach((t, i) => positionMap.set(t.id, i));
+
+  return todos
+    .map((t) => ({
+      ...t,
+      categoryColor: colorMap.get(Number(t.categoryId)) ?? null,
+    }))
+    .sort((a, b) => {
+      const oa = orderMap.get(Number(a.categoryId)) ?? 999;
+      const ob = orderMap.get(Number(b.categoryId)) ?? 999;
+      if (oa !== ob) return oa - ob;
+      return (positionMap.get(a.id) ?? 0) - (positionMap.get(b.id) ?? 0);
+    });
+}
+
 export function useWidgetSync() {
   const todayDate = toISO(new Date());
   const tomorrowDate = toISO(dateOffset(1));
@@ -29,36 +55,10 @@ export function useWidgetSync() {
   const { data: rawCategories } = useCategoriesQuery();
   const queryClient = useQueryClient();
 
-  const sortByHomeOrder = (todos) => {
-    if (!Array.isArray(todos) || !Array.isArray(rawCategories)) return [];
-
-    const orderMap = new Map();
-    const colorMap = new Map();
-    rawCategories.forEach((c) => {
-      orderMap.set(Number(c.id), c.displayOrder ?? 0);
-      colorMap.set(Number(c.id), c.colorHex);
-    });
-
-    const positionMap = new Map();
-    todos.forEach((t, i) => positionMap.set(t.id, i));
-
-    return todos
-      .map((t) => ({
-        ...t,
-        categoryColor: colorMap.get(Number(t.categoryId)) ?? null,
-      }))
-      .sort((a, b) => {
-        const oa = orderMap.get(Number(a.categoryId)) ?? 999;
-        const ob = orderMap.get(Number(b.categoryId)) ?? 999;
-        if (oa !== ob) return oa - ob;
-        return (positionMap.get(a.id) ?? 0) - (positionMap.get(b.id) ?? 0);
-      });
-  };
-
   const payload = useMemo(() => {
     return {
-      [todayDate]: sortByHomeOrder(todosToday),
-      [tomorrowDate]: sortByHomeOrder(todosTomorrow),
+      [todayDate]: sortByHomeOrder(todosToday, rawCategories),
+      [tomorrowDate]: sortByHomeOrder(todosTomorrow, rawCategories),
     };
   }, [todosToday, todosTomorrow, rawCategories, todayDate, tomorrowDate]);
 
