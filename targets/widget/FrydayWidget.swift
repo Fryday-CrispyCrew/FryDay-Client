@@ -126,45 +126,24 @@ struct SmallProvider: TimelineProvider {
     }
 }
 
-struct MediumCharProvider: AppIntentTimelineProvider {
-    typealias Entry = TodoEntry
-    typealias Intent = FrydayCharConfigIntent
+struct StyledProvider: TimelineProvider {
+    let style: WidgetStyle
 
     func placeholder(in context: Context) -> TodoEntry {
-        TodoEntryBuilder.staticPlaceholder(style: .character)
+        TodoEntryBuilder.staticPlaceholder(style: style)
     }
 
-    func snapshot(for configuration: FrydayCharConfigIntent, in context: Context) async -> TodoEntry {
+    func getSnapshot(in context: Context, completion: @escaping (TodoEntry) -> Void) {
         if context.isPreview {
-            return TodoEntryBuilder.previewSample(style: configuration.style)
+            completion(TodoEntryBuilder.previewSample(style: style))
+            return
         }
-        return TodoEntryBuilder.makeEntry(style: configuration.style)
+        completion(TodoEntryBuilder.makeEntry(style: style))
     }
 
-    func timeline(for configuration: FrydayCharConfigIntent, in context: Context) async -> Timeline<TodoEntry> {
+    func getTimeline(in context: Context, completion: @escaping (Timeline<TodoEntry>) -> Void) {
         let next = Calendar.current.date(byAdding: .minute, value: 15, to: Date()) ?? Date()
-        return Timeline(entries: [TodoEntryBuilder.makeEntry(style: configuration.style)], policy: .after(next))
-    }
-}
-
-struct MediumListProvider: AppIntentTimelineProvider {
-    typealias Entry = TodoEntry
-    typealias Intent = FrydayListConfigIntent
-
-    func placeholder(in context: Context) -> TodoEntry {
-        TodoEntryBuilder.staticPlaceholder(style: .list)
-    }
-
-    func snapshot(for configuration: FrydayListConfigIntent, in context: Context) async -> TodoEntry {
-        if context.isPreview {
-            return TodoEntryBuilder.previewSample(style: configuration.style)
-        }
-        return TodoEntryBuilder.makeEntry(style: configuration.style)
-    }
-
-    func timeline(for configuration: FrydayListConfigIntent, in context: Context) async -> Timeline<TodoEntry> {
-        let next = Calendar.current.date(byAdding: .minute, value: 15, to: Date()) ?? Date()
-        return Timeline(entries: [TodoEntryBuilder.makeEntry(style: configuration.style)], policy: .after(next))
+        completion(Timeline(entries: [TodoEntryBuilder.makeEntry(style: style)], policy: .after(next)))
     }
 }
 
@@ -209,10 +188,9 @@ struct FrydayWidgetSmall: Widget {
 
 struct FrydayWidgetMediumChar: Widget {
     var body: some WidgetConfiguration {
-        AppIntentConfiguration(
+        StaticConfiguration(
             kind: "FrydayWidgetMediumChar",
-            intent: FrydayCharConfigIntent.self,
-            provider: MediumCharProvider()
+            provider: StyledProvider(style: .character)
         ) { entry in
             FrydayWidgetEntryView(entry: entry)
                 .environment(\.redactionReasons, [])
@@ -226,10 +204,9 @@ struct FrydayWidgetMediumChar: Widget {
 
 struct FrydayWidgetMediumList: Widget {
     var body: some WidgetConfiguration {
-        AppIntentConfiguration(
+        StaticConfiguration(
             kind: "FrydayWidgetMediumList",
-            intent: FrydayListConfigIntent.self,
-            provider: MediumListProvider()
+            provider: StyledProvider(style: .list)
         ) { entry in
             FrydayWidgetEntryView(entry: entry)
                 .environment(\.redactionReasons, [])
