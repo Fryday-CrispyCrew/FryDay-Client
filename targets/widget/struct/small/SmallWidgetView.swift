@@ -54,7 +54,7 @@ struct SmallWidgetView: View {
 
             Spacer()
 
-            Text("FryDay에\n연결할 수 없어요.\n위젯을 눌러\n앱을 다시 시작해 주세요!")
+            Text("앱을 열어\n연결 상태를 확인해 주세요.")
                 .font(.caption)
                 .multilineTextAlignment(.center)
                 .padding(.horizontal, 12)

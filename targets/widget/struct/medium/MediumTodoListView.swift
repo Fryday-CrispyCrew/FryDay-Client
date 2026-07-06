@@ -100,27 +100,33 @@ struct MediumTodoListView: View {
         .padding(.bottom, 18)
     }
 
-    // MARK: - Error — 안내 텍스트만
+    // MARK: - Error — Bowl_Error 아이콘 + 안내 텍스트
     private var errorView: some View {
         VStack(alignment: .leading, spacing: 0) {
-            HStack {
-                Spacer()
-                Text(entry.dateString)
-                    .font(.caption)
-                    .foregroundColor(AppColor.Gray.gr500)
-            }
-            .padding(.top, 18)
-            .padding(.horizontal, 18)
+            Text(entry.dateString)
+                .font(.caption)
+                .foregroundColor(AppColor.Gray.gr500)
+                .padding(.top, 18)
+                .padding(.leading, 18)
 
             Spacer(minLength: 0)
 
-            VStack(spacing: 2) {
-                Text("앱을 열어")
-                    .font(.system(size: 12))
-                    .foregroundColor(AppColor.Gray.gr700)
-                Text("연결 상태를 확인해 주세요.")
-                    .font(.system(size: 12))
-                    .foregroundColor(AppColor.Gray.gr700)
+            VStack(spacing: 8) {
+                Image("Medium_Bowl_Error")
+                    .renderingMode(.original)
+                    .resizable()
+                    .widgetAccentedRenderingMode(.fullColor)
+                    .scaledToFit()
+                    .frame(width: 40, height: 40)
+
+                VStack(spacing: 2) {
+                    Text("앱을 열어")
+                        .font(.system(size: 12))
+                        .foregroundColor(AppColor.Gray.gr700)
+                    Text("연결 상태를 확인해 주세요.")
+                        .font(.system(size: 12))
+                        .foregroundColor(AppColor.Gray.gr700)
+                }
             }
             .frame(maxWidth: .infinity, alignment: .center)
 
