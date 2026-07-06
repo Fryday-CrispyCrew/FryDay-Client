@@ -246,9 +246,9 @@ struct FrydayWidgetMediumList: Widget {
 @main
 struct FrydayWidgetBundle: WidgetBundle {
     var body: some Widget {
-        FrydayWidgetSmall()
         FrydayWidgetMediumChar()
         FrydayWidgetMediumList()
+        FrydayWidgetSmall()
     }
 }
 
