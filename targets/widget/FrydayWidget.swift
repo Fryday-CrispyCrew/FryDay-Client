@@ -62,7 +62,6 @@ enum TodoEntryBuilder {
         )
     }
 
-    // App Group을 읽지 않는 즉시 반환 placeholder (Error 상태로 실제 UI 표시)
     static func staticPlaceholder(style: WidgetStyle) -> TodoEntry {
         let fmt = DateFormatter()
         fmt.locale = Locale(identifier: "ko_KR")
@@ -78,7 +77,6 @@ enum TodoEntryBuilder {
         )
     }
 
-    // iOS 위젯 갤러리/앱 롱프레스 메뉴에 뜨는 프리뷰용 샘플 데이터
     static func previewSample(style: WidgetStyle) -> TodoEntry {
         let fmt = DateFormatter()
         fmt.locale = Locale(identifier: "ko_KR")
@@ -126,24 +124,38 @@ struct SmallProvider: TimelineProvider {
     }
 }
 
-struct StyledProvider: TimelineProvider {
-    let style: WidgetStyle
+struct MediumProvider: AppIntentTimelineProvider {
+    typealias Entry = TodoEntry
+    typealias Intent = FrydayConfigIntent
 
     func placeholder(in context: Context) -> TodoEntry {
-        TodoEntryBuilder.staticPlaceholder(style: style)
+        TodoEntryBuilder.staticPlaceholder(style: .character)
     }
 
-    func getSnapshot(in context: Context, completion: @escaping (TodoEntry) -> Void) {
+    func snapshot(for configuration: FrydayConfigIntent, in context: Context) async -> TodoEntry {
         if context.isPreview {
-            completion(TodoEntryBuilder.previewSample(style: style))
-            return
+            return TodoEntryBuilder.previewSample(style: configuration.style)
         }
-        completion(TodoEntryBuilder.makeEntry(style: style))
+        return TodoEntryBuilder.makeEntry(style: configuration.style)
     }
 
-    func getTimeline(in context: Context, completion: @escaping (Timeline<TodoEntry>) -> Void) {
+    func timeline(for configuration: FrydayConfigIntent, in context: Context) async -> Timeline<TodoEntry> {
         let next = Calendar.current.date(byAdding: .minute, value: 15, to: Date()) ?? Date()
-        completion(Timeline(entries: [TodoEntryBuilder.makeEntry(style: style)], policy: .after(next)))
+        return Timeline(entries: [TodoEntryBuilder.makeEntry(style: configuration.style)], policy: .after(next))
+    }
+
+    // 갤러리에 캐릭터형/리스트형 2개 프리뷰 카드로 노출
+    func recommendations() -> [AppIntentRecommendation<FrydayConfigIntent>] {
+        let charIntent = FrydayConfigIntent()
+        charIntent.style = .character
+
+        let listIntent = FrydayConfigIntent()
+        listIntent.style = .list
+
+        return [
+            AppIntentRecommendation(intent: charIntent, description: "캐릭터형"),
+            AppIntentRecommendation(intent: listIntent, description: "리스트형"),
+        ]
     }
 }
 
@@ -168,7 +180,7 @@ struct FrydayWidgetEntryView: View {
     }
 }
 
-// MARK: - Widgets (3개)
+// MARK: - Widgets (Small 1개 + Medium 1개 → recommendations 로 Medium 프리뷰 2개 표시)
 
 struct FrydayWidgetSmall: Widget {
     var body: some WidgetConfiguration {
@@ -186,45 +198,29 @@ struct FrydayWidgetSmall: Widget {
     }
 }
 
-struct FrydayWidgetMediumChar: Widget {
+struct FrydayWidgetMedium: Widget {
     var body: some WidgetConfiguration {
-        StaticConfiguration(
-            kind: "FrydayWidgetMediumChar",
-            provider: StyledProvider(style: .character)
+        AppIntentConfiguration(
+            kind: "FrydayWidgetMedium",
+            intent: FrydayConfigIntent.self,
+            provider: MediumProvider()
         ) { entry in
             FrydayWidgetEntryView(entry: entry)
                 .environment(\.redactionReasons, [])
         }
-        .configurationDisplayName("FryDay 캐릭터형")
-        .description("캐릭터와 함께 오늘의 투두를 확인해요")
+        .configurationDisplayName("FryDay")
+        .description("오늘의 투두를 확인해요")
         .supportedFamilies([.systemMedium])
         .contentMarginsDisabled()
     }
 }
 
-struct FrydayWidgetMediumList: Widget {
-    var body: some WidgetConfiguration {
-        StaticConfiguration(
-            kind: "FrydayWidgetMediumList",
-            provider: StyledProvider(style: .list)
-        ) { entry in
-            FrydayWidgetEntryView(entry: entry)
-                .environment(\.redactionReasons, [])
-        }
-        .configurationDisplayName("FryDay 리스트형")
-        .description("최대 6개의 투두를 리스트로 확인해요")
-        .supportedFamilies([.systemMedium])
-        .contentMarginsDisabled()
-    }
-}
-
-// MARK: - Bundle (3개 위젯을 하나의 extension에서 노출)
+// MARK: - Bundle
 
 @main
 struct FrydayWidgetBundle: WidgetBundle {
     var body: some Widget {
-        FrydayWidgetMediumChar()
-        FrydayWidgetMediumList()
+        FrydayWidgetMedium()
         FrydayWidgetSmall()
     }
 }
@@ -238,13 +234,13 @@ struct FrydayWidgetBundle: WidgetBundle {
 }
 
 #Preview("Medium 캐릭터형", as: .systemMedium) {
-    FrydayWidgetMediumChar()
+    FrydayWidgetMedium()
 } timeline: {
     TodoEntry(date: Date(), dateString: "5월 23일 (토)", doneCount: 0, doingCount: 4, isConnected: true, todos: Array(TodoEntryBuilder.previewTodos.prefix(4)), style: .character)
 }
 
 #Preview("Medium 리스트형", as: .systemMedium) {
-    FrydayWidgetMediumList()
+    FrydayWidgetMedium()
 } timeline: {
     TodoEntry(date: Date(), dateString: "5월 23일 (토)", doneCount: 0, doingCount: 6, isConnected: true, todos: TodoEntryBuilder.previewTodos, style: .list)
 }

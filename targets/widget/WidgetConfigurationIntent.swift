@@ -1,7 +1,7 @@
 import AppIntents
 import WidgetKit
 
-// Medium 위젯 스타일 옵션 (Entry 에서만 사용)
+// Medium 위젯 스타일 옵션
 enum WidgetStyle: String, AppEnum {
     case character   // 02: 캐릭터형
     case list        // 03: 리스트형
@@ -16,4 +16,13 @@ enum WidgetStyle: String, AppEnum {
             .list: DisplayRepresentation(title: "리스트형")
         ]
     }
+}
+
+// Medium 위젯 편집 시 스타일 선택 (기본: 캐릭터형)
+struct FrydayConfigIntent: WidgetConfigurationIntent {
+    static var title: LocalizedStringResource = "위젯 스타일"
+    static var description = IntentDescription("Medium 위젯의 스타일을 선택합니다.")
+
+    @Parameter(title: "스타일", default: .character)
+    var style: WidgetStyle
 }
