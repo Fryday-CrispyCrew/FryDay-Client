@@ -78,6 +78,23 @@ enum TodoEntryBuilder {
         )
     }
 
+    // iOS 위젯 갤러리/앱 롱프레스 메뉴에 뜨는 프리뷰용 샘플 데이터
+    static func previewSample(style: WidgetStyle) -> TodoEntry {
+        let fmt = DateFormatter()
+        fmt.locale = Locale(identifier: "ko_KR")
+        fmt.dateFormat = "M월 d일 (E)"
+        let sample = style == .list ? previewTodos : Array(previewTodos.prefix(4))
+        return TodoEntry(
+            date: Date(),
+            dateString: fmt.string(from: Date()),
+            doneCount: 0,
+            doingCount: sample.count,
+            isConnected: true,
+            todos: sample,
+            style: style
+        )
+    }
+
     static let previewTodos: [TodoItem] = [
         TodoItem(id: "todo-1", title: "연우님 기획 차력쇼 감상", categoryCode: "OR", isDone: false),
         TodoItem(id: "todo-2", title: "연우님 기획 차력쇼 감상", categoryCode: "BR", isDone: false),
@@ -96,6 +113,10 @@ struct SmallProvider: TimelineProvider {
     }
 
     func getSnapshot(in context: Context, completion: @escaping (TodoEntry) -> Void) {
+        if context.isPreview {
+            completion(TodoEntryBuilder.previewSample(style: .character))
+            return
+        }
         completion(TodoEntryBuilder.makeEntry(style: .character))
     }
 
@@ -114,7 +135,10 @@ struct MediumCharProvider: AppIntentTimelineProvider {
     }
 
     func snapshot(for configuration: FrydayCharConfigIntent, in context: Context) async -> TodoEntry {
-        TodoEntryBuilder.makeEntry(style: configuration.style)
+        if context.isPreview {
+            return TodoEntryBuilder.previewSample(style: configuration.style)
+        }
+        return TodoEntryBuilder.makeEntry(style: configuration.style)
     }
 
     func timeline(for configuration: FrydayCharConfigIntent, in context: Context) async -> Timeline<TodoEntry> {
@@ -132,7 +156,10 @@ struct MediumListProvider: AppIntentTimelineProvider {
     }
 
     func snapshot(for configuration: FrydayListConfigIntent, in context: Context) async -> TodoEntry {
-        TodoEntryBuilder.makeEntry(style: configuration.style)
+        if context.isPreview {
+            return TodoEntryBuilder.previewSample(style: configuration.style)
+        }
+        return TodoEntryBuilder.makeEntry(style: configuration.style)
     }
 
     func timeline(for configuration: FrydayListConfigIntent, in context: Context) async -> Timeline<TodoEntry> {
