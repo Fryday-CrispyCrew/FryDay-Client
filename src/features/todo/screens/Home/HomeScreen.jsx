@@ -41,6 +41,7 @@ import BorderButton from "../../../../shared/components/BorderButton";
 import BackIcon from "../../../../shared/assets/svg/Back.svg"
 import { useServerStatusStore } from "../../../../shared/stores/serverStatusStore";
 import ServerMaintenanceScreen from "../../../../shared/screens/ServerMaintenanceScreen";
+import { useWidgetSync } from "../../../../shared/widget/useWidgetSync";
 
 function formatYYYYMMDD(dateObj) {
   const y = dateObj.getFullYear();
@@ -215,6 +216,8 @@ function pickRandomDifferent(list, prev, fallback = "") {
 
 export default function HomeScreen({ navigation, route }) {
   const { open, close } = useModalStore();
+
+  useWidgetSync();
 
   const [shouldInitNotifications, setShouldInitNotifications] = useState(false);
   const [bubbleText, setBubbleText] = useState("");
