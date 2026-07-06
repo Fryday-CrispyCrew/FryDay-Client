@@ -1,11 +1,12 @@
 import { useEffect, useMemo } from "react";
 import { AppState } from "react-native";
-import { useQueryClient } from "@tanstack/react-query";
-import { useHomeTodosQuery } from "../../features/todo/queries/home/useHomeTodosQuery";
+import { useQueryClient, useQueries } from "@tanstack/react-query";
 import { useCategoriesQuery } from "../../features/todo/queries/category/useCategoriesQuery";
 import { homeApi } from "../../features/todo/queries/home/homeApi";
 import { homeKeys } from "../../features/todo/queries/home/homeKeys";
 import { syncTodosToWidget, drainPendingToggles } from "./syncWidget";
+
+const SYNC_DAYS = 7;
 
 function toISO(d) {
   const yyyy = d.getFullYear();
@@ -47,20 +48,32 @@ function sortByHomeOrder(todos, rawCategories) {
 }
 
 export function useWidgetSync() {
-  const todayDate = toISO(new Date());
-  const tomorrowDate = toISO(dateOffset(1));
+  const dates = useMemo(
+    () => Array.from({ length: SYNC_DAYS }, (_, i) => toISO(dateOffset(i))),
+    [],
+  );
 
-  const { data: todosToday } = useHomeTodosQuery({ date: todayDate });
-  const { data: todosTomorrow } = useHomeTodosQuery({ date: tomorrowDate });
+  const results = useQueries({
+    queries: dates.map((date) => ({
+      queryKey: homeKeys.todosList({ date, categoryId: null }),
+      queryFn: () => homeApi.getTodos({ date }),
+      select: (res) => res?.data ?? [],
+      enabled: !!date,
+    })),
+  });
+
   const { data: rawCategories } = useCategoriesQuery();
   const queryClient = useQueryClient();
 
+  const todosByDateKey = results.map((r) => r.data).join("|");
+
   const payload = useMemo(() => {
-    return {
-      [todayDate]: sortByHomeOrder(todosToday, rawCategories),
-      [tomorrowDate]: sortByHomeOrder(todosTomorrow, rawCategories),
-    };
-  }, [todosToday, todosTomorrow, rawCategories, todayDate, tomorrowDate]);
+    const acc = {};
+    dates.forEach((date, i) => {
+      acc[date] = sortByHomeOrder(results[i].data, rawCategories);
+    });
+    return acc;
+  }, [dates, todosByDateKey, rawCategories]);
 
   useEffect(() => {
     syncTodosToWidget(payload);
