@@ -50,7 +50,7 @@ export function syncTodosToWidget(todosByDate = {}) {
     }
 
     storage.set("todosByDateJson", JSON.stringify(merged));
-    ExtensionStorage.reloadWidget("FrydayWidget");
+    ExtensionStorage.reloadWidget();
   } catch {}
 }
 
@@ -59,7 +59,7 @@ export function syncLoginToWidget(isLoggedIn) {
 
   try {
     storage.set("isLoggedIn", isLoggedIn ? 1 : 0);
-    ExtensionStorage.reloadWidget("FrydayWidget");
+    ExtensionStorage.reloadWidget();
   } catch {}
 }
 
@@ -70,7 +70,7 @@ export function clearWidgetForLogout() {
     storage.set("isLoggedIn", 0);
     storage.remove("todosByDateJson");
     storage.remove("pendingToggleIds");
-    ExtensionStorage.reloadWidget("FrydayWidget");
+    ExtensionStorage.reloadWidget();
   } catch {}
 }
 
