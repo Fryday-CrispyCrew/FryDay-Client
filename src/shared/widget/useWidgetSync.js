@@ -2,6 +2,7 @@ import { useEffect, useMemo } from "react";
 import { AppState } from "react-native";
 import { useQueryClient, useQueries } from "@tanstack/react-query";
 import { useCategoriesQuery } from "../../features/todo/queries/category/useCategoriesQuery";
+import { categoryKeys } from "../../features/todo/queries/category/categoryKeys";
 import { homeApi } from "../../features/todo/queries/home/homeApi";
 import { homeKeys } from "../../features/todo/queries/home/homeKeys";
 import { syncTodosToWidget, drainPendingToggles } from "./syncWidget";
@@ -19,6 +20,12 @@ function dateOffset(days) {
   const d = new Date();
   d.setDate(d.getDate() + days);
   return d;
+}
+
+function extractArray(raw) {
+  if (Array.isArray(raw)) return raw;
+  if (raw && Array.isArray(raw.data)) return raw.data;
+  return null;
 }
 
 function sortByHomeOrder(todos, rawCategories) {
@@ -53,35 +60,54 @@ export function useWidgetSync() {
     [],
   );
 
-  const todosByDate = useQueries({
+  useQueries({
     queries: dates.map((date) => ({
       queryKey: homeKeys.todosList({ date, categoryId: null }),
       queryFn: () => homeApi.getTodos({ date }),
       select: (res) => res?.data ?? [],
       enabled: !!date,
     })),
-    combine: (queryResults) => queryResults.map((r) => r.data),
   });
 
-  const { data: rawCategories } = useCategoriesQuery();
+  useCategoriesQuery();
+
   const queryClient = useQueryClient();
 
   useEffect(() => {
-    if (!Array.isArray(rawCategories)) return;
-    if (todosByDate.every((d) => d === undefined)) return;
+    const doSync = () => {
+      const rawCategoriesData = queryClient.getQueryData(categoryKeys.list());
+      const rawCategories = extractArray(rawCategoriesData);
+      if (!rawCategories || rawCategories.length === 0) return;
 
-    const payload = {};
-    dates.forEach((date, i) => {
-      const data = todosByDate[i];
-      if (Array.isArray(data)) {
-        payload[date] = sortByHomeOrder(data, rawCategories);
-      }
+      const payload = {};
+      let hasAny = false;
+      dates.forEach((date) => {
+        const rawTodos = queryClient.getQueryData(
+          homeKeys.todosList({ date, categoryId: null }),
+        );
+        const todos = extractArray(rawTodos);
+        if (todos) {
+          payload[date] = sortByHomeOrder(todos, rawCategories);
+          hasAny = true;
+        }
+      });
+
+      if (hasAny) syncTodosToWidget(payload);
+    };
+
+    const unsub = queryClient.getQueryCache().subscribe((event) => {
+      if (event?.type !== "updated" && event?.type !== "added") return;
+      const key = event.query?.queryKey;
+      if (!Array.isArray(key)) return;
+      const isHomeTodos = key[0] === "home" && key[1] === "todos";
+      const isCategories = key[0] === "categories";
+      if (isHomeTodos || isCategories) doSync();
     });
 
-    if (Object.keys(payload).length === 0) return;
+    doSync();
 
-    syncTodosToWidget(payload);
-  }, [todosByDate, rawCategories, dates]);
+    return unsub;
+  }, [queryClient, dates]);
 
   useEffect(() => {
     const handleAppState = async (nextState) => {
