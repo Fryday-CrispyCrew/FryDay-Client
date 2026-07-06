@@ -80,11 +80,12 @@ struct MediumTodoListView: View {
         stateView(
             image: "Medium_Bowl_Error",
             line1: "앱을 열어",
-            line2: "연결 상태를 확인해 주세요."
+            line2: "연결 상태를 확인해 주세요.",
+            imageOffsetY: -5
         )
     }
 
-    private func stateView(image: String, line1: String, line2: String) -> some View {
+    private func stateView(image: String, line1: String, line2: String, imageOffsetY: CGFloat = 0) -> some View {
         VStack(alignment: .leading, spacing: 0) {
             Text(entry.dateString)
                 .font(.caption)
@@ -101,6 +102,7 @@ struct MediumTodoListView: View {
                     .widgetAccentedRenderingMode(.fullColor)
                     .scaledToFit()
                     .frame(width: 40, height: 40)
+                    .offset(y: imageOffsetY)
 
                 VStack(spacing: 2) {
                     Text(line1)
