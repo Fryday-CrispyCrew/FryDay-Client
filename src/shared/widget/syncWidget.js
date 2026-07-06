@@ -91,11 +91,29 @@ export async function drainPendingToggles(toggleFn) {
 
   if (!Array.isArray(pending) || pending.length === 0) return;
 
+  const successful = [];
   for (const todoId of pending) {
     try {
       await toggleFn(todoId);
+      successful.push(todoId);
     } catch (e) {
       console.warn(`[syncWidget] toggle sync failed for ${todoId}:`, e);
+    }
+  }
+
+  if (successful.length > 0) {
+    const todosRaw = storage.get("todosJson");
+    if (todosRaw) {
+      try {
+        const todos = JSON.parse(todosRaw);
+        const successSet = new Set(successful);
+        const updated = todos.map((t) =>
+          successSet.has(t.id) ? { ...t, isDone: !t.isDone } : t,
+        );
+        storage.set("todosJson", JSON.stringify(updated));
+      } catch (e) {
+        console.warn("[syncWidget] optimistic todosJson update failed:", e);
+      }
     }
   }
 
