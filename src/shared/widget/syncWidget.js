@@ -53,6 +53,20 @@ export function syncLoginToWidget(isLoggedIn) {
   }
 }
 
+export function clearWidgetForLogout() {
+  if (Platform.OS !== "ios") return;
+
+  try {
+    storage.set("isLoggedIn", 0);
+    storage.remove("todosJson");
+    storage.remove("pendingToggleIds");
+    storage.remove("completedTodoIds");
+    ExtensionStorage.reloadWidget();
+  } catch (e) {
+    console.warn("[syncWidget] clearWidgetForLogout failed:", e);
+  }
+}
+
 export async function drainPendingToggles(toggleFn) {
   if (Platform.OS !== "ios") return;
 
