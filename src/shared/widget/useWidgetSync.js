@@ -74,24 +74,33 @@ export function useWidgetSync() {
   const queryClient = useQueryClient();
 
   useEffect(() => {
-    const doSync = () => {
+    const doSync = (reason) => {
       const rawCategoriesData = queryClient.getQueryData(categoryKeys.list());
       const rawCategories = extractArray(rawCategoriesData);
+      console.warn(`[widgetSync] doSync (${reason}) categoriesLen=${rawCategories?.length ?? 0}`);
       if (!rawCategories || rawCategories.length === 0) return;
 
       const payload = {};
       let hasAny = false;
+      const summary = [];
       dates.forEach((date) => {
         const rawTodos = queryClient.getQueryData(
           homeKeys.todosList({ date, categoryId: null }),
         );
         const todos = extractArray(rawTodos);
         if (todos) {
-          payload[date] = sortByHomeOrder(todos, rawCategories);
+          const sorted = sortByHomeOrder(todos, rawCategories);
+          payload[date] = sorted;
           hasAny = true;
+          summary.push(`${date}:${sorted.length}(done=${sorted.filter((t) => t.done).length})`);
+          if (date === dates[0] && sorted.length > 0) {
+            console.warn(`[widgetSync] first todo keys: ${Object.keys(sorted[0]).join(",")}`);
+            console.warn(`[widgetSync] first todo: ${JSON.stringify(sorted[0])}`);
+          }
         }
       });
 
+      console.warn(`[widgetSync] payload → ${summary.join(" | ")}`);
       if (hasAny) syncTodosToWidget(payload);
     };
 
@@ -101,10 +110,12 @@ export function useWidgetSync() {
       if (!Array.isArray(key)) return;
       const isHomeTodos = key[0] === "home" && key[1] === "todos";
       const isCategories = key[0] === "categories";
-      if (isHomeTodos || isCategories) doSync();
+      if (isHomeTodos || isCategories) {
+        doSync(`cache:${key[0]}/${key[1]}`);
+      }
     });
 
-    doSync();
+    doSync("initial");
 
     return unsub;
   }, [queryClient, dates]);
