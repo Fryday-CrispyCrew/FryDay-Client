@@ -75,8 +75,16 @@ struct MediumWidgetView: View {
     // MARK: - Empty — 안내 텍스트 + 캐릭터+말풍선 이미지
     private var emptyView: some View {
         GeometryReader { geo in
-            HStack(alignment: .top, spacing: 8) {
-                // 좌측 안내 텍스트
+            ZStack(alignment: .bottomTrailing) {
+                Image("Medium_Empty")
+                    .renderingMode(.original)
+                    .resizable()
+                    .widgetAccentedRenderingMode(.fullColor)
+                    .scaledToFit()
+                    .frame(maxWidth: geo.size.width * 0.72, alignment: .bottomTrailing)
+                    .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .bottomTrailing)
+            }
+            .overlay(alignment: .topLeading) {
                 VStack(alignment: .leading, spacing: 4) {
                     Text("아직 튀긴 투두가 없어요.")
                         .font(.caption)
@@ -84,41 +92,35 @@ struct MediumWidgetView: View {
                     Text("위젯을 눌러 투두를 추가해 주세요!")
                         .font(.caption)
                         .foregroundColor(AppColor.Gray.gr700)
-                    Spacer(minLength: 0)
                 }
                 .padding(.leading, 18)
                 .padding(.top, 18)
-                .frame(width: geo.size.width * 0.5, alignment: .leading)
-
-                // 우측 캐릭터+말풍선 (하나의 이미지)
-                ZStack(alignment: .bottomTrailing) {
-                    Image("Medium_Empty")
-                        .renderingMode(.original)
-                        .resizable()
-                        .widgetAccentedRenderingMode(.fullColor)
-                        .scaledToFit()
-                        .frame(maxWidth: geo.size.width * 0.75, maxHeight: geo.size.height * 1.15, alignment: .bottomTrailing)
-                        .padding(.bottom, 0)
-                        .padding(.trailing, 0)
-                        .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .bottomTrailing)
-                }
-                .overlay(alignment: .topTrailing) {
-                    WidgetHeader(
-                        dateString: entry.dateString,
-                        doneCount: entry.doneCount,
-                        doingCount: entry.doingCount
-                    )
-                    .padding(.top, 18)
-                    .padding(.trailing, 18)
-                }
+            }
+            .overlay(alignment: .topTrailing) {
+                WidgetHeader(
+                    dateString: entry.dateString,
+                    doneCount: entry.doneCount,
+                    doingCount: entry.doingCount
+                )
+                .padding(.top, 18)
+                .padding(.trailing, 18)
             }
         }
     }
 
-    // MARK: - Error — 안내 텍스트 + 회색 캐릭터
+    // MARK: - Error — 안내 텍스트 + Bowl_Error 이미지
     private var errorView: some View {
         GeometryReader { geo in
-            HStack(alignment: .top, spacing: 8) {
+            ZStack(alignment: .bottomTrailing) {
+                Image("Medium_Bowl_Error")
+                    .renderingMode(.original)
+                    .resizable()
+                    .widgetAccentedRenderingMode(.fullColor)
+                    .scaledToFit()
+                    .frame(maxWidth: geo.size.width * 0.72, alignment: .bottomTrailing)
+                    .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .bottomTrailing)
+            }
+            .overlay(alignment: .topLeading) {
                 VStack(alignment: .leading, spacing: 4) {
                     Text("앱을 열어")
                         .font(.caption)
@@ -126,32 +128,17 @@ struct MediumWidgetView: View {
                     Text("연결 상태를 확인해 주세요.")
                         .font(.caption)
                         .foregroundColor(AppColor.Gray.gr700)
-                    Spacer(minLength: 0)
                 }
                 .padding(.leading, 18)
                 .padding(.top, 18)
-                .frame(width: geo.size.width * 0.5, alignment: .leading)
-
-                ZStack(alignment: .bottomTrailing) {
-                    Image("Medium_Error")
-                        .renderingMode(.original)
-                        .resizable()
-                        .widgetAccentedRenderingMode(.fullColor)
-                        .scaledToFit()
-                        .frame(maxWidth: geo.size.width * 0.55, maxHeight: geo.size.height * 0.95, alignment: .bottomTrailing)
-                        .padding(.bottom, 0)
-                        .padding(.trailing, 0)
-                        .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .bottomTrailing)
-                }
-                .overlay(alignment: .topTrailing) {
-                    Text(entry.dateString)
-                        .font(.caption)
-                        .foregroundColor(AppColor.Gray.gr500)
-                        .padding(.top, 18)
-                        .padding(.trailing, 18)
-                }
+            }
+            .overlay(alignment: .topTrailing) {
+                Text(entry.dateString)
+                    .font(.caption)
+                    .foregroundColor(AppColor.Gray.gr500)
+                    .padding(.top, 18)
+                    .padding(.trailing, 18)
             }
         }
     }
-
 }
