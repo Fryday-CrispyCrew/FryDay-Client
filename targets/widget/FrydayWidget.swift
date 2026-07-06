@@ -24,12 +24,7 @@ enum TodoEntryBuilder {
         isoFmt.dateFormat = "yyyy-MM-dd"
         let todayISO = isoFmt.string(from: Date())
 
-        let isConnected: Bool = {
-            guard let d = defaults, d.object(forKey: "isLoggedIn") != nil else {
-                return true
-            }
-            return d.bool(forKey: "isLoggedIn")
-        }()
+        let isConnected: Bool = defaults?.bool(forKey: "isLoggedIn") ?? false
 
         let pendingToggleIds: Set<String> = {
             guard let jsonString = defaults?.string(forKey: "pendingToggleIds"),
