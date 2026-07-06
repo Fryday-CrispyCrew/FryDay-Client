@@ -21,6 +21,13 @@ struct TodoProvider: AppIntentTimelineProvider {
         return Timeline(entries: [Self.makeEntry(style: configuration.style)], policy: .after(next))
     }
 
+    private struct TodoDTO: Decodable {
+        let id: String
+        let title: String
+        let categoryCode: String
+        let isDone: Bool
+    }
+
     static func makeEntry(style: WidgetStyle) -> TodoEntry {
         let appGroupID = "group.com.fryday.shared"
         let defaults = UserDefaults(suiteName: appGroupID)
@@ -37,13 +44,27 @@ struct TodoProvider: AppIntentTimelineProvider {
         }()
 
         let completedIds = Set(defaults?.stringArray(forKey: "completedTodoIds") ?? [])
-        let todos = Self.previewTodos.map { todo in
-            TodoItem(
-                id: todo.id,
-                title: todo.title,
-                categoryCode: todo.categoryCode,
-                isDone: completedIds.contains(todo.id)
-            )
+        let pendingToggleIds = Set(defaults?.stringArray(forKey: "pendingToggleIds") ?? [])
+
+        var todos: [TodoItem] = []
+        if let json = defaults?.string(forKey: "todosJson"),
+           let data = json.data(using: .utf8),
+           let dtos = try? JSONDecoder().decode([TodoDTO].self, from: data) {
+            // pendingToggleIds는 위젯 탭 시 낙관적 반영용, RN 앱 실행 후 sync되면 정리됨
+            todos = dtos.map { dto in
+                let baseDone = dto.isDone || completedIds.contains(dto.id)
+                let isDone = pendingToggleIds.contains(dto.id) ? !baseDone : baseDone
+                return TodoItem(id: dto.id, title: dto.title, categoryCode: dto.categoryCode, isDone: isDone)
+            }
+        } else {
+            todos = Self.previewTodos.map { todo in
+                TodoItem(
+                    id: todo.id,
+                    title: todo.title,
+                    categoryCode: todo.categoryCode,
+                    isDone: completedIds.contains(todo.id)
+                )
+            }
         }
 
         let doneCount = todos.filter { $0.isDone }.count
