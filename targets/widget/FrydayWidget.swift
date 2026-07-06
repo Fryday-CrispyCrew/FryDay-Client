@@ -56,14 +56,11 @@ struct TodoProvider: AppIntentTimelineProvider {
             return Set(arr)
         }()
 
-        let syncedDate = defaults?.string(forKey: "syncedDate")
-        let isTodayData = (syncedDate == todayISO)
-
         var todos: [TodoItem] = []
-        if isTodayData,
-           let json = defaults?.string(forKey: "todosJson"),
+        if let json = defaults?.string(forKey: "todosByDateJson"),
            let data = json.data(using: .utf8),
-           let dtos = try? JSONDecoder().decode([TodoDTO].self, from: data) {
+           let byDate = try? JSONDecoder().decode([String: [TodoDTO]].self, from: data),
+           let dtos = byDate[todayISO] {
             todos = dtos.map { dto in
                 let isDone = pendingToggleIds.contains(dto.id) ? !dto.isDone : dto.isDone
                 return TodoItem(id: dto.id, title: dto.title, categoryCode: dto.categoryCode, isDone: isDone)

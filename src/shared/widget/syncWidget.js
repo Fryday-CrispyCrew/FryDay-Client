@@ -30,21 +30,15 @@ function toWidgetTodo(todo) {
   };
 }
 
-function todayISO() {
-  const d = new Date();
-  const yyyy = d.getFullYear();
-  const mm = String(d.getMonth() + 1).padStart(2, "0");
-  const dd = String(d.getDate()).padStart(2, "0");
-  return `${yyyy}-${mm}-${dd}`;
-}
-
-export function syncTodosToWidget(todos = []) {
+export function syncTodosToWidget(todosByDate = {}) {
   if (Platform.OS !== "ios") return;
 
   try {
-    const widgetTodos = todos.map(toWidgetTodo);
-    storage.set("todosJson", JSON.stringify(widgetTodos));
-    storage.set("syncedDate", todayISO());
+    const payload = {};
+    for (const [date, todos] of Object.entries(todosByDate)) {
+      payload[date] = (todos ?? []).map(toWidgetTodo);
+    }
+    storage.set("todosByDateJson", JSON.stringify(payload));
     ExtensionStorage.reloadWidget();
   } catch (e) {
     console.warn("[syncWidget] syncTodosToWidget failed:", e);
@@ -67,8 +61,7 @@ export function clearWidgetForLogout() {
 
   try {
     storage.set("isLoggedIn", 0);
-    storage.remove("todosJson");
-    storage.remove("syncedDate");
+    storage.remove("todosByDateJson");
     storage.remove("pendingToggleIds");
     ExtensionStorage.reloadWidget();
   } catch (e) {
@@ -102,17 +95,20 @@ export async function drainPendingToggles(toggleFn) {
   }
 
   if (successful.length > 0) {
-    const todosRaw = storage.get("todosJson");
-    if (todosRaw) {
+    const raw = storage.get("todosByDateJson");
+    if (raw) {
       try {
-        const todos = JSON.parse(todosRaw);
+        const byDate = JSON.parse(raw);
         const successSet = new Set(successful);
-        const updated = todos.map((t) =>
-          successSet.has(t.id) ? { ...t, isDone: !t.isDone } : t,
-        );
-        storage.set("todosJson", JSON.stringify(updated));
+        const updated = {};
+        for (const [date, todos] of Object.entries(byDate)) {
+          updated[date] = todos.map((t) =>
+            successSet.has(t.id) ? { ...t, isDone: !t.isDone } : t,
+          );
+        }
+        storage.set("todosByDateJson", JSON.stringify(updated));
       } catch (e) {
-        console.warn("[syncWidget] optimistic todosJson update failed:", e);
+        console.warn("[syncWidget] optimistic todos update failed:", e);
       }
     }
   }

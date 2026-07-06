@@ -7,21 +7,29 @@ import { homeApi } from "../../features/todo/queries/home/homeApi";
 import { homeKeys } from "../../features/todo/queries/home/homeKeys";
 import { syncTodosToWidget, drainPendingToggles } from "./syncWidget";
 
-function todayISO() {
-  const d = new Date();
+function toISO(d) {
   const yyyy = d.getFullYear();
   const mm = String(d.getMonth() + 1).padStart(2, "0");
   const dd = String(d.getDate()).padStart(2, "0");
   return `${yyyy}-${mm}-${dd}`;
 }
 
+function dateOffset(days) {
+  const d = new Date();
+  d.setDate(d.getDate() + days);
+  return d;
+}
+
 export function useWidgetSync() {
-  const date = todayISO();
-  const { data: todos } = useHomeTodosQuery({ date });
+  const todayDate = toISO(new Date());
+  const tomorrowDate = toISO(dateOffset(1));
+
+  const { data: todosToday } = useHomeTodosQuery({ date: todayDate });
+  const { data: todosTomorrow } = useHomeTodosQuery({ date: tomorrowDate });
   const { data: rawCategories } = useCategoriesQuery();
   const queryClient = useQueryClient();
 
-  const sortedByHomeOrder = useMemo(() => {
+  const sortByHomeOrder = (todos) => {
     if (!Array.isArray(todos) || !Array.isArray(rawCategories)) return [];
 
     const orderMap = new Map();
@@ -45,13 +53,18 @@ export function useWidgetSync() {
         if (oa !== ob) return oa - ob;
         return (positionMap.get(a.id) ?? 0) - (positionMap.get(b.id) ?? 0);
       });
-  }, [todos, rawCategories]);
+  };
+
+  const payload = useMemo(() => {
+    return {
+      [todayDate]: sortByHomeOrder(todosToday),
+      [tomorrowDate]: sortByHomeOrder(todosTomorrow),
+    };
+  }, [todosToday, todosTomorrow, rawCategories, todayDate, tomorrowDate]);
 
   useEffect(() => {
-    if (sortedByHomeOrder.length > 0 || Array.isArray(todos)) {
-      syncTodosToWidget(sortedByHomeOrder);
-    }
-  }, [sortedByHomeOrder, todos]);
+    syncTodosToWidget(payload);
+  }, [payload]);
 
   useEffect(() => {
     const handleAppState = async (nextState) => {
