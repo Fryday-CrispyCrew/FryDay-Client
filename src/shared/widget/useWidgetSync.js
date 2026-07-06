@@ -1,7 +1,8 @@
-import { useEffect } from "react";
+import { useEffect, useMemo } from "react";
 import { AppState } from "react-native";
 import { useQueryClient } from "@tanstack/react-query";
 import { useHomeTodosQuery } from "../../features/todo/queries/home/useHomeTodosQuery";
+import { useCategoriesQuery } from "../../features/todo/queries/category/useCategoriesQuery";
 import { homeApi } from "../../features/todo/queries/home/homeApi";
 import { homeKeys } from "../../features/todo/queries/home/homeKeys";
 import { syncTodosToWidget, drainPendingToggles } from "./syncWidget";
@@ -17,13 +18,40 @@ function todayISO() {
 export function useWidgetSync() {
   const date = todayISO();
   const { data: todos } = useHomeTodosQuery({ date });
+  const { data: rawCategories } = useCategoriesQuery();
   const queryClient = useQueryClient();
 
+  const sortedByHomeOrder = useMemo(() => {
+    if (!Array.isArray(todos) || !Array.isArray(rawCategories)) return [];
+
+    const orderMap = new Map();
+    const colorMap = new Map();
+    rawCategories.forEach((c) => {
+      orderMap.set(Number(c.id), c.displayOrder ?? 0);
+      colorMap.set(Number(c.id), c.colorHex);
+    });
+
+    const positionMap = new Map();
+    todos.forEach((t, i) => positionMap.set(t.id, i));
+
+    return todos
+      .map((t) => ({
+        ...t,
+        categoryColor: colorMap.get(Number(t.categoryId)) ?? null,
+      }))
+      .sort((a, b) => {
+        const oa = orderMap.get(Number(a.categoryId)) ?? 999;
+        const ob = orderMap.get(Number(b.categoryId)) ?? 999;
+        if (oa !== ob) return oa - ob;
+        return (positionMap.get(a.id) ?? 0) - (positionMap.get(b.id) ?? 0);
+      });
+  }, [todos, rawCategories]);
+
   useEffect(() => {
-    if (Array.isArray(todos)) {
-      syncTodosToWidget(todos);
+    if (sortedByHomeOrder.length > 0 || Array.isArray(todos)) {
+      syncTodosToWidget(sortedByHomeOrder);
     }
-  }, [todos]);
+  }, [sortedByHomeOrder, todos]);
 
   useEffect(() => {
     const handleAppState = async (nextState) => {
