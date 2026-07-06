@@ -26,8 +26,8 @@ struct MediumWidgetView: View {
                 // 좌측 투두 리스트 (최대 4개, 텍스트 12pt / 행간 150 / 각 행 간격 16pt)
                 VStack(alignment: .leading, spacing: 16) {
                     ForEach(entry.todos.prefix(4)) { todo in
-                        HStack(spacing: 25) {
-                            Text(truncated(todo.title, maxChars: 13))
+                        HStack(spacing: 8) {
+                            Text(truncated(todo.title, maxChars: 8))
                                 .font(.system(size: 12))
                                 .lineSpacing(6)
                                 .foregroundColor(AppColor.Gray.text)
@@ -97,7 +97,7 @@ struct MediumWidgetView: View {
                         .resizable()
                         .widgetAccentedRenderingMode(.fullColor)
                         .scaledToFit()
-                        .frame(maxWidth: geo.size.width * 0.58, maxHeight: geo.size.height * 0.98, alignment: .bottomTrailing)
+                        .frame(maxWidth: geo.size.width * 0.75, maxHeight: geo.size.height * 1.15, alignment: .bottomTrailing)
                         .padding(.bottom, 0)
                         .padding(.trailing, 0)
                         .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .bottomTrailing)
