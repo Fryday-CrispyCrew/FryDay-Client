@@ -63,11 +63,21 @@ export function syncLoginToWidget(isLoggedIn) {
   } catch {}
 }
 
+export function syncServerErrorToWidget(isServerError) {
+  if (Platform.OS !== "ios") return;
+
+  try {
+    storage.set("isServerError", isServerError ? 1 : 0);
+    ExtensionStorage.reloadWidget();
+  } catch {}
+}
+
 export function clearWidgetForLogout() {
   if (Platform.OS !== "ios") return;
 
   try {
     storage.set("isLoggedIn", 0);
+    storage.remove("isServerError");
     storage.remove("todosByDateJson");
     storage.remove("pendingToggleIds");
     ExtensionStorage.reloadWidget();

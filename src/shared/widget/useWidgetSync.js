@@ -5,7 +5,12 @@ import { useCategoriesQuery } from "../../features/todo/queries/category/useCate
 import { categoryKeys } from "../../features/todo/queries/category/categoryKeys";
 import { homeApi } from "../../features/todo/queries/home/homeApi";
 import { homeKeys } from "../../features/todo/queries/home/homeKeys";
-import { syncTodosToWidget, drainPendingToggles } from "./syncWidget";
+import { useServerStatusStore } from "../stores/serverStatusStore";
+import {
+  syncTodosToWidget,
+  syncServerErrorToWidget,
+  drainPendingToggles,
+} from "./syncWidget";
 
 const SYNC_DAYS = 7;
 
@@ -83,6 +88,11 @@ export function useWidgetSync() {
   useCategoriesQuery();
 
   const queryClient = useQueryClient();
+  const isServerError = useServerStatusStore((s) => s.isServerError);
+
+  useEffect(() => {
+    syncServerErrorToWidget(isServerError);
+  }, [isServerError]);
 
   useEffect(() => {
     const doSync = () => {
