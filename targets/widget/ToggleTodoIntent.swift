@@ -20,7 +20,13 @@ struct ToggleTodoIntent: AppIntent {
 
     func perform() async throws -> some IntentResult {
         let defaults = UserDefaults(suiteName: Self.appGroupID)
-        var pending = defaults?.stringArray(forKey: Self.pendingKey) ?? []
+
+        var pending: [String] = []
+        if let jsonString = defaults?.string(forKey: Self.pendingKey),
+           let data = jsonString.data(using: .utf8),
+           let arr = try? JSONDecoder().decode([String].self, from: data) {
+            pending = arr
+        }
 
         if let idx = pending.firstIndex(of: todoId) {
             pending.remove(at: idx)
@@ -28,7 +34,11 @@ struct ToggleTodoIntent: AppIntent {
             pending.append(todoId)
         }
 
-        defaults?.set(pending, forKey: Self.pendingKey)
+        if let data = try? JSONEncoder().encode(pending),
+           let jsonString = String(data: data, encoding: .utf8) {
+            defaults?.set(jsonString, forKey: Self.pendingKey)
+        }
+
         WidgetCenter.shared.reloadAllTimelines()
         return .result()
     }

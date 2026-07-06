@@ -36,6 +36,10 @@ struct TodoProvider: AppIntentTimelineProvider {
         fmt.locale = Locale(identifier: "ko_KR")
         fmt.dateFormat = "M월 d일 (E)"
 
+        let isoFmt = DateFormatter()
+        isoFmt.dateFormat = "yyyy-MM-dd"
+        let todayISO = isoFmt.string(from: Date())
+
         let isConnected: Bool = {
             guard let d = defaults, d.object(forKey: "isLoggedIn") != nil else {
                 return true
@@ -43,27 +47,26 @@ struct TodoProvider: AppIntentTimelineProvider {
             return d.bool(forKey: "isLoggedIn")
         }()
 
-        let completedIds = Set(defaults?.stringArray(forKey: "completedTodoIds") ?? [])
-        let pendingToggleIds = Set(defaults?.stringArray(forKey: "pendingToggleIds") ?? [])
+        let pendingToggleIds: Set<String> = {
+            guard let jsonString = defaults?.string(forKey: "pendingToggleIds"),
+                  let data = jsonString.data(using: .utf8),
+                  let arr = try? JSONDecoder().decode([String].self, from: data) else {
+                return []
+            }
+            return Set(arr)
+        }()
+
+        let syncedDate = defaults?.string(forKey: "syncedDate")
+        let isTodayData = (syncedDate == todayISO)
 
         var todos: [TodoItem] = []
-        if let json = defaults?.string(forKey: "todosJson"),
+        if isTodayData,
+           let json = defaults?.string(forKey: "todosJson"),
            let data = json.data(using: .utf8),
            let dtos = try? JSONDecoder().decode([TodoDTO].self, from: data) {
-            // pendingToggleIds는 위젯 탭 시 낙관적 반영용, RN 앱 실행 후 sync되면 정리됨
             todos = dtos.map { dto in
-                let baseDone = dto.isDone || completedIds.contains(dto.id)
-                let isDone = pendingToggleIds.contains(dto.id) ? !baseDone : baseDone
+                let isDone = pendingToggleIds.contains(dto.id) ? !dto.isDone : dto.isDone
                 return TodoItem(id: dto.id, title: dto.title, categoryCode: dto.categoryCode, isDone: isDone)
-            }
-        } else {
-            todos = Self.previewTodos.map { todo in
-                TodoItem(
-                    id: todo.id,
-                    title: todo.title,
-                    categoryCode: todo.categoryCode,
-                    isDone: completedIds.contains(todo.id)
-                )
             }
         }
 

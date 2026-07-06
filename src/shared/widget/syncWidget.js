@@ -30,12 +30,21 @@ function toWidgetTodo(todo) {
   };
 }
 
+function todayISO() {
+  const d = new Date();
+  const yyyy = d.getFullYear();
+  const mm = String(d.getMonth() + 1).padStart(2, "0");
+  const dd = String(d.getDate()).padStart(2, "0");
+  return `${yyyy}-${mm}-${dd}`;
+}
+
 export function syncTodosToWidget(todos = []) {
   if (Platform.OS !== "ios") return;
 
   try {
     const widgetTodos = todos.map(toWidgetTodo);
     storage.set("todosJson", JSON.stringify(widgetTodos));
+    storage.set("syncedDate", todayISO());
     ExtensionStorage.reloadWidget();
   } catch (e) {
     console.warn("[syncWidget] syncTodosToWidget failed:", e);
@@ -59,8 +68,8 @@ export function clearWidgetForLogout() {
   try {
     storage.set("isLoggedIn", 0);
     storage.remove("todosJson");
+    storage.remove("syncedDate");
     storage.remove("pendingToggleIds");
-    storage.remove("completedTodoIds");
     ExtensionStorage.reloadWidget();
   } catch (e) {
     console.warn("[syncWidget] clearWidgetForLogout failed:", e);
