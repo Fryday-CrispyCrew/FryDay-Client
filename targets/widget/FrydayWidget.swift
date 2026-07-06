@@ -158,6 +158,7 @@ struct FrydayWidgetSmall: Widget {
             provider: SmallProvider()
         ) { entry in
             FrydayWidgetEntryView(entry: entry)
+                .unredacted()
         }
         .configurationDisplayName("FryDay")
         .description("오늘의 투두를 확인해요")
@@ -174,6 +175,7 @@ struct FrydayWidgetMediumChar: Widget {
             provider: MediumCharProvider()
         ) { entry in
             FrydayWidgetEntryView(entry: entry)
+                .unredacted()
         }
         .configurationDisplayName("FryDay 캐릭터형")
         .description("캐릭터와 함께 오늘의 투두를 확인해요")
@@ -190,6 +192,7 @@ struct FrydayWidgetMediumList: Widget {
             provider: MediumListProvider()
         ) { entry in
             FrydayWidgetEntryView(entry: entry)
+                .unredacted()
         }
         .configurationDisplayName("FryDay 리스트형")
         .description("최대 6개의 투두를 리스트로 확인해요")
