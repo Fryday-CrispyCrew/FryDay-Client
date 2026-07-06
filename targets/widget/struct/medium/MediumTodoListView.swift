@@ -17,7 +17,7 @@ struct MediumTodoListView: View {
                 listView
             }
         }
-        .containerBackground(.background, for: .widget)
+        .containerBackground(AppColor.Gray.surface, for: .widget)
     }
 
     // MARK: - List — 최대 6개 투두 (2열 × 3행)
@@ -29,7 +29,7 @@ struct MediumTodoListView: View {
                 .foregroundColor(AppColor.Gray.gr500)
                 .padding(.top, 18)
 
-            Spacer().frame(height: 20)
+            Spacer().frame(height: 25)
 
             LazyVGrid(
                 columns: [
@@ -49,6 +49,7 @@ struct MediumTodoListView: View {
                         Spacer(minLength: 0)
                         WidgetCheckBox(todo: todo)
                     }
+                    .padding(.trailing, 5)
                 }
             }
 
@@ -119,14 +120,11 @@ struct MediumTodoListView: View {
                     .scaledToFit()
                     .frame(width: 40, height: 40)
 
-                VStack(spacing: 2) {
-                    Text("앱을 열어")
-                        .font(.system(size: 12))
-                        .foregroundColor(AppColor.Gray.gr700)
-                    Text("연결 상태를 확인해 주세요.")
-                        .font(.system(size: 12))
-                        .foregroundColor(AppColor.Gray.gr700)
-                }
+                Text("앱을 열어\n연결 상태를 확인해 주세요.")
+                    .font(.system(size: 12))
+                    .lineSpacing(6)
+                    .multilineTextAlignment(.center)
+                    .foregroundColor(AppColor.Gray.gr500)
             }
             .frame(maxWidth: .infinity, alignment: .center)
 

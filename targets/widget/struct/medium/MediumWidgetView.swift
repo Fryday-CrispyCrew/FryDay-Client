@@ -16,7 +16,7 @@ struct MediumWidgetView: View {
                 contentView
             }
         }
-        .containerBackground(.background, for: .widget)
+        .containerBackground(AppColor.Gray.surface, for: .widget)
     }
 
     // MARK: - Full / Frying — 투두 리스트 + 캐릭터
@@ -27,7 +27,7 @@ struct MediumWidgetView: View {
                 VStack(alignment: .leading, spacing: 16) {
                     ForEach(entry.todos.prefix(4)) { todo in
                         HStack(spacing: 0) {
-                            Text(truncated(todo.title, maxChars: 8))
+                            Text(truncated(todo.title, maxChars: 13))
                                 .font(.system(size: 12))
                                 .lineSpacing(6)
                                 .foregroundColor(AppColor.Gray.text)
@@ -39,6 +39,7 @@ struct MediumWidgetView: View {
                     Spacer(minLength: 0)
                 }
                 .padding(.leading, 18)
+                .padding(.trailing, 35)
                 .padding(.top, 18)
                 .frame(width: geo.size.width * 0.58, alignment: .leading)
 
@@ -82,7 +83,7 @@ struct MediumWidgetView: View {
                     .resizable()
                     .widgetAccentedRenderingMode(.fullColor)
                     .scaledToFit()
-                    .frame(maxWidth: geo.size.width * 0.72, alignment: .bottomTrailing)
+                    .frame(maxWidth: geo.size.width * 0.82, alignment: .bottomTrailing)
                     .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .bottomTrailing)
             }
             .overlay(alignment: .topLeading) {
@@ -109,36 +110,39 @@ struct MediumWidgetView: View {
         }
     }
 
-    // MARK: - Error — 안내 텍스트 + Bowl_Error 이미지
+    // MARK: - Error — 안내 텍스트 + Medium_Error 캐릭터 (Full/Frying과 동일 레이아웃)
     private var errorView: some View {
         GeometryReader { geo in
-            ZStack(alignment: .bottomTrailing) {
-                Image("Medium_Bowl_Error")
-                    .renderingMode(.original)
-                    .resizable()
-                    .widgetAccentedRenderingMode(.fullColor)
-                    .scaledToFit()
-                    .frame(maxWidth: geo.size.width * 0.72, alignment: .bottomTrailing)
-                    .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .bottomTrailing)
-            }
-            .overlay(alignment: .topLeading) {
-                VStack(alignment: .leading, spacing: 4) {
-                    Text("앱을 열어")
-                        .font(.caption)
-                        .foregroundColor(AppColor.Gray.gr700)
-                    Text("연결 상태를 확인해 주세요.")
-                        .font(.caption)
-                        .foregroundColor(AppColor.Gray.gr700)
+            HStack(alignment: .top, spacing: 8) {
+                VStack(alignment: .leading, spacing: 0) {
+                    Text("앱을 열어\n연결 상태를 확인해 주세요.")
+                        .font(.system(size: 12))
+                        .lineSpacing(6)
+                        .foregroundColor(AppColor.Gray.gr500)
+                    Spacer(minLength: 0)
                 }
                 .padding(.leading, 18)
                 .padding(.top, 18)
-            }
-            .overlay(alignment: .topTrailing) {
-                Text(entry.dateString)
-                    .font(.caption)
-                    .foregroundColor(AppColor.Gray.gr500)
-                    .padding(.top, 18)
-                    .padding(.trailing, 18)
+                .frame(width: geo.size.width * 0.58, alignment: .leading)
+
+                ZStack(alignment: .bottomTrailing) {
+                    Image("Medium_Error")
+                        .renderingMode(.original)
+                        .resizable()
+                        .widgetAccentedRenderingMode(.fullColor)
+                        .scaledToFit()
+                        .frame(maxWidth: geo.size.width * 0.55, maxHeight: geo.size.height * 0.95, alignment: .bottomTrailing)
+                        .padding(.bottom, 0)
+                        .padding(.trailing, 0)
+                        .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .bottomTrailing)
+                }
+                .overlay(alignment: .topTrailing) {
+                    Text(entry.dateString)
+                        .font(.caption)
+                        .foregroundColor(AppColor.Gray.gr500)
+                        .padding(.top, 18)
+                        .padding(.trailing, 18)
+                }
             }
         }
     }

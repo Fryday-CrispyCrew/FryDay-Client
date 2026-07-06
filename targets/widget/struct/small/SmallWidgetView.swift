@@ -13,7 +13,7 @@ struct SmallWidgetView: View {
                 contentView
             }
         }
-        .containerBackground(.background, for: .widget)
+        .containerBackground(AppColor.Gray.surface, for: .widget)
     }
 
     // Full / Frying / Empty 공통 레이아웃 (캐릭터 좌하단 + 우상단 헤더)
@@ -40,27 +40,26 @@ struct SmallWidgetView: View {
         }
     }
 
-    // 로그아웃/연결 실패 상태
     private var errorView: some View {
         VStack(spacing: 0) {
             HStack {
                 Spacer()
                 Text(entry.dateString)
-                    .font(.caption)
-                    .foregroundColor(.secondary)
+                    .font(.system(size: 12))
+                    .foregroundColor(AppColor.Gray.gr500)
             }
-            .padding(.top, 12)
-            .padding(.trailing, 12)
 
             Spacer()
 
             Text("앱을 열어\n연결 상태를 확인해 주세요.")
-                .font(.caption)
+                .font(.system(size: 12))
+                .lineSpacing(6)
                 .multilineTextAlignment(.center)
-                .padding(.horizontal, 12)
+                .foregroundColor(AppColor.Gray.gr500)
 
             Spacer()
         }
+        .padding(18)
     }
 
     private var characterImageName: String {
