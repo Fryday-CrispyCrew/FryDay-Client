@@ -26,12 +26,13 @@ struct MediumWidgetView: View {
                 // 좌측 투두 리스트 (최대 4개, 텍스트 12pt / 행간 150 / 각 행 간격 16pt)
                 VStack(alignment: .leading, spacing: 16) {
                     ForEach(entry.todos.prefix(4)) { todo in
-                        HStack(spacing: 8) {
+                        HStack(spacing: 0) {
                             Text(truncated(todo.title, maxChars: 8))
                                 .font(.system(size: 12))
                                 .lineSpacing(6)
                                 .foregroundColor(AppColor.Gray.text)
                                 .lineLimit(1)
+                            Spacer(minLength: 4)
                             WidgetCheckBox(todo: todo)
                         }
                     }
