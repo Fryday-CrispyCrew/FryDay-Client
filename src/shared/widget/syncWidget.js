@@ -34,11 +34,22 @@ export function syncTodosToWidget(todosByDate = {}) {
   if (Platform.OS !== "ios") return;
 
   try {
-    const payload = {};
-    for (const [date, todos] of Object.entries(todosByDate)) {
-      payload[date] = (todos ?? []).map(toWidgetTodo);
+    let existing = {};
+    const raw = storage.get("todosByDateJson");
+    if (raw) {
+      try {
+        existing = JSON.parse(raw) ?? {};
+      } catch {
+        existing = {};
+      }
     }
-    storage.set("todosByDateJson", JSON.stringify(payload));
+
+    const merged = { ...existing };
+    for (const [date, todos] of Object.entries(todosByDate)) {
+      merged[date] = (todos ?? []).map(toWidgetTodo);
+    }
+
+    storage.set("todosByDateJson", JSON.stringify(merged));
     ExtensionStorage.reloadWidget("FrydayWidget");
   } catch (e) {
     console.warn("[syncWidget] syncTodosToWidget failed:", e);

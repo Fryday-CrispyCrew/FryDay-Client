@@ -68,11 +68,18 @@ export function useWidgetSync() {
 
   useEffect(() => {
     if (!Array.isArray(rawCategories)) return;
+    if (todosByDate.every((d) => d === undefined)) return;
 
     const payload = {};
     dates.forEach((date, i) => {
-      payload[date] = sortByHomeOrder(todosByDate[i], rawCategories);
+      const data = todosByDate[i];
+      if (Array.isArray(data)) {
+        payload[date] = sortByHomeOrder(data, rawCategories);
+      }
     });
+
+    if (Object.keys(payload).length === 0) return;
+
     syncTodosToWidget(payload);
   }, [todosByDate, rawCategories, dates]);
 
