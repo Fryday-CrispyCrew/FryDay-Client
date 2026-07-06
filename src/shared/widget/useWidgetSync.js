@@ -28,6 +28,17 @@ function extractArray(raw) {
   return null;
 }
 
+function normalizeTodo(t) {
+  return {
+    id: String(t.id),
+    title: t.description ?? t.title ?? "",
+    done: t.status === "COMPLETED",
+    categoryId: t.categoryId,
+    displayOrder: t.displayOrder,
+    categoryColor: t.categoryColor ?? null,
+  };
+}
+
 function sortByHomeOrder(todos, rawCategories) {
   if (!Array.isArray(todos) || !Array.isArray(rawCategories)) return [];
 
@@ -74,33 +85,26 @@ export function useWidgetSync() {
   const queryClient = useQueryClient();
 
   useEffect(() => {
-    const doSync = (reason) => {
+    const doSync = () => {
       const rawCategoriesData = queryClient.getQueryData(categoryKeys.list());
       const rawCategories = extractArray(rawCategoriesData);
-      console.warn(`[widgetSync] doSync (${reason}) categoriesLen=${rawCategories?.length ?? 0}`);
       if (!rawCategories || rawCategories.length === 0) return;
 
       const payload = {};
       let hasAny = false;
-      const summary = [];
       dates.forEach((date) => {
         const rawTodos = queryClient.getQueryData(
           homeKeys.todosList({ date, categoryId: null }),
         );
         const todos = extractArray(rawTodos);
         if (todos) {
-          const sorted = sortByHomeOrder(todos, rawCategories);
+          const normalized = todos.map(normalizeTodo);
+          const sorted = sortByHomeOrder(normalized, rawCategories);
           payload[date] = sorted;
           hasAny = true;
-          summary.push(`${date}:${sorted.length}(done=${sorted.filter((t) => t.done).length})`);
-          if (date === dates[0] && sorted.length > 0) {
-            console.warn(`[widgetSync] first todo keys: ${Object.keys(sorted[0]).join(",")}`);
-            console.warn(`[widgetSync] first todo: ${JSON.stringify(sorted[0])}`);
-          }
         }
       });
 
-      console.warn(`[widgetSync] payload → ${summary.join(" | ")}`);
       if (hasAny) syncTodosToWidget(payload);
     };
 
@@ -110,12 +114,10 @@ export function useWidgetSync() {
       if (!Array.isArray(key)) return;
       const isHomeTodos = key[0] === "home" && key[1] === "todos";
       const isCategories = key[0] === "categories";
-      if (isHomeTodos || isCategories) {
-        doSync(`cache:${key[0]}/${key[1]}`);
-      }
+      if (isHomeTodos || isCategories) doSync();
     });
 
-    doSync("initial");
+    doSync();
 
     return unsub;
   }, [queryClient, dates]);
