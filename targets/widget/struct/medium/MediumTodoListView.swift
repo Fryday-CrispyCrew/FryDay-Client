@@ -71,8 +71,7 @@ struct MediumTodoListView: View {
         stateView(
             image: "Medium_Bowl",
             line1: "아직 튀긴 투두가 없어요.",
-            line2: "위젯을 눌러 투두를 추가해 주세요!",
-            textColor: AppColor.Gray.gr700
+            line2: "위젯을 눌러 투두를 추가해 주세요!"
         )
     }
 
@@ -81,12 +80,11 @@ struct MediumTodoListView: View {
         stateView(
             image: "Medium_Bowl_Error",
             line1: "앱을 열어",
-            line2: "연결 상태를 확인해 주세요.",
-            textColor: AppColor.Gray.gr500
+            line2: "연결 상태를 확인해 주세요."
         )
     }
 
-    private func stateView(image: String, line1: String, line2: String, textColor: Color) -> some View {
+    private func stateView(image: String, line1: String, line2: String) -> some View {
         VStack(alignment: .leading, spacing: 0) {
             Text(entry.dateString)
                 .font(.caption)
@@ -107,10 +105,10 @@ struct MediumTodoListView: View {
                 VStack(spacing: 2) {
                     Text(line1)
                         .font(.system(size: 12))
-                        .foregroundColor(textColor)
+                        .foregroundColor(AppColor.Gray.gr500)
                     Text(line2)
                         .font(.system(size: 12))
-                        .foregroundColor(textColor)
+                        .foregroundColor(AppColor.Gray.gr500)
                 }
             }
             .frame(maxWidth: .infinity, alignment: .center)

@@ -51,9 +51,7 @@ export function syncTodosToWidget(todosByDate = {}) {
 
     storage.set("todosByDateJson", JSON.stringify(merged));
     ExtensionStorage.reloadWidget("FrydayWidget");
-  } catch (e) {
-    console.warn("[syncWidget] syncTodosToWidget failed:", e);
-  }
+  } catch {}
 }
 
 export function syncLoginToWidget(isLoggedIn) {
@@ -62,9 +60,7 @@ export function syncLoginToWidget(isLoggedIn) {
   try {
     storage.set("isLoggedIn", isLoggedIn ? 1 : 0);
     ExtensionStorage.reloadWidget("FrydayWidget");
-  } catch (e) {
-    console.warn("[syncWidget] syncLoginToWidget failed:", e);
-  }
+  } catch {}
 }
 
 export function clearWidgetForLogout() {
@@ -75,9 +71,7 @@ export function clearWidgetForLogout() {
     storage.remove("todosByDateJson");
     storage.remove("pendingToggleIds");
     ExtensionStorage.reloadWidget("FrydayWidget");
-  } catch (e) {
-    console.warn("[syncWidget] clearWidgetForLogout failed:", e);
-  }
+  } catch {}
 }
 
 export async function drainPendingToggles(toggleFn) {
@@ -100,9 +94,7 @@ export async function drainPendingToggles(toggleFn) {
     try {
       await toggleFn(todoId);
       successful.push(todoId);
-    } catch (e) {
-      console.warn(`[syncWidget] toggle sync failed for ${todoId}:`, e);
-    }
+    } catch {}
   }
 
   if (successful.length > 0) {
@@ -118,9 +110,7 @@ export async function drainPendingToggles(toggleFn) {
           );
         }
         storage.set("todosByDateJson", JSON.stringify(updated));
-      } catch (e) {
-        console.warn("[syncWidget] optimistic todos update failed:", e);
-      }
+      } catch {}
     }
   }
 
