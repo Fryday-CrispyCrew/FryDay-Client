@@ -68,6 +68,25 @@ struct MediumTodoListView: View {
 
     // MARK: - Empty — 빈 상태 아이콘 + 안내 텍스트
     private var emptyView: some View {
+        stateView(
+            image: "Medium_Bowl",
+            line1: "아직 튀긴 투두가 없어요.",
+            line2: "위젯을 눌러 투두를 추가해 주세요!",
+            textColor: AppColor.Gray.gr700
+        )
+    }
+
+    // MARK: - Error — Bowl_Error 아이콘 + 안내 텍스트
+    private var errorView: some View {
+        stateView(
+            image: "Medium_Bowl_Error",
+            line1: "앱을 열어",
+            line2: "연결 상태를 확인해 주세요.",
+            textColor: AppColor.Gray.gr500
+        )
+    }
+
+    private func stateView(image: String, line1: String, line2: String, textColor: Color) -> some View {
         VStack(alignment: .leading, spacing: 0) {
             Text(entry.dateString)
                 .font(.caption)
@@ -78,7 +97,7 @@ struct MediumTodoListView: View {
             Spacer(minLength: 0)
 
             VStack(spacing: 8) {
-                Image("Medium_Bowl")
+                Image(image)
                     .renderingMode(.original)
                     .resizable()
                     .widgetAccentedRenderingMode(.fullColor)
@@ -86,45 +105,13 @@ struct MediumTodoListView: View {
                     .frame(width: 40, height: 40)
 
                 VStack(spacing: 2) {
-                    Text("아직 튀긴 투두가 없어요.")
+                    Text(line1)
                         .font(.system(size: 12))
-                        .foregroundColor(AppColor.Gray.gr700)
-                    Text("위젯을 눌러 투두를 추가해 주세요!")
+                        .foregroundColor(textColor)
+                    Text(line2)
                         .font(.system(size: 12))
-                        .foregroundColor(AppColor.Gray.gr700)
+                        .foregroundColor(textColor)
                 }
-            }
-            .frame(maxWidth: .infinity, alignment: .center)
-
-            Spacer(minLength: 0)
-        }
-        .padding(.bottom, 18)
-    }
-
-    // MARK: - Error — Bowl_Error 아이콘 + 안내 텍스트
-    private var errorView: some View {
-        VStack(alignment: .leading, spacing: 0) {
-            Text(entry.dateString)
-                .font(.caption)
-                .foregroundColor(AppColor.Gray.gr500)
-                .padding(.top, 18)
-                .padding(.leading, 18)
-
-            Spacer(minLength: 0)
-
-            VStack(spacing: 8) {
-                Image("Medium_Bowl_Error")
-                    .renderingMode(.original)
-                    .resizable()
-                    .widgetAccentedRenderingMode(.fullColor)
-                    .scaledToFit()
-                    .frame(width: 40, height: 40)
-
-                Text("앱을 열어\n연결 상태를 확인해 주세요.")
-                    .font(.system(size: 12))
-                    .lineSpacing(6)
-                    .multilineTextAlignment(.center)
-                    .foregroundColor(AppColor.Gray.gr500)
             }
             .frame(maxWidth: .infinity, alignment: .center)
 
