@@ -81,7 +81,7 @@ struct MediumTodoListView: View {
             image: "Medium_Bowl_Error",
             line1: "앱을 열어",
             line2: "연결 상태를 확인해 주세요.",
-            imageOffsetY: -5
+            imageOffsetY: -10
         )
     }
 
