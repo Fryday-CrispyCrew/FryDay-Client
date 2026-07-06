@@ -53,31 +53,28 @@ export function useWidgetSync() {
     [],
   );
 
-  const results = useQueries({
+  const todosByDate = useQueries({
     queries: dates.map((date) => ({
       queryKey: homeKeys.todosList({ date, categoryId: null }),
       queryFn: () => homeApi.getTodos({ date }),
       select: (res) => res?.data ?? [],
       enabled: !!date,
     })),
+    combine: (queryResults) => queryResults.map((r) => r.data),
   });
 
   const { data: rawCategories } = useCategoriesQuery();
   const queryClient = useQueryClient();
 
-  const todosByDateKey = results.map((r) => r.data).join("|");
-
-  const payload = useMemo(() => {
-    const acc = {};
-    dates.forEach((date, i) => {
-      acc[date] = sortByHomeOrder(results[i].data, rawCategories);
-    });
-    return acc;
-  }, [dates, todosByDateKey, rawCategories]);
-
   useEffect(() => {
+    if (!Array.isArray(rawCategories)) return;
+
+    const payload = {};
+    dates.forEach((date, i) => {
+      payload[date] = sortByHomeOrder(todosByDate[i], rawCategories);
+    });
     syncTodosToWidget(payload);
-  }, [payload]);
+  }, [todosByDate, rawCategories, dates]);
 
   useEffect(() => {
     const handleAppState = async (nextState) => {
