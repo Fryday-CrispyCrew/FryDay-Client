@@ -1,6 +1,7 @@
 import * as SecureStore from "expo-secure-store";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { STEP_KEY } from "../../../shared/constants/onboardingStep";
+import { clearWidgetForLogout } from "../../../shared/widget/syncWidget";
 
 export async function clearForLogout() {
   try {
@@ -15,6 +16,8 @@ export async function clearForLogout() {
     SecureStore.deleteItemAsync(STEP_KEY),
     SecureStore.deleteItemAsync("deviceId"),
   ]);
+
+  clearWidgetForLogout();
 }
 export async function clearForDeleteAccount() {
   await clearForLogout();

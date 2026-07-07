@@ -9,12 +9,15 @@ import AsyncStorage from "@react-native-async-storage/async-storage";
 import * as SecureStore from "expo-secure-store";
 import {STEP_KEY} from "../../../../shared/constants/onboardingStep";
 import dayjs from "dayjs";
+import {syncLoginToWidget} from "../../../../shared/widget/syncWidget";
 
 async function persistLoginResult(data, deviceId) {
   await Promise.all([
     saveAccessToken(String(data?.accessToken ?? "")),
     saveRefreshToken(String(data?.refreshToken ?? "")),
   ]);
+
+  syncLoginToWidget(true);
 
   await Promise.allSettled([
     AsyncStorage.setItem("deviceId", deviceId),
