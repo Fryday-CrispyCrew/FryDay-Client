@@ -94,12 +94,12 @@ enum TodoEntryBuilder {
     }
 
     static let previewTodos: [TodoItem] = [
-        TodoItem(id: "todo-1", title: "연우님 기획 차력쇼 감상", categoryCode: "OR", isDone: false),
-        TodoItem(id: "todo-2", title: "연우님 기획 차력쇼 감상", categoryCode: "BR", isDone: false),
-        TodoItem(id: "todo-3", title: "연우님 기획 차력쇼 감상", categoryCode: "PK", isDone: false),
-        TodoItem(id: "todo-4", title: "연우님 기획 차력쇼 감상", categoryCode: "MT", isDone: false),
-        TodoItem(id: "todo-5", title: "연우님 기획 차력쇼 감상", categoryCode: "LG", isDone: false),
-        TodoItem(id: "todo-6", title: "연우님 기획 차력쇼 감상", categoryCode: "CB", isDone: false),
+        TodoItem(id: "todo-1", title: "매일 물 2L 마시기", categoryCode: "OR", isDone: false),
+        TodoItem(id: "todo-2", title: "영양제 먹기", categoryCode: "BR", isDone: false),
+        TodoItem(id: "todo-3", title: "뉴스 확인하기", categoryCode: "PK", isDone: false),
+        TodoItem(id: "todo-4", title: "스트레칭 하기", categoryCode: "MT", isDone: false),
+        TodoItem(id: "todo-5", title: "환기 시키기", categoryCode: "LG", isDone: false),
+        TodoItem(id: "todo-6", title: "요리 책 2장 읽기", categoryCode: "CB", isDone: false),
     ]
 }
 
@@ -168,8 +168,8 @@ struct FrydayWidgetSmall: Widget {
             FrydayWidgetEntryView(entry: entry)
                 .environment(\.redactionReasons, [])
         }
-        .configurationDisplayName("FryDay")
-        .description("오늘의 투두를 확인해요")
+        .configurationDisplayName("Small")
+        .description("오늘의 투두 개수와 완료 현황을 FryDay의 튀김을 함께 확인하세요.")
         .supportedFamilies([.systemSmall])
         .contentMarginsDisabled()
     }
@@ -184,8 +184,8 @@ struct FrydayWidgetMediumChar: Widget {
             FrydayWidgetEntryView(entry: entry)
                 .environment(\.redactionReasons, [])
         }
-        .configurationDisplayName("FryDay 캐릭터형")
-        .description("캐릭터와 함께 오늘의 투두를 확인해요")
+        .configurationDisplayName("FryDay - 캐릭터")
+        .description("오늘의 핵심 투두를 체크하고, 계획들이 잘 튀겨지고 있는지 확인하세요.")
         .supportedFamilies([.systemMedium])
         .contentMarginsDisabled()
     }
@@ -200,8 +200,8 @@ struct FrydayWidgetMediumList: Widget {
             FrydayWidgetEntryView(entry: entry)
                 .environment(\.redactionReasons, [])
         }
-        .configurationDisplayName("FryDay 리스트형")
-        .description("최대 6개의 투두를 리스트로 확인해요")
+        .configurationDisplayName("FryDay - 리스트")
+        .description("내가 오늘 추가한 투두들을 깔끔한 리스트 형태로 홈화면에서 확인하세요.")
         .supportedFamilies([.systemMedium])
         .contentMarginsDisabled()
     }
@@ -218,20 +218,20 @@ struct FrydayWidgetBundle: WidgetBundle {
 
 // MARK: - Previews
 
-#Preview("Small · Full", as: .systemSmall) {
+#Preview("Small", as: .systemSmall) {
     FrydayWidgetSmall()
 } timeline: {
-    TodoEntry(date: Date(), dateString: "1월 1일 (수)", doneCount: 10, doingCount: 0, isConnected: true, todos: TodoEntryBuilder.previewTodos)
+    TodoEntry(date: Date(), dateString: "7월 7일 (화)", doneCount: 0, doingCount: 6, isConnected: true, todos: TodoEntryBuilder.previewTodos)
 }
 
-#Preview("Medium 캐릭터형", as: .systemMedium) {
+#Preview("Medium 캐릭터", as: .systemMedium) {
     FrydayWidgetMediumChar()
 } timeline: {
-    TodoEntry(date: Date(), dateString: "5월 23일 (토)", doneCount: 0, doingCount: 4, isConnected: true, todos: Array(TodoEntryBuilder.previewTodos.prefix(4)), style: .character)
+    TodoEntry(date: Date(), dateString: "7월 7일 (화)", doneCount: 0, doingCount: 6, isConnected: true, todos: Array(TodoEntryBuilder.previewTodos.prefix(4)), style: .character)
 }
 
-#Preview("Medium 리스트형", as: .systemMedium) {
+#Preview("Medium 리스트", as: .systemMedium) {
     FrydayWidgetMediumList()
 } timeline: {
-    TodoEntry(date: Date(), dateString: "5월 23일 (토)", doneCount: 0, doingCount: 6, isConnected: true, todos: TodoEntryBuilder.previewTodos, style: .list)
+    TodoEntry(date: Date(), dateString: "7월 7일 (화)", doneCount: 0, doingCount: 6, isConnected: true, todos: TodoEntryBuilder.previewTodos, style: .list)
 }
