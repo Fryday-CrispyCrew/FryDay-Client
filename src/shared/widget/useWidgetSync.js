@@ -139,6 +139,7 @@ export function useWidgetSync() {
         await homeApi.toggleCompletion({ todoId });
       });
       queryClient.invalidateQueries({ queryKey: homeKeys.todos() });
+      queryClient.invalidateQueries({ queryKey: homeKeys.characterStatus() });
     };
 
     const sub = AppState.addEventListener("change", handleAppState);

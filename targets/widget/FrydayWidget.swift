@@ -171,12 +171,55 @@ struct FrydayWidgetEntryView: View {
     }
 }
 
-// MARK: - Widget (Small + Medium 지원, 단일 kind)
+// Small 전용 Provider
+struct SmallProvider: TimelineProvider {
+    func placeholder(in context: Context) -> TodoEntry {
+        TodoEntryBuilder.staticPlaceholder(style: .character)
+    }
 
-struct FrydayWidget: Widget {
+    func getSnapshot(in context: Context, completion: @escaping (TodoEntry) -> Void) {
+        if context.isPreview {
+            completion(TodoEntryBuilder.previewSample(style: .character))
+            return
+        }
+        completion(TodoEntryBuilder.makeEntry(style: .character))
+    }
+
+    func getTimeline(in context: Context, completion: @escaping (Timeline<TodoEntry>) -> Void) {
+        let now = Date()
+        let calendar = Calendar.current
+        let tomorrowMidnight = calendar.startOfDay(for: now.addingTimeInterval(86400))
+        let dayAfterMidnight = calendar.startOfDay(for: tomorrowMidnight.addingTimeInterval(86400))
+
+        let todayEntry = TodoEntryBuilder.makeEntry(style: .character, forDate: now)
+        let tomorrowEntry = TodoEntryBuilder.makeEntry(style: .character, forDate: tomorrowMidnight)
+
+        completion(Timeline(entries: [todayEntry, tomorrowEntry], policy: .after(dayAfterMidnight)))
+    }
+}
+
+// MARK: - Widgets
+
+struct FrydayWidgetSmall: Widget {
+    var body: some WidgetConfiguration {
+        StaticConfiguration(
+            kind: "FrydayWidgetSmall",
+            provider: SmallProvider()
+        ) { entry in
+            FrydayWidgetEntryView(entry: entry)
+                .environment(\.redactionReasons, [])
+        }
+        .configurationDisplayName("FryDay")
+        .description("오늘의 투두를 확인해요")
+        .supportedFamilies([.systemSmall])
+        .contentMarginsDisabled()
+    }
+}
+
+struct FrydayWidgetMedium: Widget {
     var body: some WidgetConfiguration {
         AppIntentConfiguration(
-            kind: "FrydayWidget",
+            kind: "FrydayWidgetMedium",
             intent: FrydayConfigIntent.self,
             provider: FrydayProvider()
         ) { entry in
@@ -185,7 +228,7 @@ struct FrydayWidget: Widget {
         }
         .configurationDisplayName("FryDay")
         .description("오늘의 투두를 확인해요")
-        .supportedFamilies([.systemSmall, .systemMedium])
+        .supportedFamilies([.systemMedium])
         .contentMarginsDisabled()
     }
 }
@@ -193,26 +236,27 @@ struct FrydayWidget: Widget {
 @main
 struct FrydayWidgetBundle: WidgetBundle {
     var body: some Widget {
-        FrydayWidget()
+        FrydayWidgetSmall()
+        FrydayWidgetMedium()
     }
 }
 
 // MARK: - Previews
 
 #Preview("Small · Full", as: .systemSmall) {
-    FrydayWidget()
+    FrydayWidgetSmall()
 } timeline: {
     TodoEntry(date: Date(), dateString: "1월 1일 (수)", doneCount: 10, doingCount: 0, isConnected: true, todos: TodoEntryBuilder.previewTodos)
 }
 
 #Preview("Medium 캐릭터형", as: .systemMedium) {
-    FrydayWidget()
+    FrydayWidgetMedium()
 } timeline: {
     TodoEntry(date: Date(), dateString: "5월 23일 (토)", doneCount: 0, doingCount: 4, isConnected: true, todos: Array(TodoEntryBuilder.previewTodos.prefix(4)), style: .character)
 }
 
 #Preview("Medium 리스트형", as: .systemMedium) {
-    FrydayWidget()
+    FrydayWidgetMedium()
 } timeline: {
     TodoEntry(date: Date(), dateString: "5월 23일 (토)", doneCount: 0, doingCount: 6, isConnected: true, todos: TodoEntryBuilder.previewTodos, style: .list)
 }
