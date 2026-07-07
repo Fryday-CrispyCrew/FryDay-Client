@@ -123,16 +123,17 @@ struct FrydayProvider: AppIntentTimelineProvider {
     func timeline(for configuration: FrydayConfigIntent, in context: Context) async -> Timeline<TodoEntry> {
         let now = Date()
         let calendar = Calendar.current
-        let tomorrowMidnight = calendar.startOfDay(for: now.addingTimeInterval(86400))
-        let dayAfterMidnight = calendar.startOfDay(for: tomorrowMidnight.addingTimeInterval(86400))
 
-        let todayEntry = TodoEntryBuilder.makeEntry(style: configuration.style, forDate: now)
-        let tomorrowEntry = TodoEntryBuilder.makeEntry(style: configuration.style, forDate: tomorrowMidnight)
+        var entries: [TodoEntry] = [
+            TodoEntryBuilder.makeEntry(style: configuration.style, forDate: now)
+        ]
+        for i in 1..<7 {
+            let midnight = calendar.startOfDay(for: now.addingTimeInterval(Double(i) * 86400))
+            entries.append(TodoEntryBuilder.makeEntry(style: configuration.style, forDate: midnight))
+        }
 
-        return Timeline(
-            entries: [todayEntry, tomorrowEntry],
-            policy: .after(dayAfterMidnight)
-        )
+        let nextRefresh = calendar.startOfDay(for: now.addingTimeInterval(7 * 86400))
+        return Timeline(entries: entries, policy: .after(nextRefresh))
     }
 
     // 갤러리에서 캐릭터형 / 리스트형 프리뷰 카드 2개 노출
@@ -188,13 +189,17 @@ struct SmallProvider: TimelineProvider {
     func getTimeline(in context: Context, completion: @escaping (Timeline<TodoEntry>) -> Void) {
         let now = Date()
         let calendar = Calendar.current
-        let tomorrowMidnight = calendar.startOfDay(for: now.addingTimeInterval(86400))
-        let dayAfterMidnight = calendar.startOfDay(for: tomorrowMidnight.addingTimeInterval(86400))
 
-        let todayEntry = TodoEntryBuilder.makeEntry(style: .character, forDate: now)
-        let tomorrowEntry = TodoEntryBuilder.makeEntry(style: .character, forDate: tomorrowMidnight)
+        var entries: [TodoEntry] = [
+            TodoEntryBuilder.makeEntry(style: .character, forDate: now)
+        ]
+        for i in 1..<7 {
+            let midnight = calendar.startOfDay(for: now.addingTimeInterval(Double(i) * 86400))
+            entries.append(TodoEntryBuilder.makeEntry(style: .character, forDate: midnight))
+        }
 
-        completion(Timeline(entries: [todayEntry, tomorrowEntry], policy: .after(dayAfterMidnight)))
+        let nextRefresh = calendar.startOfDay(for: now.addingTimeInterval(7 * 86400))
+        completion(Timeline(entries: entries, policy: .after(nextRefresh)))
     }
 }
 
