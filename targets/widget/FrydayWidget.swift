@@ -103,54 +103,6 @@ enum TodoEntryBuilder {
     ]
 }
 
-// MARK: - Provider (Small + Medium 모두 처리)
-
-struct FrydayProvider: AppIntentTimelineProvider {
-    typealias Entry = TodoEntry
-    typealias Intent = FrydayConfigIntent
-
-    func placeholder(in context: Context) -> TodoEntry {
-        TodoEntryBuilder.staticPlaceholder(style: .character)
-    }
-
-    func snapshot(for configuration: FrydayConfigIntent, in context: Context) async -> TodoEntry {
-        if context.isPreview {
-            return TodoEntryBuilder.previewSample(style: configuration.style)
-        }
-        return TodoEntryBuilder.makeEntry(style: configuration.style)
-    }
-
-    func timeline(for configuration: FrydayConfigIntent, in context: Context) async -> Timeline<TodoEntry> {
-        let now = Date()
-        let calendar = Calendar.current
-
-        var entries: [TodoEntry] = [
-            TodoEntryBuilder.makeEntry(style: configuration.style, forDate: now)
-        ]
-        for i in 1..<7 {
-            let midnight = calendar.startOfDay(for: now.addingTimeInterval(Double(i) * 86400))
-            entries.append(TodoEntryBuilder.makeEntry(style: configuration.style, forDate: midnight))
-        }
-
-        let nextRefresh = calendar.startOfDay(for: now.addingTimeInterval(7 * 86400))
-        return Timeline(entries: entries, policy: .after(nextRefresh))
-    }
-
-    // 갤러리에서 캐릭터형 / 리스트형 프리뷰 카드 2개 노출
-    func recommendations() -> [AppIntentRecommendation<FrydayConfigIntent>] {
-        let charIntent = FrydayConfigIntent()
-        charIntent.style = .character
-
-        let listIntent = FrydayConfigIntent()
-        listIntent.style = .list
-
-        return [
-            AppIntentRecommendation(intent: charIntent, description: "캐릭터형"),
-            AppIntentRecommendation(intent: listIntent, description: "리스트형"),
-        ]
-    }
-}
-
 // MARK: - Entry View
 
 struct FrydayWidgetEntryView: View {
@@ -172,18 +124,20 @@ struct FrydayWidgetEntryView: View {
     }
 }
 
-// Small 전용 Provider
-struct SmallProvider: TimelineProvider {
+// 스타일별 Static Provider
+struct StyledStaticProvider: TimelineProvider {
+    let style: WidgetStyle
+
     func placeholder(in context: Context) -> TodoEntry {
-        TodoEntryBuilder.staticPlaceholder(style: .character)
+        TodoEntryBuilder.staticPlaceholder(style: style)
     }
 
     func getSnapshot(in context: Context, completion: @escaping (TodoEntry) -> Void) {
         if context.isPreview {
-            completion(TodoEntryBuilder.previewSample(style: .character))
+            completion(TodoEntryBuilder.previewSample(style: style))
             return
         }
-        completion(TodoEntryBuilder.makeEntry(style: .character))
+        completion(TodoEntryBuilder.makeEntry(style: style))
     }
 
     func getTimeline(in context: Context, completion: @escaping (Timeline<TodoEntry>) -> Void) {
@@ -191,11 +145,11 @@ struct SmallProvider: TimelineProvider {
         let calendar = Calendar.current
 
         var entries: [TodoEntry] = [
-            TodoEntryBuilder.makeEntry(style: .character, forDate: now)
+            TodoEntryBuilder.makeEntry(style: style, forDate: now)
         ]
         for i in 1..<7 {
             let midnight = calendar.startOfDay(for: now.addingTimeInterval(Double(i) * 86400))
-            entries.append(TodoEntryBuilder.makeEntry(style: .character, forDate: midnight))
+            entries.append(TodoEntryBuilder.makeEntry(style: style, forDate: midnight))
         }
 
         let nextRefresh = calendar.startOfDay(for: now.addingTimeInterval(7 * 86400))
@@ -209,7 +163,7 @@ struct FrydayWidgetSmall: Widget {
     var body: some WidgetConfiguration {
         StaticConfiguration(
             kind: "FrydayWidgetSmall",
-            provider: SmallProvider()
+            provider: StyledStaticProvider(style: .character)
         ) { entry in
             FrydayWidgetEntryView(entry: entry)
                 .environment(\.redactionReasons, [])
@@ -221,18 +175,33 @@ struct FrydayWidgetSmall: Widget {
     }
 }
 
-struct FrydayWidgetMedium: Widget {
+struct FrydayWidgetMediumChar: Widget {
     var body: some WidgetConfiguration {
-        AppIntentConfiguration(
-            kind: "FrydayWidgetMedium",
-            intent: FrydayConfigIntent.self,
-            provider: FrydayProvider()
+        StaticConfiguration(
+            kind: "FrydayWidgetMediumChar",
+            provider: StyledStaticProvider(style: .character)
         ) { entry in
             FrydayWidgetEntryView(entry: entry)
                 .environment(\.redactionReasons, [])
         }
-        .configurationDisplayName("FryDay")
-        .description("오늘의 투두를 확인해요")
+        .configurationDisplayName("FryDay 캐릭터형")
+        .description("캐릭터와 함께 오늘의 투두를 확인해요")
+        .supportedFamilies([.systemMedium])
+        .contentMarginsDisabled()
+    }
+}
+
+struct FrydayWidgetMediumList: Widget {
+    var body: some WidgetConfiguration {
+        StaticConfiguration(
+            kind: "FrydayWidgetMediumList",
+            provider: StyledStaticProvider(style: .list)
+        ) { entry in
+            FrydayWidgetEntryView(entry: entry)
+                .environment(\.redactionReasons, [])
+        }
+        .configurationDisplayName("FryDay 리스트형")
+        .description("최대 6개의 투두를 리스트로 확인해요")
         .supportedFamilies([.systemMedium])
         .contentMarginsDisabled()
     }
@@ -242,7 +211,8 @@ struct FrydayWidgetMedium: Widget {
 struct FrydayWidgetBundle: WidgetBundle {
     var body: some Widget {
         FrydayWidgetSmall()
-        FrydayWidgetMedium()
+        FrydayWidgetMediumChar()
+        FrydayWidgetMediumList()
     }
 }
 
@@ -255,13 +225,13 @@ struct FrydayWidgetBundle: WidgetBundle {
 }
 
 #Preview("Medium 캐릭터형", as: .systemMedium) {
-    FrydayWidgetMedium()
+    FrydayWidgetMediumChar()
 } timeline: {
     TodoEntry(date: Date(), dateString: "5월 23일 (토)", doneCount: 0, doingCount: 4, isConnected: true, todos: Array(TodoEntryBuilder.previewTodos.prefix(4)), style: .character)
 }
 
 #Preview("Medium 리스트형", as: .systemMedium) {
-    FrydayWidgetMedium()
+    FrydayWidgetMediumList()
 } timeline: {
     TodoEntry(date: Date(), dateString: "5월 23일 (토)", doneCount: 0, doingCount: 6, isConnected: true, todos: TodoEntryBuilder.previewTodos, style: .list)
 }
