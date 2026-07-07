@@ -12,7 +12,7 @@ enum TodoEntryBuilder {
         let isDone: Bool
     }
 
-    static func makeEntry(style: WidgetStyle) -> TodoEntry {
+    static func makeEntry(style: WidgetStyle, forDate date: Date = Date()) -> TodoEntry {
         let appGroupID = "group.com.fryday.shared"
         let defaults = UserDefaults(suiteName: appGroupID)
 
@@ -22,7 +22,7 @@ enum TodoEntryBuilder {
 
         let isoFmt = DateFormatter()
         isoFmt.dateFormat = "yyyy-MM-dd"
-        let todayISO = isoFmt.string(from: Date())
+        let dateISO = isoFmt.string(from: date)
 
         let isLoggedIn = defaults?.bool(forKey: "isLoggedIn") ?? false
         let isServerError = defaults?.bool(forKey: "isServerError") ?? false
@@ -41,7 +41,7 @@ enum TodoEntryBuilder {
         if let json = defaults?.string(forKey: "todosByDateJson"),
            let data = json.data(using: .utf8),
            let byDate = try? JSONDecoder().decode([String: [TodoDTO]].self, from: data),
-           let dtos = byDate[todayISO] {
+           let dtos = byDate[dateISO] {
             todos = dtos.map { dto in
                 let isDone = pendingToggleIds.contains(dto.id) ? !dto.isDone : dto.isDone
                 return TodoItem(id: dto.id, title: dto.title, categoryCode: dto.categoryCode, isDone: isDone)
@@ -52,8 +52,8 @@ enum TodoEntryBuilder {
         let doingCount = todos.filter { !$0.isDone }.count
 
         return TodoEntry(
-            date: Date(),
-            dateString: fmt.string(from: Date()),
+            date: date,
+            dateString: fmt.string(from: date),
             doneCount: doneCount,
             doingCount: doingCount,
             isConnected: isConnected,
@@ -121,8 +121,18 @@ struct FrydayProvider: AppIntentTimelineProvider {
     }
 
     func timeline(for configuration: FrydayConfigIntent, in context: Context) async -> Timeline<TodoEntry> {
-        let next = Calendar.current.date(byAdding: .minute, value: 15, to: Date()) ?? Date()
-        return Timeline(entries: [TodoEntryBuilder.makeEntry(style: configuration.style)], policy: .after(next))
+        let now = Date()
+        let calendar = Calendar.current
+        let tomorrowMidnight = calendar.startOfDay(for: now.addingTimeInterval(86400))
+        let dayAfterMidnight = calendar.startOfDay(for: tomorrowMidnight.addingTimeInterval(86400))
+
+        let todayEntry = TodoEntryBuilder.makeEntry(style: configuration.style, forDate: now)
+        let tomorrowEntry = TodoEntryBuilder.makeEntry(style: configuration.style, forDate: tomorrowMidnight)
+
+        return Timeline(
+            entries: [todayEntry, tomorrowEntry],
+            policy: .after(dayAfterMidnight)
+        )
     }
 
     // 갤러리에서 캐릭터형 / 리스트형 프리뷰 카드 2개 노출
