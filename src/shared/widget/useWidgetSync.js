@@ -8,6 +8,7 @@ import { homeKeys } from "../../features/todo/queries/home/homeKeys";
 import { useServerStatusStore } from "../stores/serverStatusStore";
 import {
   syncTodosToWidget,
+  syncLoginToWidget,
   syncServerErrorToWidget,
   drainPendingToggles,
 } from "./syncWidget";
@@ -89,6 +90,11 @@ export function useWidgetSync() {
 
   const queryClient = useQueryClient();
   const isServerError = useServerStatusStore((s) => s.isServerError);
+
+  useEffect(() => {
+    syncLoginToWidget(true);
+    syncServerErrorToWidget(false);
+  }, []);
 
   useEffect(() => {
     syncServerErrorToWidget(isServerError);
