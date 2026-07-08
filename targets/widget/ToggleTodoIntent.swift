@@ -39,7 +39,9 @@ struct ToggleTodoIntent: AppIntent {
             defaults?.set(jsonString, forKey: Self.pendingKey)
         }
 
-        WidgetCenter.shared.reloadAllTimelines()
+        WidgetCenter.shared.reloadTimelines(ofKind: "FrydayWidgetSmall")
+        WidgetCenter.shared.reloadTimelines(ofKind: "FrydayWidgetMediumChar")
+        WidgetCenter.shared.reloadTimelines(ofKind: "FrydayWidgetMediumList")
         return .result()
     }
 }

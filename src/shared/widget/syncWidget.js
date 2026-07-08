@@ -4,6 +4,20 @@ import { ExtensionStorage } from "@bacons/apple-targets";
 const APP_GROUP = "group.com.fryday.shared";
 const storage = new ExtensionStorage(APP_GROUP);
 
+const WIDGET_KINDS = [
+  "FrydayWidgetSmall",
+  "FrydayWidgetMediumChar",
+  "FrydayWidgetMediumList",
+];
+
+function reloadAllWidgetKinds() {
+  for (const kind of WIDGET_KINDS) {
+    try {
+      ExtensionStorage.reloadWidget(kind);
+    } catch {}
+  }
+}
+
 const HEX_TO_CODE = {
   "#FF5B22": "OR",
   "#693838": "BR",
@@ -50,7 +64,7 @@ export function syncTodosToWidget(todosByDate = {}) {
     }
 
     storage.set("todosByDateJson", JSON.stringify(merged));
-    ExtensionStorage.reloadWidget();
+    reloadAllWidgetKinds();
   } catch {}
 }
 
@@ -59,7 +73,7 @@ export function syncLoginToWidget(isLoggedIn) {
 
   try {
     storage.set("isLoggedIn", isLoggedIn ? 1 : 0);
-    ExtensionStorage.reloadWidget();
+    reloadAllWidgetKinds();
   } catch {}
 }
 
@@ -68,7 +82,7 @@ export function syncServerErrorToWidget(isServerError) {
 
   try {
     storage.set("isServerError", isServerError ? 1 : 0);
-    ExtensionStorage.reloadWidget();
+    reloadAllWidgetKinds();
   } catch {}
 }
 
@@ -80,7 +94,7 @@ export function clearWidgetForLogout() {
     storage.remove("isServerError");
     storage.remove("todosByDateJson");
     storage.remove("pendingToggleIds");
-    ExtensionStorage.reloadWidget();
+    reloadAllWidgetKinds();
   } catch {}
 }
 
@@ -125,5 +139,5 @@ export async function drainPendingToggles(toggleFn) {
   }
 
   storage.remove("pendingToggleIds");
-  ExtensionStorage.reloadWidget();
+  reloadAllWidgetKinds();
 }
