@@ -52,7 +52,8 @@ api.interceptors.response.use(
     const status = error?.response?.status;
     const errorCode = error?.response?.data?.errorCode;
 
-    const isMaintenanceError = errorCode === "SERVICE_UNAVAILABLE";
+    const isMaintenanceError =
+      errorCode === "SERVICE_UNAVAILABLE" || status === 502;
 
     if (isMaintenanceError) {
       useServerStatusStore.getState().openServerError();
