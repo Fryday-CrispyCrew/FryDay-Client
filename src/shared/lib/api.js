@@ -41,16 +41,18 @@ api.interceptors.request.use(
   (error) => Promise.reject(error),
 );
 api.interceptors.response.use(
-  (response) => response,
+  (response) => {
+    const state = useServerStatusStore.getState();
+    if (state.isServerError) {
+      state.closeServerError();
+    }
+    return response;
+  },
   (error) => {
     const status = error?.response?.status;
     const errorCode = error?.response?.data?.errorCode;
 
-    const isMaintenanceError =
-      errorCode === "SERVICE_UNAVAILABLE" ||
-      status === 502 ||
-      error?.message === "Network Error" ||
-      error?.code === "ECONNABORTED";
+    const isMaintenanceError = errorCode === "SERVICE_UNAVAILABLE";
 
     if (isMaintenanceError) {
       useServerStatusStore.getState().openServerError();
