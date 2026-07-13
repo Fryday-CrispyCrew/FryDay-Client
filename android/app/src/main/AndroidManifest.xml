@@ -42,5 +42,29 @@
         <data android:host="oauth" android:scheme="kakaoc2eaa0f8dae4116f5ee998144c4aa122"/>
       </intent-filter>
     </activity>
+
+    <!-- Widget: Small -->
+    <receiver android:name=".widget.FrydayWidgetSmallReceiver" android:exported="false">
+      <intent-filter>
+        <action android:name="android.appwidget.action.APPWIDGET_UPDATE"/>
+      </intent-filter>
+      <meta-data android:name="android.appwidget.provider" android:resource="@xml/widget_small_info"/>
+    </receiver>
+
+    <!-- Widget: Medium 캐릭터형 -->
+    <receiver android:name=".widget.FrydayWidgetMediumCharReceiver" android:exported="false">
+      <intent-filter>
+        <action android:name="android.appwidget.action.APPWIDGET_UPDATE"/>
+      </intent-filter>
+      <meta-data android:name="android.appwidget.provider" android:resource="@xml/widget_medium_char_info"/>
+    </receiver>
+
+    <!-- Widget: Medium 리스트형 -->
+    <receiver android:name=".widget.FrydayWidgetMediumListReceiver" android:exported="false">
+      <intent-filter>
+        <action android:name="android.appwidget.action.APPWIDGET_UPDATE"/>
+      </intent-filter>
+      <meta-data android:name="android.appwidget.provider" android:resource="@xml/widget_medium_list_info"/>
+    </receiver>
   </application>
 </manifest>

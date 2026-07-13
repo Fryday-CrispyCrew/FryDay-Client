@@ -3,4 +3,29 @@
   <color name="timePicker_numbersSelectorColor">#80CBC4</color>
   <color name="timePicker_background">#383838</color>
   <color name="timePicker_numbersBackgroundColor">#555555</color>
+
+  <!-- FryDay 위젯 디자인 시스템 (Dark) -->
+  <color name="fryday_primary">#FF642F</color>
+  <color name="fryday_secondary">#212120</color>
+
+  <!-- Category Colors (Dark) -->
+  <color name="category_or">#FF642F</color>
+  <color name="category_br">#7C4E4E</color>
+  <color name="category_lg">#A8DB57</color>
+  <color name="category_cb">#458FD5</color>
+  <color name="category_dp">#ED63B6</color>
+  <color name="category_mt">#46D5AD</color>
+  <color name="category_vl">#AF66BE</color>
+  <color name="category_pk">#FF76A8</color>
+  <color name="category_mb">#BC7958</color>
+
+  <!-- Gray Scale (Dark - text/surface 반전) -->
+  <color name="gray_text">#FAFAFA</color>
+  <color name="gray_900">#F2F2F2</color>
+  <color name="gray_700">#EAEAEA</color>
+  <color name="gray_500">#C4C4C3</color>
+  <color name="gray_300">#8A8989</color>
+  <color name="gray_200">#5D5E60</color>
+  <color name="gray_100">#4F4E4D</color>
+  <color name="gray_surface">#141312</color>
 </resources>

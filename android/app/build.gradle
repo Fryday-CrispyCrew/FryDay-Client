@@ -1,5 +1,6 @@
 apply plugin: "com.android.application"
 apply plugin: "org.jetbrains.kotlin.android"
+apply plugin: "org.jetbrains.kotlin.plugin.compose"
 apply plugin: "com.facebook.react"
 
 def projectRoot = rootDir.getAbsoluteFile().getParentFile().getAbsolutePath()
@@ -80,6 +81,10 @@ def enableMinifyInReleaseBuilds = (findProperty('android.enableMinifyInReleaseBu
  * this variant is about 6MiB larger per architecture than default.
  */
 def jscFlavor = 'io.github.react-native-community:jsc-android:2026004.+'
+
+configurations.all {
+    exclude group: 'androidx.work', module: 'work-runtime-ktx'
+}
 
 android {
     ndkVersion rootProject.ext.ndkVersion
@@ -179,6 +184,11 @@ dependencies {
     } else {
         implementation jscFlavor
     }
+
+    // Widget (Jetpack Glance)
+    implementation "androidx.glance:glance-appwidget:1.1.1"
+    implementation "androidx.glance:glance-material3:1.1.1"
+    implementation "androidx.work:work-runtime:2.9.1"
 }
 
 apply plugin: 'com.google.gms.google-services'
