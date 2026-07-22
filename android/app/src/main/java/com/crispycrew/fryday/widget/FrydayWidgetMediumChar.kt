@@ -24,6 +24,7 @@ import androidx.glance.layout.fillMaxSize
 import androidx.glance.layout.fillMaxWidth
 import androidx.glance.layout.height
 import androidx.glance.layout.padding
+import androidx.glance.layout.size
 import androidx.glance.layout.width
 import androidx.glance.text.Text
 import androidx.glance.text.TextAlign
@@ -72,6 +73,10 @@ private fun MediumCharContent(entry: WidgetEntry) {
 
 @Composable
 private fun MediumCharFullView(entry: WidgetEntry) {
+    val size = LocalSize.current
+    val boxHeight = minOf(size.height, MEDIUM_MAX_HEIGHT)
+    val charSize = boxHeight * 0.9f
+
     Row(modifier = GlanceModifier.fillMaxSize()) {
         Column(
             modifier = GlanceModifier
@@ -90,7 +95,7 @@ private fun MediumCharFullView(entry: WidgetEntry) {
             Image(
                 provider = ImageProvider(WidgetImages.mediumCharacter(entry.state)),
                 contentDescription = null,
-                modifier = GlanceModifier.fillMaxSize()
+                modifier = GlanceModifier.size(charSize)
             )
             Box(
                 modifier = GlanceModifier
@@ -172,6 +177,10 @@ private fun MediumCharEmptyView(dateString: String) {
 
 @Composable
 private fun MediumCharErrorView(dateString: String) {
+    val size = LocalSize.current
+    val boxHeight = minOf(size.height, MEDIUM_MAX_HEIGHT)
+    val charSize = boxHeight * 0.9f
+
     Row(modifier = GlanceModifier.fillMaxSize()) {
         Column(
             modifier = GlanceModifier
@@ -193,7 +202,7 @@ private fun MediumCharErrorView(dateString: String) {
             Image(
                 provider = ImageProvider(R.drawable.medium_error),
                 contentDescription = null,
-                modifier = GlanceModifier.fillMaxSize()
+                modifier = GlanceModifier.size(charSize)
             )
             Box(
                 modifier = GlanceModifier

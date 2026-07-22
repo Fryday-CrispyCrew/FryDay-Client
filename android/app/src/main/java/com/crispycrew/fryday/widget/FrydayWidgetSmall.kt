@@ -91,10 +91,7 @@ private fun SmallContentView(entry: WidgetEntry) {
 
 @Composable
 private fun SmallErrorView(dateString: String) {
-    Column(
-        modifier = GlanceModifier.fillMaxSize().padding(18.dp),
-        horizontalAlignment = Alignment.CenterHorizontally
-    ) {
+    Box(modifier = GlanceModifier.fillMaxSize().padding(18.dp)) {
         Box(
             modifier = GlanceModifier.fillMaxWidth(),
             contentAlignment = Alignment.TopEnd
@@ -107,15 +104,19 @@ private fun SmallErrorView(dateString: String) {
                 )
             )
         }
-        Spacer(modifier = GlanceModifier.size(20.dp))
-        Text(
-            text = "앱을 열어\n연결 상태를 확인해 주세요.",
-            style = TextStyle(
-                color = ColorProvider(R.color.gray_500),
-                fontSize = 12.sp,
-                textAlign = TextAlign.Center
+        Box(
+            modifier = GlanceModifier.fillMaxSize(),
+            contentAlignment = Alignment.Center
+        ) {
+            Text(
+                text = "앱을 열어\n연결 상태를 확인해 주세요.",
+                style = TextStyle(
+                    color = ColorProvider(R.color.gray_500),
+                    fontSize = 12.sp,
+                    textAlign = TextAlign.Center
+                )
             )
-        )
+        }
     }
 }
 
