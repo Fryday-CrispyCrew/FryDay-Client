@@ -93,7 +93,7 @@ fun WidgetCheckBox(todo: TodoItem) {
     }
     Box(
         modifier = GlanceModifier
-            .size(28.dp)
+            .size(20.dp)
             .clickable(
                 actionRunCallback<ToggleTodoAction>(
                     actionParametersOf(ToggleTodoAction.todoIdKey to todo.id)

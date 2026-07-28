@@ -15,7 +15,7 @@ import androidx.glance.appwidget.GlanceAppWidgetReceiver
 import androidx.glance.appwidget.SizeMode
 import androidx.glance.appwidget.action.actionRunCallback
 import androidx.glance.appwidget.lazy.LazyColumn
-import androidx.glance.appwidget.lazy.items
+import androidx.glance.appwidget.lazy.itemsIndexed
 import androidx.glance.appwidget.provideContent
 import androidx.glance.background
 import androidx.glance.currentState
@@ -74,10 +74,10 @@ private fun SmallWidgetContent(entry: WidgetEntry) {
 @Composable
 private fun ScrollableTodoList(todos: List<TodoItem>) {
     LazyColumn(modifier = GlanceModifier.fillMaxSize()) {
-        items(todos, itemId = { it.id.hashCode().toLong() }) { todo ->
+        itemsIndexed(todos, itemId = { _, it -> it.id.hashCode().toLong() }) { i, todo ->
             Column {
+                if (i > 0) Spacer(modifier = GlanceModifier.height(16.dp))
                 TodoCell(todo)
-                Spacer(modifier = GlanceModifier.height(16.dp))
             }
         }
     }
