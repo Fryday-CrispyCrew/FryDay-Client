@@ -11,6 +11,7 @@ import com.facebook.react.bridge.ReactMethod
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
+import org.json.JSONObject
 
 class FrydayWidgetModule(reactContext: ReactApplicationContext) :
     ReactContextBaseJavaModule(reactContext) {
@@ -24,11 +25,28 @@ class FrydayWidgetModule(reactContext: ReactApplicationContext) :
     @ReactMethod
     fun syncTodos(json: String, promise: Promise) {
         try {
-            prefs.edit().putString("todosByDateJson", json).apply()
+            val existing = prefs.getString("todosByDateJson", null)
+            val merged = if (existing.isNullOrEmpty()) json else mergeTodosJson(existing, json)
+            prefs.edit().putString("todosByDateJson", merged).apply()
             reloadAllWidgets()
             promise.resolve(null)
         } catch (e: Exception) {
             promise.reject("SYNC_TODOS_FAILED", e)
+        }
+    }
+
+    private fun mergeTodosJson(existingJson: String, incomingJson: String): String {
+        return try {
+            val existing = JSONObject(existingJson)
+            val incoming = JSONObject(incomingJson)
+            val keys = incoming.keys()
+            while (keys.hasNext()) {
+                val date = keys.next()
+                existing.put(date, incoming.get(date))
+            }
+            existing.toString()
+        } catch (_: Exception) {
+            incomingJson
         }
     }
 
