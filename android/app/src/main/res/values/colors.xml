@@ -1,0 +1,35 @@
+<resources>
+  <color name="splashscreen_background">#FF5B22</color>
+  <color name="iconBackground">#ffffff</color>
+  <color name="colorPrimary">#023c69</color>
+  <color name="colorPrimaryDark">#FF5B22</color>
+  <color name="timePicker_headerBackground">#FF5B22</color>
+  <color name="timePicker_numbersSelectorColor">#FF5B22</color>
+  <color name="timePicker_background">#FFFFFF</color>
+  <color name="timePicker_numbersBackgroundColor">#EEEEEE</color>
+
+  <!-- FryDay 위젯 디자인 시스템 (Light) -->
+  <color name="fryday_primary">#FF5B22</color>
+  <color name="fryday_secondary">#F4F4F4</color>
+
+  <!-- Category Colors -->
+  <color name="category_or">#FF5B22</color>
+  <color name="category_br">#693838</color>
+  <color name="category_lg">#82B236</color>
+  <color name="category_cb">#3E78AE</color>
+  <color name="category_dp">#D0509D</color>
+  <color name="category_mt">#3CB492</color>
+  <color name="category_vl">#9351A1</color>
+  <color name="category_pk">#F06B9C</color>
+  <color name="category_mb">#AA7459</color>
+
+  <!-- Gray Scale -->
+  <color name="gray_text">#141312</color>
+  <color name="gray_900">#4F4E4D</color>
+  <color name="gray_700">#5D5E60</color>
+  <color name="gray_500">#8A8989</color>
+  <color name="gray_300">#C4C4C3</color>
+  <color name="gray_200">#EAEAEA</color>
+  <color name="gray_100">#F2F2F2</color>
+  <color name="gray_surface">#FAFAFA</color>
+</resources>

@@ -1,4 +1,4 @@
-import { Platform } from "react-native";
+import { NativeModules, Platform } from "react-native";
 import { ExtensionStorage } from "@bacons/apple-targets";
 
 const APP_GROUP = "group.com.fryday.shared";
@@ -9,6 +9,8 @@ const WIDGET_KINDS = [
   "FrydayWidgetMediumChar",
   "FrydayWidgetMediumList",
 ];
+
+const AndroidWidget = NativeModules.FrydayWidget;
 
 function reloadAllWidgetKinds() {
   for (const kind of WIDGET_KINDS) {
@@ -44,71 +46,113 @@ function toWidgetTodo(todo) {
   };
 }
 
+function buildTodosPayload(todosByDate = {}) {
+  const payload = {};
+  for (const [date, todos] of Object.entries(todosByDate)) {
+    payload[date] = (todos ?? []).map(toWidgetTodo);
+  }
+  return payload;
+}
+
 export function syncTodosToWidget(todosByDate = {}) {
-  if (Platform.OS !== "ios") return;
-
-  try {
-    let existing = {};
-    const raw = storage.get("todosByDateJson");
-    if (raw) {
-      try {
-        existing = JSON.parse(raw) ?? {};
-      } catch {
-        existing = {};
+  if (Platform.OS === "ios") {
+    try {
+      let existing = {};
+      const raw = storage.get("todosByDateJson");
+      if (raw) {
+        try {
+          existing = JSON.parse(raw) ?? {};
+        } catch {
+          existing = {};
+        }
       }
-    }
+      const merged = { ...existing, ...buildTodosPayload(todosByDate) };
+      storage.set("todosByDateJson", JSON.stringify(merged));
+      reloadAllWidgetKinds();
+    } catch {}
+    return;
+  }
 
-    const merged = { ...existing };
-    for (const [date, todos] of Object.entries(todosByDate)) {
-      merged[date] = (todos ?? []).map(toWidgetTodo);
-    }
-
-    storage.set("todosByDateJson", JSON.stringify(merged));
-    reloadAllWidgetKinds();
-  } catch {}
+  if (Platform.OS === "android" && AndroidWidget) {
+    try {
+      const merged = buildTodosPayload(todosByDate);
+      AndroidWidget.syncTodos(JSON.stringify(merged));
+    } catch {}
+  }
 }
 
 export function syncLoginToWidget(isLoggedIn) {
-  if (Platform.OS !== "ios") return;
+  if (Platform.OS === "ios") {
+    try {
+      storage.set("isLoggedIn", isLoggedIn ? 1 : 0);
+      reloadAllWidgetKinds();
+    } catch {}
+    return;
+  }
 
-  try {
-    storage.set("isLoggedIn", isLoggedIn ? 1 : 0);
-    reloadAllWidgetKinds();
-  } catch {}
+  if (Platform.OS === "android" && AndroidWidget) {
+    try {
+      AndroidWidget.syncLogin(!!isLoggedIn);
+    } catch {}
+  }
 }
 
 export function syncServerErrorToWidget(isServerError) {
-  if (Platform.OS !== "ios") return;
+  if (Platform.OS === "ios") {
+    try {
+      storage.set("isServerError", isServerError ? 1 : 0);
+      reloadAllWidgetKinds();
+    } catch {}
+    return;
+  }
 
-  try {
-    storage.set("isServerError", isServerError ? 1 : 0);
-    reloadAllWidgetKinds();
-  } catch {}
+  if (Platform.OS === "android" && AndroidWidget) {
+    try {
+      AndroidWidget.syncServerError(!!isServerError);
+    } catch {}
+  }
 }
 
 export function clearWidgetForLogout() {
-  if (Platform.OS !== "ios") return;
+  if (Platform.OS === "ios") {
+    try {
+      storage.set("isLoggedIn", 0);
+      storage.remove("isServerError");
+      storage.remove("todosByDateJson");
+      storage.remove("pendingToggleIds");
+      reloadAllWidgetKinds();
+    } catch {}
+    return;
+  }
 
-  try {
-    storage.set("isLoggedIn", 0);
-    storage.remove("isServerError");
-    storage.remove("todosByDateJson");
-    storage.remove("pendingToggleIds");
-    reloadAllWidgetKinds();
-  } catch {}
+  if (Platform.OS === "android" && AndroidWidget) {
+    try {
+      AndroidWidget.clearForLogout();
+    } catch {}
+  }
 }
 
 export async function drainPendingToggles(toggleFn) {
-  if (Platform.OS !== "ios") return;
-
-  const raw = storage.get("pendingToggleIds");
-  if (!raw) return;
-
   let pending = [];
-  try {
-    pending = JSON.parse(raw);
-  } catch {
-    pending = [];
+
+  if (Platform.OS === "ios") {
+    const raw = storage.get("pendingToggleIds");
+    if (!raw) return;
+    try {
+      pending = JSON.parse(raw);
+    } catch {
+      pending = [];
+    }
+  } else if (Platform.OS === "android" && AndroidWidget) {
+    try {
+      const raw = await AndroidWidget.getPendingToggles();
+      if (!raw) return;
+      pending = JSON.parse(raw);
+    } catch {
+      pending = [];
+    }
+  } else {
+    return;
   }
 
   if (!Array.isArray(pending) || pending.length === 0) return;
@@ -121,23 +165,48 @@ export async function drainPendingToggles(toggleFn) {
     } catch {}
   }
 
-  if (successful.length > 0) {
-    const raw = storage.get("todosByDateJson");
-    if (raw) {
-      try {
-        const byDate = JSON.parse(raw);
-        const successSet = new Set(successful);
-        const updated = {};
-        for (const [date, todos] of Object.entries(byDate)) {
-          updated[date] = todos.map((t) =>
-            successSet.has(t.id) ? { ...t, isDone: !t.isDone } : t,
-          );
-        }
-        storage.set("todosByDateJson", JSON.stringify(updated));
-      } catch {}
+  if (Platform.OS === "ios") {
+    if (successful.length > 0) {
+      const raw = storage.get("todosByDateJson");
+      if (raw) {
+        try {
+          const byDate = JSON.parse(raw);
+          const successSet = new Set(successful);
+          const updated = {};
+          for (const [date, todos] of Object.entries(byDate)) {
+            updated[date] = todos.map((t) =>
+              successSet.has(t.id) ? { ...t, isDone: !t.isDone } : t,
+            );
+          }
+          storage.set("todosByDateJson", JSON.stringify(updated));
+        } catch {}
+      }
     }
+    storage.remove("pendingToggleIds");
+    reloadAllWidgetKinds();
+    return;
   }
 
-  storage.remove("pendingToggleIds");
-  reloadAllWidgetKinds();
+  if (Platform.OS === "android" && AndroidWidget) {
+    try {
+      if (successful.length > 0) {
+        try {
+          const currentJson = await AndroidWidget.getTodosByDate?.();
+          if (currentJson) {
+            const byDate = JSON.parse(currentJson);
+            const successSet = new Set(successful);
+            const updated = {};
+            for (const [date, todos] of Object.entries(byDate)) {
+              updated[date] = todos.map((t) =>
+                successSet.has(t.id) ? { ...t, isDone: !t.isDone } : t,
+              );
+            }
+            await AndroidWidget.syncTodos(JSON.stringify(updated));
+          }
+        } catch {}
+      }
+      await AndroidWidget.clearPendingToggles();
+      await AndroidWidget.reloadWidgets();
+    } catch {}
+  }
 }
