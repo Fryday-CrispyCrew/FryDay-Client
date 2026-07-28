@@ -10,6 +10,7 @@ import {
   StatusBar,
   Pressable,
   ScrollView,
+  AppState,
 } from "react-native";
 import { Gesture, GestureDetector } from "react-native-gesture-handler";
 import { SafeAreaView } from "react-native-safe-area-context";
@@ -237,6 +238,23 @@ export default function HomeScreen({ navigation, route }) {
   const isViewingToday = useMemo(() => {
     return date === formatYYYYMMDD(new Date());
   }, [date]);
+
+  const isViewingTodayRef = useRef(true);
+  useEffect(() => {
+    isViewingTodayRef.current = isViewingToday;
+  }, [isViewingToday]);
+
+  useEffect(() => {
+    const sub = AppState.addEventListener("change", (status) => {
+      if (status !== "active") return;
+      if (!isViewingTodayRef.current) return;
+      const now = new Date();
+      setCurrentDate((prev) =>
+        formatYYYYMMDD(prev) === formatYYYYMMDD(now) ? prev : now,
+      );
+    });
+    return () => sub.remove();
+  }, []);
 
   const {
     data: rawCategories = [],
