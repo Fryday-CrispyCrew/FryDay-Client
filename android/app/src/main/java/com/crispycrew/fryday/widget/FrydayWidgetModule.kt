@@ -1,13 +1,16 @@
 package com.crispycrew.fryday.widget
 
-import android.appwidget.AppWidgetManager
-import android.content.ComponentName
 import android.content.Context
-import android.content.Intent
+import androidx.datastore.preferences.core.longPreferencesKey
+import androidx.glance.appwidget.GlanceAppWidgetManager
+import androidx.glance.appwidget.state.updateAppWidgetState
 import com.facebook.react.bridge.Promise
 import com.facebook.react.bridge.ReactApplicationContext
 import com.facebook.react.bridge.ReactContextBaseJavaModule
 import com.facebook.react.bridge.ReactMethod
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.launch
 
 class FrydayWidgetModule(reactContext: ReactApplicationContext) :
     ReactContextBaseJavaModule(reactContext) {
@@ -88,6 +91,16 @@ class FrydayWidgetModule(reactContext: ReactApplicationContext) :
     }
 
     @ReactMethod
+    fun getTodosByDate(promise: Promise) {
+        try {
+            val json = prefs.getString("todosByDateJson", null)
+            promise.resolve(json)
+        } catch (e: Exception) {
+            promise.reject("GET_TODOS_FAILED", e)
+        }
+    }
+
+    @ReactMethod
     fun reloadWidgets(promise: Promise) {
         try {
             reloadAllWidgets()
@@ -99,21 +112,22 @@ class FrydayWidgetModule(reactContext: ReactApplicationContext) :
 
     private fun reloadAllWidgets() {
         val context = reactApplicationContext
-        val manager = AppWidgetManager.getInstance(context)
-        val kinds = listOf(
-            FrydayWidgetSmallReceiver::class.java,
-            FrydayWidgetMediumCharReceiver::class.java,
-            FrydayWidgetMediumListReceiver::class.java
-        )
-        for (kind in kinds) {
-            val ids = manager.getAppWidgetIds(ComponentName(context, kind))
-            if (ids.isNotEmpty()) {
-                val intent = Intent(context, kind).apply {
-                    action = AppWidgetManager.ACTION_APPWIDGET_UPDATE
-                    putExtra(AppWidgetManager.EXTRA_APPWIDGET_IDS, ids)
+        val tickKey = longPreferencesKey("_widgetTick")
+        CoroutineScope(Dispatchers.IO).launch {
+            try {
+                val manager = GlanceAppWidgetManager(context)
+                val smallInstance = FrydayWidgetSmall()
+                val mediumInstance = FrydayWidgetMediumList()
+                val tick = System.currentTimeMillis()
+                manager.getGlanceIds(FrydayWidgetSmall::class.java).forEach { id ->
+                    updateAppWidgetState(context, id) { p -> p[tickKey] = tick }
+                    smallInstance.update(context, id)
                 }
-                context.sendBroadcast(intent)
-            }
+                manager.getGlanceIds(FrydayWidgetMediumList::class.java).forEach { id ->
+                    updateAppWidgetState(context, id) { p -> p[tickKey] = tick }
+                    mediumInstance.update(context, id)
+                }
+            } catch (_: Exception) {}
         }
     }
 }

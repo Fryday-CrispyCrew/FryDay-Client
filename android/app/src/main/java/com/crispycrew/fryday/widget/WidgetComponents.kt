@@ -1,79 +1,143 @@
 package com.crispycrew.fryday.widget
 
+import android.util.Log
 import androidx.compose.runtime.Composable
+import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 import androidx.glance.ColorFilter
 import androidx.glance.GlanceModifier
 import androidx.glance.Image
 import androidx.glance.ImageProvider
+import androidx.glance.action.actionParametersOf
+import androidx.glance.action.clickable
+import androidx.glance.appwidget.action.actionRunCallback
 import androidx.glance.layout.Alignment
+import androidx.glance.layout.Box
 import androidx.glance.layout.Column
 import androidx.glance.layout.Row
 import androidx.glance.layout.Spacer
+import androidx.glance.layout.fillMaxSize
+import androidx.glance.layout.fillMaxWidth
 import androidx.glance.layout.height
+import androidx.glance.layout.padding
 import androidx.glance.layout.size
 import androidx.glance.layout.width
 import androidx.glance.text.Text
+import androidx.glance.text.TextAlign
 import androidx.glance.text.TextStyle
 import androidx.glance.unit.ColorProvider
-import androidx.compose.ui.unit.sp
-import androidx.compose.ui.unit.dp
 import com.crispycrew.fryday.R
 
 @Composable
-fun WidgetHeader(dateString: String, doneCount: Int, doingCount: Int) {
-    Column(horizontalAlignment = Alignment.End) {
-        Text(
-            text = dateString,
-            style = TextStyle(
-                color = ColorProvider(R.color.gray_500),
-                fontSize = 12.sp
-            )
-        )
-        Spacer(modifier = GlanceModifier.height(4.dp))
-        Row(verticalAlignment = Alignment.CenterVertically) {
-            Image(
-                provider = ImageProvider(R.drawable.icon_done),
-                contentDescription = null,
-                modifier = GlanceModifier.size(16.dp)
-            )
-            Spacer(modifier = GlanceModifier.width(4.dp))
-            Text(
-                text = "$doneCount",
-                style = TextStyle(
-                    color = ColorProvider(R.color.category_or),
-                    fontSize = 12.sp
-                )
-            )
-            Spacer(modifier = GlanceModifier.width(8.dp))
-            Image(
-                provider = ImageProvider(R.drawable.icon_doing),
-                contentDescription = null,
-                modifier = GlanceModifier.size(16.dp)
-            )
-            Spacer(modifier = GlanceModifier.width(4.dp))
-            Text(
-                text = "$doingCount",
-                style = TextStyle(
-                    color = ColorProvider(R.color.gray_700),
-                    fontSize = 12.sp
-                )
-            )
+fun TodoListColumn(todos: List<TodoItem>, maxItems: Int) {
+    val list = todos.take(maxItems)
+    Column(modifier = GlanceModifier.fillMaxWidth()) {
+        list.forEachIndexed { i, todo ->
+            if (i > 0) Spacer(modifier = GlanceModifier.height(16.dp))
+            TodoCell(todo)
         }
     }
 }
 
 @Composable
+fun TodoListGrid(todos: List<TodoItem>, maxItems: Int) {
+    val list = todos.take(maxItems)
+    val rows = list.chunked(2)
+    Column(modifier = GlanceModifier.fillMaxWidth()) {
+        rows.forEachIndexed { rowIdx, pair ->
+            if (rowIdx > 0) Spacer(modifier = GlanceModifier.height(16.dp))
+            Row(modifier = GlanceModifier.fillMaxWidth()) {
+                pair.forEachIndexed { colIdx, todo ->
+                    if (colIdx > 0) Spacer(modifier = GlanceModifier.width(12.dp))
+                    Box(modifier = GlanceModifier.defaultWeight()) {
+                        TodoCell(todo)
+                    }
+                }
+                if (pair.size == 1) {
+                    Spacer(modifier = GlanceModifier.width(12.dp))
+                    Box(modifier = GlanceModifier.defaultWeight()) {}
+                }
+            }
+        }
+    }
+}
+
+@Composable
+fun TodoCell(todo: TodoItem) {
+    Row(
+        modifier = GlanceModifier.fillMaxWidth(),
+        verticalAlignment = Alignment.CenterVertically
+    ) {
+        Text(
+            text = truncate(todo.title, 13),
+            style = TextStyle(
+                color = ColorProvider(R.color.gray_text),
+                fontSize = 12.sp
+            ),
+            maxLines = 1,
+            modifier = GlanceModifier.defaultWeight()
+        )
+        Spacer(modifier = GlanceModifier.width(4.dp))
+        WidgetCheckBox(todo)
+    }
+}
+
+@Composable
 fun WidgetCheckBox(todo: TodoItem) {
+    Log.d("WidgetCheckBox", "render ${todo.id} isDone=${todo.isDone}")
     val drawable = if (todo.isDone) R.drawable.radio_on else R.drawable.radio_off
     val tintColor = if (todo.isDone) {
         ColorProvider(AppColor.categoryColor(todo.categoryCode))
     } else {
         ColorProvider(R.color.gray_200)
     }
-    Image(
-        provider = ImageProvider(drawable),
-        contentDescription = null,
-        colorFilter = ColorFilter.tint(tintColor),
-        modifier = GlanceModifier.size(20.dp)
-    )
+    Box(
+        modifier = GlanceModifier
+            .size(28.dp)
+            .clickable(
+                actionRunCallback<ToggleTodoAction>(
+                    actionParametersOf(ToggleTodoAction.todoIdKey to todo.id)
+                )
+            ),
+        contentAlignment = Alignment.Center
+    ) {
+        Image(
+            provider = ImageProvider(drawable),
+            contentDescription = null,
+            colorFilter = ColorFilter.tint(tintColor),
+            modifier = GlanceModifier.size(20.dp)
+        )
+    }
 }
+
+@Composable
+fun CenterBowlMessage(state: WidgetState) {
+    val message = when (state) {
+        WidgetState.ERROR -> "앱을 열어\n연결 상태를 확인해 주세요."
+        WidgetState.EMPTY -> "아직 튀긴 투두가 없어요.\n위젯을 눌러 투두를 추가해 주세요!"
+        else -> ""
+    }
+    Column(
+        modifier = GlanceModifier.fillMaxSize(),
+        horizontalAlignment = Alignment.CenterHorizontally,
+        verticalAlignment = Alignment.CenterVertically
+    ) {
+        Image(
+            provider = ImageProvider(R.drawable.medium_bowl),
+            contentDescription = null,
+            modifier = GlanceModifier.size(40.dp)
+        )
+        Spacer(modifier = GlanceModifier.height(8.dp))
+        Text(
+            text = message,
+            style = TextStyle(
+                color = ColorProvider(R.color.gray_500),
+                fontSize = 12.sp,
+                textAlign = TextAlign.Center
+            )
+        )
+    }
+}
+
+private fun truncate(text: String, max: Int): String =
+    if (text.length <= max) text else text.take(max) + "..."

@@ -189,6 +189,22 @@ export async function drainPendingToggles(toggleFn) {
 
   if (Platform.OS === "android" && AndroidWidget) {
     try {
+      if (successful.length > 0) {
+        try {
+          const currentJson = await AndroidWidget.getTodosByDate?.();
+          if (currentJson) {
+            const byDate = JSON.parse(currentJson);
+            const successSet = new Set(successful);
+            const updated = {};
+            for (const [date, todos] of Object.entries(byDate)) {
+              updated[date] = todos.map((t) =>
+                successSet.has(t.id) ? { ...t, isDone: !t.isDone } : t,
+              );
+            }
+            await AndroidWidget.syncTodos(JSON.stringify(updated));
+          }
+        } catch {}
+      }
       await AndroidWidget.clearPendingToggles();
       await AndroidWidget.reloadWidgets();
     } catch {}
