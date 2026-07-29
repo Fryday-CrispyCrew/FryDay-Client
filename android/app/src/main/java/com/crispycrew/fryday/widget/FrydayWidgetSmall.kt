@@ -76,10 +76,11 @@ private fun SmallWidgetContent(entry: WidgetEntry) {
 private fun ScrollableTodoList(todos: List<TodoItem>) {
     val size = LocalSize.current
     val available = (size.height.value - 52f).coerceAtLeast(40f)
-    val ideal = 4f * 20f + 3f * 12f
-    val scale = (available / ideal).coerceAtMost(1.2f)
-    val rowH = (20f * scale).coerceAtLeast(10f)
-    val gap = (12f * scale).coerceAtLeast(2f)
+    var gap = 16f
+    var rowH = ((available - 3f * gap) / 4f).coerceIn(16f, 20f)
+    if (4f * rowH + 3f * gap > available) {
+        gap = ((available - 4f * rowH) / 3f).coerceAtLeast(4f)
+    }
     LazyColumn(modifier = GlanceModifier.fillMaxSize()) {
         itemsIndexed(todos, itemId = { _, it -> it.id.hashCode().toLong() }) { i, todo ->
             Column {
