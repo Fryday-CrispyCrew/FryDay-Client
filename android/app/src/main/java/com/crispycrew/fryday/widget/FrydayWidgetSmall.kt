@@ -56,7 +56,7 @@ private fun SmallWidgetContent(entry: WidgetEntry) {
             .clickable(actionRunCallback<OpenAppAction>())
     ) {
         Column(modifier = GlanceModifier.fillMaxSize().padding(14.dp)) {
-            Spacer(modifier = GlanceModifier.height(6.dp))
+            Spacer(modifier = GlanceModifier.defaultWeight())
             Text(
                 text = entry.dateString,
                 style = TextStyle(
@@ -70,6 +70,7 @@ private fun SmallWidgetContent(entry: WidgetEntry) {
                     CenterBowlMessage(state = entry.state)
                 else -> ScrollableTodoList(entry.todos)
             }
+            Spacer(modifier = GlanceModifier.defaultWeight())
         }
     }
 }
@@ -77,12 +78,12 @@ private fun SmallWidgetContent(entry: WidgetEntry) {
 @Composable
 private fun ScrollableTodoList(todos: List<TodoItem>) {
     val size = LocalSize.current
-    val available = (size.height.value - 61f).coerceAtLeast(20f)
+    val available = (size.height.value - 55f).coerceAtLeast(20f)
     val rowH = 20f
     val fitGap = 16f
     val fitRows = ((available + fitGap) / (rowH + fitGap)).toInt().coerceIn(1, 4)
     val gap = if (fitRows > 1) {
-        ((available - fitRows * rowH) / (fitRows - 1)).coerceIn(16f, 22f)
+        ((available - fitRows * rowH) / (fitRows - 1)).coerceIn(18f, 26f)
     } else {
         0f
     }

@@ -44,13 +44,13 @@ fun TodoListColumn(todos: List<TodoItem>, maxItems: Int) {
 @Composable
 fun TodoListGrid(todos: List<TodoItem>, maxItems: Int) {
     val size = LocalSize.current
-    val available = (size.height.value - 61f).coerceAtLeast(20f)
+    val available = (size.height.value - 55f).coerceAtLeast(20f)
     val rowH = 20f
     val fitGap = 16f
     val maxRowsCap = (maxItems / 2).coerceAtLeast(1)
     val fitRows = ((available + fitGap) / (rowH + fitGap)).toInt().coerceIn(1, maxRowsCap)
     val gap = if (fitRows > 1) {
-        ((available - fitRows * rowH) / (fitRows - 1)).coerceIn(16f, 22f)
+        ((available - fitRows * rowH) / (fitRows - 1)).coerceIn(18f, 26f)
     } else {
         0f
     }
