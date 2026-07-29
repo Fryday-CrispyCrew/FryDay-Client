@@ -47,11 +47,11 @@ fun TodoListGrid(todos: List<TodoItem>, maxItems: Int) {
     val rows = list.chunked(2)
     val rowCount = rows.size.coerceAtLeast(1)
     val size = LocalSize.current
-    val available = (size.height.value - 58f).coerceAtLeast(40f)
-    val ideal = rowCount * 20f + (rowCount - 1) * 8f
-    val scale = (available / ideal).coerceAtMost(1.0f)
+    val available = (size.height.value - 52f).coerceAtLeast(40f)
+    val ideal = rowCount * 20f + (rowCount - 1) * 12f
+    val scale = (available / ideal).coerceAtMost(1.2f)
     val rowH = (20f * scale).coerceAtLeast(10f)
-    val gap = (8f * scale).coerceAtLeast(2f)
+    val gap = (12f * scale).coerceAtLeast(2f)
     Column(modifier = GlanceModifier.fillMaxWidth().fillMaxHeight()) {
         Spacer(modifier = GlanceModifier.defaultWeight())
         rows.forEachIndexed { rowIdx, pair ->

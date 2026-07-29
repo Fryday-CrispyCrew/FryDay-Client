@@ -54,7 +54,7 @@ private fun SmallWidgetContent(entry: WidgetEntry) {
             .background(ImageProvider(R.drawable.widget_surface_bg))
             .clickable(actionRunCallback<OpenAppAction>())
     ) {
-        Column(modifier = GlanceModifier.fillMaxSize().padding(16.dp)) {
+        Column(modifier = GlanceModifier.fillMaxSize().padding(14.dp)) {
             Text(
                 text = entry.dateString,
                 style = TextStyle(
@@ -62,7 +62,7 @@ private fun SmallWidgetContent(entry: WidgetEntry) {
                     fontSize = 12.sp
                 )
             )
-            Spacer(modifier = GlanceModifier.height(12.dp))
+            Spacer(modifier = GlanceModifier.height(10.dp))
             when (entry.state) {
                 WidgetState.ERROR, WidgetState.EMPTY ->
                     CenterBowlMessage(state = entry.state)
@@ -75,11 +75,11 @@ private fun SmallWidgetContent(entry: WidgetEntry) {
 @Composable
 private fun ScrollableTodoList(todos: List<TodoItem>) {
     val size = LocalSize.current
-    val available = (size.height.value - 58f).coerceAtLeast(40f)
-    val ideal = 4f * 20f + 3f * 8f
-    val scale = (available / ideal).coerceAtMost(1.0f)
+    val available = (size.height.value - 52f).coerceAtLeast(40f)
+    val ideal = 4f * 20f + 3f * 12f
+    val scale = (available / ideal).coerceAtMost(1.2f)
     val rowH = (20f * scale).coerceAtLeast(10f)
-    val gap = (8f * scale).coerceAtLeast(2f)
+    val gap = (12f * scale).coerceAtLeast(2f)
     LazyColumn(modifier = GlanceModifier.fillMaxSize()) {
         itemsIndexed(todos, itemId = { _, it -> it.id.hashCode().toLong() }) { i, todo ->
             Column {
