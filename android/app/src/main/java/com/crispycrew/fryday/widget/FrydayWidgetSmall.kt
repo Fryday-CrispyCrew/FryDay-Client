@@ -24,6 +24,7 @@ import androidx.glance.layout.Box
 import androidx.glance.layout.Column
 import androidx.glance.layout.Spacer
 import androidx.glance.layout.fillMaxSize
+import androidx.glance.layout.fillMaxWidth
 import androidx.glance.layout.height
 import androidx.glance.layout.padding
 import androidx.glance.state.PreferencesGlanceStateDefinition
@@ -77,14 +78,16 @@ private fun ScrollableTodoList(todos: List<TodoItem>) {
     val size = LocalSize.current
     val available = (size.height.value - 52f).coerceAtLeast(40f)
     var rowH = 20f
-    var gap = 16f
+    var gap = ((available - 4f * rowH) / 3f).coerceIn(16f, 32f)
     if (4f * rowH + 3f * gap > available) {
+        gap = 16f
         rowH = ((available - 3f * gap) / 4f).coerceAtLeast(10f)
     }
     if (4f * rowH + 3f * gap > available) {
         gap = ((available - 4f * rowH) / 3f).coerceAtLeast(4f)
     }
-    LazyColumn(modifier = GlanceModifier.fillMaxSize()) {
+    val listHeight = 4f * rowH + 3f * gap
+    LazyColumn(modifier = GlanceModifier.fillMaxWidth().height(listHeight.dp)) {
         itemsIndexed(todos, itemId = { _, it -> it.id.hashCode().toLong() }) { i, todo ->
             Column {
                 if (i > 0) Spacer(modifier = GlanceModifier.height(gap.dp))
