@@ -8,6 +8,7 @@ import androidx.glance.ColorFilter
 import androidx.glance.GlanceModifier
 import androidx.glance.Image
 import androidx.glance.ImageProvider
+import androidx.glance.LocalSize
 import androidx.glance.action.actionParametersOf
 import androidx.glance.action.clickable
 import androidx.glance.appwidget.action.actionRunCallback
@@ -44,13 +45,17 @@ fun TodoListColumn(todos: List<TodoItem>, maxItems: Int) {
 fun TodoListGrid(todos: List<TodoItem>, maxItems: Int) {
     val list = todos.take(maxItems)
     val rows = list.chunked(2)
+    val rowCount = rows.size.coerceAtLeast(1)
+    val size = LocalSize.current
+    val available = (size.height.value - 46f).coerceAtLeast(40f)
+    val ideal = rowCount * 20f + (rowCount - 1) * 16f
+    val scale = (available / ideal).coerceAtMost(1.5f)
+    val rowH = (20f * scale).coerceAtLeast(10f)
+    val gap = (16f * scale).coerceAtLeast(2f)
     Column(modifier = GlanceModifier.fillMaxWidth().fillMaxHeight()) {
         rows.forEachIndexed { rowIdx, pair ->
-            if (rowIdx > 0) {
-                Spacer(modifier = GlanceModifier.height(16.dp))
-                Spacer(modifier = GlanceModifier.defaultWeight())
-            }
-            Row(modifier = GlanceModifier.fillMaxWidth()) {
+            if (rowIdx > 0) Spacer(modifier = GlanceModifier.height(gap.dp))
+            Row(modifier = GlanceModifier.fillMaxWidth().height(rowH.dp)) {
                 pair.forEachIndexed { colIdx, todo ->
                     if (colIdx > 0) Spacer(modifier = GlanceModifier.width(12.dp))
                     Box(modifier = GlanceModifier.defaultWeight()) {
