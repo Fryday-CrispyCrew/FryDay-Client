@@ -1,20 +1,22 @@
 import React from "react";
 import { ScrollView } from "react-native";
-import { SafeAreaView } from "react-native-safe-area-context";
+import { SafeAreaView, useSafeAreaInsets } from "react-native-safe-area-context";
 import MyPageHeader from "../../components/MypageHeader";
 import SystemBox from "../../components/SystemBox";
 import { TERMS_DATA } from "../../../../shared/constants/terms";
 
 export default function SystemUse() {
+    const insets = useSafeAreaInsets();
+
     return (
-        <SafeAreaView className="flex-1 bg-gr" edges={["top", "bottom"]}>
+        <SafeAreaView className="flex-1 bg-gr" edges={["top"]}>
             <MyPageHeader showBackButton title="이용 약관" />
 
             <ScrollView
                 showsVerticalScrollIndicator={false}
                 contentContainerStyle={{
                     paddingTop: 16,
-                    paddingBottom: 24,
+                    paddingBottom: 24 + (insets.bottom || 0),
                     rowGap: 16,
                 }}
             >
