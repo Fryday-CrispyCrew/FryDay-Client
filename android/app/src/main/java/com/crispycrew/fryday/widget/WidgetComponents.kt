@@ -50,15 +50,14 @@ fun TodoListGrid(todos: List<TodoItem>, maxItems: Int) {
     val size = LocalSize.current
     val available = (size.height.value - 52f).coerceAtLeast(40f)
     var rowH = 20f
-    var gap = ((available - rowCount * rowH) / gapCount).coerceAtLeast(16f)
+    var gap = 16f
     if (rowCount * rowH + gapCount * gap > available) {
-        gap = 16f
         rowH = ((available - gapCount * gap) / rowCount).coerceAtLeast(10f)
     }
     if (rowCount * rowH + gapCount * gap > available) {
         gap = ((available - rowCount * rowH) / gapCount).coerceAtLeast(4f)
     }
-    Column(modifier = GlanceModifier.fillMaxWidth().fillMaxHeight()) {
+    Column(modifier = GlanceModifier.fillMaxWidth()) {
         rows.forEachIndexed { rowIdx, pair ->
             if (rowIdx > 0) Spacer(modifier = GlanceModifier.height(gap.dp))
             Row(modifier = GlanceModifier.fillMaxWidth().height(rowH.dp)) {

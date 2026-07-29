@@ -77,9 +77,8 @@ private fun ScrollableTodoList(todos: List<TodoItem>) {
     val size = LocalSize.current
     val available = (size.height.value - 52f).coerceAtLeast(40f)
     var rowH = 20f
-    var gap = ((available - 4f * rowH) / 3f).coerceAtLeast(16f)
+    var gap = 16f
     if (4f * rowH + 3f * gap > available) {
-        gap = 16f
         rowH = ((available - 3f * gap) / 4f).coerceAtLeast(10f)
     }
     if (4f * rowH + 3f * gap > available) {
