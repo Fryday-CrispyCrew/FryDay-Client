@@ -46,16 +46,19 @@ fun TodoListGrid(todos: List<TodoItem>, maxItems: Int) {
     val list = todos.take(maxItems)
     val rows = list.chunked(2)
     val rowCount = rows.size.coerceAtLeast(1)
+    val gapCount = (rowCount - 1).coerceAtLeast(1)
     val size = LocalSize.current
     val available = (size.height.value - 52f).coerceAtLeast(40f)
-    var gap = 16f
-    val gapCount = (rowCount - 1).coerceAtLeast(0)
-    var rowH = ((available - gapCount * gap) / rowCount).coerceIn(16f, 20f)
-    if (rowCount * rowH + gapCount * gap > available && gapCount > 0) {
+    var rowH = 20f
+    var gap = ((available - rowCount * rowH) / gapCount).coerceAtLeast(16f)
+    if (rowCount * rowH + gapCount * gap > available) {
+        gap = 16f
+        rowH = ((available - gapCount * gap) / rowCount).coerceAtLeast(10f)
+    }
+    if (rowCount * rowH + gapCount * gap > available) {
         gap = ((available - rowCount * rowH) / gapCount).coerceAtLeast(4f)
     }
     Column(modifier = GlanceModifier.fillMaxWidth().fillMaxHeight()) {
-        Spacer(modifier = GlanceModifier.defaultWeight())
         rows.forEachIndexed { rowIdx, pair ->
             if (rowIdx > 0) Spacer(modifier = GlanceModifier.height(gap.dp))
             Row(modifier = GlanceModifier.fillMaxWidth().height(rowH.dp)) {
@@ -71,7 +74,6 @@ fun TodoListGrid(todos: List<TodoItem>, maxItems: Int) {
                 }
             }
         }
-        Spacer(modifier = GlanceModifier.defaultWeight())
     }
 }
 

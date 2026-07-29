@@ -76,8 +76,12 @@ private fun SmallWidgetContent(entry: WidgetEntry) {
 private fun ScrollableTodoList(todos: List<TodoItem>) {
     val size = LocalSize.current
     val available = (size.height.value - 52f).coerceAtLeast(40f)
-    var gap = 16f
-    var rowH = ((available - 3f * gap) / 4f).coerceIn(16f, 20f)
+    var rowH = 20f
+    var gap = ((available - 4f * rowH) / 3f).coerceAtLeast(16f)
+    if (4f * rowH + 3f * gap > available) {
+        gap = 16f
+        rowH = ((available - 3f * gap) / 4f).coerceAtLeast(10f)
+    }
     if (4f * rowH + 3f * gap > available) {
         gap = ((available - 4f * rowH) / 3f).coerceAtLeast(4f)
     }
