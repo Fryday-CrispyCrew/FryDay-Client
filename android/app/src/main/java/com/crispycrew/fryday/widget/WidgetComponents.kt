@@ -8,6 +8,7 @@ import androidx.glance.ColorFilter
 import androidx.glance.GlanceModifier
 import androidx.glance.Image
 import androidx.glance.ImageProvider
+import androidx.glance.LocalSize
 import androidx.glance.action.actionParametersOf
 import androidx.glance.action.clickable
 import androidx.glance.appwidget.action.actionRunCallback
@@ -16,6 +17,7 @@ import androidx.glance.layout.Box
 import androidx.glance.layout.Column
 import androidx.glance.layout.Row
 import androidx.glance.layout.Spacer
+import androidx.glance.layout.fillMaxHeight
 import androidx.glance.layout.fillMaxSize
 import androidx.glance.layout.fillMaxWidth
 import androidx.glance.layout.height
@@ -41,12 +43,23 @@ fun TodoListColumn(todos: List<TodoItem>, maxItems: Int) {
 
 @Composable
 fun TodoListGrid(todos: List<TodoItem>, maxItems: Int) {
-    val list = todos.take(maxItems)
+    val size = LocalSize.current
+    val available = (size.height.value - 61f).coerceAtLeast(20f)
+    val rowH = 20f
+    val fitGap = 16f
+    val maxRowsCap = (maxItems / 2).coerceAtLeast(1)
+    val fitRows = ((available + fitGap) / (rowH + fitGap)).toInt().coerceIn(1, maxRowsCap)
+    val gap = if (fitRows > 1) {
+        ((available - fitRows * rowH) / (fitRows - 1)).coerceIn(16f, 22f)
+    } else {
+        0f
+    }
+    val list = todos.take(fitRows * 2)
     val rows = list.chunked(2)
     Column(modifier = GlanceModifier.fillMaxWidth()) {
         rows.forEachIndexed { rowIdx, pair ->
-            if (rowIdx > 0) Spacer(modifier = GlanceModifier.height(16.dp))
-            Row(modifier = GlanceModifier.fillMaxWidth()) {
+            if (rowIdx > 0) Spacer(modifier = GlanceModifier.height(gap.dp))
+            Row(modifier = GlanceModifier.fillMaxWidth().height(rowH.dp)) {
                 pair.forEachIndexed { colIdx, todo ->
                     if (colIdx > 0) Spacer(modifier = GlanceModifier.width(12.dp))
                     Box(modifier = GlanceModifier.defaultWeight()) {
@@ -93,7 +106,7 @@ fun WidgetCheckBox(todo: TodoItem) {
     }
     Box(
         modifier = GlanceModifier
-            .size(28.dp)
+            .size(20.dp)
             .clickable(
                 actionRunCallback<ToggleTodoAction>(
                     actionParametersOf(ToggleTodoAction.todoIdKey to todo.id)

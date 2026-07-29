@@ -9,13 +9,14 @@ import androidx.datastore.preferences.core.longPreferencesKey
 import androidx.glance.GlanceId
 import androidx.glance.GlanceModifier
 import androidx.glance.ImageProvider
+import androidx.glance.LocalSize
 import androidx.glance.action.clickable
 import androidx.glance.appwidget.GlanceAppWidget
 import androidx.glance.appwidget.GlanceAppWidgetReceiver
 import androidx.glance.appwidget.SizeMode
 import androidx.glance.appwidget.action.actionRunCallback
 import androidx.glance.appwidget.lazy.LazyColumn
-import androidx.glance.appwidget.lazy.items
+import androidx.glance.appwidget.lazy.itemsIndexed
 import androidx.glance.appwidget.provideContent
 import androidx.glance.background
 import androidx.glance.currentState
@@ -23,6 +24,7 @@ import androidx.glance.layout.Box
 import androidx.glance.layout.Column
 import androidx.glance.layout.Spacer
 import androidx.glance.layout.fillMaxSize
+import androidx.glance.layout.fillMaxWidth
 import androidx.glance.layout.height
 import androidx.glance.layout.padding
 import androidx.glance.state.PreferencesGlanceStateDefinition
@@ -53,7 +55,8 @@ private fun SmallWidgetContent(entry: WidgetEntry) {
             .background(ImageProvider(R.drawable.widget_surface_bg))
             .clickable(actionRunCallback<OpenAppAction>())
     ) {
-        Column(modifier = GlanceModifier.fillMaxSize().padding(18.dp)) {
+        Column(modifier = GlanceModifier.fillMaxSize().padding(14.dp)) {
+            Spacer(modifier = GlanceModifier.height(6.dp))
             Text(
                 text = entry.dateString,
                 style = TextStyle(
@@ -61,7 +64,7 @@ private fun SmallWidgetContent(entry: WidgetEntry) {
                     fontSize = 12.sp
                 )
             )
-            Spacer(modifier = GlanceModifier.height(12.dp))
+            Spacer(modifier = GlanceModifier.height(13.dp))
             when (entry.state) {
                 WidgetState.ERROR, WidgetState.EMPTY ->
                     CenterBowlMessage(state = entry.state)
@@ -73,11 +76,24 @@ private fun SmallWidgetContent(entry: WidgetEntry) {
 
 @Composable
 private fun ScrollableTodoList(todos: List<TodoItem>) {
-    LazyColumn(modifier = GlanceModifier.fillMaxSize()) {
-        items(todos, itemId = { it.id.hashCode().toLong() }) { todo ->
+    val size = LocalSize.current
+    val available = (size.height.value - 61f).coerceAtLeast(20f)
+    val rowH = 20f
+    val fitGap = 16f
+    val fitRows = ((available + fitGap) / (rowH + fitGap)).toInt().coerceIn(1, 4)
+    val gap = if (fitRows > 1) {
+        ((available - fitRows * rowH) / (fitRows - 1)).coerceIn(16f, 22f)
+    } else {
+        0f
+    }
+    val listHeight = fitRows * rowH + (fitRows - 1).coerceAtLeast(0) * gap
+    LazyColumn(modifier = GlanceModifier.fillMaxWidth().height(listHeight.dp)) {
+        itemsIndexed(todos, itemId = { _, it -> it.id.hashCode().toLong() }) { i, todo ->
             Column {
-                TodoCell(todo)
-                Spacer(modifier = GlanceModifier.height(16.dp))
+                if (i > 0) Spacer(modifier = GlanceModifier.height(gap.dp))
+                Box(modifier = GlanceModifier.height(rowH.dp)) {
+                    TodoCell(todo)
+                }
             }
         }
     }

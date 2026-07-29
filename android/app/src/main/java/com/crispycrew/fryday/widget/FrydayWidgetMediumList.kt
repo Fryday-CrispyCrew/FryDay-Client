@@ -47,7 +47,8 @@ private fun MediumWidgetContent(entry: WidgetEntry) {
             .background(ImageProvider(R.drawable.widget_surface_bg))
             .clickable(actionRunCallback<OpenAppAction>())
     ) {
-        Column(modifier = GlanceModifier.fillMaxSize().padding(18.dp)) {
+        Column(modifier = GlanceModifier.fillMaxSize().padding(14.dp)) {
+            Spacer(modifier = GlanceModifier.height(6.dp))
             Text(
                 text = entry.dateString,
                 style = TextStyle(
@@ -55,7 +56,7 @@ private fun MediumWidgetContent(entry: WidgetEntry) {
                     fontSize = 12.sp
                 )
             )
-            Spacer(modifier = GlanceModifier.height(12.dp))
+            Spacer(modifier = GlanceModifier.height(13.dp))
             when (entry.state) {
                 WidgetState.ERROR, WidgetState.EMPTY ->
                     CenterBowlMessage(state = entry.state)
