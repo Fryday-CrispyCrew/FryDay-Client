@@ -43,9 +43,12 @@ fun TodoListColumn(todos: List<TodoItem>, maxItems: Int) {
 fun TodoListGrid(todos: List<TodoItem>, maxItems: Int) {
     val list = todos.take(maxItems)
     val rows = list.chunked(2)
-    Column(modifier = GlanceModifier.fillMaxWidth()) {
+    Column(modifier = GlanceModifier.fillMaxWidth().fillMaxHeight()) {
         rows.forEachIndexed { rowIdx, pair ->
-            if (rowIdx > 0) Spacer(modifier = GlanceModifier.height(16.dp))
+            if (rowIdx > 0) {
+                Spacer(modifier = GlanceModifier.height(16.dp))
+                Spacer(modifier = GlanceModifier.defaultWeight())
+            }
             Row(modifier = GlanceModifier.fillMaxWidth()) {
                 pair.forEachIndexed { colIdx, todo ->
                     if (colIdx > 0) Spacer(modifier = GlanceModifier.width(12.dp))
