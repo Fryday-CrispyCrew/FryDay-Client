@@ -9,6 +9,7 @@ import androidx.datastore.preferences.core.longPreferencesKey
 import androidx.glance.GlanceId
 import androidx.glance.GlanceModifier
 import androidx.glance.ImageProvider
+import androidx.glance.LocalSize
 import androidx.glance.action.clickable
 import androidx.glance.appwidget.GlanceAppWidget
 import androidx.glance.appwidget.GlanceAppWidgetReceiver
@@ -73,11 +74,16 @@ private fun SmallWidgetContent(entry: WidgetEntry) {
 
 @Composable
 private fun ScrollableTodoList(todos: List<TodoItem>) {
+    val size = LocalSize.current
+    val availableList = (size.height.value - 62f).coerceAtLeast(96f)
+    val rowHeight = ((availableList - 48f) / 4f).coerceAtLeast(20f)
     LazyColumn(modifier = GlanceModifier.fillMaxSize()) {
         itemsIndexed(todos, itemId = { _, it -> it.id.hashCode().toLong() }) { i, todo ->
             Column {
                 if (i > 0) Spacer(modifier = GlanceModifier.height(16.dp))
-                TodoCell(todo)
+                Box(modifier = GlanceModifier.height(rowHeight.dp)) {
+                    TodoCell(todo)
+                }
             }
         }
     }
