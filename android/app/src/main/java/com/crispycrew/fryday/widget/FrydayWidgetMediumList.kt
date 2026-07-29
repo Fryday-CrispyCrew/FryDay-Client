@@ -47,7 +47,7 @@ private fun MediumWidgetContent(entry: WidgetEntry) {
             .background(ImageProvider(R.drawable.widget_surface_bg))
             .clickable(actionRunCallback<OpenAppAction>())
     ) {
-        Column(modifier = GlanceModifier.fillMaxSize().padding(horizontal = 16.dp, vertical = 14.dp)) {
+        Column(modifier = GlanceModifier.fillMaxSize().padding(horizontal = 18.dp, vertical = 14.dp)) {
             Spacer(modifier = GlanceModifier.defaultWeight())
             Text(
                 text = entry.dateString,
