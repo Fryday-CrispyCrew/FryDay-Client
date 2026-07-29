@@ -48,11 +48,11 @@ fun TodoListGrid(todos: List<TodoItem>, maxItems: Int) {
     val rowCount = rows.size.coerceAtLeast(1)
     val gapCount = (rowCount - 1).coerceAtLeast(1)
     val size = LocalSize.current
-    val available = (size.height.value - 58f).coerceAtLeast(40f)
+    val available = (size.height.value - 61f).coerceAtLeast(40f)
     var rowH = 20f
-    var gap = ((available - rowCount * rowH) / gapCount).coerceIn(16f, 22f)
+    var gap = ((available - rowCount * rowH) / gapCount).coerceIn(18f, 24f)
     if (rowCount * rowH + gapCount * gap > available) {
-        gap = 16f
+        gap = 18f
         rowH = ((available - gapCount * gap) / rowCount).coerceAtLeast(10f)
     }
     if (rowCount * rowH + gapCount * gap > available) {

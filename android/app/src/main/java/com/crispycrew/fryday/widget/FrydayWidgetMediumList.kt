@@ -56,7 +56,7 @@ private fun MediumWidgetContent(entry: WidgetEntry) {
                     fontSize = 12.sp
                 )
             )
-            Spacer(modifier = GlanceModifier.height(10.dp))
+            Spacer(modifier = GlanceModifier.height(13.dp))
             when (entry.state) {
                 WidgetState.ERROR, WidgetState.EMPTY ->
                     CenterBowlMessage(state = entry.state)

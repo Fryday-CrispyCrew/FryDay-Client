@@ -64,7 +64,7 @@ private fun SmallWidgetContent(entry: WidgetEntry) {
                     fontSize = 12.sp
                 )
             )
-            Spacer(modifier = GlanceModifier.height(10.dp))
+            Spacer(modifier = GlanceModifier.height(13.dp))
             when (entry.state) {
                 WidgetState.ERROR, WidgetState.EMPTY ->
                     CenterBowlMessage(state = entry.state)
@@ -77,11 +77,11 @@ private fun SmallWidgetContent(entry: WidgetEntry) {
 @Composable
 private fun ScrollableTodoList(todos: List<TodoItem>) {
     val size = LocalSize.current
-    val available = (size.height.value - 58f).coerceAtLeast(40f)
+    val available = (size.height.value - 61f).coerceAtLeast(40f)
     var rowH = 20f
-    var gap = ((available - 4f * rowH) / 3f).coerceIn(16f, 22f)
+    var gap = ((available - 4f * rowH) / 3f).coerceIn(18f, 24f)
     if (4f * rowH + 3f * gap > available) {
-        gap = 16f
+        gap = 18f
         rowH = ((available - 3f * gap) / 4f).coerceAtLeast(10f)
     }
     if (4f * rowH + 3f * gap > available) {
