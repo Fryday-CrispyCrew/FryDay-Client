@@ -48,6 +48,7 @@ private fun MediumWidgetContent(entry: WidgetEntry) {
             .clickable(actionRunCallback<OpenAppAction>())
     ) {
         Column(modifier = GlanceModifier.fillMaxSize().padding(14.dp)) {
+            Spacer(modifier = GlanceModifier.height(6.dp))
             Text(
                 text = entry.dateString,
                 style = TextStyle(
