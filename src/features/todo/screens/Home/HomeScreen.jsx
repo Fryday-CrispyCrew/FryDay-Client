@@ -389,7 +389,15 @@ export default function HomeScreen({ navigation, route }) {
         if (y && m && d) {
           appliedInitialDateRef.current = dateStr;
           setCurrentDate(new Date(y, m - 1, d));
+          return;
         }
+      }
+
+      if (isViewingTodayRef.current) {
+        const now = new Date();
+        setCurrentDate((prev) =>
+          formatYYYYMMDD(prev) === formatYYYYMMDD(now) ? prev : now,
+        );
       }
     }, [route?.params?.initialDate]),
   );
