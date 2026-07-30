@@ -126,8 +126,8 @@ fun WidgetCheckBox(todo: TodoItem) {
 @Composable
 fun CenterBowlMessage(state: WidgetState) {
     val message = when (state) {
-        WidgetState.ERROR -> "앱을 열어\n연결 상태를 확인해 주세요."
-        WidgetState.EMPTY -> "아직 튀긴 투두가 없어요.\n위젯을 눌러 투두를 추가해 주세요!"
+        WidgetState.ERROR -> "연결 상태를 확인해 주세요."
+        WidgetState.EMPTY -> "아직 투두가 없어요."
         else -> ""
     }
     Column(
