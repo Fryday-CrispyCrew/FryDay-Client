@@ -48,19 +48,29 @@ private fun MediumWidgetContent(entry: WidgetEntry) {
             .clickable(actionRunCallback<OpenAppAction>())
     ) {
         Column(modifier = GlanceModifier.fillMaxSize().padding(horizontal = 18.dp, vertical = 14.dp)) {
-            Spacer(modifier = GlanceModifier.height(11.dp))
-            Text(
-                text = entry.dateString,
-                style = TextStyle(
-                    color = ColorProvider(R.color.gray_500),
-                    fontSize = 12.sp
+            if (entry.state == WidgetState.ERROR || entry.state == WidgetState.EMPTY) {
+                Spacer(modifier = GlanceModifier.defaultWeight())
+                Text(
+                    text = entry.dateString,
+                    style = TextStyle(
+                        color = ColorProvider(R.color.gray_500),
+                        fontSize = 12.sp
+                    )
                 )
-            )
-            Spacer(modifier = GlanceModifier.height(13.dp))
-            when (entry.state) {
-                WidgetState.ERROR, WidgetState.EMPTY ->
-                    CenterBowlMessage(state = entry.state)
-                else -> TodoListGrid(entry.todos, maxItems = 8)
+                Spacer(modifier = GlanceModifier.height(13.dp))
+                CenterBowlMessage(state = entry.state)
+                Spacer(modifier = GlanceModifier.defaultWeight())
+            } else {
+                Spacer(modifier = GlanceModifier.height(11.dp))
+                Text(
+                    text = entry.dateString,
+                    style = TextStyle(
+                        color = ColorProvider(R.color.gray_500),
+                        fontSize = 12.sp
+                    )
+                )
+                Spacer(modifier = GlanceModifier.height(13.dp))
+                TodoListGrid(entry.todos, maxItems = 8)
             }
         }
     }

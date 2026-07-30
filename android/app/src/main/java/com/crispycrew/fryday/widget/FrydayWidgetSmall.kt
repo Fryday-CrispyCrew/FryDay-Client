@@ -68,7 +68,7 @@ private fun SmallWidgetContent(entry: WidgetEntry) {
             Spacer(modifier = GlanceModifier.height(13.dp))
             when (entry.state) {
                 WidgetState.ERROR, WidgetState.EMPTY ->
-                    Box(modifier = GlanceModifier.fillMaxSize().padding(end = 18.dp)) {
+                    Box(modifier = GlanceModifier.fillMaxWidth().padding(end = 18.dp)) {
                         CenterBowlMessage(state = entry.state)
                     }
                 else -> ScrollableTodoList(entry.todos)
