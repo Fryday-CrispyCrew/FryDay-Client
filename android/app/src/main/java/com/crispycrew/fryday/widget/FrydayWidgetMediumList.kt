@@ -48,7 +48,7 @@ private fun MediumWidgetContent(entry: WidgetEntry) {
             .clickable(actionRunCallback<OpenAppAction>())
     ) {
         Column(modifier = GlanceModifier.fillMaxSize().padding(horizontal = 18.dp, vertical = 14.dp)) {
-            Spacer(modifier = GlanceModifier.defaultWeight())
+            Spacer(modifier = GlanceModifier.height(6.dp))
             Text(
                 text = entry.dateString,
                 style = TextStyle(
@@ -62,7 +62,6 @@ private fun MediumWidgetContent(entry: WidgetEntry) {
                     CenterBowlMessage(state = entry.state)
                 else -> TodoListGrid(entry.todos, maxItems = 8)
             }
-            Spacer(modifier = GlanceModifier.defaultWeight())
         }
     }
 }
