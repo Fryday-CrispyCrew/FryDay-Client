@@ -49,7 +49,7 @@ private fun MediumWidgetContent(entry: WidgetEntry) {
     ) {
         Column(modifier = GlanceModifier.fillMaxSize().padding(horizontal = 18.dp, vertical = 14.dp)) {
             if (entry.state == WidgetState.ERROR || entry.state == WidgetState.EMPTY) {
-                Spacer(modifier = GlanceModifier.defaultWeight())
+                Spacer(modifier = GlanceModifier.height(20.dp))
                 Text(
                     text = entry.dateString,
                     style = TextStyle(
@@ -59,7 +59,7 @@ private fun MediumWidgetContent(entry: WidgetEntry) {
                 )
                 Spacer(modifier = GlanceModifier.height(13.dp))
                 CenterBowlMessage(state = entry.state)
-                Spacer(modifier = GlanceModifier.defaultWeight())
+                Spacer(modifier = GlanceModifier.height(60.dp))
             } else {
                 Spacer(modifier = GlanceModifier.height(11.dp))
                 Text(

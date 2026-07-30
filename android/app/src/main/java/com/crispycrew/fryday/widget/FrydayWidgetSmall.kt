@@ -56,24 +56,34 @@ private fun SmallWidgetContent(entry: WidgetEntry) {
             .clickable(actionRunCallback<OpenAppAction>())
     ) {
         Column(modifier = GlanceModifier.fillMaxSize().padding(start = 18.dp, end = 0.dp, top = 14.dp, bottom = 14.dp).clickable(actionRunCallback<OpenAppAction>())) {
-            Spacer(modifier = GlanceModifier.defaultWeight())
-            Text(
-                text = entry.dateString,
-                style = TextStyle(
-                    color = ColorProvider(R.color.gray_500),
-                    fontSize = 12.sp
-                ),
-                modifier = GlanceModifier.padding(end = 18.dp)
-            )
-            Spacer(modifier = GlanceModifier.height(13.dp))
-            when (entry.state) {
-                WidgetState.ERROR, WidgetState.EMPTY ->
-                    Box(modifier = GlanceModifier.fillMaxWidth().padding(end = 18.dp)) {
-                        CenterBowlMessage(state = entry.state)
-                    }
-                else -> ScrollableTodoList(entry.todos)
+            if (entry.state == WidgetState.ERROR || entry.state == WidgetState.EMPTY) {
+                Spacer(modifier = GlanceModifier.height(10.dp))
+                Text(
+                    text = entry.dateString,
+                    style = TextStyle(
+                        color = ColorProvider(R.color.gray_500),
+                        fontSize = 12.sp
+                    ),
+                    modifier = GlanceModifier.padding(end = 18.dp)
+                )
+                Spacer(modifier = GlanceModifier.height(13.dp))
+                Box(modifier = GlanceModifier.fillMaxSize().padding(end = 18.dp, bottom = 30.dp)) {
+                    CenterBowlMessage(state = entry.state)
+                }
+            } else {
+                Spacer(modifier = GlanceModifier.defaultWeight())
+                Text(
+                    text = entry.dateString,
+                    style = TextStyle(
+                        color = ColorProvider(R.color.gray_500),
+                        fontSize = 12.sp
+                    ),
+                    modifier = GlanceModifier.padding(end = 18.dp)
+                )
+                Spacer(modifier = GlanceModifier.height(13.dp))
+                ScrollableTodoList(entry.todos)
+                Spacer(modifier = GlanceModifier.defaultWeight())
             }
-            Spacer(modifier = GlanceModifier.defaultWeight())
         }
     }
 }

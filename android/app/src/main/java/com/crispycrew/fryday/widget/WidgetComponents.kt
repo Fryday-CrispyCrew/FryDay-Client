@@ -131,8 +131,9 @@ fun CenterBowlMessage(state: WidgetState) {
         else -> ""
     }
     Column(
-        modifier = GlanceModifier.fillMaxWidth(),
-        horizontalAlignment = Alignment.CenterHorizontally
+        modifier = GlanceModifier.fillMaxSize(),
+        horizontalAlignment = Alignment.CenterHorizontally,
+        verticalAlignment = Alignment.CenterVertically
     ) {
         Image(
             provider = ImageProvider(R.drawable.medium_bowl),
