@@ -92,10 +92,13 @@ export function useWidgetSync() {
   }, [isServerError]);
 
   useEffect(() => {
-    const doSync = () => {
+    const doSync = async () => {
       const rawCategoriesData = queryClient.getQueryData(categoryKeys.list());
       const rawCategories = extractArray(rawCategoriesData);
       if (!rawCategories || rawCategories.length === 0) return;
+
+      const pendingIds = await peekPendingToggleIds();
+      const pendingSet = new Set(pendingIds.map(String));
 
       const payload = {};
       let hasAny = false;
@@ -106,7 +109,10 @@ export function useWidgetSync() {
         const todos = extractArray(rawTodos);
         if (todos) {
           const normalized = todos.map(normalizeTodo);
-          const sorted = sortByHomeOrder(normalized, rawCategories);
+          const serverState = normalized.map((t) =>
+            pendingSet.has(String(t.id)) ? { ...t, done: !t.done } : t,
+          );
+          const sorted = sortByHomeOrder(serverState, rawCategories);
           payload[date] = sorted;
           hasAny = true;
         }
