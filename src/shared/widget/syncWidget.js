@@ -199,6 +199,11 @@ export async function drainPendingToggles(toggleFn) {
 
   if (Platform.OS === "android" && AndroidWidget) {
     try {
+      if (failed.length > 0 && AndroidWidget.setPendingToggles) {
+        await AndroidWidget.setPendingToggles(JSON.stringify(failed));
+      } else {
+        await AndroidWidget.clearPendingToggles();
+      }
       if (successful.length > 0) {
         try {
           const currentJson = await AndroidWidget.getTodosByDate?.();
@@ -214,13 +219,9 @@ export async function drainPendingToggles(toggleFn) {
             await AndroidWidget.syncTodos(JSON.stringify(updated));
           }
         } catch {}
-      }
-      if (failed.length > 0 && AndroidWidget.setPendingToggles) {
-        await AndroidWidget.setPendingToggles(JSON.stringify(failed));
       } else {
-        await AndroidWidget.clearPendingToggles();
+        await AndroidWidget.reloadWidgets();
       }
-      await AndroidWidget.reloadWidgets();
     } catch {}
   }
 }
