@@ -9,20 +9,18 @@ import androidx.datastore.preferences.core.longPreferencesKey
 import androidx.glance.GlanceId
 import androidx.glance.GlanceModifier
 import androidx.glance.ImageProvider
-import androidx.glance.LocalSize
 import androidx.glance.action.clickable
 import androidx.glance.appwidget.GlanceAppWidget
 import androidx.glance.appwidget.GlanceAppWidgetReceiver
 import androidx.glance.appwidget.SizeMode
 import androidx.glance.appwidget.action.actionRunCallback
-import androidx.glance.appwidget.lazy.LazyColumn
-import androidx.glance.appwidget.lazy.itemsIndexed
 import androidx.glance.appwidget.provideContent
 import androidx.glance.background
 import androidx.glance.currentState
 import androidx.glance.layout.Box
 import androidx.glance.layout.Column
 import androidx.glance.layout.Spacer
+import androidx.glance.layout.fillMaxHeight
 import androidx.glance.layout.fillMaxSize
 import androidx.glance.layout.fillMaxWidth
 import androidx.glance.layout.height
@@ -64,35 +62,29 @@ private fun SmallWidgetContent(entry: WidgetEntry) {
                 ),
                 modifier = GlanceModifier.padding(end = 18.dp)
             )
-            Spacer(modifier = GlanceModifier.defaultWeight())
+            Spacer(modifier = GlanceModifier.height(13.dp))
             when (entry.state) {
                 WidgetState.ERROR, WidgetState.EMPTY -> {
+                    Spacer(modifier = GlanceModifier.defaultWeight())
                     Box(modifier = GlanceModifier.fillMaxWidth().padding(end = 18.dp)) {
                         CenterBowlMessage(state = entry.state)
                     }
                     Spacer(modifier = GlanceModifier.defaultWeight())
                 }
-                else -> ScrollableTodoList(entry.todos)
+                else -> AutoSpacedTodoList(entry.todos)
             }
         }
     }
 }
 
 @Composable
-private fun ScrollableTodoList(todos: List<TodoItem>) {
-    val size = LocalSize.current
-    val available = (size.height.value - 50f).coerceAtLeast(20f)
-    val rowH = 20f
-    val gap = 16f
-    val fitRows = ((available + gap) / (rowH + gap)).toInt().coerceIn(1, 4)
-    val listHeight = fitRows * rowH + (fitRows - 1).coerceAtLeast(0) * gap
-    LazyColumn(modifier = GlanceModifier.fillMaxWidth().height(listHeight.dp)) {
-        itemsIndexed(todos, itemId = { _, it -> it.id.hashCode().toLong() }) { i, todo ->
-            Column(modifier = GlanceModifier.padding(end = 18.dp)) {
-                if (i > 0) Spacer(modifier = GlanceModifier.height(gap.dp))
-                Box(modifier = GlanceModifier.height(rowH.dp)) {
-                    TodoCell(todo)
-                }
+private fun AutoSpacedTodoList(todos: List<TodoItem>) {
+    val list = todos.take(4)
+    Column(modifier = GlanceModifier.fillMaxWidth().fillMaxHeight().padding(end = 18.dp)) {
+        list.forEachIndexed { i, todo ->
+            if (i > 0) Spacer(modifier = GlanceModifier.defaultWeight())
+            Box(modifier = GlanceModifier.height(20.dp)) {
+                TodoCell(todo)
             }
         }
     }

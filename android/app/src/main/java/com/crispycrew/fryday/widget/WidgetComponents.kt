@@ -43,17 +43,12 @@ fun TodoListColumn(todos: List<TodoItem>, maxItems: Int) {
 
 @Composable
 fun TodoListGrid(todos: List<TodoItem>, maxItems: Int) {
-    val size = LocalSize.current
-    val available = (size.height.value - 50f).coerceAtLeast(20f)
     val rowH = 20f
-    val gap = 16f
-    val maxRowsCap = (maxItems / 2).coerceAtLeast(1)
-    val fitRows = ((available + gap) / (rowH + gap)).toInt().coerceIn(1, maxRowsCap)
-    val list = todos.take(fitRows * 2)
+    val list = todos.take(maxItems)
     val rows = list.chunked(2)
-    Column(modifier = GlanceModifier.fillMaxWidth()) {
+    Column(modifier = GlanceModifier.fillMaxWidth().fillMaxHeight()) {
         rows.forEachIndexed { rowIdx, pair ->
-            if (rowIdx > 0) Spacer(modifier = GlanceModifier.height(gap.dp))
+            if (rowIdx > 0) Spacer(modifier = GlanceModifier.defaultWeight())
             Row(modifier = GlanceModifier.fillMaxWidth().height(rowH.dp)) {
                 pair.forEachIndexed { colIdx, todo ->
                     if (colIdx > 0) Spacer(modifier = GlanceModifier.width(12.dp))
