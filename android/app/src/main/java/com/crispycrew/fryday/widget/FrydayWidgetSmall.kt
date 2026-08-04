@@ -100,4 +100,9 @@ private fun ScrollableTodoList(todos: List<TodoItem>) {
 
 class FrydayWidgetSmallReceiver : GlanceAppWidgetReceiver() {
     override val glanceAppWidget: GlanceAppWidget = FrydayWidgetSmall()
+
+    override fun onEnabled(context: Context) {
+        super.onEnabled(context)
+        WidgetMidnightUpdateReceiver.scheduleNextMidnight(context)
+    }
 }

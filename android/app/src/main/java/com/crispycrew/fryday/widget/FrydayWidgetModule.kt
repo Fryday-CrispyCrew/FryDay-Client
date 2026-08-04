@@ -122,6 +122,7 @@ class FrydayWidgetModule(reactContext: ReactApplicationContext) :
     fun reloadWidgets(promise: Promise) {
         try {
             reloadAllWidgets()
+            WidgetMidnightUpdateReceiver.scheduleNextMidnight(reactApplicationContext)
             promise.resolve(null)
         } catch (e: Exception) {
             promise.reject("RELOAD_FAILED", e)

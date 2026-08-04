@@ -69,4 +69,9 @@ private fun MediumWidgetContent(entry: WidgetEntry) {
 
 class FrydayWidgetMediumListReceiver : GlanceAppWidgetReceiver() {
     override val glanceAppWidget: GlanceAppWidget = FrydayWidgetMediumList()
+
+    override fun onEnabled(context: Context) {
+        super.onEnabled(context)
+        WidgetMidnightUpdateReceiver.scheduleNextMidnight(context)
+    }
 }
