@@ -54,7 +54,8 @@ object WidgetDataReader {
         }
 
         val todayISO = SimpleDateFormat("yyyy-MM-dd", Locale.US).format(Date())
-        val todos = readTodosForDate(prefs, todayISO)
+        val pendingIds = readPendingIds(prefs)
+        val todos = readTodosForDate(prefs, todayISO, pendingIds)
         Log.d("WidgetDataReader", "read: todos=${todos.map { it.id to it.isDone }}")
 
         val doneCount = todos.count { it.isDone }
@@ -79,9 +80,20 @@ object WidgetDataReader {
         return SimpleDateFormat("M월 d일 (E)", Locale.KOREAN).format(date)
     }
 
+    private fun readPendingIds(prefs: android.content.SharedPreferences): Set<String> {
+        val raw = prefs.getString(KEY_PENDING_TOGGLES, null) ?: return emptySet()
+        return try {
+            val arr = JSONArray(raw)
+            (0 until arr.length()).map { arr.getString(it) }.toSet()
+        } catch (_: Exception) {
+            emptySet()
+        }
+    }
+
     private fun readTodosForDate(
         prefs: android.content.SharedPreferences,
-        dateISO: String
+        dateISO: String,
+        pendingIds: Set<String>
     ): List<TodoItem> {
         val json = prefs.getString(KEY_TODOS_BY_DATE, null) ?: return emptyList()
         return try {
@@ -90,11 +102,14 @@ object WidgetDataReader {
             val arr = byDate.getJSONArray(dateISO)
             (0 until arr.length()).map { i ->
                 val o = arr.getJSONObject(i)
+                val id = o.getString("id")
+                val rawIsDone = o.optBoolean("isDone", false)
+                val effectiveIsDone = if (pendingIds.contains(id)) !rawIsDone else rawIsDone
                 TodoItem(
-                    id = o.getString("id"),
+                    id = id,
                     title = o.optString("title", ""),
                     categoryCode = o.optString("categoryCode", "OR"),
-                    isDone = o.optBoolean("isDone", false)
+                    isDone = effectiveIsDone
                 )
             }
         } catch (_: Exception) {
