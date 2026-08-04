@@ -11,6 +11,7 @@ import {
   syncLoginToWidget,
   syncServerErrorToWidget,
   drainPendingToggles,
+  peekPendingToggleIds,
 } from "./syncWidget";
 
 const SYNC_DAYS = 7;
@@ -139,11 +140,41 @@ export function useWidgetSync() {
   }, [queryClient, dates]);
 
   useEffect(() => {
+    const applyOptimisticFlip = (pendingIds) => {
+      if (!pendingIds || pendingIds.length === 0) return;
+      const pendingSet = new Set(pendingIds.map(String));
+      const queries = queryClient
+        .getQueryCache()
+        .findAll({ queryKey: homeKeys.todos() });
+      for (const query of queries) {
+        const cached = query.state.data;
+        const arr = extractArray(cached);
+        if (!arr) continue;
+        const flipped = arr.map((t) =>
+          pendingSet.has(String(t.id))
+            ? {
+                ...t,
+                status: t.status === "COMPLETED" ? "IN_PROGRESS" : "COMPLETED",
+              }
+            : t,
+        );
+        const next = Array.isArray(cached)
+          ? flipped
+          : { ...cached, data: flipped };
+        queryClient.setQueryData(query.queryKey, next);
+      }
+    };
+
     const handleAppState = async (nextState) => {
       if (nextState !== "active") return;
+
+      const pendingIds = await peekPendingToggleIds();
+      applyOptimisticFlip(pendingIds);
+
       await drainPendingToggles(async (todoId) => {
         await homeApi.toggleCompletion({ todoId });
       });
+
       queryClient.invalidateQueries({ queryKey: homeKeys.todos() });
       queryClient.invalidateQueries({ queryKey: homeKeys.characterStatus() });
     };

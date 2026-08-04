@@ -109,6 +109,16 @@ class FrydayWidgetModule(reactContext: ReactApplicationContext) :
     }
 
     @ReactMethod
+    fun setPendingToggles(json: String, promise: Promise) {
+        try {
+            prefs.edit().putString("pendingToggleIds", json).apply()
+            promise.resolve(null)
+        } catch (e: Exception) {
+            promise.reject("SET_PENDING_FAILED", e)
+        }
+    }
+
+    @ReactMethod
     fun getTodosByDate(promise: Promise) {
         try {
             val json = prefs.getString("todosByDateJson", null)
