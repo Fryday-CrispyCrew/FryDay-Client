@@ -82,7 +82,7 @@ private fun SmallWidgetContent(entry: WidgetEntry) {
 @Composable
 private fun ScrollableTodoList(todos: List<TodoItem>) {
     val size = LocalSize.current
-    val available = (size.height.value - 63f).coerceAtLeast(20f)
+    val available = (size.height.value - 70f).coerceAtLeast(20f)
     val rowH = 20f
     val minGap = 4f
     val fitRows = ((available + minGap) / (rowH + minGap)).toInt().coerceIn(1, 4)
