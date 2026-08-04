@@ -49,17 +49,27 @@ function normalizeTodo(t) {
 function sortByHomeOrder(todos, rawCategories) {
   if (!Array.isArray(todos) || !Array.isArray(rawCategories)) return [];
 
+  const categoryOrderMap = new Map();
   const colorMap = new Map();
-  rawCategories.forEach((c) => {
-    colorMap.set(Number(c.id), c.colorHex);
-  });
+  rawCategories
+    .slice()
+    .sort((a, b) => (a?.displayOrder ?? 0) - (b?.displayOrder ?? 0))
+    .forEach((c, i) => {
+      categoryOrderMap.set(Number(c.id), i);
+      colorMap.set(Number(c.id), c.colorHex);
+    });
 
   return todos
     .map((t) => ({
       ...t,
       categoryColor: colorMap.get(Number(t.categoryId)) ?? null,
     }))
-    .sort((a, b) => (a.displayOrder ?? 0) - (b.displayOrder ?? 0));
+    .sort((a, b) => {
+      const ca = categoryOrderMap.get(Number(a.categoryId)) ?? 999;
+      const cb = categoryOrderMap.get(Number(b.categoryId)) ?? 999;
+      if (ca !== cb) return ca - cb;
+      return (a.displayOrder ?? 0) - (b.displayOrder ?? 0);
+    });
 }
 
 export function useWidgetSync() {
