@@ -37,11 +37,13 @@ struct ToggleTodoIntent: AppIntent {
         if let data = try? JSONEncoder().encode(pending),
            let jsonString = String(data: data, encoding: .utf8) {
             defaults?.set(jsonString, forKey: Self.pendingKey)
+            defaults?.synchronize()
         }
 
         WidgetCenter.shared.reloadTimelines(ofKind: "FrydayWidgetSmall")
         WidgetCenter.shared.reloadTimelines(ofKind: "FrydayWidgetMediumChar")
         WidgetCenter.shared.reloadTimelines(ofKind: "FrydayWidgetMediumList")
+        WidgetCenter.shared.reloadAllTimelines()
         return .result()
     }
 }
