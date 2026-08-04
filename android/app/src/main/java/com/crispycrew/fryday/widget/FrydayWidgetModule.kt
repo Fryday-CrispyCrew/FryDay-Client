@@ -109,6 +109,16 @@ class FrydayWidgetModule(reactContext: ReactApplicationContext) :
     }
 
     @ReactMethod
+    fun setPendingToggles(json: String, promise: Promise) {
+        try {
+            prefs.edit().putString("pendingToggleIds", json).apply()
+            promise.resolve(null)
+        } catch (e: Exception) {
+            promise.reject("SET_PENDING_FAILED", e)
+        }
+    }
+
+    @ReactMethod
     fun getTodosByDate(promise: Promise) {
         try {
             val json = prefs.getString("todosByDateJson", null)
@@ -122,6 +132,7 @@ class FrydayWidgetModule(reactContext: ReactApplicationContext) :
     fun reloadWidgets(promise: Promise) {
         try {
             reloadAllWidgets()
+            WidgetMidnightUpdateReceiver.scheduleNextMidnight(reactApplicationContext)
             promise.resolve(null)
         } catch (e: Exception) {
             promise.reject("RELOAD_FAILED", e)

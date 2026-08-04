@@ -47,30 +47,22 @@ private fun MediumWidgetContent(entry: WidgetEntry) {
             .background(ImageProvider(R.drawable.widget_surface_bg))
             .clickable(actionRunCallback<OpenAppAction>())
     ) {
-        Column(modifier = GlanceModifier.fillMaxSize().padding(horizontal = 18.dp, vertical = 14.dp)) {
-            if (entry.state == WidgetState.ERROR || entry.state == WidgetState.EMPTY) {
-                Spacer(modifier = GlanceModifier.height(20.dp))
-                Text(
-                    text = entry.dateString,
-                    style = TextStyle(
-                        color = ColorProvider(R.color.gray_500),
-                        fontSize = 12.sp
-                    )
+        Column(modifier = GlanceModifier.fillMaxSize().padding(18.dp)) {
+            Text(
+                text = entry.dateString,
+                style = TextStyle(
+                    color = ColorProvider(R.color.gray_500),
+                    fontSize = 12.sp
                 )
-                Spacer(modifier = GlanceModifier.height(13.dp))
-                CenterBowlMessage(state = entry.state)
-                Spacer(modifier = GlanceModifier.height(60.dp))
-            } else {
-                Spacer(modifier = GlanceModifier.height(11.dp))
-                Text(
-                    text = entry.dateString,
-                    style = TextStyle(
-                        color = ColorProvider(R.color.gray_500),
-                        fontSize = 12.sp
-                    )
-                )
-                Spacer(modifier = GlanceModifier.height(13.dp))
-                TodoListGrid(entry.todos, maxItems = 8)
+            )
+            Spacer(modifier = GlanceModifier.height(13.dp))
+            when (entry.state) {
+                WidgetState.ERROR, WidgetState.EMPTY -> {
+                    Spacer(modifier = GlanceModifier.defaultWeight())
+                    CenterBowlMessage(state = entry.state)
+                    Spacer(modifier = GlanceModifier.defaultWeight())
+                }
+                else -> TodoListGrid(entry.todos, maxItems = 8)
             }
         }
     }
@@ -78,4 +70,9 @@ private fun MediumWidgetContent(entry: WidgetEntry) {
 
 class FrydayWidgetMediumListReceiver : GlanceAppWidgetReceiver() {
     override val glanceAppWidget: GlanceAppWidget = FrydayWidgetMediumList()
+
+    override fun onEnabled(context: Context) {
+        super.onEnabled(context)
+        WidgetMidnightUpdateReceiver.scheduleNextMidnight(context)
+    }
 }

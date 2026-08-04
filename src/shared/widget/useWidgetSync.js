@@ -11,6 +11,7 @@ import {
   syncLoginToWidget,
   syncServerErrorToWidget,
   drainPendingToggles,
+  peekPendingToggleIds,
 } from "./syncWidget";
 
 const SYNC_DAYS = 7;
@@ -48,15 +49,15 @@ function normalizeTodo(t) {
 function sortByHomeOrder(todos, rawCategories) {
   if (!Array.isArray(todos) || !Array.isArray(rawCategories)) return [];
 
-  const orderMap = new Map();
+  const categoryOrderMap = new Map();
   const colorMap = new Map();
-  rawCategories.forEach((c) => {
-    orderMap.set(Number(c.id), c.displayOrder ?? 0);
-    colorMap.set(Number(c.id), c.colorHex);
-  });
-
-  const positionMap = new Map();
-  todos.forEach((t, i) => positionMap.set(t.id, i));
+  rawCategories
+    .slice()
+    .sort((a, b) => (a?.displayOrder ?? 0) - (b?.displayOrder ?? 0))
+    .forEach((c, i) => {
+      categoryOrderMap.set(Number(c.id), i);
+      colorMap.set(Number(c.id), c.colorHex);
+    });
 
   return todos
     .map((t) => ({
@@ -64,10 +65,10 @@ function sortByHomeOrder(todos, rawCategories) {
       categoryColor: colorMap.get(Number(t.categoryId)) ?? null,
     }))
     .sort((a, b) => {
-      const oa = orderMap.get(Number(a.categoryId)) ?? 999;
-      const ob = orderMap.get(Number(b.categoryId)) ?? 999;
-      if (oa !== ob) return oa - ob;
-      return (positionMap.get(a.id) ?? 0) - (positionMap.get(b.id) ?? 0);
+      const ca = categoryOrderMap.get(Number(a.categoryId)) ?? 999;
+      const cb = categoryOrderMap.get(Number(b.categoryId)) ?? 999;
+      if (ca !== cb) return ca - cb;
+      return (a.displayOrder ?? 0) - (b.displayOrder ?? 0);
     });
 }
 
@@ -101,10 +102,13 @@ export function useWidgetSync() {
   }, [isServerError]);
 
   useEffect(() => {
-    const doSync = () => {
+    const doSync = async () => {
       const rawCategoriesData = queryClient.getQueryData(categoryKeys.list());
       const rawCategories = extractArray(rawCategoriesData);
       if (!rawCategories || rawCategories.length === 0) return;
+
+      const pendingIds = await peekPendingToggleIds();
+      const pendingSet = new Set(pendingIds.map(String));
 
       const payload = {};
       let hasAny = false;
@@ -115,7 +119,10 @@ export function useWidgetSync() {
         const todos = extractArray(rawTodos);
         if (todos) {
           const normalized = todos.map(normalizeTodo);
-          const sorted = sortByHomeOrder(normalized, rawCategories);
+          const serverState = normalized.map((t) =>
+            pendingSet.has(String(t.id)) ? { ...t, done: !t.done } : t,
+          );
+          const sorted = sortByHomeOrder(serverState, rawCategories);
           payload[date] = sorted;
           hasAny = true;
         }
@@ -139,11 +146,41 @@ export function useWidgetSync() {
   }, [queryClient, dates]);
 
   useEffect(() => {
+    const applyOptimisticFlip = (pendingIds) => {
+      if (!pendingIds || pendingIds.length === 0) return;
+      const pendingSet = new Set(pendingIds.map(String));
+      const queries = queryClient
+        .getQueryCache()
+        .findAll({ queryKey: homeKeys.todos() });
+      for (const query of queries) {
+        const cached = query.state.data;
+        const arr = extractArray(cached);
+        if (!arr) continue;
+        const flipped = arr.map((t) =>
+          pendingSet.has(String(t.id))
+            ? {
+                ...t,
+                status: t.status === "COMPLETED" ? "IN_PROGRESS" : "COMPLETED",
+              }
+            : t,
+        );
+        const next = Array.isArray(cached)
+          ? flipped
+          : { ...cached, data: flipped };
+        queryClient.setQueryData(query.queryKey, next);
+      }
+    };
+
     const handleAppState = async (nextState) => {
       if (nextState !== "active") return;
+
+      const pendingIds = await peekPendingToggleIds();
+      applyOptimisticFlip(pendingIds);
+
       await drainPendingToggles(async (todoId) => {
         await homeApi.toggleCompletion({ todoId });
       });
+
       queryClient.invalidateQueries({ queryKey: homeKeys.todos() });
       queryClient.invalidateQueries({ queryKey: homeKeys.characterStatus() });
     };

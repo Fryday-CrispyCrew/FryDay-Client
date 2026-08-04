@@ -55,34 +55,25 @@ private fun SmallWidgetContent(entry: WidgetEntry) {
             .background(ImageProvider(R.drawable.widget_surface_bg))
             .clickable(actionRunCallback<OpenAppAction>())
     ) {
-        Column(modifier = GlanceModifier.fillMaxSize().padding(start = 18.dp, end = 0.dp, top = 14.dp, bottom = 14.dp).clickable(actionRunCallback<OpenAppAction>())) {
-            if (entry.state == WidgetState.ERROR || entry.state == WidgetState.EMPTY) {
-                Spacer(modifier = GlanceModifier.height(10.dp))
-                Text(
-                    text = entry.dateString,
-                    style = TextStyle(
-                        color = ColorProvider(R.color.gray_500),
-                        fontSize = 12.sp
-                    ),
-                    modifier = GlanceModifier.padding(end = 18.dp)
-                )
-                Spacer(modifier = GlanceModifier.height(13.dp))
-                Box(modifier = GlanceModifier.fillMaxSize().padding(end = 18.dp, bottom = 30.dp)) {
-                    CenterBowlMessage(state = entry.state)
+        Column(modifier = GlanceModifier.fillMaxSize().padding(start = 18.dp, end = 0.dp, top = 18.dp, bottom = 18.dp).clickable(actionRunCallback<OpenAppAction>())) {
+            Text(
+                text = entry.dateString,
+                style = TextStyle(
+                    color = ColorProvider(R.color.gray_500),
+                    fontSize = 12.sp
+                ),
+                modifier = GlanceModifier.padding(end = 18.dp)
+            )
+            Spacer(modifier = GlanceModifier.height(13.dp))
+            when (entry.state) {
+                WidgetState.ERROR, WidgetState.EMPTY -> {
+                    Spacer(modifier = GlanceModifier.defaultWeight())
+                    Box(modifier = GlanceModifier.fillMaxWidth().padding(end = 18.dp)) {
+                        CenterBowlMessage(state = entry.state)
+                    }
+                    Spacer(modifier = GlanceModifier.defaultWeight())
                 }
-            } else {
-                Spacer(modifier = GlanceModifier.defaultWeight())
-                Text(
-                    text = entry.dateString,
-                    style = TextStyle(
-                        color = ColorProvider(R.color.gray_500),
-                        fontSize = 12.sp
-                    ),
-                    modifier = GlanceModifier.padding(end = 18.dp)
-                )
-                Spacer(modifier = GlanceModifier.height(13.dp))
-                ScrollableTodoList(entry.todos)
-                Spacer(modifier = GlanceModifier.defaultWeight())
+                else -> ScrollableTodoList(entry.todos)
             }
         }
     }
@@ -91,12 +82,12 @@ private fun SmallWidgetContent(entry: WidgetEntry) {
 @Composable
 private fun ScrollableTodoList(todos: List<TodoItem>) {
     val size = LocalSize.current
-    val available = (size.height.value - 55f).coerceAtLeast(20f)
+    val available = (size.height.value - 70f).coerceAtLeast(20f)
     val rowH = 20f
-    val fitGap = 16f
-    val fitRows = ((available + fitGap) / (rowH + fitGap)).toInt().coerceIn(1, 4)
+    val minGap = 4f
+    val fitRows = ((available + minGap) / (rowH + minGap)).toInt().coerceIn(1, 4)
     val gap = if (fitRows > 1) {
-        ((available - fitRows * rowH) / (fitRows - 1)).coerceIn(18f, 26f)
+        ((available - fitRows * rowH) / (fitRows - 1)).coerceAtLeast(minGap)
     } else {
         0f
     }
@@ -115,4 +106,9 @@ private fun ScrollableTodoList(todos: List<TodoItem>) {
 
 class FrydayWidgetSmallReceiver : GlanceAppWidgetReceiver() {
     override val glanceAppWidget: GlanceAppWidget = FrydayWidgetSmall()
+
+    override fun onEnabled(context: Context) {
+        super.onEnabled(context)
+        WidgetMidnightUpdateReceiver.scheduleNextMidnight(context)
+    }
 }

@@ -37,32 +37,12 @@ class ToggleTodoAction : ActionCallback {
         }
         if (pendingList.contains(todoId)) pendingList.remove(todoId) else pendingList.add(todoId)
 
-        val todosJson = prefs.getString("todosByDateJson", null)
-        if (todosJson != null) {
-            try {
-                val byDate = JSONObject(todosJson)
-                val keys = byDate.keys()
-                while (keys.hasNext()) {
-                    val date = keys.next()
-                    val arr = byDate.getJSONArray(date)
-                    for (i in 0 until arr.length()) {
-                        val o = arr.getJSONObject(i)
-                        if (o.getString("id") == todoId) {
-                            o.put("isDone", !o.optBoolean("isDone", false))
-                        }
-                    }
-                }
-                val newPending = JSONArray()
-                pendingList.forEach { newPending.put(it) }
-                prefs.edit()
-                    .putString("todosByDateJson", byDate.toString())
-                    .putString("pendingToggleIds", newPending.toString())
-                    .commit()
-                Log.d("ToggleTodoAction", "flipped isDone, pending=$pendingList")
-            } catch (e: Exception) {
-                Log.e("ToggleTodoAction", "failed", e)
-            }
-        }
+        val newPending = JSONArray()
+        pendingList.forEach { newPending.put(it) }
+        prefs.edit()
+            .putString("pendingToggleIds", newPending.toString())
+            .commit()
+        Log.d("ToggleTodoAction", "pending updated: $pendingList")
 
         val manager = GlanceAppWidgetManager(context)
         val smallInstance = FrydayWidgetSmall()

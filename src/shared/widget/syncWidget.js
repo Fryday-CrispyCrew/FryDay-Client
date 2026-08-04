@@ -132,37 +132,43 @@ export function clearWidgetForLogout() {
   }
 }
 
-export async function drainPendingToggles(toggleFn) {
-  let pending = [];
-
+export async function peekPendingToggleIds() {
   if (Platform.OS === "ios") {
     const raw = storage.get("pendingToggleIds");
-    if (!raw) return;
+    if (!raw) return [];
     try {
-      pending = JSON.parse(raw);
+      const arr = JSON.parse(raw);
+      return Array.isArray(arr) ? arr.map(String) : [];
     } catch {
-      pending = [];
+      return [];
     }
-  } else if (Platform.OS === "android" && AndroidWidget) {
+  }
+  if (Platform.OS === "android" && AndroidWidget) {
     try {
       const raw = await AndroidWidget.getPendingToggles();
-      if (!raw) return;
-      pending = JSON.parse(raw);
+      if (!raw) return [];
+      const arr = JSON.parse(raw);
+      return Array.isArray(arr) ? arr.map(String) : [];
     } catch {
-      pending = [];
+      return [];
     }
-  } else {
-    return;
   }
+  return [];
+}
 
-  if (!Array.isArray(pending) || pending.length === 0) return;
+export async function drainPendingToggles(toggleFn) {
+  const pending = await peekPendingToggleIds();
+  if (pending.length === 0) return;
 
   const successful = [];
+  const failed = [];
   for (const todoId of pending) {
     try {
       await toggleFn(todoId);
       successful.push(todoId);
-    } catch {}
+    } catch {
+      failed.push(todoId);
+    }
   }
 
   if (Platform.OS === "ios") {
@@ -175,20 +181,29 @@ export async function drainPendingToggles(toggleFn) {
           const updated = {};
           for (const [date, todos] of Object.entries(byDate)) {
             updated[date] = todos.map((t) =>
-              successSet.has(t.id) ? { ...t, isDone: !t.isDone } : t,
+              successSet.has(String(t.id)) ? { ...t, isDone: !t.isDone } : t,
             );
           }
           storage.set("todosByDateJson", JSON.stringify(updated));
         } catch {}
       }
     }
-    storage.remove("pendingToggleIds");
+    if (failed.length > 0) {
+      storage.set("pendingToggleIds", JSON.stringify(failed));
+    } else {
+      storage.remove("pendingToggleIds");
+    }
     reloadAllWidgetKinds();
     return;
   }
 
   if (Platform.OS === "android" && AndroidWidget) {
     try {
+      if (failed.length > 0 && AndroidWidget.setPendingToggles) {
+        await AndroidWidget.setPendingToggles(JSON.stringify(failed));
+      } else {
+        await AndroidWidget.clearPendingToggles();
+      }
       if (successful.length > 0) {
         try {
           const currentJson = await AndroidWidget.getTodosByDate?.();
@@ -198,15 +213,15 @@ export async function drainPendingToggles(toggleFn) {
             const updated = {};
             for (const [date, todos] of Object.entries(byDate)) {
               updated[date] = todos.map((t) =>
-                successSet.has(t.id) ? { ...t, isDone: !t.isDone } : t,
+                successSet.has(String(t.id)) ? { ...t, isDone: !t.isDone } : t,
               );
             }
             await AndroidWidget.syncTodos(JSON.stringify(updated));
           }
         } catch {}
+      } else {
+        await AndroidWidget.reloadWidgets();
       }
-      await AndroidWidget.clearPendingToggles();
-      await AndroidWidget.reloadWidgets();
     } catch {}
   }
 }
