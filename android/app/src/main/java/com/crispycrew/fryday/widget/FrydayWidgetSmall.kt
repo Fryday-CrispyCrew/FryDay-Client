@@ -94,7 +94,11 @@ private fun ScrollableTodoList(todos: List<TodoItem>) {
     val listHeight = fitRows * rowH + (fitRows - 1).coerceAtLeast(0) * gap
     LazyColumn(modifier = GlanceModifier.fillMaxWidth().height(listHeight.dp)) {
         itemsIndexed(todos, itemId = { _, it -> it.id.hashCode().toLong() }) { i, todo ->
-            Column(modifier = GlanceModifier.padding(end = 18.dp)) {
+            Column(
+                modifier = GlanceModifier
+                    .padding(end = 18.dp)
+                    .clickable(actionRunCallback<OpenAppAction>())
+            ) {
                 if (i > 0) Spacer(modifier = GlanceModifier.height(gap.dp))
                 Box(modifier = GlanceModifier.height(rowH.dp)) {
                     TodoCell(todo)
