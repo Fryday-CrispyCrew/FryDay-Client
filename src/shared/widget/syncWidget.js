@@ -4,11 +4,7 @@ import { ExtensionStorage } from "@bacons/apple-targets";
 const APP_GROUP = "group.com.fryday.shared";
 const storage = new ExtensionStorage(APP_GROUP);
 
-const WIDGET_KINDS = [
-  "FrydayWidgetSmall",
-  "FrydayWidgetMediumChar",
-  "FrydayWidgetMediumList",
-];
+const WIDGET_KINDS = ["FrydayWidgetSmall", "FrydayWidgetMedium"];
 
 const AndroidWidget = NativeModules.FrydayWidget;
 
