@@ -71,7 +71,7 @@ fun TodoCell(todo: TodoItem) {
         verticalAlignment = Alignment.CenterVertically
     ) {
         Text(
-            text = truncate(todo.title, 13),
+            text = todo.title,
             style = TextStyle(
                 color = ColorProvider(R.color.gray_text),
                 fontSize = 12.sp
@@ -140,5 +140,3 @@ fun CenterBowlMessage(state: WidgetState) {
     }
 }
 
-private fun truncate(text: String, max: Int): String =
-    if (text.length <= max) text else text.take(max) + "..."
