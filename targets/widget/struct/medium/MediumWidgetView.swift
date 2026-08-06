@@ -27,11 +27,12 @@ struct MediumWidgetView: View {
                 VStack(alignment: .leading, spacing: 16) {
                     ForEach(entry.todos.prefix(4)) { todo in
                         HStack(spacing: 0) {
-                            Text(truncated(todo.title, maxChars: 13))
+                            Text(todo.title)
                                 .font(.system(size: 12))
                                 .lineSpacing(6)
                                 .foregroundColor(AppColor.Gray.text)
                                 .lineLimit(1)
+                                .truncationMode(.tail)
                             Spacer(minLength: 4)
                             WidgetCheckBox(todo: todo)
                         }
@@ -66,12 +67,6 @@ struct MediumWidgetView: View {
                 }
             }
         }
-    }
-
-    // 13자 초과 시 뒤에 말줄임표
-    private func truncated(_ s: String, maxChars: Int) -> String {
-        if s.count <= maxChars { return s }
-        return String(s.prefix(maxChars)) + "..."
     }
 
     // MARK: - Empty — 안내 텍스트 + 캐릭터+말풍선 이미지

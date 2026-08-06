@@ -53,11 +53,11 @@ fun TodoListGrid(todos: List<TodoItem>, maxItems: Int) {
                 val leftIdx = rowIdx * 2
                 val rightIdx = rowIdx * 2 + 1
                 Box(modifier = GlanceModifier.defaultWeight()) {
-                    if (leftIdx < list.size) TodoCell(list[leftIdx], maxChars = 16)
+                    if (leftIdx < list.size) TodoCell(list[leftIdx])
                 }
                 Spacer(modifier = GlanceModifier.width(12.dp))
                 Box(modifier = GlanceModifier.defaultWeight()) {
-                    if (rightIdx < list.size) TodoCell(list[rightIdx], maxChars = 16)
+                    if (rightIdx < list.size) TodoCell(list[rightIdx])
                 }
             }
         }
@@ -65,13 +65,13 @@ fun TodoListGrid(todos: List<TodoItem>, maxItems: Int) {
 }
 
 @Composable
-fun TodoCell(todo: TodoItem, maxChars: Int = 13) {
+fun TodoCell(todo: TodoItem) {
     Row(
         modifier = GlanceModifier.fillMaxWidth(),
         verticalAlignment = Alignment.CenterVertically
     ) {
         Text(
-            text = truncate(todo.title, maxChars),
+            text = todo.title,
             style = TextStyle(
                 color = ColorProvider(R.color.gray_text),
                 fontSize = 12.sp
@@ -140,5 +140,3 @@ fun CenterBowlMessage(state: WidgetState) {
     }
 }
 
-private fun truncate(text: String, max: Int): String =
-    if (text.length <= max) text else text.take(max) + "..."

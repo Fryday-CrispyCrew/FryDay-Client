@@ -41,11 +41,12 @@ struct MediumTodoListView: View {
             ) {
                 ForEach(entry.todos.prefix(6)) { todo in
                     HStack(spacing: 8) {
-                        Text(truncated(todo.title, maxChars: 16))
+                        Text(todo.title)
                             .font(.system(size: 12))
                             .lineSpacing(6)
                             .foregroundColor(AppColor.Gray.text)
                             .lineLimit(1)
+                            .truncationMode(.tail)
                         Spacer(minLength: 0)
                         WidgetCheckBox(todo: todo)
                     }
@@ -58,12 +59,6 @@ struct MediumTodoListView: View {
         .padding(.horizontal, 18)
         .padding(.bottom, 18)
         .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .top)
-    }
-
-    // 13자 초과 시 뒤에 말줄임표 (02와 동일 로직)
-    private func truncated(_ s: String, maxChars: Int) -> String {
-        if s.count <= maxChars { return s }
-        return String(s.prefix(maxChars)) + "..."
     }
 
     // MARK: - Empty — 빈 상태 아이콘 + 안내 텍스트
