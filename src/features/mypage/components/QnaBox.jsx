@@ -33,7 +33,7 @@ export default function QnaBox({ title, content, defaultOpen = false }) {
 
                 <View
                     className="w-4 h-4 items-center justify-center shrink-0"
-                    style={{ transform: [{ rotate: open ? "180deg" : "0deg" }] }}
+                    style={{ transform: [{ rotate: open ? "0deg" : "180deg" }] }}
                 >
                     <ChevronDown width={12} height={12} />
                 </View>
