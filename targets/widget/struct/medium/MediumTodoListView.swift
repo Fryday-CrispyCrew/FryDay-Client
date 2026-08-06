@@ -41,7 +41,7 @@ struct MediumTodoListView: View {
             ) {
                 ForEach(entry.todos.prefix(6)) { todo in
                     HStack(spacing: 8) {
-                        Text(truncated(todo.title, maxChars: 13))
+                        Text(truncated(todo.title, maxChars: 16))
                             .font(.system(size: 12))
                             .lineSpacing(6)
                             .foregroundColor(AppColor.Gray.text)
