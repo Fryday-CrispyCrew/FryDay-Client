@@ -1,4 +1,4 @@
-import { useEffect, useMemo } from "react";
+import { useEffect, useMemo, useRef } from "react";
 import { AppState } from "react-native";
 import { useQueryClient, useQueries } from "@tanstack/react-query";
 import { useCategoriesQuery } from "../../features/todo/queries/category/useCategoriesQuery";
@@ -92,6 +92,9 @@ export function useWidgetSync() {
   const queryClient = useQueryClient();
   const isServerError = useServerStatusStore((s) => s.isServerError);
 
+  const pendingSetRef = useRef(new Set());
+  const inProgressWritesRef = useRef(new Set());
+
   useEffect(() => {
     syncLoginToWidget(true);
     syncServerErrorToWidget(false);
@@ -102,13 +105,57 @@ export function useWidgetSync() {
   }, [isServerError]);
 
   useEffect(() => {
-    const doSync = async () => {
+    const refreshPendingSet = async () => {
+      const ids = await peekPendingToggleIds();
+      pendingSetRef.current = new Set(ids.map(String));
+    };
+
+    const applyOptimisticFlipToQuery = (queryKey) => {
+      const pendingSet = pendingSetRef.current;
+      if (pendingSet.size === 0) return;
+
+      const cached = queryClient.getQueryData(queryKey);
+      const arr = extractArray(cached);
+      if (!arr || arr.length === 0) return;
+
+      const needsFlip = arr.some((t) => pendingSet.has(String(t.id)));
+      if (!needsFlip) return;
+
+      const flipped = arr.map((t) =>
+        pendingSet.has(String(t.id))
+          ? {
+              ...t,
+              status: t.status === "COMPLETED" ? "IN_PROGRESS" : "COMPLETED",
+            }
+          : t,
+      );
+      const next = Array.isArray(cached)
+        ? flipped
+        : { ...cached, data: flipped };
+
+      const keyStr = JSON.stringify(queryKey);
+      inProgressWritesRef.current.add(keyStr);
+      queryClient.setQueryData(queryKey, next);
+      Promise.resolve().then(() =>
+        inProgressWritesRef.current.delete(keyStr),
+      );
+    };
+
+    const applyOptimisticFlipAll = () => {
+      const queries = queryClient
+        .getQueryCache()
+        .findAll({ queryKey: homeKeys.todos() });
+      for (const query of queries) {
+        applyOptimisticFlipToQuery(query.queryKey);
+      }
+    };
+
+    const doSync = () => {
       const rawCategoriesData = queryClient.getQueryData(categoryKeys.list());
       const rawCategories = extractArray(rawCategoriesData);
       if (!rawCategories || rawCategories.length === 0) return;
 
-      const pendingIds = await peekPendingToggleIds();
-      const pendingSet = new Set(pendingIds.map(String));
+      const pendingSet = pendingSetRef.current;
 
       const payload = {};
       let hasAny = false;
@@ -135,51 +182,28 @@ export function useWidgetSync() {
       if (event?.type !== "updated" && event?.type !== "added") return;
       const key = event.query?.queryKey;
       if (!Array.isArray(key)) return;
+
+      const keyStr = JSON.stringify(key);
+      if (inProgressWritesRef.current.has(keyStr)) return;
+
       const isHomeTodos = key[0] === "home" && key[1] === "todos";
       const isCategories = key[0] === "categories";
+
+      if (isHomeTodos) applyOptimisticFlipToQuery(key);
       if (isHomeTodos || isCategories) doSync();
     });
-
-    doSync();
-
-    return unsub;
-  }, [queryClient, dates]);
-
-  useEffect(() => {
-    const applyOptimisticFlip = (pendingIds) => {
-      if (!pendingIds || pendingIds.length === 0) return;
-      const pendingSet = new Set(pendingIds.map(String));
-      const queries = queryClient
-        .getQueryCache()
-        .findAll({ queryKey: homeKeys.todos() });
-      for (const query of queries) {
-        const cached = query.state.data;
-        const arr = extractArray(cached);
-        if (!arr) continue;
-        const flipped = arr.map((t) =>
-          pendingSet.has(String(t.id))
-            ? {
-                ...t,
-                status: t.status === "COMPLETED" ? "IN_PROGRESS" : "COMPLETED",
-              }
-            : t,
-        );
-        const next = Array.isArray(cached)
-          ? flipped
-          : { ...cached, data: flipped };
-        queryClient.setQueryData(query.queryKey, next);
-      }
-    };
 
     const handleAppState = async (nextState) => {
       if (nextState !== "active") return;
 
-      const pendingIds = await peekPendingToggleIds();
-      applyOptimisticFlip(pendingIds);
+      await refreshPendingSet();
+      applyOptimisticFlipAll();
 
       await drainPendingToggles(async (todoId) => {
         await homeApi.toggleCompletion({ todoId });
       });
+
+      await refreshPendingSet();
 
       queryClient.invalidateQueries({ queryKey: homeKeys.todos() });
       queryClient.invalidateQueries({ queryKey: homeKeys.characterStatus() });
@@ -187,6 +211,10 @@ export function useWidgetSync() {
 
     const sub = AppState.addEventListener("change", handleAppState);
     handleAppState("active");
-    return () => sub.remove();
-  }, [queryClient]);
+
+    return () => {
+      unsub();
+      sub.remove();
+    };
+  }, [queryClient, dates]);
 }
