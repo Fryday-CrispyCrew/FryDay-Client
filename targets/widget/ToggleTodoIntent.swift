@@ -41,9 +41,7 @@ struct ToggleTodoIntent: AppIntent {
         }
 
         WidgetCenter.shared.reloadTimelines(ofKind: "FrydayWidgetSmall")
-        WidgetCenter.shared.reloadTimelines(ofKind: "FrydayWidgetMediumChar")
-        WidgetCenter.shared.reloadTimelines(ofKind: "FrydayWidgetMediumList")
-        WidgetCenter.shared.reloadAllTimelines()
+        WidgetCenter.shared.reloadTimelines(ofKind: "FrydayWidgetMedium")
         return .result()
     }
 }

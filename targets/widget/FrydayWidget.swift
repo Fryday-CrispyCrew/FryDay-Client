@@ -124,20 +124,19 @@ struct FrydayWidgetEntryView: View {
     }
 }
 
-// 스타일별 Static Provider
-struct StyledStaticProvider: TimelineProvider {
-    let style: WidgetStyle
+// MARK: - Small — StaticConfiguration (single kind)
 
+struct SmallStaticProvider: TimelineProvider {
     func placeholder(in context: Context) -> TodoEntry {
-        TodoEntryBuilder.staticPlaceholder(style: style)
+        TodoEntryBuilder.staticPlaceholder(style: .character)
     }
 
     func getSnapshot(in context: Context, completion: @escaping (TodoEntry) -> Void) {
         if context.isPreview {
-            completion(TodoEntryBuilder.previewSample(style: style))
+            completion(TodoEntryBuilder.previewSample(style: .character))
             return
         }
-        completion(TodoEntryBuilder.makeEntry(style: style))
+        completion(TodoEntryBuilder.makeEntry(style: .character))
     }
 
     func getTimeline(in context: Context, completion: @escaping (Timeline<TodoEntry>) -> Void) {
@@ -145,11 +144,11 @@ struct StyledStaticProvider: TimelineProvider {
         let calendar = Calendar.current
 
         var entries: [TodoEntry] = [
-            TodoEntryBuilder.makeEntry(style: style, forDate: now)
+            TodoEntryBuilder.makeEntry(style: .character, forDate: now)
         ]
         for i in 1..<7 {
             let midnight = calendar.startOfDay(for: now.addingTimeInterval(Double(i) * 86400))
-            entries.append(TodoEntryBuilder.makeEntry(style: style, forDate: midnight))
+            entries.append(TodoEntryBuilder.makeEntry(style: .character, forDate: midnight))
         }
 
         let nextRefresh = calendar.startOfDay(for: now.addingTimeInterval(7 * 86400))
@@ -157,62 +156,80 @@ struct StyledStaticProvider: TimelineProvider {
     }
 }
 
-// MARK: - Widgets
-
 struct FrydayWidgetSmall: Widget {
     var body: some WidgetConfiguration {
         StaticConfiguration(
             kind: "FrydayWidgetSmall",
-            provider: StyledStaticProvider(style: .character)
+            provider: SmallStaticProvider()
         ) { entry in
             FrydayWidgetEntryView(entry: entry)
                 .environment(\.redactionReasons, [])
         }
-        .configurationDisplayName("Small")
-        .description("오늘의 투두 개수와 완료 현황을 FryDay의 튀김을 함께 확인하세요.")
+        .configurationDisplayName("FryDay")
+        .description("오늘의 투두 개수와 완료 현황을 FryDay의 튀김과 함께 확인하세요.")
         .supportedFamilies([.systemSmall])
         .contentMarginsDisabled()
     }
 }
 
-struct FrydayWidgetMediumChar: Widget {
+// MARK: - Medium — AppIntentConfiguration (single kind, style configurable)
+
+struct MediumIntentProvider: AppIntentTimelineProvider {
+    typealias Intent = FrydayConfigIntent
+    typealias Entry = TodoEntry
+
+    func placeholder(in context: Context) -> TodoEntry {
+        TodoEntryBuilder.staticPlaceholder(style: .character)
+    }
+
+    func snapshot(for configuration: FrydayConfigIntent, in context: Context) async -> TodoEntry {
+        if context.isPreview {
+            return TodoEntryBuilder.previewSample(style: configuration.style)
+        }
+        return TodoEntryBuilder.makeEntry(style: configuration.style)
+    }
+
+    func timeline(for configuration: FrydayConfigIntent, in context: Context) async -> Timeline<TodoEntry> {
+        let now = Date()
+        let calendar = Calendar.current
+
+        var entries: [TodoEntry] = [
+            TodoEntryBuilder.makeEntry(style: configuration.style, forDate: now)
+        ]
+        for i in 1..<7 {
+            let midnight = calendar.startOfDay(for: now.addingTimeInterval(Double(i) * 86400))
+            entries.append(TodoEntryBuilder.makeEntry(style: configuration.style, forDate: midnight))
+        }
+
+        let nextRefresh = calendar.startOfDay(for: now.addingTimeInterval(7 * 86400))
+        return Timeline(entries: entries, policy: .after(nextRefresh))
+    }
+}
+
+struct FrydayWidgetMedium: Widget {
     var body: some WidgetConfiguration {
-        StaticConfiguration(
-            kind: "FrydayWidgetMediumChar",
-            provider: StyledStaticProvider(style: .character)
+        AppIntentConfiguration(
+            kind: "FrydayWidgetMedium",
+            intent: FrydayConfigIntent.self,
+            provider: MediumIntentProvider()
         ) { entry in
             FrydayWidgetEntryView(entry: entry)
                 .environment(\.redactionReasons, [])
         }
-        .configurationDisplayName("FryDay - 캐릭터")
-        .description("오늘의 핵심 투두를 체크하고, 계획들이 잘 튀겨지고 있는지 확인하세요.")
+        .configurationDisplayName("FryDay")
+        .description("오늘의 투두를 홈 화면에서 바로 확인하세요. 위젯 편집으로 캐릭터/리스트 스타일 변경 가능.")
         .supportedFamilies([.systemMedium])
         .contentMarginsDisabled()
     }
 }
 
-struct FrydayWidgetMediumList: Widget {
-    var body: some WidgetConfiguration {
-        StaticConfiguration(
-            kind: "FrydayWidgetMediumList",
-            provider: StyledStaticProvider(style: .list)
-        ) { entry in
-            FrydayWidgetEntryView(entry: entry)
-                .environment(\.redactionReasons, [])
-        }
-        .configurationDisplayName("FryDay - 리스트")
-        .description("내가 오늘 추가한 투두들을 깔끔한 리스트 형태로 홈화면에서 확인하세요.")
-        .supportedFamilies([.systemMedium])
-        .contentMarginsDisabled()
-    }
-}
+// MARK: - Bundle
 
 @main
 struct FrydayWidgetBundle: WidgetBundle {
     var body: some Widget {
         FrydayWidgetSmall()
-        FrydayWidgetMediumChar()
-        FrydayWidgetMediumList()
+        FrydayWidgetMedium()
     }
 }
 
@@ -225,13 +242,13 @@ struct FrydayWidgetBundle: WidgetBundle {
 }
 
 #Preview("Medium 캐릭터", as: .systemMedium) {
-    FrydayWidgetMediumChar()
+    FrydayWidgetMedium()
 } timeline: {
     TodoEntry(date: Date(), dateString: "7월 7일 (화)", doneCount: 0, doingCount: 6, isConnected: true, todos: Array(TodoEntryBuilder.previewTodos.prefix(4)), style: .character)
 }
 
 #Preview("Medium 리스트", as: .systemMedium) {
-    FrydayWidgetMediumList()
+    FrydayWidgetMedium()
 } timeline: {
     TodoEntry(date: Date(), dateString: "7월 7일 (화)", doneCount: 0, doingCount: 6, isConnected: true, todos: TodoEntryBuilder.previewTodos, style: .list)
 }
