@@ -9,14 +9,14 @@ export default function SystemUse() {
     const insets = useSafeAreaInsets();
 
     return (
-        <SafeAreaView className="flex-1 bg-gr" edges={["top"]}>
+        <SafeAreaView className="flex-1 bg-gr" edges={["top", "bottom"]}>
             <MyPageHeader showBackButton title="이용 약관" />
 
             <ScrollView
                 showsVerticalScrollIndicator={false}
                 contentContainerStyle={{
                     paddingTop: 16,
-                    paddingBottom: 24 + (insets.bottom || 0),
+                    paddingBottom: 48 + (insets.bottom || 0),
                     rowGap: 16,
                 }}
             >
