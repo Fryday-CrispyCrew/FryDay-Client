@@ -214,7 +214,7 @@ export default function ReportScreen() {
 
             <ScrollView
                 className="flex-1"
-                contentContainerStyle={{paddingTop: 8, paddingBottom: 32}}
+                contentContainerStyle={{paddingTop: 0, paddingBottom: 32}}
                 showsVerticalScrollIndicator={false}
             >
                 <ReportHeroCard caseType={report.caseType} nickname={nickname} />

@@ -12,7 +12,7 @@ export default function ReportHeroCard({ caseType, nickname }) {
     const imageSize = Math.min(150, width * 0.42);
 
     return (
-        <View className="px-5 py-6 bg-wt">
+        <View className="px-5 pt-1 pb-6 bg-wt">
             {/* 텍스트 영역 */}
             <View className="pr-2">
                 {lines.map((line, lineIdx) => (
