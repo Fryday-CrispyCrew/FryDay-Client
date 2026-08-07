@@ -41,10 +41,6 @@ struct ToggleTodoIntent: AppIntent {
         }
 
         WidgetCenter.shared.reloadTimelines(ofKind: "FrydayWidget")
-        WidgetCenter.shared.reloadAllTimelines()
-
-        try? await Task.sleep(nanoseconds: 150_000_000)
-
         return .result()
     }
 }
