@@ -40,8 +40,7 @@ struct ToggleTodoIntent: AppIntent {
             defaults?.synchronize()
         }
 
-        WidgetCenter.shared.reloadTimelines(ofKind: "FrydayWidgetSmall")
-        WidgetCenter.shared.reloadTimelines(ofKind: "FrydayWidgetMedium")
+        WidgetCenter.shared.reloadTimelines(ofKind: "FrydayWidget")
         return .result()
     }
 }
