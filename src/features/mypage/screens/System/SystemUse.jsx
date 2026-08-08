@@ -12,25 +12,25 @@ export default function SystemUse() {
         <SafeAreaView className="flex-1 bg-gr" edges={["top"]}>
             <MyPageHeader showBackButton title="이용 약관" />
 
-            <View className="flex-1">
-                <ScrollView
-                    className="flex-1"
-                    showsVerticalScrollIndicator={false}
-                    contentContainerStyle={{
-                        paddingTop: 16,
-                        paddingBottom: 80 + (insets.bottom || 0),
-                        rowGap: 16,
-                    }}
-                >
-                    {TERMS_DATA.map((item) => (
-                        <SystemBox
-                            key={item.key}
-                            title={item.title}
-                            content={item.content}
-                        />
-                    ))}
-                </ScrollView>
-            </View>
+            <ScrollView
+                className="flex-1"
+                showsVerticalScrollIndicator={false}
+                contentInsetAdjustmentBehavior="never"
+                automaticallyAdjustContentInsets={false}
+                contentContainerStyle={{
+                    paddingTop: 16,
+                    paddingBottom: 200 + (insets.bottom || 0),
+                    rowGap: 16,
+                }}
+            >
+                {TERMS_DATA.map((item) => (
+                    <SystemBox
+                        key={item.key}
+                        title={item.title}
+                        content={item.content}
+                    />
+                ))}
+            </ScrollView>
         </SafeAreaView>
     );
 }
