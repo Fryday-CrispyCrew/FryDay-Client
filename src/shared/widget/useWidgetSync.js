@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useRef } from "react";
+import { useEffect, useMemo } from "react";
 import { AppState } from "react-native";
 import { useQueryClient, useQueries } from "@tanstack/react-query";
 import { useCategoriesQuery } from "../../features/todo/queries/category/useCategoriesQuery";
@@ -12,8 +12,8 @@ import {
   syncServerErrorToWidget,
   drainPendingToggles,
   peekPendingToggleIds,
-  peekPendingToggleIdsSync,
 } from "./syncWidget";
+import { setPendingCache } from "./pendingCache";
 
 const SYNC_DAYS = 7;
 
@@ -93,9 +93,6 @@ export function useWidgetSync() {
   const queryClient = useQueryClient();
   const isServerError = useServerStatusStore((s) => s.isServerError);
 
-  const pendingSetRef = useRef(new Set());
-  const inProgressWritesRef = useRef(new Set());
-
   useEffect(() => {
     syncLoginToWidget(true);
     syncServerErrorToWidget(false);
@@ -105,58 +102,13 @@ export function useWidgetSync() {
     syncServerErrorToWidget(isServerError);
   }, [isServerError]);
 
+  // 위젯 storage sync: RN cache 변경마다 서버 raw 데이터 를 위젯 스토리지에 write
+  // 위젯은 스토리지 데이터 + 자체 pending overlay 로 렌더
   useEffect(() => {
-    const refreshPendingSet = async () => {
-      const ids = await peekPendingToggleIds();
-      pendingSetRef.current = new Set(ids.map(String));
-    };
-
-    const applyOptimisticFlipToQuery = (queryKey) => {
-      const pendingSet = pendingSetRef.current;
-      if (pendingSet.size === 0) return;
-
-      const cached = queryClient.getQueryData(queryKey);
-      const arr = extractArray(cached);
-      if (!arr || arr.length === 0) return;
-
-      const needsFlip = arr.some((t) => pendingSet.has(String(t.id)));
-      if (!needsFlip) return;
-
-      const flipped = arr.map((t) =>
-        pendingSet.has(String(t.id))
-          ? {
-              ...t,
-              status: t.status === "COMPLETED" ? "IN_PROGRESS" : "COMPLETED",
-            }
-          : t,
-      );
-      const next = Array.isArray(cached)
-        ? flipped
-        : { ...cached, data: flipped };
-
-      const keyStr = JSON.stringify(queryKey);
-      inProgressWritesRef.current.add(keyStr);
-      queryClient.setQueryData(queryKey, next);
-      Promise.resolve().then(() =>
-        inProgressWritesRef.current.delete(keyStr),
-      );
-    };
-
-    const applyOptimisticFlipAll = () => {
-      const queries = queryClient
-        .getQueryCache()
-        .findAll({ queryKey: homeKeys.todos() });
-      for (const query of queries) {
-        applyOptimisticFlipToQuery(query.queryKey);
-      }
-    };
-
     const doSync = () => {
       const rawCategoriesData = queryClient.getQueryData(categoryKeys.list());
       const rawCategories = extractArray(rawCategoriesData);
       if (!rawCategories || rawCategories.length === 0) return;
-
-      const pendingSet = pendingSetRef.current;
 
       const payload = {};
       let hasAny = false;
@@ -167,10 +119,7 @@ export function useWidgetSync() {
         const todos = extractArray(rawTodos);
         if (todos) {
           const normalized = todos.map(normalizeTodo);
-          const serverState = normalized.map((t) =>
-            pendingSet.has(String(t.id)) ? { ...t, done: !t.done } : t,
-          );
-          const sorted = sortByHomeOrder(serverState, rawCategories);
+          const sorted = sortByHomeOrder(normalized, rawCategories);
           payload[date] = sorted;
           hasAny = true;
         }
@@ -183,35 +132,33 @@ export function useWidgetSync() {
       if (event?.type !== "updated" && event?.type !== "added") return;
       const key = event.query?.queryKey;
       if (!Array.isArray(key)) return;
-
-      const keyStr = JSON.stringify(key);
-      if (inProgressWritesRef.current.has(keyStr)) return;
-
       const isHomeTodos = key[0] === "home" && key[1] === "todos";
       const isCategories = key[0] === "categories";
-
-      if (isHomeTodos) {
-        // iOS 는 storage 동기 접근 가능 → race 없이 최신 pending 로 flip
-        const syncPending = peekPendingToggleIdsSync();
-        if (syncPending !== null) {
-          pendingSetRef.current = new Set(syncPending.map(String));
-        }
-        applyOptimisticFlipToQuery(key);
-      }
       if (isHomeTodos || isCategories) doSync();
     });
 
+    doSync();
+
+    return unsub;
+  }, [queryClient, dates]);
+
+  // 앱 진입 시: pending 을 JS 캐시에 저장 (Android select 용) + drain + refetch
+  // useHomeTodosQuery 의 select 가 pending overlay 를 매 렌더마다 적용 → 반영 즉시
+  useEffect(() => {
     const handleAppState = async (nextState) => {
       if (nextState !== "active") return;
 
-      await refreshPendingSet();
-      applyOptimisticFlipAll();
+      const pendingIds = await peekPendingToggleIds();
+      setPendingCache(pendingIds);
+
+      queryClient.invalidateQueries({ queryKey: homeKeys.todos() });
 
       await drainPendingToggles(async (todoId) => {
         await homeApi.toggleCompletion({ todoId });
       });
 
-      await refreshPendingSet();
+      const pendingAfter = await peekPendingToggleIds();
+      setPendingCache(pendingAfter);
 
       queryClient.invalidateQueries({ queryKey: homeKeys.todos() });
       queryClient.invalidateQueries({ queryKey: homeKeys.characterStatus() });
@@ -219,10 +166,6 @@ export function useWidgetSync() {
 
     const sub = AppState.addEventListener("change", handleAppState);
     handleAppState("active");
-
-    return () => {
-      unsub();
-      sub.remove();
-    };
-  }, [queryClient, dates]);
+    return () => sub.remove();
+  }, [queryClient]);
 }
