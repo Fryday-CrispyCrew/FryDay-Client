@@ -19,7 +19,7 @@ export default function SystemUse() {
                 automaticallyAdjustContentInsets={false}
                 contentContainerStyle={{
                     paddingTop: 16,
-                    paddingBottom: 200 + (insets.bottom || 0),
+                    paddingBottom: 24 + (insets.bottom || 0),
                     rowGap: 16,
                 }}
             >
