@@ -12,6 +12,7 @@ import {
   syncServerErrorToWidget,
   drainPendingToggles,
   peekPendingToggleIds,
+  peekPendingToggleIdsSync,
 } from "./syncWidget";
 
 const SYNC_DAYS = 7;
@@ -189,7 +190,14 @@ export function useWidgetSync() {
       const isHomeTodos = key[0] === "home" && key[1] === "todos";
       const isCategories = key[0] === "categories";
 
-      if (isHomeTodos) applyOptimisticFlipToQuery(key);
+      if (isHomeTodos) {
+        // iOS 는 storage 동기 접근 가능 → race 없이 최신 pending 로 flip
+        const syncPending = peekPendingToggleIdsSync();
+        if (syncPending !== null) {
+          pendingSetRef.current = new Set(syncPending.map(String));
+        }
+        applyOptimisticFlipToQuery(key);
+      }
       if (isHomeTodos || isCategories) doSync();
     });
 
