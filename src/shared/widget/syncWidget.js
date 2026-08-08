@@ -128,6 +128,20 @@ export function clearWidgetForLogout() {
   }
 }
 
+export function peekPendingToggleIdsSync() {
+  if (Platform.OS === "ios") {
+    const raw = storage.get("pendingToggleIds");
+    if (!raw) return [];
+    try {
+      const arr = JSON.parse(raw);
+      return Array.isArray(arr) ? arr.map(String) : [];
+    } catch {
+      return [];
+    }
+  }
+  return null;
+}
+
 export async function peekPendingToggleIds() {
   if (Platform.OS === "ios") {
     const raw = storage.get("pendingToggleIds");
