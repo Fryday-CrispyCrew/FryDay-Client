@@ -7,7 +7,7 @@ export default function SystemBox({title, content}) {
             <AppText variant="M500" className="text-gr500">
                 {title}
             </AppText>
-            <AppText variant="L400" className="text-bk leading-[1.5]">
+            <AppText variant="L400" className="text-bk leading-6">
                 {content}
             </AppText>
         </View>
