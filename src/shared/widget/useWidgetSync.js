@@ -142,16 +142,29 @@ export function useWidgetSync() {
     return unsub;
   }, [queryClient, dates]);
 
-  // 앱 진입 시: pending 을 JS 캐시에 저장 (Android select 용) + drain + refetch
+  // 앱 진입 시: pending 을 JS 캐시에 저장 + select 강제 재실행 + drain + refetch
   // useHomeTodosQuery 의 select 가 pending overlay 를 매 렌더마다 적용 → 반영 즉시
   useEffect(() => {
+    const forceSelectRerun = () => {
+      queryClient
+        .getQueryCache()
+        .findAll({ queryKey: homeKeys.todos() })
+        .forEach((q) => {
+          const data = q.state.data;
+          if (data) queryClient.setQueryData(q.queryKey, { ...data });
+        });
+    };
+
     const handleAppState = async (nextState) => {
       if (nextState !== "active") return;
 
       const pendingIds = await peekPendingToggleIds();
       setPendingCache(pendingIds);
+      // pending 변경 즉시 홈 재렌더 (select 재실행)
+      forceSelectRerun();
 
-      queryClient.invalidateQueries({ queryKey: homeKeys.todos() });
+      // 최신 서버 상태 강제 fetch
+      queryClient.refetchQueries({ queryKey: homeKeys.todos() });
 
       await drainPendingToggles(async (todoId) => {
         await homeApi.toggleCompletion({ todoId });
@@ -159,8 +172,9 @@ export function useWidgetSync() {
 
       const pendingAfter = await peekPendingToggleIds();
       setPendingCache(pendingAfter);
+      forceSelectRerun();
 
-      queryClient.invalidateQueries({ queryKey: homeKeys.todos() });
+      queryClient.refetchQueries({ queryKey: homeKeys.todos() });
       queryClient.invalidateQueries({ queryKey: homeKeys.characterStatus() });
     };
 

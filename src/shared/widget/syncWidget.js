@@ -1,5 +1,6 @@
 import { NativeModules, Platform } from "react-native";
 import { ExtensionStorage } from "@bacons/apple-targets";
+import { setPendingCache } from "./pendingCache";
 
 const APP_GROUP = "group.com.fryday.shared";
 const storage = new ExtensionStorage(APP_GROUP);
@@ -65,8 +66,10 @@ export function syncTodosToWidget(todosByDate = {}) {
       const merged = { ...existing, ...buildTodosPayload(todosByDate) };
       storage.set("todosByDateJson", JSON.stringify(merged));
       reloadAllWidgetKinds();
-      // 크로스프로세스 UserDefaults 전파 지연 커버용 재시도
-      setTimeout(reloadAllWidgetKinds, 200);
+      // 크로스프로세스 UserDefaults 전파 지연 커버용 다중 재시도
+      setTimeout(reloadAllWidgetKinds, 100);
+      setTimeout(reloadAllWidgetKinds, 500);
+      setTimeout(reloadAllWidgetKinds, 1500);
     } catch {}
     return;
   }
@@ -75,6 +78,12 @@ export function syncTodosToWidget(todosByDate = {}) {
     try {
       const merged = buildTodosPayload(todosByDate);
       AndroidWidget.syncTodos(JSON.stringify(merged));
+      // 위젯 리로드 async 이므로 재시도로 확실히 반영
+      setTimeout(() => {
+        try {
+          AndroidWidget.reloadWidgets?.();
+        } catch {}
+      }, 300);
     } catch {}
   }
 }
@@ -237,3 +246,8 @@ export async function drainPendingToggles(toggleFn) {
     } catch {}
   }
 }
+
+// 모듈 로드 즉시 pending 캐시 초기화 (Android select 콜드 스타트 race 방지)
+peekPendingToggleIds()
+  .then((ids) => setPendingCache(ids))
+  .catch(() => {});
