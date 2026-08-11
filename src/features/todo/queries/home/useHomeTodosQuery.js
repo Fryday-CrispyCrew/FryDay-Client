@@ -28,6 +28,8 @@ export function useHomeTodosQuery({date, categoryId}, options = {}) {
 
   useEffect(() => {
     let alive = true;
+    const activeTimers = [];
+
     const refresh = async () => {
       const sync = peekPendingToggleIdsSync();
       if (sync !== null) {
@@ -41,21 +43,23 @@ export function useHomeTodosQuery({date, categoryId}, options = {}) {
       }
     };
 
-    refresh();
-    // iOS 콜드 스타트 시 UserDefaults 크로스프로세스 sync 지연 커버용 재시도
-    const timers = [
-      setTimeout(refresh, 100),
-      setTimeout(refresh, 300),
-      setTimeout(refresh, 800),
-      setTimeout(refresh, 2000),
-    ];
+    // iOS UserDefaults 크로스프로세스 sync 지연 커버 (콜드 스타트 + 웜 리쥼 공통)
+    const refreshWithRetries = () => {
+      refresh();
+      activeTimers.push(setTimeout(refresh, 100));
+      activeTimers.push(setTimeout(refresh, 300));
+      activeTimers.push(setTimeout(refresh, 800));
+      activeTimers.push(setTimeout(refresh, 2000));
+    };
+
+    refreshWithRetries();
 
     const sub = AppState.addEventListener("change", (s) => {
-      if (s === "active") refresh();
+      if (s === "active") refreshWithRetries();
     });
     return () => {
       alive = false;
-      timers.forEach(clearTimeout);
+      activeTimers.forEach(clearTimeout);
       sub.remove();
     };
   }, []);
