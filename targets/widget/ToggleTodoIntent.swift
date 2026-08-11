@@ -40,6 +40,9 @@ struct ToggleTodoIntent: AppIntent {
             defaults?.synchronize()
         }
 
+        // 크로스프로세스 UserDefaults disk flush 대기 (앱 콜드 스타트 시 stale read 방지)
+        try? await Task.sleep(nanoseconds: 100_000_000)
+
         WidgetCenter.shared.reloadTimelines(ofKind: "FrydayWidget")
         return .result()
     }

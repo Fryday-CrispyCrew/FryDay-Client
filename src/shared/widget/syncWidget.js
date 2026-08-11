@@ -141,7 +141,14 @@ export function clearWidgetForLogout() {
 
 export function peekPendingToggleIdsSync() {
   if (Platform.OS === "ios") {
-    const raw = storage.get("pendingToggleIds");
+    // 매번 새 storage 인스턴스 생성해서 캐싱 우회, 크로스프로세스 최신 값 읽기 시도
+    let raw = null;
+    try {
+      const freshStorage = new ExtensionStorage(APP_GROUP);
+      raw = freshStorage.get("pendingToggleIds");
+    } catch {
+      raw = storage.get("pendingToggleIds");
+    }
     if (!raw) return [];
     try {
       const arr = JSON.parse(raw);
