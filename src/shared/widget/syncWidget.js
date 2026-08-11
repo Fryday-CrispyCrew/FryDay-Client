@@ -65,6 +65,8 @@ export function syncTodosToWidget(todosByDate = {}) {
       const merged = { ...existing, ...buildTodosPayload(todosByDate) };
       storage.set("todosByDateJson", JSON.stringify(merged));
       reloadAllWidgetKinds();
+      // 크로스프로세스 UserDefaults 전파 지연 커버용 재시도
+      setTimeout(reloadAllWidgetKinds, 200);
     } catch {}
     return;
   }
