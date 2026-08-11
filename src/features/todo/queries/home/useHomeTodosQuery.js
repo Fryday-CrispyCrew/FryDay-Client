@@ -25,50 +25,63 @@ export function useHomeTodosQuery({date, categoryId}, options = {}) {
   });
 
   const [pending, setPending] = useState(() => readPendingSync());
-  const lastPendingStrRef = useRef(JSON.stringify(readPendingSync() ?? []));
 
   useEffect(() => {
     let alive = true;
+    let clearTimer = null;
+    let readTimers = [];
 
-    const applyIfChanged = (ids) => {
-      const str = JSON.stringify(ids ?? []);
-      if (str === lastPendingStrRef.current) return;
-      lastPendingStrRef.current = str;
-      setPending(ids ?? []);
-      setPendingCache(ids ?? []);
+    // 저장소 pending 이 비어있으면 즉시 clear 하지 않고 3초 지연
+    // → drain 이 storage 를 clear 했는데 refetch 는 아직 안 끝났을 때, 겉으로 unflipped 로 보이는 flicker 방지
+    // 실제 사용자가 pending 없는 상태(위젯 안 눌렀음)여도 3초 후엔 정상 empty 로 됨
+    const applyIds = (ids) => {
+      if (!alive) return;
+      if (clearTimer) {
+        clearTimeout(clearTimer);
+        clearTimer = null;
+      }
+      const arr = ids ?? [];
+      if (arr.length > 0) {
+        setPending(arr);
+        setPendingCache(arr);
+      } else {
+        clearTimer = setTimeout(() => {
+          if (!alive) return;
+          setPending([]);
+          setPendingCache([]);
+        }, 3000);
+      }
     };
 
     const readOnce = async () => {
       const sync = peekPendingToggleIdsSync();
       if (sync !== null) {
-        applyIfChanged(sync);
-        return sync;
+        applyIds(sync);
+        return;
       }
       const ids = await peekPendingToggleIds();
-      if (alive) applyIfChanged(ids);
-      return ids;
+      applyIds(ids ?? []);
     };
 
-    // 초기 read + iOS UserDefaults 크로스프로세스 sync 지연 커버 짧은 재시도
-    // 재시도는 최초 non-empty 잡히면 중단 → drain 중 flicker 방지
-    (async () => {
-      const first = await readOnce();
-      if (first && first.length > 0) return;
-      // 콜드 스타트 iOS UserDefaults sync 대기
-      for (const delay of [200, 600]) {
-        await new Promise((r) => setTimeout(r, delay));
-        if (!alive) return;
-        const ids = await readOnce();
-        if (ids && ids.length > 0) return;
-      }
-    })();
+    const scheduleReads = () => {
+      readTimers.forEach(clearTimeout);
+      readTimers = [];
+      readOnce();
+      // iOS UserDefaults 크로스프로세스 sync 지연 커버
+      readTimers.push(setTimeout(readOnce, 200));
+      readTimers.push(setTimeout(readOnce, 800));
+    };
+
+    scheduleReads();
 
     const sub = AppState.addEventListener("change", (s) => {
-      if (s === "active") readOnce();
+      if (s === "active") scheduleReads();
     });
 
     return () => {
       alive = false;
+      if (clearTimer) clearTimeout(clearTimer);
+      readTimers.forEach(clearTimeout);
       sub.remove();
     };
   }, []);
