@@ -1,33 +1,69 @@
-// src/features/todo/queries/home/useHomeTodosQuery.js
+import {useEffect, useMemo, useState} from "react";
+import {AppState} from "react-native";
 import {useQuery} from "@tanstack/react-query";
 import {homeKeys} from "./homeKeys";
 import {homeApi} from "./homeApi";
-import {peekPendingToggleIdsSync} from "../../../../shared/widget/syncWidget";
-import {getPendingCache} from "../../../../shared/widget/pendingCache";
+import {
+  peekPendingToggleIdsSync,
+  peekPendingToggleIds,
+} from "../../../../shared/widget/syncWidget";
+import {getPendingCache, setPendingCache} from "../../../../shared/widget/pendingCache";
 
-function applyPendingOverlay(todos) {
-  if (!Array.isArray(todos) || todos.length === 0) return todos;
-  const syncPending = peekPendingToggleIdsSync();
-  const pendingIds = syncPending !== null ? syncPending : getPendingCache();
-  console.log("[overlay] pending:", pendingIds, "todo ids:", todos.map(t => t.id));
-  if (pendingIds.length === 0) return todos;
-  const pendingSet = new Set(pendingIds.map(String));
-  return todos.map((t) =>
-    pendingSet.has(String(t.id))
-      ? {
-          ...t,
-          status: t.status === "COMPLETED" ? "IN_PROGRESS" : "COMPLETED",
-        }
-      : t,
-  );
+function readPendingSync() {
+  const sync = peekPendingToggleIdsSync();
+  if (sync !== null) return sync;
+  return getPendingCache();
 }
 
 export function useHomeTodosQuery({date, categoryId}, options = {}) {
-  return useQuery({
+  const query = useQuery({
     queryKey: homeKeys.todosList({date, categoryId}),
     queryFn: () => homeApi.getTodos({date, categoryId}),
     enabled: !!date,
-    select: (res) => applyPendingOverlay(res?.data ?? []),
+    select: (res) => res?.data ?? [],
     ...options,
   });
+
+  const [pending, setPending] = useState(() => readPendingSync());
+
+  useEffect(() => {
+    let alive = true;
+    const refresh = async () => {
+      const sync = peekPendingToggleIdsSync();
+      if (sync !== null) {
+        if (alive) setPending(sync);
+        return;
+      }
+      const ids = await peekPendingToggleIds();
+      if (alive) {
+        setPending(ids);
+        setPendingCache(ids);
+      }
+    };
+
+    refresh();
+    const sub = AppState.addEventListener("change", (s) => {
+      if (s === "active") refresh();
+    });
+    return () => {
+      alive = false;
+      sub.remove();
+    };
+  }, []);
+
+  const dataWithOverlay = useMemo(() => {
+    const arr = Array.isArray(query.data) ? query.data : [];
+    if (!pending || pending.length === 0) return arr;
+    const pendingSet = new Set(pending.map(String));
+    return arr.map((t) =>
+      pendingSet.has(String(t.id))
+        ? {
+            ...t,
+            status: t.status === "COMPLETED" ? "IN_PROGRESS" : "COMPLETED",
+          }
+        : t,
+    );
+  }, [query.data, pending]);
+
+  return {...query, data: dataWithOverlay};
 }

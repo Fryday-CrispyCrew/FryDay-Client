@@ -148,13 +148,10 @@ export function peekPendingToggleIdsSync() {
     } catch {
       raw = storage.get("pendingToggleIds");
     }
-    console.log("[peekSync] iOS raw:", raw);
     if (!raw) return [];
     try {
       const arr = JSON.parse(raw);
-      const result = Array.isArray(arr) ? arr.map(String) : [];
-      console.log("[peekSync] parsed:", result);
-      return result;
+      return Array.isArray(arr) ? arr.map(String) : [];
     } catch {
       return [];
     }
