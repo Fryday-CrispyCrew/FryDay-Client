@@ -27,8 +27,9 @@ class FrydayWidgetModule(reactContext: ReactApplicationContext) :
         try {
             val existing = prefs.getString("todosByDateJson", null)
             val merged = if (existing.isNullOrEmpty()) json else mergeTodosJson(existing, json)
-            prefs.edit().putString("todosByDateJson", merged).apply()
+            prefs.edit().putString("todosByDateJson", merged).commit()
             reloadAllWidgets()
+            WidgetMidnightUpdateReceiver.scheduleNextMidnight(reactApplicationContext)
             promise.resolve(null)
         } catch (e: Exception) {
             promise.reject("SYNC_TODOS_FAILED", e)
@@ -53,7 +54,7 @@ class FrydayWidgetModule(reactContext: ReactApplicationContext) :
     @ReactMethod
     fun syncLogin(isLoggedIn: Boolean, promise: Promise) {
         try {
-            prefs.edit().putBoolean("isLoggedIn", isLoggedIn).apply()
+            prefs.edit().putBoolean("isLoggedIn", isLoggedIn).commit()
             reloadAllWidgets()
             promise.resolve(null)
         } catch (e: Exception) {
@@ -64,7 +65,7 @@ class FrydayWidgetModule(reactContext: ReactApplicationContext) :
     @ReactMethod
     fun syncServerError(isServerError: Boolean, promise: Promise) {
         try {
-            prefs.edit().putBoolean("isServerError", isServerError).apply()
+            prefs.edit().putBoolean("isServerError", isServerError).commit()
             reloadAllWidgets()
             promise.resolve(null)
         } catch (e: Exception) {
@@ -80,7 +81,7 @@ class FrydayWidgetModule(reactContext: ReactApplicationContext) :
                 .remove("isServerError")
                 .remove("todosByDateJson")
                 .remove("pendingToggleIds")
-                .apply()
+                .commit()
             reloadAllWidgets()
             promise.resolve(null)
         } catch (e: Exception) {
@@ -101,7 +102,7 @@ class FrydayWidgetModule(reactContext: ReactApplicationContext) :
     @ReactMethod
     fun clearPendingToggles(promise: Promise) {
         try {
-            prefs.edit().remove("pendingToggleIds").apply()
+            prefs.edit().remove("pendingToggleIds").commit()
             promise.resolve(null)
         } catch (e: Exception) {
             promise.reject("CLEAR_PENDING_FAILED", e)
@@ -111,7 +112,7 @@ class FrydayWidgetModule(reactContext: ReactApplicationContext) :
     @ReactMethod
     fun setPendingToggles(json: String, promise: Promise) {
         try {
-            prefs.edit().putString("pendingToggleIds", json).apply()
+            prefs.edit().putString("pendingToggleIds", json).commit()
             promise.resolve(null)
         } catch (e: Exception) {
             promise.reject("SET_PENDING_FAILED", e)

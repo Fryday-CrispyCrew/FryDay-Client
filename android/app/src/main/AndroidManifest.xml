@@ -5,6 +5,7 @@
   <uses-permission android:name="android.permission.VIBRATE"/>
   <uses-permission android:name="android.permission.WRITE_EXTERNAL_STORAGE"/>
   <uses-permission android:name="com.google.android.gms.permission.AD_ID"/>
+  <uses-permission android:name="android.permission.RECEIVE_BOOT_COMPLETED"/>
   <queries>
     <intent>
       <action android:name="android.intent.action.VIEW"/>
@@ -42,7 +43,12 @@
         <data android:host="oauth" android:scheme="kakaoc2eaa0f8dae4116f5ee998144c4aa122"/>
       </intent-filter>
     </activity>
-    <receiver android:name=".widget.WidgetMidnightUpdateReceiver" android:exported="false"/>
+    <receiver android:name=".widget.WidgetMidnightUpdateReceiver" android:exported="true">
+      <intent-filter>
+        <action android:name="android.intent.action.BOOT_COMPLETED"/>
+        <action android:name="android.intent.action.MY_PACKAGE_REPLACED"/>
+      </intent-filter>
+    </receiver>
     <receiver android:name=".widget.FrydayWidgetSmallReceiver" android:exported="false">
       <intent-filter>
         <action android:name="android.appwidget.action.APPWIDGET_UPDATE"/>
