@@ -42,11 +42,20 @@ export function useHomeTodosQuery({date, categoryId}, options = {}) {
     };
 
     refresh();
+    // iOS 콜드 스타트 시 UserDefaults 크로스프로세스 sync 지연 커버용 재시도
+    const timers = [
+      setTimeout(refresh, 100),
+      setTimeout(refresh, 300),
+      setTimeout(refresh, 800),
+      setTimeout(refresh, 2000),
+    ];
+
     const sub = AppState.addEventListener("change", (s) => {
       if (s === "active") refresh();
     });
     return () => {
       alive = false;
+      timers.forEach(clearTimeout);
       sub.remove();
     };
   }, []);
