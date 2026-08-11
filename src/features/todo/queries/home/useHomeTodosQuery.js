@@ -1,4 +1,4 @@
-import {useEffect, useMemo, useState} from "react";
+import {useEffect, useMemo, useRef, useState} from "react";
 import {AppState} from "react-native";
 import {useQuery} from "@tanstack/react-query";
 import {homeKeys} from "./homeKeys";
@@ -25,41 +25,50 @@ export function useHomeTodosQuery({date, categoryId}, options = {}) {
   });
 
   const [pending, setPending] = useState(() => readPendingSync());
+  const lastPendingStrRef = useRef(JSON.stringify(readPendingSync() ?? []));
 
   useEffect(() => {
     let alive = true;
-    const activeTimers = [];
 
-    const refresh = async () => {
+    const applyIfChanged = (ids) => {
+      const str = JSON.stringify(ids ?? []);
+      if (str === lastPendingStrRef.current) return;
+      lastPendingStrRef.current = str;
+      setPending(ids ?? []);
+      setPendingCache(ids ?? []);
+    };
+
+    const readOnce = async () => {
       const sync = peekPendingToggleIdsSync();
       if (sync !== null) {
-        if (alive) setPending(sync);
-        return;
+        applyIfChanged(sync);
+        return sync;
       }
       const ids = await peekPendingToggleIds();
-      if (alive) {
-        setPending(ids);
-        setPendingCache(ids);
+      if (alive) applyIfChanged(ids);
+      return ids;
+    };
+
+    // 초기 read + iOS UserDefaults 크로스프로세스 sync 지연 커버 짧은 재시도
+    // 재시도는 최초 non-empty 잡히면 중단 → drain 중 flicker 방지
+    (async () => {
+      const first = await readOnce();
+      if (first && first.length > 0) return;
+      // 콜드 스타트 iOS UserDefaults sync 대기
+      for (const delay of [200, 600]) {
+        await new Promise((r) => setTimeout(r, delay));
+        if (!alive) return;
+        const ids = await readOnce();
+        if (ids && ids.length > 0) return;
       }
-    };
-
-    // iOS UserDefaults 크로스프로세스 sync 지연 커버 (콜드 스타트 + 웜 리쥼 공통)
-    const refreshWithRetries = () => {
-      refresh();
-      activeTimers.push(setTimeout(refresh, 100));
-      activeTimers.push(setTimeout(refresh, 300));
-      activeTimers.push(setTimeout(refresh, 800));
-      activeTimers.push(setTimeout(refresh, 2000));
-    };
-
-    refreshWithRetries();
+    })();
 
     const sub = AppState.addEventListener("change", (s) => {
-      if (s === "active") refreshWithRetries();
+      if (s === "active") readOnce();
     });
+
     return () => {
       alive = false;
-      activeTimers.forEach(clearTimeout);
       sub.remove();
     };
   }, []);

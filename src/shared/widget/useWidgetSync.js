@@ -11,9 +11,7 @@ import {
   syncLoginToWidget,
   syncServerErrorToWidget,
   drainPendingToggles,
-  peekPendingToggleIds,
 } from "./syncWidget";
-import { setPendingCache } from "./pendingCache";
 
 const SYNC_DAYS = 7;
 
@@ -102,8 +100,7 @@ export function useWidgetSync() {
     syncServerErrorToWidget(isServerError);
   }, [isServerError]);
 
-  // 위젯 storage sync: RN cache 변경마다 서버 raw 데이터 를 위젯 스토리지에 write
-  // 위젯은 스토리지 데이터 + 자체 pending overlay 로 렌더
+  // 위젯 storage sync: 서버 raw 데이터를 위젯 스토리지에 write
   useEffect(() => {
     const doSync = () => {
       const rawCategoriesData = queryClient.getQueryData(categoryKeys.list());
@@ -138,43 +135,19 @@ export function useWidgetSync() {
     });
 
     doSync();
-
     return unsub;
   }, [queryClient, dates]);
 
-  // 앱 진입 시: pending 을 JS 캐시에 저장 + select 강제 재실행 + drain + refetch
-  // useHomeTodosQuery 의 select 가 pending overlay 를 매 렌더마다 적용 → 반영 즉시
+  // 앱 진입 시 drain + refetch. Pending 상태 관리는 useHomeTodosQuery 가 담당.
   useEffect(() => {
-    const forceSelectRerun = () => {
-      queryClient
-        .getQueryCache()
-        .findAll({ queryKey: homeKeys.todos() })
-        .forEach((q) => {
-          const data = q.state.data;
-          if (data) queryClient.setQueryData(q.queryKey, { ...data });
-        });
-    };
-
     const handleAppState = async (nextState) => {
       if (nextState !== "active") return;
-
-      const pendingIds = await peekPendingToggleIds();
-      setPendingCache(pendingIds);
-      // pending 변경 즉시 홈 재렌더 (select 재실행)
-      forceSelectRerun();
-
-      // 최신 서버 상태 강제 fetch
-      queryClient.refetchQueries({ queryKey: homeKeys.todos() });
 
       await drainPendingToggles(async (todoId) => {
         await homeApi.toggleCompletion({ todoId });
       });
 
-      const pendingAfter = await peekPendingToggleIds();
-      setPendingCache(pendingAfter);
-      forceSelectRerun();
-
-      queryClient.refetchQueries({ queryKey: homeKeys.todos() });
+      await queryClient.refetchQueries({ queryKey: homeKeys.todos() });
       queryClient.invalidateQueries({ queryKey: homeKeys.characterStatus() });
     };
 
