@@ -141,7 +141,6 @@ export function clearWidgetForLogout() {
 
 export function peekPendingToggleIdsSync() {
   if (Platform.OS === "ios") {
-    // 매번 새 storage 인스턴스 생성해서 캐싱 우회, 크로스프로세스 최신 값 읽기 시도
     let raw = null;
     try {
       const freshStorage = new ExtensionStorage(APP_GROUP);
@@ -149,10 +148,13 @@ export function peekPendingToggleIdsSync() {
     } catch {
       raw = storage.get("pendingToggleIds");
     }
+    console.log("[peekSync] iOS raw:", raw);
     if (!raw) return [];
     try {
       const arr = JSON.parse(raw);
-      return Array.isArray(arr) ? arr.map(String) : [];
+      const result = Array.isArray(arr) ? arr.map(String) : [];
+      console.log("[peekSync] parsed:", result);
+      return result;
     } catch {
       return [];
     }

@@ -9,6 +9,7 @@ function applyPendingOverlay(todos) {
   if (!Array.isArray(todos) || todos.length === 0) return todos;
   const syncPending = peekPendingToggleIdsSync();
   const pendingIds = syncPending !== null ? syncPending : getPendingCache();
+  console.log("[overlay] pending:", pendingIds, "todo ids:", todos.map(t => t.id));
   if (pendingIds.length === 0) return todos;
   const pendingSet = new Set(pendingIds.map(String));
   return todos.map((t) =>
