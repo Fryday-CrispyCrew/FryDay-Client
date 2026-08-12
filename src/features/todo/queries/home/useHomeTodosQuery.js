@@ -1,6 +1,6 @@
-import {useEffect, useMemo, useState} from "react";
+import {useEffect, useMemo, useRef, useState} from "react";
 import {AppState} from "react-native";
-import {useQuery} from "@tanstack/react-query";
+import {useQuery, useQueryClient} from "@tanstack/react-query";
 import {homeKeys} from "./homeKeys";
 import {homeApi} from "./homeApi";
 import {
@@ -37,21 +37,46 @@ export function useHomeTodosQuery({date, categoryId}, options = {}) {
     ...options,
   });
 
+  const queryClient = useQueryClient();
+  const queryKey = homeKeys.todosList({date, categoryId});
+
   const [pending, setPending] = useState(() => readPendingSync());
   const [beforeStates, setBeforeStates] = useState(() => readBeforeSync());
+  const lastNonEmptyAtRef = useRef(Date.now());
+  const clearTimerRef = useRef(null);
 
   useEffect(() => {
     let alive = true;
 
+    const tryClearIfServerCaughtUp = () => {
+      if (!alive) return;
+      const state = queryClient.getQueryState(queryKey);
+      const dataUpdatedAt = state?.dataUpdatedAt ?? 0;
+      // 서버가 pending 감지 이후에 refetch 되었으면 drain 완료된 것 → state clear
+      if (dataUpdatedAt > lastNonEmptyAtRef.current) {
+        setPending([]);
+        setPendingCache([]);
+        setBeforeStates({});
+        return;
+      }
+      clearTimerRef.current = setTimeout(tryClearIfServerCaughtUp, 300);
+    };
+
     const applyAll = (ids, before) => {
       if (!alive) return;
       const arr = ids ?? [];
-      // Non-empty read 는 즉시 반영. Empty 는 overlay 로직이 beforeStates 로 자동 처리하므로 state clear 안 함
-      // (state clear 하면 refetch 완료 전에 unflipped 로 flicker 될 수 있음)
+      if (clearTimerRef.current) {
+        clearTimeout(clearTimerRef.current);
+        clearTimerRef.current = null;
+      }
       if (arr.length > 0) {
+        lastNonEmptyAtRef.current = Date.now();
         setPending(arr);
         setPendingCache(arr);
         setBeforeStates(before ?? {});
+      } else {
+        // Storage empty → drain 이 서버 반영 완료 될 때까지 대기 후 state clear
+        tryClearIfServerCaughtUp();
       }
     };
 
@@ -85,9 +110,10 @@ export function useHomeTodosQuery({date, categoryId}, options = {}) {
 
     return () => {
       alive = false;
+      if (clearTimerRef.current) clearTimeout(clearTimerRef.current);
       sub.remove();
     };
-  }, []);
+  }, [queryClient, JSON.stringify(queryKey)]);
 
   const dataWithOverlay = useMemo(() => {
     const arr = Array.isArray(query.data) ? query.data : [];
