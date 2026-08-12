@@ -28,40 +28,47 @@ export function useHomeTodosQuery({date, categoryId}, options = {}) {
   const queryKey = homeKeys.todosList({date, categoryId});
 
   const [pending, setPending] = useState(() => readPendingSync());
-  const lastNonEmptyAtRef = useRef(Date.now());
-  const clearAttemptTimerRef = useRef(null);
+  // pending id 감지 시점의 서버 상태 기록 → drain 후 서버가 이 상태와 달라지면 overlay 안 함
+  const [beforeStatus, setBeforeStatus] = useState(new Map());
 
   useEffect(() => {
     let alive = true;
 
-    const tryClearIfServerCaughtUp = () => {
-      if (!alive) return;
-      const state = queryClient.getQueryState(queryKey);
-      const dataUpdatedAt = state?.dataUpdatedAt ?? 0;
-      // 서버 데이터가 pending 감지 이후에 refetch 되었으면 safe to clear
-      if (dataUpdatedAt > lastNonEmptyAtRef.current) {
-        setPending([]);
-        setPendingCache([]);
-        return;
-      }
-      // 아직 refetch 안 됐으면 다시 체크
-      clearAttemptTimerRef.current = setTimeout(tryClearIfServerCaughtUp, 300);
-    };
-
     const applyIds = (ids) => {
       if (!alive) return;
       const arr = ids ?? [];
-      if (clearAttemptTimerRef.current) {
-        clearTimeout(clearAttemptTimerRef.current);
-        clearAttemptTimerRef.current = null;
-      }
       if (arr.length > 0) {
-        lastNonEmptyAtRef.current = Date.now();
+        // 새 pending id 에 대해 현재 서버 상태 기록
+        const currentQueryData = queryClient.getQueryData(queryKey);
+        const currentTodos = currentQueryData?.data ?? [];
+        setBeforeStatus((prev) => {
+          const next = new Map(prev);
+          arr.forEach((id) => {
+            const key = String(id);
+            if (!next.has(key)) {
+              const server = currentTodos.find((t) => String(t.id) === key);
+              if (server) {
+                next.set(key, server.status);
+              } else {
+                next.set(key, "IN_PROGRESS");
+              }
+            }
+          });
+          // pending 에서 빠진 id 는 before 에서도 제거
+          const arrSet = new Set(arr.map(String));
+          for (const key of Array.from(next.keys())) {
+            if (!arrSet.has(key)) next.delete(key);
+          }
+          return next;
+        });
         setPending(arr);
         setPendingCache(arr);
       } else {
-        // Empty 감지 → 서버 refetch 될 때까지 대기
-        tryClearIfServerCaughtUp();
+        // Empty storage → pending state 도 즉시 clear (before 도 clear)
+        // Overlay 는 beforeStatus 로 서버 반영 여부 판단하니 clear 해도 double-flip 안 됨
+        setPending([]);
+        setPendingCache([]);
+        setBeforeStatus(new Map());
       }
     };
 
@@ -77,7 +84,6 @@ export function useHomeTodosQuery({date, categoryId}, options = {}) {
 
     const scheduleReads = () => {
       readOnce();
-      // iOS UserDefaults 크로스프로세스 sync 지연 커버
       setTimeout(readOnce, 200);
       setTimeout(readOnce, 800);
     };
@@ -90,7 +96,6 @@ export function useHomeTodosQuery({date, categoryId}, options = {}) {
 
     return () => {
       alive = false;
-      if (clearAttemptTimerRef.current) clearTimeout(clearAttemptTimerRef.current);
       sub.remove();
     };
   }, [queryClient, JSON.stringify(queryKey)]);
@@ -99,15 +104,21 @@ export function useHomeTodosQuery({date, categoryId}, options = {}) {
     const arr = Array.isArray(query.data) ? query.data : [];
     if (!pending || pending.length === 0) return arr;
     const pendingSet = new Set(pending.map(String));
-    return arr.map((t) =>
-      pendingSet.has(String(t.id))
-        ? {
-            ...t,
-            status: t.status === "COMPLETED" ? "IN_PROGRESS" : "COMPLETED",
-          }
-        : t,
-    );
-  }, [query.data, pending]);
+    return arr.map((t) => {
+      const idKey = String(t.id);
+      if (!pendingSet.has(idKey)) return t;
+      const before = beforeStatus.get(idKey);
+      // 서버 상태가 pending 감지 시점과 같음 = 아직 drain 안 됨 → overlay 적용
+      // 다름 = drain 완료되어 서버가 이미 flipped → overlay 안 함
+      if (before !== undefined && t.status !== before) {
+        return t;
+      }
+      return {
+        ...t,
+        status: t.status === "COMPLETED" ? "IN_PROGRESS" : "COMPLETED",
+      };
+    });
+  }, [query.data, pending, beforeStatus]);
 
   return {...query, data: dataWithOverlay};
 }
