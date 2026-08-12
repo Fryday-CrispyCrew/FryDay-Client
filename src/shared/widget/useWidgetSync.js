@@ -1,4 +1,4 @@
-import { useEffect, useMemo } from "react";
+import { useEffect, useMemo, useRef } from "react";
 import { AppState } from "react-native";
 import { useQueryClient, useQueries } from "@tanstack/react-query";
 import { useCategoriesQuery } from "../../features/todo/queries/category/useCategoriesQuery";
@@ -11,6 +11,8 @@ import {
   syncLoginToWidget,
   syncServerErrorToWidget,
   drainPendingToggles,
+  peekPendingToggleIds,
+  peekPendingBeforeStates,
 } from "./syncWidget";
 
 const SYNC_DAYS = 7;
@@ -138,7 +140,69 @@ export function useWidgetSync() {
     return unsub;
   }, [queryClient, dates]);
 
-  // 앱 진입 시 drain + refetch. Pending 상태 관리는 useHomeTodosQuery 가 담당.
+  // Pending overlay: cache 를 직접 mutate.
+  // Cache 가 업데이트될 때마다 (fetch/refetch) pending 존재하면 재적용.
+  useEffect(() => {
+    const inProgressRef = new Set();
+
+    const applyFlipToQuery = async (queryKey) => {
+      const keyStr = JSON.stringify(queryKey);
+      if (inProgressRef.has(keyStr)) return;
+
+      const [pendingIds, beforeStates] = await Promise.all([
+        peekPendingToggleIds(),
+        peekPendingBeforeStates(),
+      ]);
+      if (!pendingIds || pendingIds.length === 0) return;
+
+      const cached = queryClient.getQueryData(queryKey);
+      const arr = extractArray(cached);
+      if (!arr || arr.length === 0) return;
+
+      const pendingSet = new Set(pendingIds.map(String));
+      let changed = false;
+      const flipped = arr.map((t) => {
+        const idKey = String(t.id);
+        if (!pendingSet.has(idKey)) return t;
+        const beforeIsDone = beforeStates?.[idKey];
+        if (beforeIsDone !== undefined) {
+          const beforeStatus = beforeIsDone ? "COMPLETED" : "IN_PROGRESS";
+          // 서버가 이미 flipped 되었으면 overlay 안 함
+          if (t.status !== beforeStatus) return t;
+        }
+        const newStatus = t.status === "COMPLETED" ? "IN_PROGRESS" : "COMPLETED";
+        changed = true;
+        return { ...t, status: newStatus };
+      });
+
+      if (!changed) return;
+
+      const next = Array.isArray(cached)
+        ? flipped
+        : { ...cached, data: flipped };
+      inProgressRef.add(keyStr);
+      queryClient.setQueryData(queryKey, next);
+      Promise.resolve().then(() => inProgressRef.delete(keyStr));
+    };
+
+    const unsub = queryClient.getQueryCache().subscribe((event) => {
+      if (event?.type !== "updated" && event?.type !== "added") return;
+      const key = event.query?.queryKey;
+      if (!Array.isArray(key)) return;
+      if (key[0] === "home" && key[1] === "todos") {
+        applyFlipToQuery(key);
+      }
+    });
+
+    // 초기 적용
+    dates.forEach((date) => {
+      applyFlipToQuery(homeKeys.todosList({ date, categoryId: null }));
+    });
+
+    return unsub;
+  }, [queryClient, dates]);
+
+  // 앱 진입 시 drain + refetch
   useEffect(() => {
     const handleAppState = async (nextState) => {
       if (nextState !== "active") return;
