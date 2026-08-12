@@ -110,8 +110,11 @@ export function useHomeTodosQuery({date, categoryId}, options = {}) {
 
     const scheduleReads = () => {
       readOnce();
-      setTimeout(readOnce, 200);
-      setTimeout(readOnce, 800);
+      // iOS 실기기 UserDefaults 크로스프로세스 sync 는 수백ms~수초 걸릴 수 있음
+      // → aggressive 재시도로 어느 시점에라도 catch
+      [100, 300, 700, 1500, 3000, 5000].forEach((delay) => {
+        setTimeout(readOnce, delay);
+      });
     };
 
     scheduleReads();
