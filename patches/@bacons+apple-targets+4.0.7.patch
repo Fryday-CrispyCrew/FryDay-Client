@@ -1,0 +1,13 @@
+diff --git a/node_modules/@bacons/apple-targets/ios/ExtensionStorageModule.swift b/node_modules/@bacons/apple-targets/ios/ExtensionStorageModule.swift
+index 56a949b..83bf545 100644
+--- a/node_modules/@bacons/apple-targets/ios/ExtensionStorageModule.swift
++++ b/node_modules/@bacons/apple-targets/ios/ExtensionStorageModule.swift
+@@ -62,6 +62,8 @@ public class ExtensionStorageModule: Module {
+ 
+         Function("get") { (key: String, group: String?) -> String? in
+             let userDefaults = UserDefaults(suiteName: group)
++            // 크로스프로세스 write (위젯 extension) 를 pick up 하기 위해 disk 재sync 강제
++            userDefaults?.synchronize()
+             if let data = userDefaults?.data(forKey: key) {
+                 do {
+                     let jsonObject = try JSONSerialization.jsonObject(with: data, options: [])
