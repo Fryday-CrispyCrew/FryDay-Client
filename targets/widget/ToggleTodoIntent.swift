@@ -8,8 +8,8 @@ struct ToggleTodoIntent: AppIntent {
 
     private static let appGroupID = "group.com.fryday.shared"
     private static let pendingKey = "pendingToggleIds"
+    private static let beforeKey = "pendingBeforeStates"
 
-    // 여러 intent 가 동시 실행될 때 read-modify-write race 방지용 serial queue
     private static let writeQueue = DispatchQueue(label: "com.fryday.toggle.write")
 
     @Parameter(title: "Todo ID")
@@ -23,7 +23,6 @@ struct ToggleTodoIntent: AppIntent {
 
     func perform() async throws -> some IntentResult {
         let capturedId = self.todoId
-        // Serial queue 로 read-modify-write 원자화
         await withCheckedContinuation { (continuation: CheckedContinuation<Void, Never>) in
             Self.writeQueue.async {
                 let defaults = UserDefaults(suiteName: Self.appGroupID)
@@ -35,17 +34,44 @@ struct ToggleTodoIntent: AppIntent {
                     pending = arr
                 }
 
+                var beforeMap: [String: Bool] = [:]
+                if let jsonString = defaults?.string(forKey: Self.beforeKey),
+                   let data = jsonString.data(using: .utf8),
+                   let dict = try? JSONDecoder().decode([String: Bool].self, from: data) {
+                    beforeMap = dict
+                }
+
                 if let idx = pending.firstIndex(of: capturedId) {
                     pending.remove(at: idx)
+                    beforeMap.removeValue(forKey: capturedId)
                 } else {
                     pending.append(capturedId)
+                    // tap 시점의 isDone 을 widget storage 에서 조회
+                    var currentIsDone = false
+                    if let json = defaults?.string(forKey: "todosByDateJson"),
+                       let data = json.data(using: .utf8),
+                       let byDate = try? JSONSerialization.jsonObject(with: data) as? [String: [[String: Any]]] {
+                        outer: for (_, todos) in byDate {
+                            for t in todos {
+                                if let tid = t["id"] as? String, tid == capturedId {
+                                    currentIsDone = t["isDone"] as? Bool ?? false
+                                    break outer
+                                }
+                            }
+                        }
+                    }
+                    beforeMap[capturedId] = currentIsDone
                 }
 
                 if let data = try? JSONEncoder().encode(pending),
                    let jsonString = String(data: data, encoding: .utf8) {
                     defaults?.set(jsonString, forKey: Self.pendingKey)
-                    defaults?.synchronize()
                 }
+                if let data = try? JSONEncoder().encode(beforeMap),
+                   let jsonString = String(data: data, encoding: .utf8) {
+                    defaults?.set(jsonString, forKey: Self.beforeKey)
+                }
+                defaults?.synchronize()
 
                 continuation.resume()
             }

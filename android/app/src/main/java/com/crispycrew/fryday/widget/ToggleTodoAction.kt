@@ -34,6 +34,7 @@ class ToggleTodoAction : ActionCallback {
         // Mutex 로 read-modify-write 원자화
         writeMutex.withLock {
             val pendingCurrent = prefs.getString("pendingToggleIds", null)
+            val beforeCurrent = prefs.getString("pendingBeforeStates", null)
             val pendingList = mutableListOf<String>()
             if (pendingCurrent != null) {
                 try {
@@ -41,14 +42,55 @@ class ToggleTodoAction : ActionCallback {
                     for (i in 0 until arr.length()) pendingList.add(arr.getString(i))
                 } catch (_: Exception) {}
             }
-            if (pendingList.contains(todoId)) pendingList.remove(todoId) else pendingList.add(todoId)
+            val beforeMap = mutableMapOf<String, Boolean>()
+            if (beforeCurrent != null) {
+                try {
+                    val obj = JSONObject(beforeCurrent)
+                    val keys = obj.keys()
+                    while (keys.hasNext()) {
+                        val k = keys.next()
+                        beforeMap[k] = obj.optBoolean(k, false)
+                    }
+                } catch (_: Exception) {}
+            }
+
+            if (pendingList.contains(todoId)) {
+                pendingList.remove(todoId)
+                beforeMap.remove(todoId)
+            } else {
+                pendingList.add(todoId)
+                // tap 시점의 isDone 을 저장 (widget storage 에서 조회)
+                var currentIsDone = false
+                val todosByDateStr = prefs.getString("todosByDateJson", null)
+                if (todosByDateStr != null) {
+                    try {
+                        val byDate = JSONObject(todosByDateStr)
+                        val dateKeys = byDate.keys()
+                        outer@ while (dateKeys.hasNext()) {
+                            val date = dateKeys.next()
+                            val todos = byDate.getJSONArray(date)
+                            for (i in 0 until todos.length()) {
+                                val t = todos.getJSONObject(i)
+                                if (t.optString("id") == todoId) {
+                                    currentIsDone = t.optBoolean("isDone", false)
+                                    break@outer
+                                }
+                            }
+                        }
+                    } catch (_: Exception) {}
+                }
+                beforeMap[todoId] = currentIsDone
+            }
 
             val newPending = JSONArray()
             pendingList.forEach { newPending.put(it) }
+            val newBefore = JSONObject()
+            beforeMap.forEach { (k, v) -> newBefore.put(k, v) }
             prefs.edit()
                 .putString("pendingToggleIds", newPending.toString())
+                .putString("pendingBeforeStates", newBefore.toString())
                 .commit()
-            Log.d("ToggleTodoAction", "pending updated: $pendingList")
+            Log.d("ToggleTodoAction", "pending updated: $pendingList, before: $beforeMap")
         }
 
         val manager = GlanceAppWidgetManager(context)

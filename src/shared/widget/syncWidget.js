@@ -139,6 +139,43 @@ export function clearWidgetForLogout() {
   }
 }
 
+export function peekPendingBeforeStatesSync() {
+  if (Platform.OS === "ios") {
+    let raw = null;
+    try {
+      const freshStorage = new ExtensionStorage(APP_GROUP);
+      raw = freshStorage.get("pendingBeforeStates");
+    } catch {
+      raw = storage.get("pendingBeforeStates");
+    }
+    if (!raw) return {};
+    try {
+      const obj = JSON.parse(raw);
+      return typeof obj === "object" && obj !== null ? obj : {};
+    } catch {
+      return {};
+    }
+  }
+  return null;
+}
+
+export async function peekPendingBeforeStates() {
+  if (Platform.OS === "ios") {
+    return peekPendingBeforeStatesSync() ?? {};
+  }
+  if (Platform.OS === "android" && AndroidWidget) {
+    try {
+      const raw = await AndroidWidget.getPendingBeforeStates?.();
+      if (!raw) return {};
+      const obj = JSON.parse(raw);
+      return typeof obj === "object" && obj !== null ? obj : {};
+    } catch {
+      return {};
+    }
+  }
+  return {};
+}
+
 export function peekPendingToggleIdsSync() {
   if (Platform.OS === "ios") {
     let raw = null;

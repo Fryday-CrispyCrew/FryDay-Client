@@ -100,6 +100,16 @@ class FrydayWidgetModule(reactContext: ReactApplicationContext) :
     }
 
     @ReactMethod
+    fun getPendingBeforeStates(promise: Promise) {
+        try {
+            val json = prefs.getString("pendingBeforeStates", null)
+            promise.resolve(json)
+        } catch (e: Exception) {
+            promise.reject("GET_BEFORE_FAILED", e)
+        }
+    }
+
+    @ReactMethod
     fun clearPendingToggles(promise: Promise) {
         try {
             prefs.edit().remove("pendingToggleIds").commit()
