@@ -46,9 +46,13 @@ export function useHomeTodosQuery({date, categoryId}, options = {}) {
     const applyAll = (ids, before) => {
       if (!alive) return;
       const arr = ids ?? [];
-      setPending(arr);
-      setPendingCache(arr);
-      setBeforeStates(before ?? {});
+      // Non-empty read 는 즉시 반영. Empty 는 overlay 로직이 beforeStates 로 자동 처리하므로 state clear 안 함
+      // (state clear 하면 refetch 완료 전에 unflipped 로 flicker 될 수 있음)
+      if (arr.length > 0) {
+        setPending(arr);
+        setPendingCache(arr);
+        setBeforeStates(before ?? {});
+      }
     };
 
     const readOnce = async () => {

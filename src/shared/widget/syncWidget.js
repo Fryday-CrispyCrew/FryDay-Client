@@ -265,6 +265,22 @@ export async function drainPendingToggles(toggleFn) {
       } else {
         storage.remove("pendingToggleIds");
       }
+      // before states 도 successful 항목 제거
+      const beforeRaw = storage.get("pendingBeforeStates");
+      if (beforeRaw) {
+        try {
+          const beforeObj = JSON.parse(beforeRaw);
+          const newBefore = {};
+          for (const [k, v] of Object.entries(beforeObj)) {
+            if (!successSet.has(k)) newBefore[k] = v;
+          }
+          if (Object.keys(newBefore).length > 0) {
+            storage.set("pendingBeforeStates", JSON.stringify(newBefore));
+          } else {
+            storage.remove("pendingBeforeStates");
+          }
+        } catch {}
+      }
     } catch {
       if (failed.length > 0) {
         storage.set("pendingToggleIds", JSON.stringify(failed));
@@ -293,6 +309,19 @@ export async function drainPendingToggles(toggleFn) {
 
       if (remaining.length > 0 && AndroidWidget.setPendingToggles) {
         await AndroidWidget.setPendingToggles(JSON.stringify(remaining));
+        // before states 도 successful 제거 후 write
+        try {
+          const beforeRaw = await AndroidWidget.getPendingBeforeStates?.();
+          if (beforeRaw && AndroidWidget.setPendingBeforeStates) {
+            const beforeObj = JSON.parse(beforeRaw);
+            const successSet = new Set(successful);
+            const newBefore = {};
+            for (const [k, v] of Object.entries(beforeObj)) {
+              if (!successSet.has(k)) newBefore[k] = v;
+            }
+            await AndroidWidget.setPendingBeforeStates(JSON.stringify(newBefore));
+          }
+        } catch {}
       } else {
         await AndroidWidget.clearPendingToggles();
       }

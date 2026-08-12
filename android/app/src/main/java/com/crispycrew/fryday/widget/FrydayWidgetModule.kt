@@ -112,7 +112,10 @@ class FrydayWidgetModule(reactContext: ReactApplicationContext) :
     @ReactMethod
     fun clearPendingToggles(promise: Promise) {
         try {
-            prefs.edit().remove("pendingToggleIds").commit()
+            prefs.edit()
+                .remove("pendingToggleIds")
+                .remove("pendingBeforeStates")
+                .commit()
             promise.resolve(null)
         } catch (e: Exception) {
             promise.reject("CLEAR_PENDING_FAILED", e)
@@ -126,6 +129,16 @@ class FrydayWidgetModule(reactContext: ReactApplicationContext) :
             promise.resolve(null)
         } catch (e: Exception) {
             promise.reject("SET_PENDING_FAILED", e)
+        }
+    }
+
+    @ReactMethod
+    fun setPendingBeforeStates(json: String, promise: Promise) {
+        try {
+            prefs.edit().putString("pendingBeforeStates", json).commit()
+            promise.resolve(null)
+        } catch (e: Exception) {
+            promise.reject("SET_BEFORE_FAILED", e)
         }
     }
 
