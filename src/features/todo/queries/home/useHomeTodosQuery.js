@@ -28,47 +28,73 @@ export function useHomeTodosQuery({date, categoryId}, options = {}) {
   const queryKey = homeKeys.todosList({date, categoryId});
 
   const [pending, setPending] = useState(() => readPendingSync());
-  // pending id 감지 시점의 서버 상태 기록 → drain 후 서버가 이 상태와 달라지면 overlay 안 함
-  const [beforeStatus, setBeforeStatus] = useState(new Map());
+  const [beforeStatus, setBeforeStatus] = useState(() => {
+    // 초기 pending 있으면 현재 캐시 서버 상태를 before 로 기록
+    const initialPending = readPendingSync();
+    if (!initialPending || initialPending.length === 0) return new Map();
+    const cached = queryClient.getQueryData(
+      homeKeys.todosList({date, categoryId}),
+    );
+    const todos = cached?.data ?? [];
+    const map = new Map();
+    initialPending.forEach((id) => {
+      const key = String(id);
+      const server = todos.find((t) => String(t.id) === key);
+      map.set(key, server?.status ?? "IN_PROGRESS");
+    });
+    return map;
+  });
+
+  const lastNonEmptyAtRef = useRef(Date.now());
+  const clearTimerRef = useRef(null);
 
   useEffect(() => {
     let alive = true;
 
+    const tryClearIfServerCaughtUp = () => {
+      if (!alive) return;
+      const state = queryClient.getQueryState(queryKey);
+      const dataUpdatedAt = state?.dataUpdatedAt ?? 0;
+      if (dataUpdatedAt > lastNonEmptyAtRef.current) {
+        setPending([]);
+        setPendingCache([]);
+        setBeforeStatus(new Map());
+        return;
+      }
+      clearTimerRef.current = setTimeout(tryClearIfServerCaughtUp, 300);
+    };
+
     const applyIds = (ids) => {
       if (!alive) return;
       const arr = ids ?? [];
+      if (clearTimerRef.current) {
+        clearTimeout(clearTimerRef.current);
+        clearTimerRef.current = null;
+      }
       if (arr.length > 0) {
-        // 새 pending id 에 대해 현재 서버 상태 기록
+        lastNonEmptyAtRef.current = Date.now();
         const currentQueryData = queryClient.getQueryData(queryKey);
         const currentTodos = currentQueryData?.data ?? [];
         setBeforeStatus((prev) => {
-          const next = new Map(prev);
+          const next = new Map();
           arr.forEach((id) => {
             const key = String(id);
-            if (!next.has(key)) {
+            if (prev.has(key)) {
+              // 이미 추적 중인 id 는 기존 before 유지 (server 재캡처 방지)
+              next.set(key, prev.get(key));
+            } else {
+              // 새로 감지된 id — 현재 서버 상태 capture
               const server = currentTodos.find((t) => String(t.id) === key);
-              if (server) {
-                next.set(key, server.status);
-              } else {
-                next.set(key, "IN_PROGRESS");
-              }
+              next.set(key, server?.status ?? "IN_PROGRESS");
             }
           });
-          // pending 에서 빠진 id 는 before 에서도 제거
-          const arrSet = new Set(arr.map(String));
-          for (const key of Array.from(next.keys())) {
-            if (!arrSet.has(key)) next.delete(key);
-          }
           return next;
         });
         setPending(arr);
         setPendingCache(arr);
       } else {
-        // Empty storage → pending state 도 즉시 clear (before 도 clear)
-        // Overlay 는 beforeStatus 로 서버 반영 여부 판단하니 clear 해도 double-flip 안 됨
-        setPending([]);
-        setPendingCache([]);
-        setBeforeStatus(new Map());
+        // Storage empty. 즉시 clear 하면 refetch 안 됐을 때 flicker → 지연 clear
+        tryClearIfServerCaughtUp();
       }
     };
 
@@ -96,6 +122,7 @@ export function useHomeTodosQuery({date, categoryId}, options = {}) {
 
     return () => {
       alive = false;
+      if (clearTimerRef.current) clearTimeout(clearTimerRef.current);
       sub.remove();
     };
   }, [queryClient, JSON.stringify(queryKey)]);
@@ -108,8 +135,7 @@ export function useHomeTodosQuery({date, categoryId}, options = {}) {
       const idKey = String(t.id);
       if (!pendingSet.has(idKey)) return t;
       const before = beforeStatus.get(idKey);
-      // 서버 상태가 pending 감지 시점과 같음 = 아직 drain 안 됨 → overlay 적용
-      // 다름 = drain 완료되어 서버가 이미 flipped → overlay 안 함
+      // 서버 상태가 pending 감지 시점과 다름 → drain 완료 → overlay 안 함
       if (before !== undefined && t.status !== before) {
         return t;
       }

@@ -215,10 +215,25 @@ export async function drainPendingToggles(toggleFn) {
         } catch {}
       }
     }
-    if (failed.length > 0) {
-      storage.set("pendingToggleIds", JSON.stringify(failed));
-    } else {
-      storage.remove("pendingToggleIds");
+    // Drain 중 위젯이 새로 추가한 pending 이 있을 수 있음 → 최신 storage 다시 읽어서 successful 만 제거
+    try {
+      const latestRaw = storage.get("pendingToggleIds");
+      const latestArr = latestRaw ? JSON.parse(latestRaw) : [];
+      const successSet = new Set(successful);
+      const remaining = (Array.isArray(latestArr) ? latestArr : [])
+        .map(String)
+        .filter((id) => !successSet.has(id));
+      if (remaining.length > 0) {
+        storage.set("pendingToggleIds", JSON.stringify(remaining));
+      } else {
+        storage.remove("pendingToggleIds");
+      }
+    } catch {
+      if (failed.length > 0) {
+        storage.set("pendingToggleIds", JSON.stringify(failed));
+      } else {
+        storage.remove("pendingToggleIds");
+      }
     }
     reloadAllWidgetKinds();
     return;
@@ -226,8 +241,21 @@ export async function drainPendingToggles(toggleFn) {
 
   if (Platform.OS === "android" && AndroidWidget) {
     try {
-      if (failed.length > 0 && AndroidWidget.setPendingToggles) {
-        await AndroidWidget.setPendingToggles(JSON.stringify(failed));
+      // Drain 중 위젯이 새로 추가한 pending 이 있을 수 있음 → 최신 storage 다시 읽어서 successful 만 제거
+      let remaining = [];
+      try {
+        const latestRaw = await AndroidWidget.getPendingToggles();
+        const latestArr = latestRaw ? JSON.parse(latestRaw) : [];
+        const successSet = new Set(successful);
+        remaining = (Array.isArray(latestArr) ? latestArr : [])
+          .map(String)
+          .filter((id) => !successSet.has(id));
+      } catch {
+        remaining = failed;
+      }
+
+      if (remaining.length > 0 && AndroidWidget.setPendingToggles) {
+        await AndroidWidget.setPendingToggles(JSON.stringify(remaining));
       } else {
         await AndroidWidget.clearPendingToggles();
       }
