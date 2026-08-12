@@ -24,6 +24,8 @@ import androidx.glance.layout.height
 import androidx.glance.layout.padding
 import androidx.glance.layout.size
 import androidx.glance.layout.width
+import androidx.glance.text.FontFamily
+import androidx.glance.text.FontWeight
 import androidx.glance.text.Text
 import androidx.glance.text.TextAlign
 import androidx.glance.text.TextStyle
@@ -74,7 +76,9 @@ fun TodoCell(todo: TodoItem) {
             text = todo.title,
             style = TextStyle(
                 color = ColorProvider(R.color.gray_text),
-                fontSize = 12.sp
+                fontSize = 12.sp,
+                fontFamily = FontFamily("pretendard"),
+                fontWeight = FontWeight.Normal
             ),
             maxLines = 1,
             modifier = GlanceModifier.defaultWeight()
@@ -134,7 +138,9 @@ fun CenterBowlMessage(state: WidgetState) {
             style = TextStyle(
                 color = ColorProvider(R.color.gray_500),
                 fontSize = 12.sp,
-                textAlign = TextAlign.Center
+                textAlign = TextAlign.Center,
+                fontFamily = FontFamily("pretendard"),
+                fontWeight = FontWeight.Medium
             )
         )
     }

@@ -28,6 +28,8 @@ import androidx.glance.layout.fillMaxWidth
 import androidx.glance.layout.height
 import androidx.glance.layout.padding
 import androidx.glance.state.PreferencesGlanceStateDefinition
+import androidx.glance.text.FontFamily
+import androidx.glance.text.FontWeight
 import androidx.glance.text.Text
 import androidx.glance.text.TextStyle
 import androidx.glance.unit.ColorProvider
@@ -60,7 +62,9 @@ private fun SmallWidgetContent(entry: WidgetEntry) {
                 text = entry.dateString,
                 style = TextStyle(
                     color = ColorProvider(R.color.gray_500),
-                    fontSize = 12.sp
+                    fontSize = 12.sp,
+                    fontFamily = FontFamily("pretendard"),
+                    fontWeight = FontWeight.Medium
                 ),
                 modifier = GlanceModifier.padding(end = 18.dp)
             )

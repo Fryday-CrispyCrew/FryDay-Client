@@ -20,6 +20,8 @@ import androidx.glance.layout.Spacer
 import androidx.glance.layout.fillMaxSize
 import androidx.glance.layout.height
 import androidx.glance.layout.padding
+import androidx.glance.text.FontFamily
+import androidx.glance.text.FontWeight
 import androidx.glance.text.Text
 import androidx.glance.text.TextStyle
 import androidx.glance.unit.ColorProvider
@@ -52,7 +54,9 @@ private fun MediumWidgetContent(entry: WidgetEntry) {
                 text = entry.dateString,
                 style = TextStyle(
                     color = ColorProvider(R.color.gray_500),
-                    fontSize = 12.sp
+                    fontSize = 12.sp,
+                    fontFamily = FontFamily("pretendard"),
+                    fontWeight = FontWeight.Medium
                 )
             )
             Spacer(modifier = GlanceModifier.height(13.dp))
