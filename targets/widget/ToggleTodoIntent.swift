@@ -9,6 +9,9 @@ struct ToggleTodoIntent: AppIntent {
     private static let appGroupID = "group.com.fryday.shared"
     private static let pendingKey = "pendingToggleIds"
 
+    // 여러 intent 가 동시 실행될 때 read-modify-write race 방지용 serial queue
+    private static let writeQueue = DispatchQueue(label: "com.fryday.toggle.write")
+
     @Parameter(title: "Todo ID")
     var todoId: String
 
@@ -19,28 +22,35 @@ struct ToggleTodoIntent: AppIntent {
     }
 
     func perform() async throws -> some IntentResult {
-        let defaults = UserDefaults(suiteName: Self.appGroupID)
+        let capturedId = self.todoId
+        // Serial queue 로 read-modify-write 원자화
+        await withCheckedContinuation { (continuation: CheckedContinuation<Void, Never>) in
+            Self.writeQueue.async {
+                let defaults = UserDefaults(suiteName: Self.appGroupID)
 
-        var pending: [String] = []
-        if let jsonString = defaults?.string(forKey: Self.pendingKey),
-           let data = jsonString.data(using: .utf8),
-           let arr = try? JSONDecoder().decode([String].self, from: data) {
-            pending = arr
+                var pending: [String] = []
+                if let jsonString = defaults?.string(forKey: Self.pendingKey),
+                   let data = jsonString.data(using: .utf8),
+                   let arr = try? JSONDecoder().decode([String].self, from: data) {
+                    pending = arr
+                }
+
+                if let idx = pending.firstIndex(of: capturedId) {
+                    pending.remove(at: idx)
+                } else {
+                    pending.append(capturedId)
+                }
+
+                if let data = try? JSONEncoder().encode(pending),
+                   let jsonString = String(data: data, encoding: .utf8) {
+                    defaults?.set(jsonString, forKey: Self.pendingKey)
+                    defaults?.synchronize()
+                }
+
+                continuation.resume()
+            }
         }
 
-        if let idx = pending.firstIndex(of: todoId) {
-            pending.remove(at: idx)
-        } else {
-            pending.append(todoId)
-        }
-
-        if let data = try? JSONEncoder().encode(pending),
-           let jsonString = String(data: data, encoding: .utf8) {
-            defaults?.set(jsonString, forKey: Self.pendingKey)
-            defaults?.synchronize()
-        }
-
-        // 크로스프로세스 UserDefaults disk flush 대기 (앱 콜드 스타트 시 stale read 방지)
         try? await Task.sleep(nanoseconds: 100_000_000)
 
         WidgetCenter.shared.reloadTimelines(ofKind: "FrydayWidget")
