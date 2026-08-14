@@ -185,6 +185,12 @@ export function useWidgetSync() {
       Promise.resolve().then(() => inProgressRef.delete(keyStr));
     };
 
+    const applyToAll = () => {
+      dates.forEach((date) => {
+        applyFlipToQuery(homeKeys.todosList({ date, categoryId: null }));
+      });
+    };
+
     const unsub = queryClient.getQueryCache().subscribe((event) => {
       if (event?.type !== "updated" && event?.type !== "added") return;
       const key = event.query?.queryKey;
@@ -194,12 +200,26 @@ export function useWidgetSync() {
       }
     });
 
-    // 초기 적용
-    dates.forEach((date) => {
-      applyFlipToQuery(homeKeys.todosList({ date, categoryId: null }));
+    // 초기 적용 + rapid multi-tap 늦게 flush 되는 write 커버용 재시도
+    applyToAll();
+    const timers = [200, 500, 1200, 2500].map((delay) =>
+      setTimeout(applyToAll, delay),
+    );
+
+    const sub = AppState.addEventListener("change", (s) => {
+      if (s === "active") {
+        applyToAll();
+        [200, 500, 1200, 2500].forEach((delay) => {
+          timers.push(setTimeout(applyToAll, delay));
+        });
+      }
     });
 
-    return unsub;
+    return () => {
+      unsub();
+      sub.remove();
+      timers.forEach(clearTimeout);
+    };
   }, [queryClient, dates]);
 
   // 앱 진입 시 drain + refetch
