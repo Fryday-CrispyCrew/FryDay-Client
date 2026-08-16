@@ -1,8 +1,61 @@
 diff --git a/node_modules/@bacons/apple-targets/ios/ExtensionStorageModule.swift b/node_modules/@bacons/apple-targets/ios/ExtensionStorageModule.swift
-index 56a949b..83bf545 100644
+index 56a949b..b3ff45b 100644
 --- a/node_modules/@bacons/apple-targets/ios/ExtensionStorageModule.swift
 +++ b/node_modules/@bacons/apple-targets/ios/ExtensionStorageModule.swift
-@@ -62,6 +62,8 @@ public class ExtensionStorageModule: Module {
+@@ -6,7 +6,9 @@ public class ExtensionStorageModule: Module {
+         Name("ExtensionStorage")
+         
+         Function("remove") { (forKey: String, suiteName: String?) in
+-            UserDefaults(suiteName: suiteName)?.removeObject(forKey: forKey)
++            let userDefaults = UserDefaults(suiteName: suiteName)
++            userDefaults?.removeObject(forKey: forKey)
++            userDefaults?.synchronize()
+         }
+         
+         Function("reloadWidget") { (timeline: String?) in
+@@ -28,13 +30,13 @@ public class ExtensionStorageModule: Module {
+         }
+         
+         Function("setArray") { (forKey: String, data: [[String: Any]], suiteName: String?) -> Bool in
+-            // Convert the incoming array of dictionaries directly to JSON data
+             do {
+                 let jsonData = try JSONSerialization.data(withJSONObject: data, options: [])
+-                UserDefaults(suiteName: suiteName)?.set(jsonData, forKey: forKey)
++                let userDefaults = UserDefaults(suiteName: suiteName)
++                userDefaults?.set(jsonData, forKey: forKey)
++                userDefaults?.synchronize()
+                 return true
+             } catch {
+-                // If encoding fails for some reason, return false
+                 return false
+             }
+         }
+@@ -42,10 +44,11 @@ public class ExtensionStorageModule: Module {
+         Function("setObject") { (forKey: String, data: [String: Any], suiteName: String?) -> Bool in
+             do {
+                 let jsonData = try JSONSerialization.data(withJSONObject: data, options: [])
+-                UserDefaults(suiteName: suiteName)?.set(jsonData, forKey: forKey)
++                let userDefaults = UserDefaults(suiteName: suiteName)
++                userDefaults?.set(jsonData, forKey: forKey)
++                userDefaults?.synchronize()
+                 return true
+             } catch {
+-                // If encoding fails for some reason, return false
+                 return false
+             }
+         }
+@@ -53,15 +56,19 @@ public class ExtensionStorageModule: Module {
+         Function("setInt") { (key: String, value: Int, group: String?) in
+             let userDefaults = UserDefaults(suiteName: group)
+             userDefaults?.set(value, forKey: key)
++            userDefaults?.synchronize()
+         }
+         
+         Function("setString") { (key: String, value: String, group: String?) in
+             let userDefaults = UserDefaults(suiteName: group)
+             userDefaults?.set(value, forKey: key)
++            userDefaults?.synchronize()
+         }        
  
          Function("get") { (key: String, group: String?) -> String? in
              let userDefaults = UserDefaults(suiteName: group)

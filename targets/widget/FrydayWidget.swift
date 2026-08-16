@@ -15,6 +15,8 @@ enum TodoEntryBuilder {
     static func makeEntry(style: WidgetStyle, forDate date: Date = Date()) -> TodoEntry {
         let appGroupID = "group.com.fryday.shared"
         let defaults = UserDefaults(suiteName: appGroupID)
+        // 앱이 write 한 값 (todosByDateJson 등) 을 위젯 프로세스가 stale 캐시 하지 않도록 강제 sync
+        defaults?.synchronize()
 
         let fmt = DateFormatter()
         fmt.locale = Locale(identifier: "ko_KR")
