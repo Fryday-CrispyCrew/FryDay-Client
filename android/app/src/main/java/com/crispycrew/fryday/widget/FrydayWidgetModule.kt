@@ -11,25 +11,37 @@ import com.facebook.react.bridge.ReactMethod
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
+import org.json.JSONArray
 import org.json.JSONObject
 
 class FrydayWidgetModule(reactContext: ReactApplicationContext) :
     ReactContextBaseJavaModule(reactContext) {
 
-    private val prefs by lazy {
-        reactApplicationContext.getSharedPreferences("fryday_widget", Context.MODE_PRIVATE)
-    }
+    private val ctx: Context get() = reactApplicationContext
 
     override fun getName() = "FrydayWidget"
+
+    // -------- state (isLoggedIn / isServerError) --------
+
+    private fun readState(): JSONObject {
+        val raw = SharedFileStorage.readString(ctx, SharedFileStorage.STATE_FILE) ?: return JSONObject()
+        return try { JSONObject(raw) } catch (_: Exception) { JSONObject() }
+    }
+
+    private fun writeState(state: JSONObject) {
+        SharedFileStorage.writeString(ctx, SharedFileStorage.STATE_FILE, state.toString())
+    }
+
+    // -------- todos --------
 
     @ReactMethod
     fun syncTodos(json: String, promise: Promise) {
         try {
-            val existing = prefs.getString("todosByDateJson", null)
+            val existing = SharedFileStorage.readString(ctx, SharedFileStorage.TODOS_FILE)
             val merged = if (existing.isNullOrEmpty()) json else mergeTodosJson(existing, json)
-            prefs.edit().putString("todosByDateJson", merged).commit()
+            SharedFileStorage.writeString(ctx, SharedFileStorage.TODOS_FILE, merged)
             reloadAllWidgets()
-            WidgetMidnightUpdateReceiver.scheduleNextMidnight(reactApplicationContext)
+            WidgetMidnightUpdateReceiver.scheduleNextMidnight(ctx)
             promise.resolve(null)
         } catch (e: Exception) {
             promise.reject("SYNC_TODOS_FAILED", e)
@@ -54,7 +66,9 @@ class FrydayWidgetModule(reactContext: ReactApplicationContext) :
     @ReactMethod
     fun syncLogin(isLoggedIn: Boolean, promise: Promise) {
         try {
-            prefs.edit().putBoolean("isLoggedIn", isLoggedIn).commit()
+            val state = readState()
+            state.put("isLoggedIn", isLoggedIn)
+            writeState(state)
             reloadAllWidgets()
             promise.resolve(null)
         } catch (e: Exception) {
@@ -65,7 +79,9 @@ class FrydayWidgetModule(reactContext: ReactApplicationContext) :
     @ReactMethod
     fun syncServerError(isServerError: Boolean, promise: Promise) {
         try {
-            prefs.edit().putBoolean("isServerError", isServerError).commit()
+            val state = readState()
+            state.put("isServerError", isServerError)
+            writeState(state)
             reloadAllWidgets()
             promise.resolve(null)
         } catch (e: Exception) {
@@ -76,12 +92,9 @@ class FrydayWidgetModule(reactContext: ReactApplicationContext) :
     @ReactMethod
     fun clearForLogout(promise: Promise) {
         try {
-            prefs.edit()
-                .putBoolean("isLoggedIn", false)
-                .remove("isServerError")
-                .remove("todosByDateJson")
-                .remove("pendingToggleIds")
-                .commit()
+            writeState(JSONObject().apply { put("isLoggedIn", false) })
+            SharedFileStorage.delete(ctx, SharedFileStorage.TODOS_FILE)
+            SharedFileStorage.delete(ctx, SharedFileStorage.PENDING_FILE)
             reloadAllWidgets()
             promise.resolve(null)
         } catch (e: Exception) {
@@ -89,11 +102,26 @@ class FrydayWidgetModule(reactContext: ReactApplicationContext) :
         }
     }
 
+    // -------- pending (widget → app) --------
+
+    private fun readPending(): JSONObject {
+        val raw = SharedFileStorage.readString(ctx, SharedFileStorage.PENDING_FILE) ?: return JSONObject()
+        return try { JSONObject(raw) } catch (_: Exception) { JSONObject() }
+    }
+
+    private fun writePending(ids: JSONArray, before: JSONObject) {
+        val obj = JSONObject().apply {
+            put("ids", ids)
+            put("before", before)
+        }
+        SharedFileStorage.writeString(ctx, SharedFileStorage.PENDING_FILE, obj.toString())
+    }
+
     @ReactMethod
     fun getPendingToggles(promise: Promise) {
         try {
-            val json = prefs.getString("pendingToggleIds", null)
-            promise.resolve(json)
+            val ids = readPending().optJSONArray("ids") ?: JSONArray()
+            promise.resolve(ids.toString())
         } catch (e: Exception) {
             promise.reject("GET_PENDING_FAILED", e)
         }
@@ -102,8 +130,8 @@ class FrydayWidgetModule(reactContext: ReactApplicationContext) :
     @ReactMethod
     fun getPendingBeforeStates(promise: Promise) {
         try {
-            val json = prefs.getString("pendingBeforeStates", null)
-            promise.resolve(json)
+            val before = readPending().optJSONObject("before") ?: JSONObject()
+            promise.resolve(before.toString())
         } catch (e: Exception) {
             promise.reject("GET_BEFORE_FAILED", e)
         }
@@ -112,10 +140,7 @@ class FrydayWidgetModule(reactContext: ReactApplicationContext) :
     @ReactMethod
     fun clearPendingToggles(promise: Promise) {
         try {
-            prefs.edit()
-                .remove("pendingToggleIds")
-                .remove("pendingBeforeStates")
-                .commit()
+            SharedFileStorage.delete(ctx, SharedFileStorage.PENDING_FILE)
             promise.resolve(null)
         } catch (e: Exception) {
             promise.reject("CLEAR_PENDING_FAILED", e)
@@ -125,7 +150,10 @@ class FrydayWidgetModule(reactContext: ReactApplicationContext) :
     @ReactMethod
     fun setPendingToggles(json: String, promise: Promise) {
         try {
-            prefs.edit().putString("pendingToggleIds", json).commit()
+            val cur = readPending()
+            val before = cur.optJSONObject("before") ?: JSONObject()
+            val newIds = JSONArray(json)
+            writePending(newIds, before)
             promise.resolve(null)
         } catch (e: Exception) {
             promise.reject("SET_PENDING_FAILED", e)
@@ -135,7 +163,10 @@ class FrydayWidgetModule(reactContext: ReactApplicationContext) :
     @ReactMethod
     fun setPendingBeforeStates(json: String, promise: Promise) {
         try {
-            prefs.edit().putString("pendingBeforeStates", json).commit()
+            val cur = readPending()
+            val ids = cur.optJSONArray("ids") ?: JSONArray()
+            val newBefore = JSONObject(json)
+            writePending(ids, newBefore)
             promise.resolve(null)
         } catch (e: Exception) {
             promise.reject("SET_BEFORE_FAILED", e)
@@ -145,8 +176,7 @@ class FrydayWidgetModule(reactContext: ReactApplicationContext) :
     @ReactMethod
     fun getTodosByDate(promise: Promise) {
         try {
-            val json = prefs.getString("todosByDateJson", null)
-            promise.resolve(json)
+            promise.resolve(SharedFileStorage.readString(ctx, SharedFileStorage.TODOS_FILE))
         } catch (e: Exception) {
             promise.reject("GET_TODOS_FAILED", e)
         }
@@ -156,7 +186,7 @@ class FrydayWidgetModule(reactContext: ReactApplicationContext) :
     fun reloadWidgets(promise: Promise) {
         try {
             reloadAllWidgets()
-            WidgetMidnightUpdateReceiver.scheduleNextMidnight(reactApplicationContext)
+            WidgetMidnightUpdateReceiver.scheduleNextMidnight(ctx)
             promise.resolve(null)
         } catch (e: Exception) {
             promise.reject("RELOAD_FAILED", e)
@@ -164,7 +194,7 @@ class FrydayWidgetModule(reactContext: ReactApplicationContext) :
     }
 
     private fun reloadAllWidgets() {
-        val context = reactApplicationContext
+        val context = ctx
         val tickKey = longPreferencesKey("_widgetTick")
         CoroutineScope(Dispatchers.IO).launch {
             try {

@@ -29,27 +29,23 @@ class ToggleTodoAction : ActionCallback {
     ) {
         val todoId = parameters[todoIdKey] ?: return
         Log.d("ToggleTodoAction", "Toggling todoId: $todoId")
-        val prefs = context.getSharedPreferences("fryday_widget", Context.MODE_PRIVATE)
 
-        // Mutex 로 read-modify-write 원자화
         writeMutex.withLock {
-            val pendingCurrent = prefs.getString("pendingToggleIds", null)
-            val beforeCurrent = prefs.getString("pendingBeforeStates", null)
+            val raw = SharedFileStorage.readString(context, SharedFileStorage.PENDING_FILE)
             val pendingList = mutableListOf<String>()
-            if (pendingCurrent != null) {
-                try {
-                    val arr = JSONArray(pendingCurrent)
-                    for (i in 0 until arr.length()) pendingList.add(arr.getString(i))
-                } catch (_: Exception) {}
-            }
             val beforeMap = mutableMapOf<String, Boolean>()
-            if (beforeCurrent != null) {
+            if (raw != null) {
                 try {
-                    val obj = JSONObject(beforeCurrent)
-                    val keys = obj.keys()
-                    while (keys.hasNext()) {
-                        val k = keys.next()
-                        beforeMap[k] = obj.optBoolean(k, false)
+                    val obj = JSONObject(raw)
+                    obj.optJSONArray("ids")?.let { arr ->
+                        for (i in 0 until arr.length()) pendingList.add(arr.getString(i))
+                    }
+                    obj.optJSONObject("before")?.let { before ->
+                        val keys = before.keys()
+                        while (keys.hasNext()) {
+                            val k = keys.next()
+                            beforeMap[k] = before.optBoolean(k, false)
+                        }
                     }
                 } catch (_: Exception) {}
             }
@@ -59,9 +55,9 @@ class ToggleTodoAction : ActionCallback {
                 beforeMap.remove(todoId)
             } else {
                 pendingList.add(todoId)
-                // tap 시점의 isDone 을 저장 (widget storage 에서 조회)
+                // tap 시점의 isDone 을 저장 (widget-todos.json 파일에서 조회)
                 var currentIsDone = false
-                val todosByDateStr = prefs.getString("todosByDateJson", null)
+                val todosByDateStr = SharedFileStorage.readString(context, SharedFileStorage.TODOS_FILE)
                 if (todosByDateStr != null) {
                     try {
                         val byDate = JSONObject(todosByDateStr)
@@ -82,14 +78,11 @@ class ToggleTodoAction : ActionCallback {
                 beforeMap[todoId] = currentIsDone
             }
 
-            val newPending = JSONArray()
-            pendingList.forEach { newPending.put(it) }
-            val newBefore = JSONObject()
-            beforeMap.forEach { (k, v) -> newBefore.put(k, v) }
-            prefs.edit()
-                .putString("pendingToggleIds", newPending.toString())
-                .putString("pendingBeforeStates", newBefore.toString())
-                .commit()
+            val newObj = JSONObject().apply {
+                put("ids", JSONArray().apply { pendingList.forEach { put(it) } })
+                put("before", JSONObject().apply { beforeMap.forEach { (k, v) -> put(k, v) } })
+            }
+            SharedFileStorage.writeString(context, SharedFileStorage.PENDING_FILE, newObj.toString())
             Log.d("ToggleTodoAction", "pending updated: $pendingList, before: $beforeMap")
         }
 

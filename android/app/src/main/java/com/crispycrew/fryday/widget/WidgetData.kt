@@ -28,17 +28,10 @@ data class WidgetEntry(
 )
 
 object WidgetDataReader {
-    private const val PREF_NAME = "fryday_widget"
-    private const val KEY_IS_LOGGED_IN = "isLoggedIn"
-    private const val KEY_IS_SERVER_ERROR = "isServerError"
-    private const val KEY_TODOS_BY_DATE = "todosByDateJson"
-    private const val KEY_PENDING_TOGGLES = "pendingToggleIds"
-
     fun read(context: Context): WidgetEntry {
-        val prefs = context.getSharedPreferences(PREF_NAME, Context.MODE_PRIVATE)
-
-        val isLoggedIn = prefs.getBoolean(KEY_IS_LOGGED_IN, false)
-        val isServerError = prefs.getBoolean(KEY_IS_SERVER_ERROR, false)
+        val state = readState(context)
+        val isLoggedIn = state.optBoolean("isLoggedIn", false)
+        val isServerError = state.optBoolean("isServerError", false)
         val isConnected = isLoggedIn && !isServerError
 
         val dateString = formatDateKorean(Date())
@@ -54,14 +47,14 @@ object WidgetDataReader {
         }
 
         val todayISO = SimpleDateFormat("yyyy-MM-dd", Locale.US).format(Date())
-        val pendingIds = readPendingIds(prefs)
-        val todos = readTodosForDate(prefs, todayISO, pendingIds)
+        val pendingIds = readPendingIds(context)
+        val todos = readTodosForDate(context, todayISO, pendingIds)
         Log.d("WidgetDataReader", "read: todos=${todos.map { it.id to it.isDone }}")
 
         val doneCount = todos.count { it.isDone }
         val doingCount = todos.count { !it.isDone }
 
-        val state = when {
+        val entryState = when {
             todos.isEmpty() -> WidgetState.EMPTY
             doingCount == 0 -> WidgetState.FULL
             else -> WidgetState.FRYING
@@ -72,7 +65,7 @@ object WidgetDataReader {
             doneCount = doneCount,
             doingCount = doingCount,
             todos = todos,
-            state = state
+            state = entryState
         )
     }
 
@@ -80,22 +73,32 @@ object WidgetDataReader {
         return SimpleDateFormat("M월 d일 (E)", Locale.KOREAN).format(date)
     }
 
-    private fun readPendingIds(prefs: android.content.SharedPreferences): Set<String> {
-        val raw = prefs.getString(KEY_PENDING_TOGGLES, null) ?: return emptySet()
+    private fun readState(context: Context): JSONObject {
+        val raw = SharedFileStorage.readString(context, SharedFileStorage.STATE_FILE) ?: return JSONObject()
         return try {
-            val arr = JSONArray(raw)
-            (0 until arr.length()).map { arr.getString(it) }.toSet()
+            JSONObject(raw)
+        } catch (_: Exception) {
+            JSONObject()
+        }
+    }
+
+    private fun readPendingIds(context: Context): Set<String> {
+        val raw = SharedFileStorage.readString(context, SharedFileStorage.PENDING_FILE) ?: return emptySet()
+        return try {
+            val obj = JSONObject(raw)
+            val ids = obj.optJSONArray("ids") ?: return emptySet()
+            (0 until ids.length()).map { ids.getString(it) }.toSet()
         } catch (_: Exception) {
             emptySet()
         }
     }
 
     private fun readTodosForDate(
-        prefs: android.content.SharedPreferences,
+        context: Context,
         dateISO: String,
         pendingIds: Set<String>
     ): List<TodoItem> {
-        val json = prefs.getString(KEY_TODOS_BY_DATE, null) ?: return emptyList()
+        val json = SharedFileStorage.readString(context, SharedFileStorage.TODOS_FILE) ?: return emptyList()
         return try {
             val byDate = JSONObject(json)
             if (!byDate.has(dateISO)) return emptyList()
