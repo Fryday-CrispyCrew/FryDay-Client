@@ -13,11 +13,6 @@ enum TodoEntryBuilder {
     }
 
     static func makeEntry(style: WidgetStyle, forDate date: Date = Date()) -> TodoEntry {
-        let appGroupID = "group.com.fryday.shared"
-        let defaults = UserDefaults(suiteName: appGroupID)
-        // 앱이 write 한 값 (todosByDateJson 등) 을 위젯 프로세스가 stale 캐시 하지 않도록 강제 sync
-        defaults?.synchronize()
-
         let fmt = DateFormatter()
         fmt.locale = Locale(identifier: "ko_KR")
         fmt.dateFormat = "M월 d일 (E)"
@@ -26,23 +21,17 @@ enum TodoEntryBuilder {
         isoFmt.dateFormat = "yyyy-MM-dd"
         let dateISO = isoFmt.string(from: date)
 
-        let isLoggedIn = defaults?.bool(forKey: "isLoggedIn") ?? false
-        let isServerError = defaults?.bool(forKey: "isServerError") ?? false
+        // App Group 파일 read (크로스프로세스 신뢰성)
+        let state = SharedFileStorage.readJSONObject(SharedFileStorage.stateFile) as? [String: Any]
+        let isLoggedIn = (state?["isLoggedIn"] as? Bool) ?? false
+        let isServerError = (state?["isServerError"] as? Bool) ?? false
         let isConnected = isLoggedIn && !isServerError
 
-        let pendingToggleIds: Set<String> = {
-            guard let jsonString = defaults?.string(forKey: "pendingToggleIds"),
-                  let data = jsonString.data(using: .utf8),
-                  let arr = try? JSONDecoder().decode([String].self, from: data) else {
-                return []
-            }
-            return Set(arr)
-        }()
+        let pendingState = SharedFileStorage.readJSON(SharedFileStorage.pendingFile, as: PendingState.self) ?? .empty
+        let pendingToggleIds = Set(pendingState.ids)
 
         var todos: [TodoItem] = []
-        if let json = defaults?.string(forKey: "todosByDateJson"),
-           let data = json.data(using: .utf8),
-           let byDate = try? JSONDecoder().decode([String: [TodoDTO]].self, from: data),
+        if let byDate = SharedFileStorage.readJSON(SharedFileStorage.todosFile, as: [String: [TodoDTO]].self),
            let dtos = byDate[dateISO] {
             todos = dtos.map { dto in
                 let isDone = pendingToggleIds.contains(dto.id) ? !dto.isDone : dto.isDone

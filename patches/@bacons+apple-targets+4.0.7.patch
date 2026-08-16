@@ -1,5 +1,35 @@
+diff --git a/node_modules/@bacons/apple-targets/build/ExtensionStorage.js b/node_modules/@bacons/apple-targets/build/ExtensionStorage.js
+index e0e2566..d517178 100644
+--- a/node_modules/@bacons/apple-targets/build/ExtensionStorage.js
++++ b/node_modules/@bacons/apple-targets/build/ExtensionStorage.js
+@@ -13,6 +13,9 @@ const nativeModule = ExtensionStorageModule !== null && ExtensionStorageModule !
+     setArray() { },
+     get() { },
+     remove() { },
++    writeAppGroupFile() { return false; },
++    readAppGroupFile() { return null; },
++    deleteAppGroupFile() { return false; },
+ };
+ const originalSetObject = nativeModule.setObject;
+ // Sweet API doesn't support doing this natively.
+@@ -29,6 +32,15 @@ class ExtensionStorage {
+     static reloadControls(name) {
+         nativeModule.reloadControls(name);
+     }
++    static writeAppGroupFile(groupId, fileName, contents) {
++        return nativeModule.writeAppGroupFile(groupId, fileName, contents);
++    }
++    static readAppGroupFile(groupId, fileName) {
++        return nativeModule.readAppGroupFile(groupId, fileName);
++    }
++    static deleteAppGroupFile(groupId, fileName) {
++        return nativeModule.deleteAppGroupFile(groupId, fileName);
++    }
+     constructor(appGroup) {
+         this.appGroup = appGroup;
+     }
 diff --git a/node_modules/@bacons/apple-targets/ios/ExtensionStorageModule.swift b/node_modules/@bacons/apple-targets/ios/ExtensionStorageModule.swift
-index 56a949b..b3ff45b 100644
+index 56a949b..5c4636f 100644
 --- a/node_modules/@bacons/apple-targets/ios/ExtensionStorageModule.swift
 +++ b/node_modules/@bacons/apple-targets/ios/ExtensionStorageModule.swift
 @@ -6,7 +6,9 @@ public class ExtensionStorageModule: Module {
@@ -44,7 +74,7 @@ index 56a949b..b3ff45b 100644
                  return false
              }
          }
-@@ -53,15 +56,19 @@ public class ExtensionStorageModule: Module {
+@@ -53,15 +56,71 @@ public class ExtensionStorageModule: Module {
          Function("setInt") { (key: String, value: Int, group: String?) in
              let userDefaults = UserDefaults(suiteName: group)
              userDefaults?.set(value, forKey: key)
@@ -55,7 +85,59 @@ index 56a949b..b3ff45b 100644
              let userDefaults = UserDefaults(suiteName: group)
              userDefaults?.set(value, forKey: key)
 +            userDefaults?.synchronize()
-         }        
++        }        
++
++        Function("writeAppGroupFile") { (groupId: String, fileName: String, contents: String) -> Bool in
++            guard let containerURL = FileManager.default.containerURL(forSecurityApplicationGroupIdentifier: groupId) else {
++                return false
++            }
++            let fileURL = containerURL.appendingPathComponent(fileName)
++            var writeError: NSError?
++            var success = false
++            let coordinator = NSFileCoordinator()
++            coordinator.coordinate(writingItemAt: fileURL, options: .forReplacing, error: &writeError) { url in
++                do {
++                    try contents.write(to: url, atomically: true, encoding: .utf8)
++                    success = true
++                } catch {
++                    success = false
++                }
++            }
++            return success
++        }
++
++        Function("readAppGroupFile") { (groupId: String, fileName: String) -> String? in
++            guard let containerURL = FileManager.default.containerURL(forSecurityApplicationGroupIdentifier: groupId) else {
++                return nil
++            }
++            let fileURL = containerURL.appendingPathComponent(fileName)
++            var readError: NSError?
++            var result: String? = nil
++            let coordinator = NSFileCoordinator()
++            coordinator.coordinate(readingItemAt: fileURL, options: [], error: &readError) { url in
++                result = try? String(contentsOf: url, encoding: .utf8)
++            }
++            return result
++        }
++
++        Function("deleteAppGroupFile") { (groupId: String, fileName: String) -> Bool in
++            guard let containerURL = FileManager.default.containerURL(forSecurityApplicationGroupIdentifier: groupId) else {
++                return false
++            }
++            let fileURL = containerURL.appendingPathComponent(fileName)
++            var writeError: NSError?
++            var success = false
++            let coordinator = NSFileCoordinator()
++            coordinator.coordinate(writingItemAt: fileURL, options: .forDeleting, error: &writeError) { url in
++                do {
++                    try FileManager.default.removeItem(at: url)
++                    success = true
++                } catch {
++                    success = FileManager.default.fileExists(atPath: url.path) == false
++                }
++            }
++            return success
+         }
  
          Function("get") { (key: String, group: String?) -> String? in
              let userDefaults = UserDefaults(suiteName: group)

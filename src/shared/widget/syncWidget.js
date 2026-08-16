@@ -3,7 +3,11 @@ import { ExtensionStorage } from "@bacons/apple-targets";
 import { setPendingCache } from "./pendingCache";
 
 const APP_GROUP = "group.com.fryday.shared";
-const storage = new ExtensionStorage(APP_GROUP);
+
+// iOS App Group 파일 (NSFileCoordinator 기반, UserDefaults 크로스프로세스 sync 이슈 회피)
+const PENDING_FILE = "widget-pending.json";
+const TODOS_FILE = "widget-todos.json";
+const STATE_FILE = "widget-state.json";
 
 const WIDGET_KINDS = ["FrydayWidget"];
 
@@ -51,25 +55,59 @@ function buildTodosPayload(todosByDate = {}) {
   return payload;
 }
 
+// -------- iOS 파일 storage 헬퍼 --------
+
+function iosReadJSON(fileName, fallback) {
+  try {
+    const raw = ExtensionStorage.readAppGroupFile(APP_GROUP, fileName);
+    if (!raw) return fallback;
+    const parsed = JSON.parse(raw);
+    return parsed ?? fallback;
+  } catch {
+    return fallback;
+  }
+}
+
+function iosWriteJSON(fileName, value) {
+  try {
+    ExtensionStorage.writeAppGroupFile(APP_GROUP, fileName, JSON.stringify(value));
+  } catch {}
+}
+
+function iosReadState() {
+  return iosReadJSON(STATE_FILE, {}) ?? {};
+}
+
+function iosMergeState(patch) {
+  const cur = iosReadState();
+  iosWriteJSON(STATE_FILE, { ...cur, ...patch });
+}
+
+function iosReadPending() {
+  const s = iosReadJSON(PENDING_FILE, null);
+  if (!s || typeof s !== "object") return { ids: [], before: {} };
+  return {
+    ids: Array.isArray(s.ids) ? s.ids.map(String) : [],
+    before: s.before && typeof s.before === "object" ? s.before : {},
+  };
+}
+
+function iosWritePending(state) {
+  iosWriteJSON(PENDING_FILE, {
+    ids: state.ids ?? [],
+    before: state.before ?? {},
+  });
+}
+
+// -------- 앱 → 위젯 write --------
+
 export function syncTodosToWidget(todosByDate = {}) {
   if (Platform.OS === "ios") {
     try {
-      let existing = {};
-      const raw = storage.get("todosByDateJson");
-      if (raw) {
-        try {
-          existing = JSON.parse(raw) ?? {};
-        } catch {
-          existing = {};
-        }
-      }
+      const existing = iosReadJSON(TODOS_FILE, {}) ?? {};
       const merged = { ...existing, ...buildTodosPayload(todosByDate) };
-      storage.set("todosByDateJson", JSON.stringify(merged));
+      iosWriteJSON(TODOS_FILE, merged);
       reloadAllWidgetKinds();
-      // 크로스프로세스 UserDefaults 전파 지연 커버용 다중 재시도
-      setTimeout(reloadAllWidgetKinds, 100);
-      setTimeout(reloadAllWidgetKinds, 500);
-      setTimeout(reloadAllWidgetKinds, 1500);
     } catch {}
     return;
   }
@@ -78,7 +116,6 @@ export function syncTodosToWidget(todosByDate = {}) {
     try {
       const merged = buildTodosPayload(todosByDate);
       AndroidWidget.syncTodos(JSON.stringify(merged));
-      // 위젯 리로드 async 이므로 재시도로 확실히 반영
       setTimeout(() => {
         try {
           AndroidWidget.reloadWidgets?.();
@@ -91,7 +128,7 @@ export function syncTodosToWidget(todosByDate = {}) {
 export function syncLoginToWidget(isLoggedIn) {
   if (Platform.OS === "ios") {
     try {
-      storage.set("isLoggedIn", isLoggedIn ? 1 : 0);
+      iosMergeState({ isLoggedIn: !!isLoggedIn });
       reloadAllWidgetKinds();
     } catch {}
     return;
@@ -107,7 +144,7 @@ export function syncLoginToWidget(isLoggedIn) {
 export function syncServerErrorToWidget(isServerError) {
   if (Platform.OS === "ios") {
     try {
-      storage.set("isServerError", isServerError ? 1 : 0);
+      iosMergeState({ isServerError: !!isServerError });
       reloadAllWidgetKinds();
     } catch {}
     return;
@@ -123,10 +160,9 @@ export function syncServerErrorToWidget(isServerError) {
 export function clearWidgetForLogout() {
   if (Platform.OS === "ios") {
     try {
-      storage.set("isLoggedIn", 0);
-      storage.remove("isServerError");
-      storage.remove("todosByDateJson");
-      storage.remove("pendingToggleIds");
+      iosWriteJSON(STATE_FILE, { isLoggedIn: false });
+      ExtensionStorage.deleteAppGroupFile(APP_GROUP, TODOS_FILE);
+      ExtensionStorage.deleteAppGroupFile(APP_GROUP, PENDING_FILE);
       reloadAllWidgetKinds();
     } catch {}
     return;
@@ -139,29 +175,18 @@ export function clearWidgetForLogout() {
   }
 }
 
+// -------- 위젯 → 앱 read (pending) --------
+
 export function peekPendingBeforeStatesSync() {
   if (Platform.OS === "ios") {
-    let raw = null;
-    try {
-      const freshStorage = new ExtensionStorage(APP_GROUP);
-      raw = freshStorage.get("pendingBeforeStates");
-    } catch {
-      raw = storage.get("pendingBeforeStates");
-    }
-    if (!raw) return {};
-    try {
-      const obj = JSON.parse(raw);
-      return typeof obj === "object" && obj !== null ? obj : {};
-    } catch {
-      return {};
-    }
+    return iosReadPending().before;
   }
   return null;
 }
 
 export async function peekPendingBeforeStates() {
   if (Platform.OS === "ios") {
-    return peekPendingBeforeStatesSync() ?? {};
+    return iosReadPending().before;
   }
   if (Platform.OS === "android" && AndroidWidget) {
     try {
@@ -178,34 +203,14 @@ export async function peekPendingBeforeStates() {
 
 export function peekPendingToggleIdsSync() {
   if (Platform.OS === "ios") {
-    let raw = null;
-    try {
-      const freshStorage = new ExtensionStorage(APP_GROUP);
-      raw = freshStorage.get("pendingToggleIds");
-    } catch {
-      raw = storage.get("pendingToggleIds");
-    }
-    if (!raw) return [];
-    try {
-      const arr = JSON.parse(raw);
-      return Array.isArray(arr) ? arr.map(String) : [];
-    } catch {
-      return [];
-    }
+    return iosReadPending().ids;
   }
   return null;
 }
 
 export async function peekPendingToggleIds() {
   if (Platform.OS === "ios") {
-    const raw = storage.get("pendingToggleIds");
-    if (!raw) return [];
-    try {
-      const arr = JSON.parse(raw);
-      return Array.isArray(arr) ? arr.map(String) : [];
-    } catch {
-      return [];
-    }
+    return iosReadPending().ids;
   }
   if (Platform.OS === "android" && AndroidWidget) {
     try {
@@ -236,65 +241,37 @@ export async function drainPendingToggles(toggleFn) {
   }
 
   if (Platform.OS === "ios") {
+    // 성공한 todo 는 widget-todos.json 에서도 isDone 반전 (위젯이 flip 뒤 진짜 상태 보게)
     if (successful.length > 0) {
-      const raw = storage.get("todosByDateJson");
-      if (raw) {
-        try {
-          const byDate = JSON.parse(raw);
-          const successSet = new Set(successful);
-          const updated = {};
-          for (const [date, todos] of Object.entries(byDate)) {
-            updated[date] = todos.map((t) =>
-              successSet.has(String(t.id)) ? { ...t, isDone: !t.isDone } : t,
-            );
-          }
-          storage.set("todosByDateJson", JSON.stringify(updated));
-        } catch {}
-      }
+      try {
+        const byDate = iosReadJSON(TODOS_FILE, {}) ?? {};
+        const successSet = new Set(successful);
+        const updated = {};
+        for (const [date, todos] of Object.entries(byDate)) {
+          updated[date] = (todos ?? []).map((t) =>
+            successSet.has(String(t.id)) ? { ...t, isDone: !t.isDone } : t,
+          );
+        }
+        iosWriteJSON(TODOS_FILE, updated);
+      } catch {}
     }
-    // Drain 중 위젯이 새로 추가한 pending 이 있을 수 있음 → 최신 storage 다시 읽어서 successful 만 제거
+    // Drain 중 위젯이 새로 추가한 pending 이 있을 수 있음 → 최신 read 후 successful 만 제거
     try {
-      const latestRaw = storage.get("pendingToggleIds");
-      const latestArr = latestRaw ? JSON.parse(latestRaw) : [];
+      const latest = iosReadPending();
       const successSet = new Set(successful);
-      const remaining = (Array.isArray(latestArr) ? latestArr : [])
-        .map(String)
-        .filter((id) => !successSet.has(id));
-      if (remaining.length > 0) {
-        storage.set("pendingToggleIds", JSON.stringify(remaining));
-      } else {
-        storage.remove("pendingToggleIds");
+      const remainingIds = latest.ids.filter((id) => !successSet.has(id));
+      const remainingBefore = {};
+      for (const [k, v] of Object.entries(latest.before)) {
+        if (!successSet.has(k)) remainingBefore[k] = v;
       }
-      // before states 도 successful 항목 제거
-      const beforeRaw = storage.get("pendingBeforeStates");
-      if (beforeRaw) {
-        try {
-          const beforeObj = JSON.parse(beforeRaw);
-          const newBefore = {};
-          for (const [k, v] of Object.entries(beforeObj)) {
-            if (!successSet.has(k)) newBefore[k] = v;
-          }
-          if (Object.keys(newBefore).length > 0) {
-            storage.set("pendingBeforeStates", JSON.stringify(newBefore));
-          } else {
-            storage.remove("pendingBeforeStates");
-          }
-        } catch {}
-      }
-    } catch {
-      if (failed.length > 0) {
-        storage.set("pendingToggleIds", JSON.stringify(failed));
-      } else {
-        storage.remove("pendingToggleIds");
-      }
-    }
+      iosWritePending({ ids: remainingIds, before: remainingBefore });
+    } catch {}
     reloadAllWidgetKinds();
     return;
   }
 
   if (Platform.OS === "android" && AndroidWidget) {
     try {
-      // Drain 중 위젯이 새로 추가한 pending 이 있을 수 있음 → 최신 storage 다시 읽어서 successful 만 제거
       let remaining = [];
       try {
         const latestRaw = await AndroidWidget.getPendingToggles();
@@ -309,7 +286,6 @@ export async function drainPendingToggles(toggleFn) {
 
       if (remaining.length > 0 && AndroidWidget.setPendingToggles) {
         await AndroidWidget.setPendingToggles(JSON.stringify(remaining));
-        // before states 도 successful 제거 후 write
         try {
           const beforeRaw = await AndroidWidget.getPendingBeforeStates?.();
           if (beforeRaw && AndroidWidget.setPendingBeforeStates) {
