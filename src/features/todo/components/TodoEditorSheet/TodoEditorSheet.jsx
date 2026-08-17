@@ -794,9 +794,14 @@ const TodoEditorSheet = React.forwardRef(function TodoEditorSheet(
         onCloseAfterSubmit?.();
       } catch (e) {
         console.log("create todo error", e);
-      } finally {
         isSubmittingRef.current = false;
+        return;
       }
+      // 성공 시 시트 close 애니메이션 (~300ms) 도중 double-tap / IME 중복 fire 방지용 cooldown.
+      // 시트가 재사용되지 않고 unmount 되면 ref 는 다음 mount 에서 자연스레 초기화됨.
+      setTimeout(() => {
+        isSubmittingRef.current = false;
+      }, 1500);
 
       return;
     }
