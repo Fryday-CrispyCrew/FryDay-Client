@@ -222,21 +222,49 @@ export function useWidgetSync() {
     };
   }, [queryClient, dates]);
 
-  // 앱 진입 시 drain + refetch
+  // 앱 진입 시 drain + refetch — 위젯 intent 가 늦게 파일에 flush 되는 경우
+  // (iOS async intent 큐잉 / Android suspend fun coroutine race) 커버용 다중 재시도.
   useEffect(() => {
+    let draining = false;
+    let cancelled = false;
+    const timers = [];
+
+    const runDrain = async () => {
+      if (draining || cancelled) return;
+      draining = true;
+      try {
+        const pending = await peekPendingToggleIds();
+        if (!pending || pending.length === 0) return;
+        await drainPendingToggles(async (todoId) => {
+          await homeApi.toggleCompletion({ todoId });
+        });
+        if (cancelled) return;
+        await queryClient.refetchQueries({ queryKey: homeKeys.todos() });
+        queryClient.invalidateQueries({ queryKey: homeKeys.characterStatus() });
+      } catch {
+      } finally {
+        draining = false;
+      }
+    };
+
+    const scheduleRetries = () => {
+      [500, 1500, 3500, 7000].forEach((delay) => {
+        timers.push(setTimeout(runDrain, delay));
+      });
+    };
+
     const handleAppState = async (nextState) => {
       if (nextState !== "active") return;
-
-      await drainPendingToggles(async (todoId) => {
-        await homeApi.toggleCompletion({ todoId });
-      });
-
-      await queryClient.refetchQueries({ queryKey: homeKeys.todos() });
-      queryClient.invalidateQueries({ queryKey: homeKeys.characterStatus() });
+      await runDrain();
+      scheduleRetries();
     };
 
     const sub = AppState.addEventListener("change", handleAppState);
     handleAppState("active");
-    return () => sub.remove();
+    return () => {
+      cancelled = true;
+      sub.remove();
+      timers.forEach(clearTimeout);
+    };
   }, [queryClient]);
 }
