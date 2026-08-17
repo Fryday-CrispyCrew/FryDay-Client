@@ -1,6 +1,8 @@
 package com.crispycrew.fryday.widget
 
 import android.content.Context
+import android.os.Build
+import android.os.FileObserver
 import androidx.datastore.preferences.core.longPreferencesKey
 import androidx.glance.appwidget.GlanceAppWidgetManager
 import androidx.glance.appwidget.state.updateAppWidgetState
@@ -8,18 +10,80 @@ import com.facebook.react.bridge.Promise
 import com.facebook.react.bridge.ReactApplicationContext
 import com.facebook.react.bridge.ReactContextBaseJavaModule
 import com.facebook.react.bridge.ReactMethod
+import com.facebook.react.modules.core.DeviceEventManagerModule
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import org.json.JSONArray
 import org.json.JSONObject
+import java.io.File
 
 class FrydayWidgetModule(reactContext: ReactApplicationContext) :
     ReactContextBaseJavaModule(reactContext) {
 
     private val ctx: Context get() = reactApplicationContext
 
+    private var pendingFileObserver: FileObserver? = null
+    private var listenerCount = 0
+
     override fun getName() = "FrydayWidget"
+
+    override fun invalidate() {
+        super.invalidate()
+        stopPendingObserver()
+    }
+
+    // -------- 파일 변경 이벤트 (widget → app 즉시 알림) --------
+
+    @Suppress("DEPRECATION")
+    private fun startPendingObserver() {
+        if (pendingFileObserver != null) return
+        val dirPath = ctx.filesDir.absolutePath
+        val mask = FileObserver.CREATE or FileObserver.MODIFY or FileObserver.CLOSE_WRITE or FileObserver.MOVED_TO or FileObserver.DELETE
+        pendingFileObserver = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
+            object : FileObserver(File(dirPath), mask) {
+                override fun onEvent(event: Int, path: String?) {
+                    if (path == SharedFileStorage.PENDING_FILE) emitPendingChanged()
+                }
+            }
+        } else {
+            object : FileObserver(dirPath, mask) {
+                override fun onEvent(event: Int, path: String?) {
+                    if (path == SharedFileStorage.PENDING_FILE) emitPendingChanged()
+                }
+            }
+        }
+        pendingFileObserver?.startWatching()
+    }
+
+    private fun stopPendingObserver() {
+        pendingFileObserver?.stopWatching()
+        pendingFileObserver = null
+    }
+
+    private fun emitPendingChanged() {
+        try {
+            reactApplicationContext
+                .getJSModule(DeviceEventManagerModule.RCTDeviceEventEmitter::class.java)
+                .emit("onWidgetPendingChanged", null)
+        } catch (_: Exception) {}
+    }
+
+    // RN NativeEventEmitter 는 addListener/removeListeners bridge method 를 호출함
+    @ReactMethod
+    fun addListener(eventName: String) {
+        listenerCount++
+        if (listenerCount == 1) startPendingObserver()
+    }
+
+    @ReactMethod
+    fun removeListeners(count: Int) {
+        listenerCount -= count
+        if (listenerCount <= 0) {
+            listenerCount = 0
+            stopPendingObserver()
+        }
+    }
 
     // -------- state (isLoggedIn / isServerError) --------
 

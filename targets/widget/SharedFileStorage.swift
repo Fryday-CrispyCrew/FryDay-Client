@@ -9,6 +9,17 @@ enum SharedFileStorage {
     static let todosFile = "widget-todos.json"
     static let stateFile = "widget-state.json"
 
+    // 위젯 → 앱 파일 변경 알림 (Darwin notification, 크로스프로세스)
+    static let pendingChangedNotification = "com.fryday.widget-pending-changed" as CFString
+
+    static func postPendingChangedNotification() {
+        CFNotificationCenterPostNotification(
+            CFNotificationCenterGetDarwinNotifyCenter(),
+            CFNotificationName(pendingChangedNotification),
+            nil, nil, true
+        )
+    }
+
     private static func url(for fileName: String) -> URL? {
         FileManager.default
             .containerURL(forSecurityApplicationGroupIdentifier: appGroupID)?

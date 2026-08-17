@@ -14,6 +14,7 @@ import {
   peekPendingToggleIds,
   peekPendingBeforeStates,
 } from "./syncWidget";
+import { subscribeWidgetPendingChanged } from "./widgetEvents";
 
 const SYNC_DAYS = 7;
 
@@ -260,10 +261,16 @@ export function useWidgetSync() {
     };
 
     const sub = AppState.addEventListener("change", handleAppState);
+    // 위젯이 파일에 write 하는 순간 (Darwin notification / FileObserver) 즉시 drain.
+    // 폴링 재시도는 fallback (앱이 이벤트를 놓치는 극단 케이스) 으로만 남김.
+    const unsubEvent = subscribeWidgetPendingChanged(() => {
+      runDrain();
+    });
     handleAppState("active");
     return () => {
       cancelled = true;
       sub.remove();
+      unsubEvent();
       timers.forEach(clearTimeout);
     };
   }, [queryClient]);

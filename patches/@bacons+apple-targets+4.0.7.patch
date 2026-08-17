@@ -29,12 +29,34 @@ index e0e2566..d517178 100644
          this.appGroup = appGroup;
      }
 diff --git a/node_modules/@bacons/apple-targets/ios/ExtensionStorageModule.swift b/node_modules/@bacons/apple-targets/ios/ExtensionStorageModule.swift
-index 56a949b..5c4636f 100644
+index 56a949b..86772be 100644
 --- a/node_modules/@bacons/apple-targets/ios/ExtensionStorageModule.swift
 +++ b/node_modules/@bacons/apple-targets/ios/ExtensionStorageModule.swift
-@@ -6,7 +6,9 @@ public class ExtensionStorageModule: Module {
+@@ -2,11 +2,31 @@ import ExpoModulesCore
+ import WidgetKit
+ 
+ public class ExtensionStorageModule: Module {
++    // Darwin notification observer state (크로스프로세스 위젯 파일 변경 알림)
++    private var isDarwinObserving = false
++    private static let widgetPendingChangedNotification = "com.fryday.widget-pending-changed" as CFString
++
+     public func definition() -> ModuleDefinition {
          Name("ExtensionStorage")
-         
+ 
++        Events("onAppGroupFileChanged")
++
++        OnStartObserving {
++            self.startDarwinObserver()
++        }
++
++        OnStopObserving {
++            self.stopDarwinObserver()
++        }
++
++        OnDestroy {
++            self.stopDarwinObserver()
++        }
++
          Function("remove") { (forKey: String, suiteName: String?) in
 -            UserDefaults(suiteName: suiteName)?.removeObject(forKey: forKey)
 +            let userDefaults = UserDefaults(suiteName: suiteName)
@@ -43,7 +65,7 @@ index 56a949b..5c4636f 100644
          }
          
          Function("reloadWidget") { (timeline: String?) in
-@@ -28,13 +30,13 @@ public class ExtensionStorageModule: Module {
+@@ -28,13 +48,13 @@ public class ExtensionStorageModule: Module {
          }
          
          Function("setArray") { (forKey: String, data: [[String: Any]], suiteName: String?) -> Bool in
@@ -60,7 +82,7 @@ index 56a949b..5c4636f 100644
                  return false
              }
          }
-@@ -42,10 +44,11 @@ public class ExtensionStorageModule: Module {
+@@ -42,10 +62,11 @@ public class ExtensionStorageModule: Module {
          Function("setObject") { (forKey: String, data: [String: Any], suiteName: String?) -> Bool in
              do {
                  let jsonData = try JSONSerialization.data(withJSONObject: data, options: [])
@@ -74,7 +96,7 @@ index 56a949b..5c4636f 100644
                  return false
              }
          }
-@@ -53,15 +56,71 @@ public class ExtensionStorageModule: Module {
+@@ -53,15 +74,71 @@ public class ExtensionStorageModule: Module {
          Function("setInt") { (key: String, value: Int, group: String?) in
              let userDefaults = UserDefaults(suiteName: group)
              userDefaults?.set(value, forKey: key)
@@ -146,3 +168,38 @@ index 56a949b..5c4636f 100644
              if let data = userDefaults?.data(forKey: key) {
                  do {
                      let jsonObject = try JSONSerialization.jsonObject(with: data, options: [])
+@@ -78,4 +155,34 @@ public class ExtensionStorageModule: Module {
+             return nil
+         }
+     }
++
++    private func startDarwinObserver() {
++        guard !isDarwinObserving else { return }
++        isDarwinObserving = true
++        let observer = Unmanaged.passUnretained(self).toOpaque()
++        CFNotificationCenterAddObserver(
++            CFNotificationCenterGetDarwinNotifyCenter(),
++            observer,
++            { _, observer, _, _, _ in
++                guard let observer = observer else { return }
++                let mySelf = Unmanaged<ExtensionStorageModule>.fromOpaque(observer).takeUnretainedValue()
++                DispatchQueue.main.async {
++                    mySelf.sendEvent("onAppGroupFileChanged", [:])
++                }
++            },
++            Self.widgetPendingChangedNotification,
++            nil,
++            .deliverImmediately
++        )
++    }
++
++    private func stopDarwinObserver() {
++        guard isDarwinObserving else { return }
++        isDarwinObserving = false
++        let observer = Unmanaged.passUnretained(self).toOpaque()
++        CFNotificationCenterRemoveObserver(
++            CFNotificationCenterGetDarwinNotifyCenter(),
++            observer, nil, nil
++        )
++    }
+ }

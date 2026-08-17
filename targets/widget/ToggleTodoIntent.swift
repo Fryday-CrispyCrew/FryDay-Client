@@ -46,6 +46,8 @@ struct ToggleTodoIntent: AppIntent {
                 }
 
                 SharedFileStorage.writeJSON(state, to: SharedFileStorage.pendingFile)
+                // 앱 프로세스가 리스닝 중이면 즉시 drain 트리거
+                SharedFileStorage.postPendingChangedNotification()
 
                 continuation.resume()
             }
