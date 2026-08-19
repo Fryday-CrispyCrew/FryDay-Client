@@ -27,14 +27,17 @@ enum TodoEntryBuilder {
         let isServerError = (state?["isServerError"] as? Bool) ?? false
         let isConnected = isLoggedIn && !isServerError
 
+        // pending 을 id 별 count 로 집계 → 홀수만 flip 대상 (parity model)
         let pendingState = SharedFileStorage.readJSON(SharedFileStorage.pendingFile, as: PendingState.self) ?? .empty
-        let pendingToggleIds = Set(pendingState.ids)
+        var pendingCounts: [String: Int] = [:]
+        pendingState.ids.forEach { pendingCounts[$0, default: 0] += 1 }
+        let pendingFlipIds = Set(pendingCounts.filter { $0.value % 2 == 1 }.keys)
 
         var todos: [TodoItem] = []
         if let byDate = SharedFileStorage.readJSON(SharedFileStorage.todosFile, as: [String: [TodoDTO]].self),
            let dtos = byDate[dateISO] {
             todos = dtos.map { dto in
-                let isDone = pendingToggleIds.contains(dto.id) ? !dto.isDone : dto.isDone
+                let isDone = pendingFlipIds.contains(dto.id) ? !dto.isDone : dto.isDone
                 return TodoItem(id: dto.id, title: dto.title, categoryCode: dto.categoryCode, isDone: isDone)
             }
         }

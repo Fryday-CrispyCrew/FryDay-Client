@@ -12,7 +12,6 @@ import {
   syncServerErrorToWidget,
   drainPendingToggles,
   peekPendingToggleIds,
-  peekPendingBeforeStates,
 } from "./syncWidget";
 import { subscribeWidgetPendingChanged } from "./widgetEvents";
 
@@ -150,27 +149,24 @@ export function useWidgetSync() {
       const keyStr = JSON.stringify(queryKey);
       if (inProgressRef.has(keyStr)) return;
 
-      const [pendingIds, beforeStates] = await Promise.all([
-        peekPendingToggleIds(),
-        peekPendingBeforeStates(),
-      ]);
+      const pendingIds = await peekPendingToggleIds();
       if (!pendingIds || pendingIds.length === 0) return;
 
       const cached = queryClient.getQueryData(queryKey);
       const arr = extractArray(cached);
       if (!arr || arr.length === 0) return;
 
-      const pendingSet = new Set(pendingIds.map(String));
+      // pending 을 id 별 count 로 집계 → 홀수만 flip 대상 (parity model)
+      const counts = {};
+      pendingIds.forEach((id) => {
+        const key = String(id);
+        counts[key] = (counts[key] || 0) + 1;
+      });
+
       let changed = false;
       const flipped = arr.map((t) => {
-        const idKey = String(t.id);
-        if (!pendingSet.has(idKey)) return t;
-        const beforeIsDone = beforeStates?.[idKey];
-        if (beforeIsDone !== undefined) {
-          const beforeStatus = beforeIsDone ? "COMPLETED" : "IN_PROGRESS";
-          // 서버가 이미 flipped 되었으면 overlay 안 함
-          if (t.status !== beforeStatus) return t;
-        }
+        const cnt = counts[String(t.id)] || 0;
+        if (cnt % 2 !== 1) return t;
         const newStatus = t.status === "COMPLETED" ? "IN_PROGRESS" : "COMPLETED";
         changed = true;
         return { ...t, status: newStatus };

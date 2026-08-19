@@ -47,8 +47,8 @@ object WidgetDataReader {
         }
 
         val todayISO = SimpleDateFormat("yyyy-MM-dd", Locale.US).format(Date())
-        val pendingIds = readPendingIds(context)
-        val todos = readTodosForDate(context, todayISO, pendingIds)
+        val pendingParity = readPendingParity(context)
+        val todos = readTodosForDate(context, todayISO, pendingParity)
         Log.d("WidgetDataReader", "read: todos=${todos.map { it.id to it.isDone }}")
 
         val doneCount = todos.count { it.isDone }
@@ -82,12 +82,18 @@ object WidgetDataReader {
         }
     }
 
-    private fun readPendingIds(context: Context): Set<String> {
+    // pending log 를 id 별 count 로 집계. 홀수만 flip 대상.
+    private fun readPendingParity(context: Context): Set<String> {
         val raw = SharedFileStorage.readString(context, SharedFileStorage.PENDING_FILE) ?: return emptySet()
         return try {
             val obj = JSONObject(raw)
             val ids = obj.optJSONArray("ids") ?: return emptySet()
-            (0 until ids.length()).map { ids.getString(it) }.toSet()
+            val counts = mutableMapOf<String, Int>()
+            for (i in 0 until ids.length()) {
+                val id = ids.getString(i)
+                counts[id] = (counts[id] ?: 0) + 1
+            }
+            counts.filter { it.value % 2 == 1 }.keys
         } catch (_: Exception) {
             emptySet()
         }
@@ -96,7 +102,7 @@ object WidgetDataReader {
     private fun readTodosForDate(
         context: Context,
         dateISO: String,
-        pendingIds: Set<String>
+        pendingFlipIds: Set<String>
     ): List<TodoItem> {
         val json = SharedFileStorage.readString(context, SharedFileStorage.TODOS_FILE) ?: return emptyList()
         return try {
@@ -107,7 +113,7 @@ object WidgetDataReader {
                 val o = arr.getJSONObject(i)
                 val id = o.getString("id")
                 val rawIsDone = o.optBoolean("isDone", false)
-                val effectiveIsDone = if (pendingIds.contains(id)) !rawIsDone else rawIsDone
+                val effectiveIsDone = if (pendingFlipIds.contains(id)) !rawIsDone else rawIsDone
                 TodoItem(
                     id = id,
                     title = o.optString("title", ""),

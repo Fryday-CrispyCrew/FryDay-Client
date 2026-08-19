@@ -30,60 +30,29 @@ class ToggleTodoAction : ActionCallback {
         val todoId = parameters[todoIdKey] ?: return
         Log.d("ToggleTodoAction", "Toggling todoId: $todoId")
 
+        // 매 tap 을 log 로 append. cancel-pending 로직 없음.
+        // 위젯/앱 표시는 count 파리티 (홀수=flip) 로 판정.
+        // A 두 번 = pending=[A,A] = 파리티 0 = 표시상 그대로.
+        // drain 은 순서대로 처리 → A×2 = 서버 net no change.
         writeMutex.withLock {
             val raw = SharedFileStorage.readString(context, SharedFileStorage.PENDING_FILE)
             val pendingList = mutableListOf<String>()
-            val beforeMap = mutableMapOf<String, Boolean>()
             if (raw != null) {
                 try {
                     val obj = JSONObject(raw)
                     obj.optJSONArray("ids")?.let { arr ->
                         for (i in 0 until arr.length()) pendingList.add(arr.getString(i))
                     }
-                    obj.optJSONObject("before")?.let { before ->
-                        val keys = before.keys()
-                        while (keys.hasNext()) {
-                            val k = keys.next()
-                            beforeMap[k] = before.optBoolean(k, false)
-                        }
-                    }
                 } catch (_: Exception) {}
             }
 
-            if (pendingList.contains(todoId)) {
-                pendingList.remove(todoId)
-                beforeMap.remove(todoId)
-            } else {
-                pendingList.add(todoId)
-                // tap 시점의 isDone 을 저장 (widget-todos.json 파일에서 조회)
-                var currentIsDone = false
-                val todosByDateStr = SharedFileStorage.readString(context, SharedFileStorage.TODOS_FILE)
-                if (todosByDateStr != null) {
-                    try {
-                        val byDate = JSONObject(todosByDateStr)
-                        val dateKeys = byDate.keys()
-                        outer@ while (dateKeys.hasNext()) {
-                            val date = dateKeys.next()
-                            val todos = byDate.getJSONArray(date)
-                            for (i in 0 until todos.length()) {
-                                val t = todos.getJSONObject(i)
-                                if (t.optString("id") == todoId) {
-                                    currentIsDone = t.optBoolean("isDone", false)
-                                    break@outer
-                                }
-                            }
-                        }
-                    } catch (_: Exception) {}
-                }
-                beforeMap[todoId] = currentIsDone
-            }
+            pendingList.add(todoId)
 
             val newObj = JSONObject().apply {
                 put("ids", JSONArray().apply { pendingList.forEach { put(it) } })
-                put("before", JSONObject().apply { beforeMap.forEach { (k, v) -> put(k, v) } })
             }
             SharedFileStorage.writeString(context, SharedFileStorage.PENDING_FILE, newObj.toString())
-            Log.d("ToggleTodoAction", "pending updated: $pendingList, before: $beforeMap")
+            Log.d("ToggleTodoAction", "pending appended: $pendingList")
         }
 
         val manager = GlanceAppWidgetManager(context)

@@ -85,18 +85,50 @@ function iosMergeState(patch) {
 
 function iosReadPending() {
   const s = iosReadJSON(PENDING_FILE, null);
-  if (!s || typeof s !== "object") return { ids: [], before: {} };
+  if (!s || typeof s !== "object") return { ids: [] };
   return {
     ids: Array.isArray(s.ids) ? s.ids.map(String) : [],
-    before: s.before && typeof s.before === "object" ? s.before : {},
   };
 }
 
 function iosWritePending(state) {
   iosWriteJSON(PENDING_FILE, {
     ids: state.ids ?? [],
-    before: state.before ?? {},
   });
+}
+
+// pending 로그를 id 별 count 로 집계 → 홀수만 flip 대상 (parity model)
+function computeFlipCounts(ids) {
+  const counts = {};
+  ids.forEach((id) => {
+    const key = String(id);
+    counts[key] = (counts[key] || 0) + 1;
+  });
+  return counts;
+}
+
+// successful 리스트에서 각 id 를 latest 에서 count 만큼 제거 (index 기반)
+function removeSuccessfulFromLatest(latestIds, successful) {
+  const remaining = [...latestIds];
+  for (const id of successful) {
+    const idx = remaining.indexOf(String(id));
+    if (idx !== -1) remaining.splice(idx, 1);
+  }
+  return remaining;
+}
+
+// successful 을 count 기반 flip 으로 todos.json 반영
+// (같은 id 짝수 번 처리 → net no change, 홀수 → 1회 flip)
+function applyCountFlipToTodos(byDate, successful) {
+  const flipCounts = computeFlipCounts(successful);
+  const updated = {};
+  for (const [date, todos] of Object.entries(byDate)) {
+    updated[date] = (todos ?? []).map((t) => {
+      const cnt = flipCounts[String(t.id)] || 0;
+      return cnt % 2 === 1 ? { ...t, isDone: !t.isDone } : t;
+    });
+  }
+  return updated;
 }
 
 // -------- 앱 → 위젯 write --------
@@ -177,30 +209,6 @@ export function clearWidgetForLogout() {
 
 // -------- 위젯 → 앱 read (pending) --------
 
-export function peekPendingBeforeStatesSync() {
-  if (Platform.OS === "ios") {
-    return iosReadPending().before;
-  }
-  return null;
-}
-
-export async function peekPendingBeforeStates() {
-  if (Platform.OS === "ios") {
-    return iosReadPending().before;
-  }
-  if (Platform.OS === "android" && AndroidWidget) {
-    try {
-      const raw = await AndroidWidget.getPendingBeforeStates?.();
-      if (!raw) return {};
-      const obj = JSON.parse(raw);
-      return typeof obj === "object" && obj !== null ? obj : {};
-    } catch {
-      return {};
-    }
-  }
-  return {};
-}
-
 export function peekPendingToggleIdsSync() {
   if (Platform.OS === "ios") {
     return iosReadPending().ids;
@@ -241,63 +249,41 @@ export async function drainPendingToggles(toggleFn) {
   }
 
   if (Platform.OS === "ios") {
-    // 성공한 todo 는 widget-todos.json 에서도 isDone 반전 (위젯이 flip 뒤 진짜 상태 보게)
+    // pending 로그에서 처리한 만큼만 제거. 같은 id 여러 번이면 처리한 횟수만큼 뺌.
+    try {
+      const latest = iosReadPending();
+      const remainingIds = removeSuccessfulFromLatest(latest.ids, successful);
+      iosWritePending({ ids: remainingIds });
+    } catch {}
+    // widget-todos.json 에도 net flip 반영 (짝수 처리 → no change, 홀수 → 1회 flip)
     if (successful.length > 0) {
       try {
         const byDate = iosReadJSON(TODOS_FILE, {}) ?? {};
-        const successSet = new Set(successful);
-        const updated = {};
-        for (const [date, todos] of Object.entries(byDate)) {
-          updated[date] = (todos ?? []).map((t) =>
-            successSet.has(String(t.id)) ? { ...t, isDone: !t.isDone } : t,
-          );
-        }
+        const updated = applyCountFlipToTodos(byDate, successful);
         iosWriteJSON(TODOS_FILE, updated);
       } catch {}
     }
-    // Drain 중 위젯이 새로 추가한 pending 이 있을 수 있음 → 최신 read 후 successful 만 제거
-    try {
-      const latest = iosReadPending();
-      const successSet = new Set(successful);
-      const remainingIds = latest.ids.filter((id) => !successSet.has(id));
-      const remainingBefore = {};
-      for (const [k, v] of Object.entries(latest.before)) {
-        if (!successSet.has(k)) remainingBefore[k] = v;
-      }
-      iosWritePending({ ids: remainingIds, before: remainingBefore });
-    } catch {}
     reloadAllWidgetKinds();
     return;
   }
 
   if (Platform.OS === "android" && AndroidWidget) {
     try {
+      // pending 로그에서 처리한 만큼만 제거
       let remaining = [];
       try {
         const latestRaw = await AndroidWidget.getPendingToggles();
         const latestArr = latestRaw ? JSON.parse(latestRaw) : [];
-        const successSet = new Set(successful);
-        remaining = (Array.isArray(latestArr) ? latestArr : [])
-          .map(String)
-          .filter((id) => !successSet.has(id));
+        remaining = removeSuccessfulFromLatest(
+          (Array.isArray(latestArr) ? latestArr : []).map(String),
+          successful,
+        );
       } catch {
         remaining = failed;
       }
 
       if (remaining.length > 0 && AndroidWidget.setPendingToggles) {
         await AndroidWidget.setPendingToggles(JSON.stringify(remaining));
-        try {
-          const beforeRaw = await AndroidWidget.getPendingBeforeStates?.();
-          if (beforeRaw && AndroidWidget.setPendingBeforeStates) {
-            const beforeObj = JSON.parse(beforeRaw);
-            const successSet = new Set(successful);
-            const newBefore = {};
-            for (const [k, v] of Object.entries(beforeObj)) {
-              if (!successSet.has(k)) newBefore[k] = v;
-            }
-            await AndroidWidget.setPendingBeforeStates(JSON.stringify(newBefore));
-          }
-        } catch {}
       } else {
         await AndroidWidget.clearPendingToggles();
       }
@@ -306,13 +292,7 @@ export async function drainPendingToggles(toggleFn) {
           const currentJson = await AndroidWidget.getTodosByDate?.();
           if (currentJson) {
             const byDate = JSON.parse(currentJson);
-            const successSet = new Set(successful);
-            const updated = {};
-            for (const [date, todos] of Object.entries(byDate)) {
-              updated[date] = todos.map((t) =>
-                successSet.has(String(t.id)) ? { ...t, isDone: !t.isDone } : t,
-              );
-            }
+            const updated = applyCountFlipToTodos(byDate, successful);
             await AndroidWidget.syncTodos(JSON.stringify(updated));
           }
         } catch {}

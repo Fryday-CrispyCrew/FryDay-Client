@@ -23,28 +23,10 @@ struct ToggleTodoIntent: AppIntent {
         let capturedId = self.todoId
         await withCheckedContinuation { (continuation: CheckedContinuation<Void, Never>) in
             Self.writeQueue.async {
+                // 매 tap 을 log 로 append. cancel-pending 로직 없음.
+                // 위젯/앱 표시는 count 파리티 (홀수=flip) 로 판정.
                 var state = SharedFileStorage.readJSON(SharedFileStorage.pendingFile, as: PendingState.self) ?? .empty
-
-                if let idx = state.ids.firstIndex(of: capturedId) {
-                    state.ids.remove(at: idx)
-                    state.before.removeValue(forKey: capturedId)
-                } else {
-                    state.ids.append(capturedId)
-                    // tap 시점의 isDone 을 widget-todos.json 에서 조회
-                    var currentIsDone = false
-                    if let byDate = SharedFileStorage.readJSONObject(SharedFileStorage.todosFile) as? [String: [[String: Any]]] {
-                        outer: for (_, todos) in byDate {
-                            for t in todos {
-                                if let tid = t["id"] as? String, tid == capturedId {
-                                    currentIsDone = (t["isDone"] as? Bool) ?? false
-                                    break outer
-                                }
-                            }
-                        }
-                    }
-                    state.before[capturedId] = currentIsDone
-                }
-
+                state.ids.append(capturedId)
                 SharedFileStorage.writeJSON(state, to: SharedFileStorage.pendingFile)
                 // 앱 프로세스가 리스닝 중이면 즉시 drain 트리거
                 SharedFileStorage.postPendingChangedNotification()

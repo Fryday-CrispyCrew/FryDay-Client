@@ -76,7 +76,8 @@ enum SharedFileStorage {
 
 struct PendingState: Codable {
     var ids: [String]
-    var before: [String: Bool]
+    // before 는 legacy 필드 - log-based 이후로는 미사용. 하위 호환 위해 optional 유지.
+    var before: [String: Bool]?
 
-    static let empty = PendingState(ids: [], before: [:])
+    static let empty = PendingState(ids: [], before: nil)
 }
