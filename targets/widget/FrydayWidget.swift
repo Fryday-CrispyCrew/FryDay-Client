@@ -163,7 +163,7 @@ struct FrydayWidget: Widget {
                 .environment(\.redactionReasons, [])
         }
         .configurationDisplayName("FryDay")
-        .description("오늘의 투두를 홈 화면에서 확인하세요. 미디움 사이즈에서 캐릭터/리스트 스타일 선택 가능.")
+        .description("오늘의 할 일과 튀김 현황을 홈 화면에 꺼내두고 매일 바삭한 하루를 보내 보세요.")
         .supportedFamilies([.systemSmall, .systemMedium])
         .contentMarginsDisabled()
     }
