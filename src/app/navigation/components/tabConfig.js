@@ -13,7 +13,7 @@ export const TAB_CONFIG = {
   Todo: { label: '홈', active: HomeActive, inactive: HomeInactive },
   Calendar: { label: '캘린더', active: CalendarActive, inactive: CalendarInactive },
   Report: { label: '리포트', active: ReportActive, inactive: ReportInactive },
-  MyPage: { label: '설정', active: SettingActive, inactive: SettingInactive },
+  MyPage: { label: '마이페이지', active: SettingActive, inactive: SettingInactive },
 };
 
 // 탭바를 숨길 라우트 (Stack 내부 포함)

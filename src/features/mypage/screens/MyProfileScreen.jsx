@@ -9,7 +9,7 @@ import Banner from "../../../shared/components/Banner";
 export default function MyProfileScreen() {
   return (
     <SafeAreaView className="flex-1 bg-gr" edges={["top", "bottom"]}>
-      <MyPageHeader showBackButton={false} title="설정" />
+      <MyPageHeader showBackButton={false} title="마이페이지" />
 
       <ScrollView
         showsVerticalScrollIndicator={false}
