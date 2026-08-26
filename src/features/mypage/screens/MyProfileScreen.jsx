@@ -99,7 +99,7 @@ export default function MyProfileScreen() {
         />
 
         {/* 배너 광고 */}
-        <View style={{ alignSelf: "center", marginTop: 28 }}>
+        <View style={{ alignSelf: "center", marginTop: 12 }}>
           <Banner />
         </View>
 
