@@ -79,22 +79,15 @@ export default function MyProfileScreen() {
       >
         <Image
           source={CharaterImage}
-          style={{ width: 155, height: 155, right: 3 }}
+          style={{ width: 155, height: 155 }}
           resizeMode="contain"
         />
       </View>
 
       <MyPageHeader showBackButton={false} title="마이페이지" />
 
-      <ScrollView
-        showsVerticalScrollIndicator={false}
-        contentContainerStyle={{
-          flexGrow: 1,
-          paddingHorizontal: 20,
-          paddingTop: 16,
-          paddingBottom: 24,
-          rowGap: 16,
-        }}
+      <View
+        className="flex-col px-5 py-4 gap-4"
       >
         <AccountReportCard
           username={nickname}
@@ -116,7 +109,7 @@ export default function MyProfileScreen() {
         <MyPageMenu menuTitle="이용 약관" to="Use" />
         <MyPageMenu menuTitle="자주 묻는 질문" to="Qna" />
         <MyPageMenu menuTitle="버전 정보" rightText="v1.2.0" hideArrow />
-      </ScrollView>
+      </View>
     </SafeAreaView>
   );
 }
