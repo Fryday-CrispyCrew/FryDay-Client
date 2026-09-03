@@ -7,6 +7,7 @@ import colors from "../../../../shared/styles/colors";
 import {toast} from "../../../../shared/components/toast/CenterToast";
 import XCircleIcon from "../../assets/svg/xCircle.svg";
 import AppText from "../../../../shared/components/AppText";
+import {useModalStore} from "../../../../shared/stores/modal/modalStore";
 
 /**
  * Alarm UI (alarmBox ~ alarmFooter) 전담 컴포넌트
@@ -29,9 +30,13 @@ export default function AlarmTimeSettingSection({
   // todo date
   todoDateStr, // "2026-02-18" 형태의 투두 날짜 문자열
 
+  // 반복 investigation instance override 확인 모달용
+  masterAlarmHHmm = null, // recurrence Master 알림 시각 ("HH:mm"). 반복 instance 편집이 아니면 null
+
   // parent control
   onClosePanel, // 예: () => setSelectedToolKey(null)
 }) {
+  const openModal = useModalStore((s) => s.open);
   const hhmm = useMemo(() => {
     const h = String(alarmDraftDate.getHours()).padStart(2, "0");
     const m = String(alarmDraftDate.getMinutes()).padStart(2, "0");
@@ -82,6 +87,50 @@ export default function AlarmTimeSettingSection({
       return alarmDate <= new Date();
     };
 
+    // 실제 알림 적용 (setState + panel 닫기)
+    const commitApply = (newHHmm) => {
+      setAlarmTime(newHHmm);
+      setHasPickedAlarmTime(true);
+      setIsIosInlineAlarmPickerOpen(false);
+      onClosePanel?.();
+    };
+
+    // 반복 Master 알림이 있는 instance 에서 새로운 개별 알림을 설정하려는 경우 확인 모달.
+    // masterAlarmHHmm 이 null 이면 반복 instance 가 아니거나 Master 알림이 없음 → 모달 스킵.
+    const needsOverrideConfirm = (newHHmm) =>
+      !!masterAlarmHHmm && newHHmm && newHHmm !== masterAlarmHHmm;
+
+    const applyWithMaybeConfirm = (newHHmm) => {
+      if (!needsOverrideConfirm(newHHmm)) {
+        commitApply(newHHmm);
+        return;
+      }
+      openModal({
+        title: "새 알림 적용하기",
+        description:
+          "새 알림을 설정하면 기존 반복 알림은 사라지고\n새 알림으로 적용돼요. 설정할까요?",
+        showClose: true,
+        closeOnBackdrop: true,
+        buttons: [
+          {
+            label: "네, 설정할래요",
+            variant: "primary",
+            onPress: () => commitApply(newHHmm),
+          },
+          {
+            label: "아니요, 반복 알림을 유지할래요",
+            variant: "outline",
+            onPress: () => {
+              // 개별 알림 미적용 — draft 는 초기화
+              setHasPickedAlarmTime(false);
+              setIsIosInlineAlarmPickerOpen(false);
+              onClosePanel?.();
+            },
+          },
+        ],
+      });
+    };
+
     // ✅ iOS picker가 열려있었다면 무조건 시간이 선택된 것으로 간주
     if (Platform.OS === "ios" && isIosInlineAlarmPickerOpen) {
       // 선택한 시간이 현재 시간 이전인지 확인
@@ -90,10 +139,7 @@ export default function AlarmTimeSettingSection({
         return;
       }
 
-      setAlarmTime(hhmm);
-      setHasPickedAlarmTime(true);
-      setIsIosInlineAlarmPickerOpen(false);
-      onClosePanel?.();
+      applyWithMaybeConfirm(hhmm);
       return;
     }
 
@@ -112,10 +158,7 @@ export default function AlarmTimeSettingSection({
     }
 
     // ✅ 실제로 시간을 고른 상태면 그 값 적용
-    setAlarmTime(hhmm);
-    setHasPickedAlarmTime(true);
-    setIsIosInlineAlarmPickerOpen(false);
-    onClosePanel?.();
+    applyWithMaybeConfirm(hhmm);
   }, [
     hhmm,
     setAlarmTime,
@@ -125,6 +168,8 @@ export default function AlarmTimeSettingSection({
     hasPickedAlarmTime,
     isIosInlineAlarmPickerOpen,
     todoDateStr,
+    masterAlarmHHmm,
+    openModal,
   ]);
 
   return (

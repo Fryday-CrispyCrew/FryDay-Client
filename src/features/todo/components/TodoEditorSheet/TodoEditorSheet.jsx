@@ -464,6 +464,15 @@ const TodoEditorSheet = React.forwardRef(function TodoEditorSheet(
     { enabled: mode === "edit" && !!numericTodoId },
   );
 
+  // 반복 Master 알림 시각 (HH:mm). 반복 instance 편집일 때만 값 있음.
+  // AlarmPanel 에서 "새 알림 적용하기" 확인 모달 조건 판정에 사용.
+  const masterAlarmHHmm = useMemo(() => {
+    const nt = todoDetail?.recurrence?.notificationTime;
+    if (!nt) return null;
+    const s = String(nt);
+    return s.length >= 5 ? s.slice(0, 5) : null;
+  }, [todoDetail?.recurrence?.notificationTime]);
+
   const { mutateAsync: updateCategory } = useUpdateTodoCategoryMutation();
   const { mutateAsync: updateDescription } = useUpdateTodoDescriptionMutation();
   const { mutateAsync: updateMemo } = useUpdateTodoMemoMutation();
@@ -1101,6 +1110,7 @@ const TodoEditorSheet = React.forwardRef(function TodoEditorSheet(
               setHasPickedAlarmTime={setHasPickedAlarmTime}
               setIsIosInlineAlarmPickerOpen={setIsIosInlineAlarmPickerOpen}
               todoDateStr={mode === "edit" ? todoDetail?.date : toYYYYMMDD(todoDate)}
+              masterAlarmHHmm={masterAlarmHHmm}
               onClosePanel={() => closePanelAndFocusTitle("alarm")}
             />
 
