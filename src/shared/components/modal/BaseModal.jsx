@@ -21,6 +21,7 @@ export default function BaseModal({
                                     hideCard = false,
                                     cardStyle,
                                     bodyStyle,
+                                    backdropColor,
                                   }) {
   const close = onBackdropPress ?? onRequestClose;
 
@@ -32,7 +33,13 @@ export default function BaseModal({
           onRequestClose={onRequestClose}
       >
         {!hideCard ? (
-            <Pressable style={styles.backdrop} onPress={close} />
+            <Pressable
+                style={[
+                  styles.backdrop,
+                  backdropColor ? { backgroundColor: backdropColor } : null,
+                ]}
+                onPress={close}
+            />
         ) : null}
 
         {hideCard ? (

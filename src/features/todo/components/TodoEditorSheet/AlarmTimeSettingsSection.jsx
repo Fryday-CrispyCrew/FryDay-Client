@@ -111,6 +111,7 @@ export default function AlarmTimeSettingSection({
           "새 알림을 설정하면 기존 반복 알림은 사라지고\n새 알림으로 적용돼요. 설정할까요?",
         showClose: true,
         closeOnBackdrop: true,
+        backdropColor: "rgba(255,255,255,0.6)",
         buttons: [
           {
             label: "네, 설정할래요",

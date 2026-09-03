@@ -46,6 +46,7 @@ export default function CommonModal({
 
                                       closeOnBackdrop = true,
                                       showClose = true,
+                                      backdropColor,
                                     }) {
   const buttonList = buttons ?? [primary, secondary].filter(Boolean);
 
@@ -56,6 +57,7 @@ export default function CommonModal({
       onRequestClose={onClose}
       onBackdropPress={closeOnBackdrop ? onClose : undefined}
       showClose={showClose}
+      backdropColor={backdropColor}
     >
       {!!description && (
         <AppText

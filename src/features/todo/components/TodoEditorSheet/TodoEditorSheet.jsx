@@ -897,41 +897,50 @@ const TodoEditorSheet = React.forwardRef(function TodoEditorSheet(
       );
     }
 
-    if (normalizeMemo(initial.memo) !== currentMemo) {
-      tasks.push(() => updateMemo({ todoId: numericTodoId, memo: currentMemo }));
-    }
-
-    // 반복 instance 는 알림 변경 시 Instance Override 로 저장 (updateTodoInstance scope: THIS).
-    // 그 외 일반 todo 는 기존 setAlarm/deleteAlarm 사용.
+    // 반복 instance 는 알림/메모 변경 시 Instance Override 로 저장 (updateTodoInstance scope: THIS).
+    // 그 외 일반 todo 는 기존 setAlarm/deleteAlarm/updateMemo 사용.
     const alarmChanged = initialNotifyAt !== currentNotifyAt;
+    const memoChanged = normalizeMemo(initial.memo) !== currentMemo;
     const isRecurringInstance = !!todoDetail?.recurrence;
 
-    if (alarmChanged) {
-      if (isRecurringInstance) {
+    if (isRecurringInstance && (alarmChanged || memoChanged)) {
+      // 알림 + 메모 를 하나의 override PATCH 로 묶어 전송
+      const payload = {};
+      if (alarmChanged) {
         const alarmTimeStr = currentNotifyAt
           ? String(currentNotifyAt).split("T")[1] ?? null
           : null;
-        tasks.push(() =>
-          updateTodoInstance({
-            instanceId: numericTodoId,
-            body: {
-              scope: "THIS",
-              payload: {
-                isAlarmEnabled: !!alarmTimeStr,
-                alarmTime: alarmTimeStr,
-              },
-            },
-          }),
-        );
-      } else if (initialNotifyAt && !currentNotifyAt) {
-        tasks.push(() => deleteAlarm({ todoId: numericTodoId }));
-      } else if (currentNotifyAt) {
-        tasks.push(() =>
-          setAlarm({
-            todoId: numericTodoId,
-            notifyAt: currentNotifyAt,
-          }),
-        );
+        payload.isAlarmEnabled = !!alarmTimeStr;
+        payload.alarmTime = alarmTimeStr;
+      }
+      if (memoChanged) {
+        payload.memo = currentMemo;
+      }
+      tasks.push(() =>
+        updateTodoInstance({
+          instanceId: numericTodoId,
+          body: {
+            scope: "THIS",
+            payload,
+          },
+        }),
+      );
+    } else {
+      // 일반 todo — 기존 로직
+      if (memoChanged) {
+        tasks.push(() => updateMemo({ todoId: numericTodoId, memo: currentMemo }));
+      }
+      if (alarmChanged) {
+        if (initialNotifyAt && !currentNotifyAt) {
+          tasks.push(() => deleteAlarm({ todoId: numericTodoId }));
+        } else if (currentNotifyAt) {
+          tasks.push(() =>
+            setAlarm({
+              todoId: numericTodoId,
+              notifyAt: currentNotifyAt,
+            }),
+          );
+        }
       }
     }
 
