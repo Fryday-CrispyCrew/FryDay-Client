@@ -44,6 +44,7 @@ import { useUpdateTodoMemoMutation } from "../../queries/sheet/content/useUpdate
 import { useSetTodoAlarmMutation } from "../../queries/sheet/alarm/useSetTodoAlarmMutation";
 import { useDeleteTodoAlarmMutation } from "../../queries/sheet/alarm/useDeleteTodoAlarmMutation";
 import { useCreateTodoRecurrenceMutation } from "../../queries/sheet/repeat/useCreateTodoRecurrenceMutation";
+import { useUpdateTodoInstanceMutation } from "../../queries/sheet/repeat/useUpdateTodoInstanceMutation";
 import { useUpdateTodoDateMutation } from "../../queries/sheet/date/useUpdateTodoDateMutation";
 
 import useTodoEditorFocus from "./hooks/useTodoEditorFocus";
@@ -479,6 +480,7 @@ const TodoEditorSheet = React.forwardRef(function TodoEditorSheet(
   const { mutateAsync: setAlarm } = useSetTodoAlarmMutation();
   const { mutateAsync: deleteAlarm } = useDeleteTodoAlarmMutation();
   const { mutateAsync: createRecurrence } = useCreateTodoRecurrenceMutation();
+  const { mutateAsync: updateTodoInstance } = useUpdateTodoInstanceMutation();
   const { mutateAsync: updateTodoDate } = useUpdateTodoDateMutation();
 
   const initialRef = useRef({
@@ -899,15 +901,38 @@ const TodoEditorSheet = React.forwardRef(function TodoEditorSheet(
       tasks.push(() => updateMemo({ todoId: numericTodoId, memo: currentMemo }));
     }
 
-    if (initialNotifyAt && !currentNotifyAt) {
-      tasks.push(() => deleteAlarm({ todoId: numericTodoId }));
-    } else if (initialNotifyAt !== currentNotifyAt && currentNotifyAt) {
-      tasks.push(() =>
-        setAlarm({
-          todoId: numericTodoId,
-          notifyAt: currentNotifyAt,
-        }),
-      );
+    // 반복 instance 는 알림 변경 시 Instance Override 로 저장 (updateTodoInstance scope: THIS).
+    // 그 외 일반 todo 는 기존 setAlarm/deleteAlarm 사용.
+    const alarmChanged = initialNotifyAt !== currentNotifyAt;
+    const isRecurringInstance = !!todoDetail?.recurrence;
+
+    if (alarmChanged) {
+      if (isRecurringInstance) {
+        const alarmTimeStr = currentNotifyAt
+          ? String(currentNotifyAt).split("T")[1] ?? null
+          : null;
+        tasks.push(() =>
+          updateTodoInstance({
+            instanceId: numericTodoId,
+            body: {
+              scope: "THIS",
+              payload: {
+                isAlarmEnabled: !!alarmTimeStr,
+                alarmTime: alarmTimeStr,
+              },
+            },
+          }),
+        );
+      } else if (initialNotifyAt && !currentNotifyAt) {
+        tasks.push(() => deleteAlarm({ todoId: numericTodoId }));
+      } else if (currentNotifyAt) {
+        tasks.push(() =>
+          setAlarm({
+            todoId: numericTodoId,
+            notifyAt: currentNotifyAt,
+          }),
+        );
+      }
     }
 
     if (repeatPayload) {
@@ -979,6 +1004,7 @@ const TodoEditorSheet = React.forwardRef(function TodoEditorSheet(
     updateMemo,
     deleteAlarm,
     setAlarm,
+    updateTodoInstance,
     createRecurrence,
     updateTodoDate,
     onSubmit,
