@@ -431,25 +431,33 @@ export default function TodoBoardSection({
       }
 
       if (isRecurringTodo(todo)) {
-        // 정책: 개별 알림/메모 만 변경한 경우 3가지 선택지 (반복 일정 수정) 모달 안 뜨게,
+        // 정책: 개별 알림/메모/제목 만 변경한 경우 3가지 선택지 (반복 일정 수정) 모달 안 뜨게,
         // 무조건 이 instance 만 override (scope THIS) 로 저장.
-        const payloadKeys = Object.keys(payload);
+        // startDate/endDate 는 recurrence rule 이 그대로여도 payload 에 자동 추가되니
+        // 실제 변경 여부 판정 대상에서 제외 + THIS scope override 요청에서는 스트립.
         const individualOnlyKeys = new Set([
           "isAlarmEnabled",
           "alarmTime",
           "memo",
+          "title",
         ]);
+        const meaningfulKeys = Object.keys(payload).filter(
+          (k) => k !== "startDate" && k !== "endDate",
+        );
         const isIndividualOnly =
           !isCancelRecurrence &&
-          payloadKeys.length > 0 &&
-          payloadKeys.every((k) => individualOnlyKeys.has(k));
+          meaningfulKeys.length > 0 &&
+          meaningfulKeys.every((k) => individualOnlyKeys.has(k));
 
         if (isIndividualOnly) {
+          const overridePayload = { ...payload };
+          delete overridePayload.startDate;
+          delete overridePayload.endDate;
           await updateTodoInstanceMutateAsync({
             instanceId,
             body: {
               scope: INSTANCE_SCOPE.THIS,
-              payload,
+              payload: overridePayload,
             },
           });
           onDone?.();
