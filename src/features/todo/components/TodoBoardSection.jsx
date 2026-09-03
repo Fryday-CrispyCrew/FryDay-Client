@@ -287,28 +287,46 @@ export default function TodoBoardSection({
     ALL: "ALL",
   };
 
+  // 반복/instance mutation 실패 시 공용 토스트 (요청 4)
+  const handleTodoUpdateError = useCallback((e) => {
+    const status = e?.response?.status;
+    const errorCode = e?.response?.data?.errorCode;
+    if (status === 400 && errorCode === "ALARM_TIME_IN_PAST") {
+      toast.show("알림 시간은 현재 시간 이후로 설정해야 합니다.");
+      return;
+    }
+    if (status === 400 && errorCode === "INVALID_INPUT_VALUE") {
+      toast.show("입력값을 다시 확인해주세요.");
+      return;
+    }
+    // 그 외는 axios interceptor 의 공용 토스트 (MUTATION_ERROR) 가 처리
+  }, []);
+
   const openRecurringEditModal = useCallback(
     ({ todo, payload, onDone, isCancelRecurrence = false }) => {
       const instanceId = Number(todo?.id);
       if (!instanceId) return;
 
       const handleUpdate = async (scope) => {
-        if (isCancelRecurrence) {
-          await cancelTodoInstanceMutateAsync({
-            instanceId,
-            body: { scope },
-          });
-        } else {
-          await updateTodoInstanceMutateAsync({
-            instanceId,
-            body: {
-              scope,
-              payload,
-            },
-          });
+        try {
+          if (isCancelRecurrence) {
+            await cancelTodoInstanceMutateAsync({
+              instanceId,
+              body: { scope },
+            });
+          } else {
+            await updateTodoInstanceMutateAsync({
+              instanceId,
+              body: {
+                scope,
+                payload,
+              },
+            });
+          }
+          onDone?.();
+        } catch (e) {
+          handleTodoUpdateError(e);
         }
-
-        onDone?.();
         close();
       };
 
@@ -335,7 +353,7 @@ export default function TodoBoardSection({
         ],
       });
     },
-    [open, close, updateTodoInstanceMutateAsync, cancelTodoInstanceMutateAsync],
+    [open, close, updateTodoInstanceMutateAsync, cancelTodoInstanceMutateAsync, handleTodoUpdateError],
   );
 
   const editor = useTodoEditorController({
@@ -396,87 +414,97 @@ export default function TodoBoardSection({
 
       const instanceId = Number(todo.id);
 
-      const payload = {};
-
       const nextTitle =
         description ||
         title ||
         text ||
         "";
-
-      if (nextTitle && nextTitle !== (todo?.title || todo?.description || "")) {
-        payload.title = nextTitle;
-      }
-
       const nextMemo = memo?.trim() ?? "";
       const prevMemo = todo?.memo?.trim() ?? "";
-
-      if (nextMemo !== prevMemo) {
-        payload.memo = nextMemo;
-      }
-
       const nextAlarmTime = notifyAt ? String(notifyAt).split("T")[1] : null;
       const prevAlarmTime = todo?.alarmTime ?? todo?.alarm?.notifyAt ?? null;
 
-      if (nextAlarmTime !== prevAlarmTime) {
-        payload.isAlarmEnabled = !!nextAlarmTime;
-        payload.alarmTime = nextAlarmTime;
-      }
-      if (recurrence?.startDate) {
-        payload.startDate = recurrence.startDate;
-      }
+      // (요청 1) 반복 투두는 title/memo/alarm 을 항상 화면 현재 값으로 전송.
+      // diff 로 만들면 override 값 기준 비교 때문에 다른 회차 반영 누락됨.
+      // 서버 규약: null = 변경 없음, 값 = 적용. 전체 값 전송 안전 + 멱등.
+      const buildFullPayload = () => {
+        const p = {};
+        if (nextTitle) p.title = nextTitle;
+        p.memo = nextMemo;
+        p.isAlarmEnabled = !!nextAlarmTime;
+        if (nextAlarmTime) p.alarmTime = nextAlarmTime;
+        if (recurrence?.startDate) p.startDate = recurrence.startDate;
+        if (recurrence?.endDate) p.endDate = recurrence.endDate;
+        return p;
+      };
 
-      if (recurrence?.endDate) {
-        payload.endDate = recurrence.endDate;
-      }
+      // 유저 실제 변경 감지 (모달 노출 여부 판정용, payload 는 항상 full 전송)
+      const titleChanged =
+        nextTitle && nextTitle !== (todo?.title || todo?.description || "");
+      const memoChanged = nextMemo !== prevMemo;
+      const alarmChanged = nextAlarmTime !== prevAlarmTime;
 
       if (isRecurringTodo(todo)) {
-        // 정책 4.2.2: 알림 변경은 이미 "새 알림 적용하기" 확인 모달에서 override(THIS) 결정 완료.
-        // 그래서 payload 가 알림 필드 (isAlarmEnabled/alarmTime) 만 담고 있으면
-        // 3가지 선택지 (4.1) 모달 스킵하고 THIS scope 로 바로 저장.
-        // title/memo/date 변경 등은 정책상 scope 선택 (이번만 / 이후 모두 / 전체) 필요.
-        // startDate/endDate 는 recurrence rule 이 그대로여도 payload 에 자동 추가되니
-        // 실제 변경 여부 판정 대상에서 제외.
-        const alarmOnlyKeys = new Set(["isAlarmEnabled", "alarmTime"]);
-        const meaningfulKeys = Object.keys(payload).filter(
-          (k) => k !== "startDate" && k !== "endDate",
-        );
+        const fullPayload = buildFullPayload();
+
+        // 정책 4.2.2: 알림 변경은 확인 모달에서 이미 override(THIS) 결정됨.
+        // 알림만 변경 → 3가지 선택지 (4.1) 모달 스킵, THIS scope 로 바로 저장.
         const isAlarmOnly =
           !isCancelRecurrence &&
-          meaningfulKeys.length > 0 &&
-          meaningfulKeys.every((k) => alarmOnlyKeys.has(k));
+          alarmChanged &&
+          !titleChanged &&
+          !memoChanged;
 
         if (isAlarmOnly) {
-          const overridePayload = { ...payload };
+          const overridePayload = { ...fullPayload };
           delete overridePayload.startDate;
           delete overridePayload.endDate;
-          await updateTodoInstanceMutateAsync({
-            instanceId,
-            body: {
-              scope: INSTANCE_SCOPE.THIS,
-              payload: overridePayload,
-            },
-          });
-          onDone?.();
+          try {
+            await updateTodoInstanceMutateAsync({
+              instanceId,
+              body: {
+                scope: INSTANCE_SCOPE.THIS,
+                payload: overridePayload,
+              },
+            });
+            onDone?.();
+          } catch (e) {
+            handleTodoUpdateError(e);
+          }
           return;
         }
 
         openRecurringEditModal({
           todo,
-          payload,
+          payload: fullPayload,
           onDone,
           isCancelRecurrence,
         });
         return;
       }
 
-      await updateTodoInstanceMutateAsync({
-        instanceId,
-        body: {
-          scope: INSTANCE_SCOPE.THIS,
-          payload,
-        },
-      });
+      // 비반복 투두 — 기존 diff 기반 payload
+      const payload = {};
+      if (titleChanged) payload.title = nextTitle;
+      if (memoChanged) payload.memo = nextMemo;
+      if (alarmChanged) {
+        payload.isAlarmEnabled = !!nextAlarmTime;
+        payload.alarmTime = nextAlarmTime;
+      }
+      if (recurrence?.startDate) payload.startDate = recurrence.startDate;
+      if (recurrence?.endDate) payload.endDate = recurrence.endDate;
+
+      try {
+        await updateTodoInstanceMutateAsync({
+          instanceId,
+          body: {
+            scope: INSTANCE_SCOPE.THIS,
+            payload,
+          },
+        });
+      } catch (e) {
+        handleTodoUpdateError(e);
+      }
     },
   });
 
