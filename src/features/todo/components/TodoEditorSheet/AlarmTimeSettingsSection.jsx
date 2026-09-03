@@ -30,8 +30,9 @@ export default function AlarmTimeSettingSection({
   // todo date
   todoDateStr, // "2026-02-18" 형태의 투두 날짜 문자열
 
-  // 반복 investigation instance override 확인 모달용
-  masterAlarmHHmm = null, // recurrence Master 알림 시각 ("HH:mm"). 반복 instance 편집이 아니면 null
+  // 반복 instance override 확인 모달용 - 서버 상세 응답의 alarmSource === "INHERIT"
+  // (반복 Master 알림 사용 중) 일 때만 팝업 노출. FE 요청 문서 요청 2.
+  isInheritingRepeatAlarm = false,
 
   // parent control
   onClosePanel, // 예: () => setSelectedToolKey(null)
@@ -95,10 +96,11 @@ export default function AlarmTimeSettingSection({
       onClosePanel?.();
     };
 
-    // 반복 Master 알림이 있는 instance 에서 새로운 개별 알림을 설정하려는 경우 확인 모달.
-    // masterAlarmHHmm 이 null 이면 반복 instance 가 아니거나 Master 알림이 없음 → 모달 스킵.
+    // 반복 Master 알림 (alarmSource === "INHERIT") 을 사용 중인 instance 에서
+    // 새 개별 알림을 설정하려는 경우 확인 모달 (정책 4.2.2 / FE 요청 문서 요청 2).
+    // 이미 개별 상태 (OVERRIDE/NONE) 이면 대체할 반복 알림 없어 팝업 스킵.
     const needsOverrideConfirm = (newHHmm) =>
-      !!masterAlarmHHmm && newHHmm && newHHmm !== masterAlarmHHmm;
+      !!isInheritingRepeatAlarm && !!newHHmm;
 
     const applyWithMaybeConfirm = (newHHmm) => {
       if (!needsOverrideConfirm(newHHmm)) {
@@ -168,7 +170,7 @@ export default function AlarmTimeSettingSection({
     hasPickedAlarmTime,
     isIosInlineAlarmPickerOpen,
     todoDateStr,
-    masterAlarmHHmm,
+    isInheritingRepeatAlarm,
     openModal,
   ]);
 

@@ -14,7 +14,7 @@ export default function AlarmPanel({
   setHasPickedAlarmTime,
   setIsIosInlineAlarmPickerOpen,
   todoDateStr,
-  masterAlarmHHmm,
+  isInheritingRepeatAlarm,
   onClosePanel,
 }) {
   if (!visible) return null;
@@ -35,7 +35,7 @@ export default function AlarmPanel({
         setHasPickedAlarmTime={setHasPickedAlarmTime}
         setIsIosInlineAlarmPickerOpen={setIsIosInlineAlarmPickerOpen}
         todoDateStr={todoDateStr}
-        masterAlarmHHmm={masterAlarmHHmm}
+        isInheritingRepeatAlarm={isInheritingRepeatAlarm}
         onClosePanel={onClosePanel}
       />
     </View>
