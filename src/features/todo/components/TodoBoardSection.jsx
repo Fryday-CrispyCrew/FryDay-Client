@@ -431,6 +431,31 @@ export default function TodoBoardSection({
       }
 
       if (isRecurringTodo(todo)) {
+        // 정책: 개별 알림/메모 만 변경한 경우 3가지 선택지 (반복 일정 수정) 모달 안 뜨게,
+        // 무조건 이 instance 만 override (scope THIS) 로 저장.
+        const payloadKeys = Object.keys(payload);
+        const individualOnlyKeys = new Set([
+          "isAlarmEnabled",
+          "alarmTime",
+          "memo",
+        ]);
+        const isIndividualOnly =
+          !isCancelRecurrence &&
+          payloadKeys.length > 0 &&
+          payloadKeys.every((k) => individualOnlyKeys.has(k));
+
+        if (isIndividualOnly) {
+          await updateTodoInstanceMutateAsync({
+            instanceId,
+            body: {
+              scope: INSTANCE_SCOPE.THIS,
+              payload,
+            },
+          });
+          onDone?.();
+          return;
+        }
+
         openRecurringEditModal({
           todo,
           payload,
@@ -439,14 +464,6 @@ export default function TodoBoardSection({
         });
         return;
       }
-
-      // console.log("instance update payload", {
-      //   instanceId,
-      //   body: {
-      //     scope: INSTANCE_SCOPE.THIS,
-      //     payload,
-      //   },
-      // });
 
       await updateTodoInstanceMutateAsync({
         instanceId,
