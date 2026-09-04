@@ -3,7 +3,7 @@
     "name": "FryDay",
     "slug": "FryDay",
     "scheme": "fryday",
-    "version": "1.2.0",
+    "version": "1.2.1",
     "orientation": "portrait",
     "icon": "./assets/fryday-icon.png",
     "userInterfaceStyle": "light",
@@ -143,7 +143,7 @@
       "expo-tracking-transparency",
       "@bacons/apple-targets"
     ],
-    "runtimeVersion": "1.2.0",
+    "runtimeVersion": "1.2.1",
     "owner": "frydayapp",
     "extra": {
       "eas": {
