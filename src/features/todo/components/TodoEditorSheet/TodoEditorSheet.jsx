@@ -44,6 +44,7 @@ import { useUpdateTodoMemoMutation } from "../../queries/sheet/content/useUpdate
 import { useSetTodoAlarmMutation } from "../../queries/sheet/alarm/useSetTodoAlarmMutation";
 import { useDeleteTodoAlarmMutation } from "../../queries/sheet/alarm/useDeleteTodoAlarmMutation";
 import { useCreateTodoRecurrenceMutation } from "../../queries/sheet/repeat/useCreateTodoRecurrenceMutation";
+import { useUpdateTodoInstanceMutation } from "../../queries/sheet/repeat/useUpdateTodoInstanceMutation";
 import { useUpdateTodoDateMutation } from "../../queries/sheet/date/useUpdateTodoDateMutation";
 
 import useTodoEditorFocus from "./hooks/useTodoEditorFocus";
@@ -145,7 +146,7 @@ const parseFrequencyValues = ({ type, frequencyValues }) => {
   return { weekdays: [], monthDays: [], yearMonths: [], yearDays: [] };
 };
 
-const mapRecurrenceToRepeatStore = (recurrence) => {
+const mapRecurrenceToRepeatStore = (recurrence, alarmSource = null) => {
   if (!recurrence) return null;
 
   const type = recurrence?.type ?? null;
@@ -163,10 +164,16 @@ const mapRecurrenceToRepeatStore = (recurrence) => {
 
   const nt = recurrence?.notificationTime ?? null;
 
+  // 정책 4.2.2 / FE 요청 3:
+  // 개별 알림 적용된 instance (alarmSource === "OVERRIDE" 또는 "NONE") 는
+  // 반복 알림 영역을 '미설정' 으로 표시. Master 자체는 유지되지만 이 회차에는 안 씀.
+  const isIndividualAlarmInstance =
+    alarmSource === "OVERRIDE" || alarmSource === "NONE";
+
   let repeatAlarm = "unset";
   let repeatAlarmTime = null;
 
-  if (nt) {
+  if (nt && !isIndividualAlarmInstance) {
     if (nt === "09:00:00") {
       repeatAlarm = "morning9";
     } else {
@@ -464,12 +471,17 @@ const TodoEditorSheet = React.forwardRef(function TodoEditorSheet(
     { enabled: mode === "edit" && !!numericTodoId },
   );
 
+  // 반복 Master 알림 상속 중 여부 (서버 상세 응답 alarmSource === "INHERIT").
+  // 이 상태 instance 에서 새 알림 입력 시 "새 알림 적용하기" 확인 모달 노출 (정책 4.2.2).
+  const isInheritingRepeatAlarm = todoDetail?.alarmSource === "INHERIT";
+
   const { mutateAsync: updateCategory } = useUpdateTodoCategoryMutation();
   const { mutateAsync: updateDescription } = useUpdateTodoDescriptionMutation();
   const { mutateAsync: updateMemo } = useUpdateTodoMemoMutation();
   const { mutateAsync: setAlarm } = useSetTodoAlarmMutation();
   const { mutateAsync: deleteAlarm } = useDeleteTodoAlarmMutation();
   const { mutateAsync: createRecurrence } = useCreateTodoRecurrenceMutation();
+  const { mutateAsync: updateTodoInstance } = useUpdateTodoInstanceMutation();
   const { mutateAsync: updateTodoDate } = useUpdateTodoDateMutation();
 
   const initialRef = useRef({
@@ -549,7 +561,24 @@ const TodoEditorSheet = React.forwardRef(function TodoEditorSheet(
     const categoryId =
       typeof todoDetail?.categoryId === "number" ? todoDetail.categoryId : null;
     const memo = todoDetail?.memo ?? "";
-    const notifyAt = todoDetail?.alarm?.notifyAt ?? null;
+
+    // FE 요청 3: alarmSource 에 따라 표시할 알림 결정.
+    // OVERRIDE → overrideAlarmTime (개별) 사용, NONE → 알림 없음, INHERIT/null → 기존 notifyAt (Master).
+    const alarmSource = todoDetail?.alarmSource ?? null;
+    let notifyAt = null;
+    if (alarmSource === "OVERRIDE") {
+      const ovTime = todoDetail?.overrideAlarmTime ?? null;
+      const dateOnly = todoDetail?.date ?? null;
+      if (ovTime && dateOnly) {
+        const hhmm = String(ovTime).slice(0, 5);
+        notifyAt = `${dateOnly}T${hhmm}:00`;
+      }
+    } else if (alarmSource === "NONE") {
+      notifyAt = null;
+    } else {
+      notifyAt = todoDetail?.alarm?.notifyAt ?? null;
+    }
+
     const dateStr = todoDetail?.date ?? null;
 
     initialRef.current = {
@@ -595,7 +624,7 @@ const TodoEditorSheet = React.forwardRef(function TodoEditorSheet(
     const repeatStore = useRepeatEditorStore.getState();
 
     if (recurrence) {
-      const mapped = mapRecurrenceToRepeatStore(recurrence);
+      const mapped = mapRecurrenceToRepeatStore(recurrence, todoDetail?.alarmSource);
       repeatStore.setRepeatAll(mapped);
       initialRecurrencePayloadRef.current = stableRecurrenceBody(
         buildInitialRecurrenceBodyFromDetail(recurrence),
@@ -886,19 +915,51 @@ const TodoEditorSheet = React.forwardRef(function TodoEditorSheet(
       );
     }
 
-    if (normalizeMemo(initial.memo) !== currentMemo) {
-      tasks.push(() => updateMemo({ todoId: numericTodoId, memo: currentMemo }));
-    }
+    // 반복 instance 는 알림/메모 변경 시 Instance Override 로 저장 (updateTodoInstance scope: THIS).
+    // 그 외 일반 todo 는 기존 setAlarm/deleteAlarm/updateMemo 사용.
+    const alarmChanged = initialNotifyAt !== currentNotifyAt;
+    const memoChanged = normalizeMemo(initial.memo) !== currentMemo;
+    const isRecurringInstance = !!todoDetail?.recurrence;
 
-    if (initialNotifyAt && !currentNotifyAt) {
-      tasks.push(() => deleteAlarm({ todoId: numericTodoId }));
-    } else if (initialNotifyAt !== currentNotifyAt && currentNotifyAt) {
+    if (isRecurringInstance && (alarmChanged || memoChanged)) {
+      // 알림 + 메모 를 하나의 override PATCH 로 묶어 전송
+      const payload = {};
+      if (alarmChanged) {
+        const alarmTimeStr = currentNotifyAt
+          ? String(currentNotifyAt).split("T")[1] ?? null
+          : null;
+        payload.isAlarmEnabled = !!alarmTimeStr;
+        payload.alarmTime = alarmTimeStr;
+      }
+      if (memoChanged) {
+        payload.memo = currentMemo;
+      }
       tasks.push(() =>
-        setAlarm({
-          todoId: numericTodoId,
-          notifyAt: currentNotifyAt,
+        updateTodoInstance({
+          instanceId: numericTodoId,
+          body: {
+            scope: "THIS",
+            payload,
+          },
         }),
       );
+    } else {
+      // 일반 todo — 기존 로직
+      if (memoChanged) {
+        tasks.push(() => updateMemo({ todoId: numericTodoId, memo: currentMemo }));
+      }
+      if (alarmChanged) {
+        if (initialNotifyAt && !currentNotifyAt) {
+          tasks.push(() => deleteAlarm({ todoId: numericTodoId }));
+        } else if (currentNotifyAt) {
+          tasks.push(() =>
+            setAlarm({
+              todoId: numericTodoId,
+              notifyAt: currentNotifyAt,
+            }),
+          );
+        }
+      }
     }
 
     if (repeatPayload) {
@@ -970,6 +1031,7 @@ const TodoEditorSheet = React.forwardRef(function TodoEditorSheet(
     updateMemo,
     deleteAlarm,
     setAlarm,
+    updateTodoInstance,
     createRecurrence,
     updateTodoDate,
     onSubmit,
@@ -1101,6 +1163,7 @@ const TodoEditorSheet = React.forwardRef(function TodoEditorSheet(
               setHasPickedAlarmTime={setHasPickedAlarmTime}
               setIsIosInlineAlarmPickerOpen={setIsIosInlineAlarmPickerOpen}
               todoDateStr={mode === "edit" ? todoDetail?.date : toYYYYMMDD(todoDate)}
+              isInheritingRepeatAlarm={isInheritingRepeatAlarm}
               onClosePanel={() => closePanelAndFocusTitle("alarm")}
             />
 
