@@ -32,6 +32,7 @@ export default function ModalHost() {
       footerSlot={footerSlot}
       closeOnBackdrop={props.closeOnBackdrop}
       showClose={props.showClose}
+      backdropColor={props.backdropColor}
       onClose={() => {
         props.onClose?.();
         close();
