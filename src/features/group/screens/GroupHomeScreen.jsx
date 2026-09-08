@@ -29,7 +29,7 @@ export default function GroupHomeScreen() {
   };
 
   const handleJoinGroup = () => {
-    // TODO: 그룹 참여 화면으로 이동
+    navigation.navigate("GroupJoin");
   };
 
   const handlePressGroup = (group) => {

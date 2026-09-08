@@ -113,17 +113,24 @@ export default function GroupCreateCompleteScreen() {
             </View>
           </SpeechBubble>
 
-          <LottieView
-            source={characterLottie}
-            autoPlay
-            loop
-            resizeMode="contain"
+          <View
             style={{
               width: LOTTIE_SIZE,
               height: LOTTIE_SIZE,
               marginTop: -20,
+              overflow: "hidden",
             }}
-          />
+          >
+            <LottieView
+              source={characterLottie}
+              autoPlay
+              loop
+              resizeMode="contain"
+              cacheComposition
+              renderMode="HARDWARE"
+              style={{ width: LOTTIE_SIZE, height: LOTTIE_SIZE }}
+            />
+          </View>
         </View>
 
         {/* 코드 섹션: 라벨 + 코드+복사 row. flex column + gap 8 */}

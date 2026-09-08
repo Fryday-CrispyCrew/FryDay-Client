@@ -15,89 +15,47 @@ import LottieView from "lottie-react-native";
 import AppText from "../../../shared/components/AppText";
 import PageHeader from "../../../shared/components/PageHeader";
 import SpeechBubble from "../components/SpeechBubble";
+import ClearIcon from "../../../shared/assets/svg/Clear.svg";
 import { useModalStore } from "../../../shared/stores/modal/modalStore";
 import colors from "../../../shared/styles/colors";
 import characterLottie from "../assets/lottie/character.json";
 
-// 입력 정책 (나중에 조정 편하게 변수로)
-const GROUP_NAME_MIN = 1;
-const GROUP_NAME_MAX = 10;
+// 입력 정책
+const GROUP_CODE_LENGTH = 6;
 
-export default function GroupCreateScreen() {
+export default function GroupJoinScreen() {
   const navigation = useNavigation();
-  const { width, height } = useWindowDimensions();
+  const { width } = useWindowDimensions();
   const openModal = useModalStore((s) => s.open);
 
   const [draft, setDraft] = useState("");
-  const [nameError, setNameError] = useState(null);
+  const [codeError, setCodeError] = useState(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
 
-  // submit 성공으로 navigate 하는 경우엔 beforeRemove 모달 인터셉트 스킵
   const skipQuitConfirmRef = useRef(false);
 
-  // 뒤로가기 시 확인 모달 (아직 그룹 제작 미완료 상태)
-  // 키보드 dismiss 후 애니메이션 끝날 때까지 대기 → 모달 오픈
-  // (키보드 hide + 모달 open 이 겹치면 로티 리레이아웃 찌부됨)
-  const openQuitConfirm = (proceedBack) => {
-    Keyboard.dismiss();
-    InteractionManager.runAfterInteractions(() => {
-      openModal({
-        title: "확인",
-        description: "아직 그룹을 제작하지 못했어요!\n그룹 제작을 그만둘까요?",
-        showClose: true,
-        closeOnBackdrop: true,
-        buttons: [
-          {
-            label: "아니요, 제작을 계속할래요",
-            variant: "primary",
-          },
-          {
-            label: "제작을 그만둘래요",
-            variant: "outline",
-            onPress: () => proceedBack(),
-          },
-        ],
-      });
-    });
-  };
-
-  // 헤더 back 버튼 → navigation.goBack() → usePreventRemove 가 모달로 인터셉트
-  const handleBackPress = () => {
-    navigation.goBack();
-  };
-
-  // native-stack 호환 back 인터셉트 (Android 하드웨어 back + 헤더 back)
-  // submit 성공 시 skipQuitConfirmRef 를 true 로 세팅해서 스킵
-  usePreventRemove(!skipQuitConfirmRef.current, ({ data }) => {
-    openQuitConfirm(() => {
-      skipQuitConfirmRef.current = true;
-      navigation.dispatch(data.action);
-    });
-  });
-
-  const trimmed = (draft ?? "").trim();
-
-  const isValidForButton =
-    trimmed.length >= GROUP_NAME_MIN && trimmed.length <= GROUP_NAME_MAX;
-  const isError = !!nameError;
+  const isValidForButton = draft.length === GROUP_CODE_LENGTH;
+  const isError = !!codeError;
 
   const errorMessage = useMemo(() => {
-    if (nameError === "tooLong") return `그룹명은 ${GROUP_NAME_MAX}자 이하로 입력해주세요`;
-    if (nameError === "duplicate") return "이미 사용 중인 그룹명이에요";
-    if (nameError === "network") return "잠시 후 다시 시도해주세요";
+    if (codeError === "notFound") return "존재하지 않는 그룹코드예요";
+    if (codeError === "already") return "이미 참여한 그룹이에요";
+    if (codeError === "full") return "그룹 멤버가 최대 인원을 도달했어요";
+    if (codeError === "network") return "잠시 후 다시 시도해주세요";
     return "";
-  }, [nameError]);
+  }, [codeError]);
 
-  const onChangeName = (text) => {
-    const raw = text ?? "";
-    // 앞뒤 공백은 유지 (조합 편의), 실제 검증은 trim 기준
-    const limited = raw.slice(0, GROUP_NAME_MAX + 1); // +1 로 초과 감지
+  const onChangeCode = (text) => {
+    // 알파벳/숫자만, 자동 대문자 변환
+    const filtered = (text ?? "").replace(/[^a-zA-Z0-9]/g, "").toUpperCase();
+    const limited = filtered.slice(0, GROUP_CODE_LENGTH);
     setDraft(limited);
+    if (codeError) setCodeError(null);
+  };
 
-    if (nameError) setNameError(null);
-    if ([...limited].length > GROUP_NAME_MAX) {
-      setNameError("tooLong");
-    }
+  const onClear = () => {
+    setDraft("");
+    if (codeError) setCodeError(null);
   };
 
   const onSubmit = async () => {
@@ -106,38 +64,69 @@ export default function GroupCreateScreen() {
 
     try {
       setIsSubmitting(true);
-      // TODO: 서버 API 로 그룹 생성 후 응답의 초대 코드로 교체
-      // const res = await createGroup({ name: trimmed });
-      // const groupCode = res.data.inviteCode;
-      const groupCode = "FRY123"; // mock
-
-      // replace 로 이동 → 백스택에 GroupCreate 남기지 않음 (Complete 에서 뒤로 = GroupHome)
-      skipQuitConfirmRef.current = true; // beforeRemove 모달 스킵
-      navigation.replace("GroupCreateComplete", { groupCode });
+      // TODO: 서버 API 로 그룹 참여 시도 후 다음 화면으로 이동
+      // await joinGroup({ code: draft });
+      // skipQuitConfirmRef.current = true;
+      // navigation.replace("GroupJoinComplete", { groupCode: draft });
     } catch (e) {
-      setNameError("network");
+      // 에러 코드에 따라 setCodeError("notFound" | "full" | "already" | "network")
+      setCodeError("network");
     } finally {
       setIsSubmitting(false);
     }
   };
 
+  // 뒤로가기 확인 모달
+  // 키보드 dismiss 후 애니메이션 끝날 때까지 대기 → 모달 오픈 (로티 찌부 방지)
+  const openQuitConfirm = (proceedBack) => {
+    Keyboard.dismiss();
+    InteractionManager.runAfterInteractions(() => {
+      openModal({
+        title: "확인",
+        description: "아직 그룹에 가입하지 못했어요!\n그룹 가입을 그만둘까요?",
+        showClose: true,
+        closeOnBackdrop: true,
+        buttons: [
+          {
+            label: "아니요, 가입을 계속할래요",
+            variant: "primary",
+          },
+          {
+            label: "가입을 그만둘래요",
+            variant: "outline",
+            onPress: () => proceedBack(),
+          },
+        ],
+      });
+    });
+  };
+
+  const handleBackPress = () => {
+    navigation.goBack();
+  };
+
+  // native-stack 호환 back 인터셉트 (usePreventRemove)
+  usePreventRemove(!skipQuitConfirmRef.current, ({ data }) => {
+    openQuitConfirm(() => {
+      skipQuitConfirmRef.current = true;
+      navigation.dispatch(data.action);
+    });
+  });
+
   const containerWidth = Math.min(width - 40, 520);
   const errorWidth = Math.min(Math.max(180, containerWidth * 0.55), 280);
-  const topPad = Math.max(18, height * 0.03);
-
-  // 캐릭터 + 그림자가 함께 들어있는 로티. 캔버스 160x160 로 크롭됨.
   const LOTTIE_SIZE = 160;
 
   return (
-    <SafeAreaView className="flex-1 bg-wt">
+    <SafeAreaView className="flex-1 bg-wt" edges={["top"]}>
       <PageHeader
-        title="그룹 만들기"
+        title="그룹 참여하기"
         showBackButton
         onBackPress={handleBackPress}
       />
 
       <View className="flex-1 px-5" style={{ paddingTop: 4 }}>
-        {/* 말풍선 + 캐릭터 + 그림자 */}
+        {/* 말풍선 + 캐릭터 */}
         <View style={{ alignItems: "center" }}>
           <SpeechBubble>
             <AppText
@@ -158,19 +147,18 @@ export default function GroupCreateScreen() {
                 variant="M600"
                 style={{ color: colors.or, lineHeight: 18 }}
               >
-                그룹의 이름
+                그룹 코드
               </AppText>
               <AppText
                 variant="M500"
                 className="text-gr900"
                 style={{ lineHeight: 18 }}
               >
-                을 알려주세요.
+                를 입력해 주세요.
               </AppText>
             </View>
           </SpeechBubble>
 
-          {/* 캐릭터 + 그림자 로티 - 말풍선 아래 붙게 (내부 캔버스 여백 상쇄) */}
           <View
             style={{
               width: LOTTIE_SIZE,
@@ -191,7 +179,7 @@ export default function GroupCreateScreen() {
           </View>
         </View>
 
-        {/* 입력 섹션: 라벨 + 인풋. flex column + gap 8 (Spacing/Sm) - 로티 덩어리와 16px 간격 */}
+        {/* 입력 섹션: 라벨 + 인풋. flex column + gap 8 */}
         <View
           style={{
             width: containerWidth,
@@ -203,10 +191,16 @@ export default function GroupCreateScreen() {
             marginTop: 16,
           }}
         >
-          {/* 라벨 + 에러 */}
-          <View style={{ flexDirection: "row", justifyContent: "space-between", alignItems: "flex-start", width: "100%" }}>
+          <View
+            style={{
+              flexDirection: "row",
+              justifyContent: "space-between",
+              alignItems: "flex-start",
+              width: "100%",
+            }}
+          >
             <AppText variant="M500" className="text-gr500">
-              그룹 이름은...
+              그룹 코드는...
             </AppText>
 
             <View style={{ width: errorWidth, alignItems: "flex-end" }}>
@@ -224,7 +218,6 @@ export default function GroupCreateScreen() {
             </View>
           </View>
 
-          {/* 입력창 - 버튼과 동일 height 48 */}
           <View
             style={{
               width: "100%",
@@ -235,19 +228,24 @@ export default function GroupCreateScreen() {
               paddingVertical: 0,
               borderWidth: 1,
               borderColor: isError ? "#F97316" : "#E5E7EB",
-              justifyContent: "center",
+              flexDirection: "row",
+              alignItems: "center",
+              justifyContent: "space-between",
             }}
           >
             <TextInput
               value={draft}
-              onChangeText={onChangeName}
-              placeholder={`그룹 이름을 ${GROUP_NAME_MAX}자 이내로 입력해 주세요`}
+              onChangeText={onChangeCode}
+              placeholder={`그룹 코드 ${GROUP_CODE_LENGTH}자를 입력해 주세요`}
               placeholderTextColor={colors.gr500}
-              maxLength={GROUP_NAME_MAX + 1}
+              maxLength={GROUP_CODE_LENGTH}
+              autoCapitalize="characters"
+              autoCorrect={false}
               returnKeyType="done"
               onSubmitEditing={onSubmit}
               style={{
-                fontFamily: "Pretendard-Medium", // L500
+                flex: 1,
+                fontFamily: "Pretendard-Medium",
                 fontSize: 14,
                 color: colors.bk,
                 paddingVertical: 0,
@@ -257,10 +255,21 @@ export default function GroupCreateScreen() {
                   : null),
               }}
             />
+
+            {!!draft?.length && (
+              <TouchableOpacity
+                activeOpacity={0.7}
+                onPress={onClear}
+                hitSlop={8}
+                style={{ marginLeft: 8, padding: 2 }}
+              >
+                <ClearIcon width={16} height={16} color={colors.gr300} />
+              </TouchableOpacity>
+            )}
           </View>
         </View>
 
-        {/* 다음으로 버튼 (오렌지) - 인풋과 20px 간격, 335x48, padding 12/0, radius 16 */}
+        {/* 다음으로 버튼 */}
         <TouchableOpacity
           activeOpacity={0.8}
           onPress={onSubmit}
@@ -277,7 +286,8 @@ export default function GroupCreateScreen() {
             justifyContent: "center",
             alignItems: "center",
             gap: 10,
-            backgroundColor: isValidForButton && !isSubmitting ? colors.or : colors.gr200,
+            backgroundColor:
+              isValidForButton && !isSubmitting ? colors.or : colors.gr200,
           }}
         >
           <AppText

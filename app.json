@@ -142,7 +142,7 @@
       ],
       "expo-tracking-transparency",
       "@bacons/apple-targets",
-      "react-native-share"
+      ["react-native-share", {}]
     ],
     "runtimeVersion": "1.2.1",
     "owner": "frydayapp",

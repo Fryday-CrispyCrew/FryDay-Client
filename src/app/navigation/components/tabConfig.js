@@ -19,4 +19,4 @@ export const TAB_CONFIG = {
 };
 
 // 탭바를 숨길 라우트 (Stack 내부 포함)
-export const HIDDEN_ROUTES = ["EditProfile", "Notice", "Use", "Qna", "Alarm", "Report", "GroupCreate", "GroupCreateComplete"];
+export const HIDDEN_ROUTES = ["EditProfile", "Notice", "Use", "Qna", "Alarm", "Report", "GroupCreate", "GroupCreateComplete", "GroupJoin"];
