@@ -33,7 +33,10 @@ export default function GroupHomeScreen() {
   };
 
   const handlePressGroup = (group) => {
-    // TODO: 그룹 상세로 이동
+    navigation.navigate("GroupDetail", {
+      groupId: group.id,
+      groupName: group.name,
+    });
   };
 
   return (
