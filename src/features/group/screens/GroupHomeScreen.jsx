@@ -1,6 +1,7 @@
 import React from "react";
 import { ScrollView, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
+import { useNavigation } from "@react-navigation/native";
 import GroupHomeHeader from "../components/GroupHomeHeader";
 import VerticalButton from "../../../shared/components/VerticalButton";
 import ChevronRight from "../../../shared/assets/svg/chevrons/ChevronRight";
@@ -10,6 +11,8 @@ import GroupHomeList from "../components/GroupHomeList";
 import colors from "../../../shared/styles/colors";
 
 export default function GroupHomeScreen() {
+  const navigation = useNavigation();
+
   // TODO: 서버 API 연동 - useGroupsQuery 등으로 대체
   const groups = [
     { id: 1, name: "그룹이름그룹이름그룹", current: 5, max: 10 },
@@ -22,7 +25,7 @@ export default function GroupHomeScreen() {
   const hasGroups = groups.length > 0;
 
   const handleCreateGroup = () => {
-    // TODO: 그룹 생성 화면으로 이동
+    navigation.navigate("GroupCreate");
   };
 
   const handleJoinGroup = () => {

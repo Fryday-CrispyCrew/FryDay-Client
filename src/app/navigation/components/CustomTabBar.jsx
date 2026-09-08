@@ -13,7 +13,6 @@ export default function CustomTabBar({state, navigation}) {
   const activeNestedRouteName = getDeepActiveRouteName(activeTabRoute);
 
   const shouldHide =
-    activeTabRoute?.name === "MyPage" &&
     !!activeNestedRouteName &&
     HIDDEN_ROUTES.includes(activeNestedRouteName);
 
