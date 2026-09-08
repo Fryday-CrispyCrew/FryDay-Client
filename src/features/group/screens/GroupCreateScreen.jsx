@@ -1,4 +1,4 @@
-import React, { useMemo, useState } from "react";
+import React, { useEffect, useMemo, useRef, useState } from "react";
 import {
   Platform,
   TextInput,
@@ -13,6 +13,7 @@ import LottieView from "lottie-react-native";
 import AppText from "../../../shared/components/AppText";
 import PageHeader from "../../../shared/components/PageHeader";
 import SpeechBubble from "../components/SpeechBubble";
+import { useModalStore } from "../../../shared/stores/modal/modalStore";
 import colors from "../../../shared/styles/colors";
 import characterLottie from "../assets/lottie/character.json";
 
@@ -23,10 +24,55 @@ const GROUP_NAME_MAX = 10;
 export default function GroupCreateScreen() {
   const navigation = useNavigation();
   const { width, height } = useWindowDimensions();
+  const openModal = useModalStore((s) => s.open);
 
   const [draft, setDraft] = useState("");
   const [nameError, setNameError] = useState(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
+
+  // submit 성공으로 navigate 하는 경우엔 beforeRemove 모달 인터셉트 스킵
+  const skipQuitConfirmRef = useRef(false);
+
+  // 뒤로가기 시 확인 모달 (아직 그룹 제작 미완료 상태)
+  const openQuitConfirm = (proceedBack) => {
+    openModal({
+      title: "확인",
+      description: "아직 그룹을 제작하지 못했어요!\n그룹 제작을 그만둘까요?",
+      showClose: true,
+      closeOnBackdrop: true,
+      buttons: [
+        {
+          label: "아니요, 제작을 계속할래요",
+          variant: "primary",
+          // primary tap: 모달만 닫고 화면 유지
+        },
+        {
+          label: "제작을 그만둘래요",
+          variant: "outline",
+          onPress: () => proceedBack(),
+        },
+      ],
+    });
+  };
+
+  // 헤더 back 버튼 → navigation.goBack() → beforeRemove 리스너가 인터셉트해서 모달
+  const handleBackPress = () => {
+    navigation.goBack();
+  };
+
+  // 하드웨어 back (Android) / 스와이프 back (iOS) 인터셉트
+  useEffect(() => {
+    const unsub = navigation.addListener("beforeRemove", (e) => {
+      // submit 성공으로 이동한 경우엔 스킵
+      if (skipQuitConfirmRef.current) return;
+      e.preventDefault();
+      openQuitConfirm(() => {
+        skipQuitConfirmRef.current = true;
+        navigation.dispatch(e.data.action);
+      });
+    });
+    return unsub;
+  }, [navigation]);
 
   const trimmed = (draft ?? "").trim();
 
@@ -59,8 +105,14 @@ export default function GroupCreateScreen() {
 
     try {
       setIsSubmitting(true);
-      // TODO: 다음 단계 화면으로 이동 (예: 인원 설정 / 생성 API)
-      // navigation.navigate("GroupCreateNext", { name: trimmed });
+      // TODO: 서버 API 로 그룹 생성 후 응답의 초대 코드로 교체
+      // const res = await createGroup({ name: trimmed });
+      // const groupCode = res.data.inviteCode;
+      const groupCode = "FRY123"; // mock
+
+      // replace 로 이동 → 백스택에 GroupCreate 남기지 않음 (Complete 에서 뒤로 = GroupHome)
+      skipQuitConfirmRef.current = true; // beforeRemove 모달 스킵
+      navigation.replace("GroupCreateComplete", { groupCode });
     } catch (e) {
       setNameError("network");
     } finally {
@@ -77,7 +129,11 @@ export default function GroupCreateScreen() {
 
   return (
     <SafeAreaView className="flex-1 bg-wt">
-      <PageHeader title="그룹 만들기" showBackButton />
+      <PageHeader
+        title="그룹 만들기"
+        showBackButton
+        onBackPress={handleBackPress}
+      />
 
       <View className="flex-1 px-5" style={{ paddingTop: 4 }}>
         {/* 말풍선 + 캐릭터 + 그림자 */}

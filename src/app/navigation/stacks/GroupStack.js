@@ -2,6 +2,7 @@ import React from "react";
 import { createNativeStackNavigator } from "@react-navigation/native-stack";
 import GroupHomeScreen from "../../../features/group/screens/GroupHomeScreen";
 import GroupCreateScreen from "../../../features/group/screens/GroupCreateScreen";
+import GroupCreateCompleteScreen from "../../../features/group/screens/GroupCreateCompleteScreen";
 
 const Stack = createNativeStackNavigator();
 
@@ -10,6 +11,7 @@ export default function GroupStack() {
     <Stack.Navigator screenOptions={{ headerShown: false }}>
       <Stack.Screen name="GroupHome" component={GroupHomeScreen} />
       <Stack.Screen name="GroupCreate" component={GroupCreateScreen} />
+      <Stack.Screen name="GroupCreateComplete" component={GroupCreateCompleteScreen} />
     </Stack.Navigator>
   );
 }
