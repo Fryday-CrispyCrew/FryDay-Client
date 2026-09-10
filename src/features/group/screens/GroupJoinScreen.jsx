@@ -32,7 +32,8 @@ export default function GroupJoinScreen() {
   const [codeError, setCodeError] = useState(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
 
-  const skipQuitConfirmRef = useRef(false);
+  // usePreventRemove 는 첫 인자를 useEffect deps 로 씀 → state 로 관리해야 재등록됨
+  const [skipQuitConfirm, setSkipQuitConfirm] = useState(false);
 
   const isValidForButton = draft.length === GROUP_CODE_LENGTH;
   const isError = !!codeError;
@@ -64,10 +65,16 @@ export default function GroupJoinScreen() {
 
     try {
       setIsSubmitting(true);
-      // TODO: 서버 API 로 그룹 참여 시도 후 다음 화면으로 이동
-      // await joinGroup({ code: draft });
-      // skipQuitConfirmRef.current = true;
-      // navigation.replace("GroupJoinComplete", { groupCode: draft });
+      // 새 플로우: 그룹 코드 확인 → 공개 카테고리 선택 → 해당 그룹 디테일로
+      // joinGroup API 는 CategorySelect 의 저장 시점에 { code, publicCategoryIds } 로 호출.
+      // preventRemove 훅이 state 재등록될 때까지 다음 tick 에서 navigate.
+      setSkipQuitConfirm(true);
+      setTimeout(() => {
+        navigation.replace("GroupCategorySelect", {
+          mode: "join",
+          groupCode: draft,
+        });
+      }, 0);
     } catch (e) {
       // 에러 코드에 따라 setCodeError("notFound" | "full" | "already" | "network")
       setCodeError("network");
@@ -106,9 +113,9 @@ export default function GroupJoinScreen() {
   };
 
   // native-stack 호환 back 인터셉트 (usePreventRemove)
-  usePreventRemove(!skipQuitConfirmRef.current, ({ data }) => {
+  usePreventRemove(!skipQuitConfirm, ({ data }) => {
     openQuitConfirm(() => {
-      skipQuitConfirmRef.current = true;
+      setSkipQuitConfirm(true);
       navigation.dispatch(data.action);
     });
   });

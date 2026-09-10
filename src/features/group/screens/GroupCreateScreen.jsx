@@ -33,7 +33,8 @@ export default function GroupCreateScreen() {
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   // submit 성공으로 navigate 하는 경우엔 beforeRemove 모달 인터셉트 스킵
-  const skipQuitConfirmRef = useRef(false);
+  // (state 로 관리해야 usePreventRemove 가 재등록되어 실제로 스킵됨)
+  const [skipQuitConfirm, setSkipQuitConfirm] = useState(false);
 
   // 뒤로가기 시 확인 모달 (아직 그룹 제작 미완료 상태)
   // 키보드 dismiss 후 애니메이션 끝날 때까지 대기 → 모달 오픈
@@ -67,10 +68,10 @@ export default function GroupCreateScreen() {
   };
 
   // native-stack 호환 back 인터셉트 (Android 하드웨어 back + 헤더 back)
-  // submit 성공 시 skipQuitConfirmRef 를 true 로 세팅해서 스킵
-  usePreventRemove(!skipQuitConfirmRef.current, ({ data }) => {
+  // submit 성공 시 skipQuitConfirm 을 true 로 세팅해서 훅 재등록 → 스킵
+  usePreventRemove(!skipQuitConfirm, ({ data }) => {
     openQuitConfirm(() => {
-      skipQuitConfirmRef.current = true;
+      setSkipQuitConfirm(true);
       navigation.dispatch(data.action);
     });
   });
@@ -106,14 +107,16 @@ export default function GroupCreateScreen() {
 
     try {
       setIsSubmitting(true);
-      // TODO: 서버 API 로 그룹 생성 후 응답의 초대 코드로 교체
-      // const res = await createGroup({ name: trimmed });
-      // const groupCode = res.data.inviteCode;
-      const groupCode = "FRY123"; // mock
-
-      // replace 로 이동 → 백스택에 GroupCreate 남기지 않음 (Complete 에서 뒤로 = GroupHome)
-      skipQuitConfirmRef.current = true; // beforeRemove 모달 스킵
-      navigation.replace("GroupCreateComplete", { groupCode });
+      // 새 플로우: 그룹 이름 저장 → 공개 카테고리 선택 → 완료 페이지
+      // createGroup API 는 CategorySelect 의 저장 시점에 { name, publicCategoryIds } 로 호출.
+      // preventRemove 훅이 state 재등록될 때까지 다음 tick 에서 navigate.
+      setSkipQuitConfirm(true);
+      setTimeout(() => {
+        navigation.replace("GroupCategorySelect", {
+          mode: "create",
+          groupName: trimmed,
+        });
+      }, 0);
     } catch (e) {
       setNameError("network");
     } finally {
