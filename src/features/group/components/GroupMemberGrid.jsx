@@ -7,10 +7,15 @@ import DottedDivider from "./DottedDivider";
  * 2열 그리드. 셀 사이/줄 사이에 점선 디바이더.
  * 캐릭터 그래픽은 부모가 illustration 슬롯으로 주입 (미주입 시 빈 상자).
  *
- * @prop {Array} members - [{ id, name, current, max, reactionLabel, reactionIcon }, ...]
+ * @prop {Array} members - [{ id, name, current, max, reactionType }, ...]
  * @prop {(m) => void} onPressReaction
+ * @prop {(m) => void} onPressGraphic - 멤버 그래픽 tap
  */
-export default function GroupMemberGrid({ members = [], onPressReaction }) {
+export default function GroupMemberGrid({
+  members = [],
+  onPressReaction,
+  onPressGraphic,
+}) {
   // 2개씩 묶어서 rows 구성
   const rows = [];
   for (let i = 0; i < members.length; i += 2) {
@@ -21,7 +26,11 @@ export default function GroupMemberGrid({ members = [], onPressReaction }) {
     <View style={{ width: "100%" }}>
       {rows.map((row, rowIdx) => (
         <React.Fragment key={rowIdx}>
-          <MemberRow row={row} onPressReaction={onPressReaction} />
+          <MemberRow
+            row={row}
+            onPressReaction={onPressReaction}
+            onPressGraphic={onPressGraphic}
+          />
 
           {/* 마지막 행 아래는 가로 점선 안 그림 */}
           {rowIdx < rows.length - 1 ? <StretchDottedH /> : null}
@@ -31,7 +40,7 @@ export default function GroupMemberGrid({ members = [], onPressReaction }) {
   );
 }
 
-function MemberRow({ row, onPressReaction }) {
+function MemberRow({ row, onPressReaction, onPressGraphic }) {
   const [rowHeight, setRowHeight] = useState(0);
 
   return (
@@ -45,6 +54,9 @@ function MemberRow({ row, onPressReaction }) {
             {...row[0]}
             onPressReaction={() =>
               onPressReaction && onPressReaction(row[0])
+            }
+            onPressGraphic={() =>
+              onPressGraphic && onPressGraphic(row[0])
             }
           />
         ) : null}
@@ -63,6 +75,9 @@ function MemberRow({ row, onPressReaction }) {
             {...row[1]}
             onPressReaction={() =>
               onPressReaction && onPressReaction(row[1])
+            }
+            onPressGraphic={() =>
+              onPressGraphic && onPressGraphic(row[1])
             }
           />
         ) : null}

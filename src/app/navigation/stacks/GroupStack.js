@@ -8,6 +8,7 @@ import GroupDetailScreen from "../../../features/group/screens/GroupDetailScreen
 import GroupSettingScreen from "../../../features/group/screens/GroupSettingScreen";
 import GroupNameEditScreen from "../../../features/group/screens/GroupNameEditScreen";
 import GroupCategorySelectScreen from "../../../features/group/screens/GroupCategorySelectScreen";
+import GroupMemberTodosScreen from "../../../features/group/screens/GroupMemberTodosScreen";
 
 const Stack = createNativeStackNavigator();
 
@@ -32,6 +33,10 @@ export default function GroupStack() {
       <Stack.Screen
         name="GroupCategorySelect"
         component={GroupCategorySelectScreen}
+      />
+      <Stack.Screen
+        name="GroupMemberTodos"
+        component={GroupMemberTodosScreen}
       />
     </Stack.Navigator>
   );

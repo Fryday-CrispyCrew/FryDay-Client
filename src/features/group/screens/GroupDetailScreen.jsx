@@ -62,6 +62,13 @@ export default function GroupDetailScreen() {
   const handleReaction = (member) => {
     // TODO: 서버 API - 응원 전송
   };
+  const handlePressMemberGraphic = (member) => {
+    navigation.navigate("GroupMemberTodos", {
+      groupName,
+      memberName: member.name,
+      memberId: member.id,
+    });
+  };
 
   return (
     <SafeAreaView className="flex-1 bg-wt" edges={["top"]}>
@@ -97,6 +104,7 @@ export default function GroupDetailScreen() {
           <GroupMemberGrid
             members={members}
             onPressReaction={handleReaction}
+            onPressGraphic={handlePressMemberGraphic}
           />
         </View>
       </ScrollView>
