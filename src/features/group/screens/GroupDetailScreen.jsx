@@ -43,9 +43,21 @@ export default function GroupDetailScreen() {
     { id: 4, name: "수정", current: 5, max: 12, reactionType: "deil" },
   ];
 
+  // 홈에서 넘겨준 params (없으면 mock default)
+  const isLeader = !!route?.params?.isLeader;
+  const currentMembers = route?.params?.current ?? members.length + 1;
+  const maxMembers = route?.params?.max ?? 10;
+
   const handleBack = () => navigation.goBack();
   const handleMenu = () => {
-    // TODO: 그룹 옵션 메뉴 (나가기 등)
+    // 그룹 관리 (설정) 화면으로 이동
+    navigation.navigate("GroupSetting", {
+      groupName,
+      isLeader,
+      current: currentMembers,
+      max: maxMembers,
+      groupCode: "FRY123", // TODO: 서버 응답으로 교체
+    });
   };
   const handleReaction = (member) => {
     // TODO: 서버 API - 응원 전송
@@ -56,7 +68,7 @@ export default function GroupDetailScreen() {
       <GroupDetailHeader
         date={date}
         groupName={groupName}
-        memberCount={members.length + 1}
+        memberCount={currentMembers}
         onBackPress={handleBack}
         onMenuPress={handleMenu}
       />

@@ -15,11 +15,11 @@ export default function GroupHomeScreen() {
 
   // TODO: 서버 API 연동 - useGroupsQuery 등으로 대체
   const groups = [
-    { id: 1, name: "그룹이름그룹이름그룹", current: 5, max: 10 },
-    { id: 2, name: "그룹이름그룹이름그룹", current: 5, max: 10 },
-    { id: 3, name: "그룹이름그룹이름그룹", current: 5, max: 10 },
-    { id: 4, name: "그룹이름그룹이름그룹", current: 5, max: 10 },
-    { id: 5, name: "그룹이름그룹이름그룹", current: 5, max: 10 },
+    { id: 1, name: "내가그룹장", current: 5, max: 10, isLeader: true },
+    { id: 2, name: "내가 그룹원", current: 5, max: 10, isLeader: false },
+    { id: 3, name: "그룹이름그룹이름그룹", current: 10, max: 10, isLeader: false },
+    { id: 4, name: "그룹이름그룹이름그룹", current: 5, max: 10, isLeader: false },
+    { id: 5, name: "그룹이름그룹이름그룹", current: 5, max: 10, isLeader: false },
   ];
 
   const hasGroups = groups.length > 0;
@@ -36,6 +36,9 @@ export default function GroupHomeScreen() {
     navigation.navigate("GroupDetail", {
       groupId: group.id,
       groupName: group.name,
+      isLeader: !!group.isLeader,
+      current: group.current,
+      max: group.max,
     });
   };
 
