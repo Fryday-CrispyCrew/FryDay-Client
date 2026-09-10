@@ -1,106 +1,68 @@
-import React, { useState } from "react";
+import React from "react";
 import { View } from "react-native";
-import Svg, { Path } from "react-native-svg";
 import AppText from "../../../shared/components/AppText";
+import DottedRound from "../assets/svg/dotted-round.svg";
 
 const RADIUS = 12;
 const DARK_BG = "rgba(20, 19, 18, 0.5)"; // gray-scale-transparency-text-50
-const DASH_COLOR = "rgba(250, 250, 250, 0.75)"; // surface-75
+
+// 크기 & 여백
+const OUTER_PAD_H = 5;
+const OUTER_PAD_V = 5;
+const INNER_W = 48; // 점선 pocket 가로 (얇게)
+const INNER_H = 52; // 점선 pocket 세로 (상단 공백 살짝 축소)
+const TEXT_BOTTOM = 10;
 
 /**
- * 본인 카드 우상단 "내 가게" 태그.
+ * 본인 카드 우상단 "내 가게" 포켓 태그.
  *
- * 스펙:
- * - 외곽: padding 24/12/12/12, bottom-only radius 12, bg 다크 반투명
- * - 내부: 3면(좌/하/우) 점선 outline, bottom-only radius 12, white 75%
- * - 텍스트: M600 12px, #FAFAFA, line-height 150%
- *
- * 내부 점선 outline 은 RN 의 borderStyle dashed 가 rounded corner 에서
- * 플랫폼 편차 심해서 react-native-svg Path 로 대신 그림.
+ * - 외곽: dark 반투명 rounded (하단만 12)
+ * - 내부: dotted-round.svg 로 점선 pocket outline (WT 75%)
+ * - 텍스트: M600 12px WT, 포켓 하단 근처에 위치 (상단 여백을 크게)
  */
 export default function MyStoreTag({ label = "내 가게" }) {
   return (
     <View
       style={{
-        // outer: dashed box 와 outer 경계 사이 12px 여백
-        padding: 12,
-        justifyContent: "center",
-        alignItems: "center",
         backgroundColor: DARK_BG,
         borderBottomLeftRadius: RADIUS,
         borderBottomRightRadius: RADIUS,
+        paddingHorizontal: OUTER_PAD_H,
+        paddingTop: 0, // 점선이 tag 최상단까지 닿게
+        paddingBottom: OUTER_PAD_V,
+        alignItems: "center",
       }}
     >
-      <InnerDashedBox>
+      <View
+        style={{
+          width: INNER_W,
+          height: INNER_H,
+          position: "relative",
+          alignItems: "center",
+          justifyContent: "flex-end",
+          paddingBottom: TEXT_BOTTOM,
+        }}
+      >
+        {/* 점선 pocket outline (정사각 SVG 를 가로세로 개별 stretch) */}
+        <DottedRound
+          width={INNER_W}
+          height={INNER_H}
+          preserveAspectRatio="none"
+          style={{ position: "absolute", top: 0, left: 0 }}
+        />
+
         <AppText
           variant="M600"
           style={{
             color: "#FAFAFA",
             fontSize: 12,
-            lineHeight: 18, // 150% of 12
+            lineHeight: 18,
             letterSpacing: 0.144,
           }}
         >
           {label}
         </AppText>
-      </InnerDashedBox>
+      </View>
     </View>
   );
-}
-
-/**
- * 3면(좌/하/우) 점선 border + bottom-only rounded 를 SVG 로 그리는 컨테이너.
- * 자식 콘텐츠 크기를 재고 그 위에 SVG 오버레이.
- */
-function InnerDashedBox({ children }) {
-  const [size, setSize] = useState({ w: 0, h: 0 });
-
-  return (
-    <View
-      style={{
-        // 내부 패딩 12만 — 텍스트와 점선 사이 간격이 12.
-        padding: 12,
-        position: "relative",
-      }}
-      onLayout={(e) =>
-        setSize({
-          w: e.nativeEvent.layout.width,
-          h: e.nativeEvent.layout.height,
-        })
-      }
-    >
-      {size.w > 0 && (
-        <Svg
-          width={size.w}
-          height={size.h}
-          style={{ position: "absolute", top: 0, left: 0 }}
-        >
-          <Path
-            d={buildBorderPath(size.w, size.h, RADIUS)}
-            fill="none"
-            stroke={DASH_COLOR}
-            strokeWidth={1}
-            strokeDasharray="3 3"
-            strokeLinecap="round"
-          />
-        </Svg>
-      )}
-      {children}
-    </View>
-  );
-}
-
-/**
- * top-open, bottom-rounded 3면 border path.
- * 좌상단 → 좌하단 → 우하단 → 우상단.
- */
-function buildBorderPath(w, h, r) {
-  return [
-    `M 0.5 0`,
-    `L 0.5 ${h - r}`,
-    `Q 0.5 ${h - 0.5} ${r} ${h - 0.5}`,
-    `L ${w - r} ${h - 0.5}`,
-    `Q ${w - 0.5} ${h - 0.5} ${w - 0.5} ${h - r}`,
-    `L ${w - 0.5} 0`,
-  ].join(" ");
 }

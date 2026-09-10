@@ -33,6 +33,8 @@ export default function GroupSelfCard({
         position: "relative",
         backgroundColor: colors.gr100,
         borderRadius: 20,
+        borderWidth: 1,
+        borderColor: colors.gr200,
         paddingHorizontal: 16,
         paddingVertical: 12,
         minHeight: 146,

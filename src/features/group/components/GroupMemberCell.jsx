@@ -38,17 +38,17 @@ export default function GroupMemberCell({
         {illustration}
       </View>
 
-      {/* 이름 */}
-      <AppText variant="L500" className="text-bk" style={{ marginTop: 8 }}>
+      {/* 이름 - L600 BK */}
+      <AppText variant="L600" className="text-bk" style={{ marginTop: 8 }}>
         {name}
       </AppText>
 
-      {/* n / m */}
-      <View style={{ flexDirection: "row", alignItems: "baseline", marginTop: 2 }}>
-        <AppText variant="M600" style={{ color: colors.or }}>
+      {/* 완료 / 미완료 투두 - 완료 L600 OR, 미완료 L500 GR500 - 이름과 4px 간격 */}
+      <View style={{ flexDirection: "row", alignItems: "baseline", marginTop: 4 }}>
+        <AppText variant="L600" style={{ color: colors.or }}>
           {current}
         </AppText>
-        <AppText variant="M500" className="text-gr500">
+        <AppText variant="L500" className="text-gr500">
           /{max}
         </AppText>
       </View>
