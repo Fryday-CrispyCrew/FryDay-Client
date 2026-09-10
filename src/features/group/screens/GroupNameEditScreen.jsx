@@ -129,31 +129,24 @@ export default function GroupNameEditScreen() {
         keyboardVerticalOffset={0}
       >
         <View className="flex-1 justify-between">
-          {/* 상단: 라벨 + 인풋 */}
-          <View className="px-5 mt-2 gap-2">
-            {/* 라벨 + 에러 */}
-            <View className="flex-row justify-between items-start">
-              <AppText variant="M500" className="text-gr500">
-                그룹 이름
-              </AppText>
-              <View style={{ width: errorWidth, alignItems: "flex-end" }}>
-                {isError ? (
-                  <AppText
-                    variant="S500"
-                    className="text-red-500"
-                    numberOfLines={1}
-                    ellipsizeMode="tail"
-                    style={{ textAlign: "right" }}
-                  >
-                    {errorMessage}
-                  </AppText>
-                ) : null}
-              </View>
-            </View>
+          {/* 상단 섹션: 라벨 / 인풋 / 에러 (column, gap 8) */}
+          <View
+            style={{
+              paddingHorizontal: 20,
+              marginTop: 8,
+              flexDirection: "column",
+              alignItems: "flex-start",
+              gap: 8,
+            }}
+          >
+            {/* 라벨 */}
+            <AppText variant="M500" className="text-gr500">
+              그룹 이름
+            </AppText>
 
             {/* 입력 카드 - bg WT / border GR100 (default) or orange (error), radius 16 */}
             <View
-              className="bg-wt px-5 py-4 self-center"
+              className="bg-wt px-5 py-4"
               style={{
                 width: containerWidth,
                 borderRadius: 16,
@@ -204,6 +197,13 @@ export default function GroupNameEditScreen() {
                 ) : null}
               </View>
             </View>
+
+            {/* 에러 메시지 - 인풋 아래, S400, gap 8 (column gap 으로 자동) */}
+            {isError ? (
+              <AppText variant="S400" className="text-red-500">
+                {errorMessage}
+              </AppText>
+            ) : null}
           </View>
 
           {/* 하단: 수정하기 버튼 (키보드 위 or 화면 하단 safe area 위) */}

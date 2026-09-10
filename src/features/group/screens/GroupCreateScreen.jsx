@@ -206,26 +206,10 @@ export default function GroupCreateScreen() {
             marginTop: 16,
           }}
         >
-          {/* 라벨 + 에러 */}
-          <View style={{ flexDirection: "row", justifyContent: "space-between", alignItems: "flex-start", width: "100%" }}>
-            <AppText variant="M500" className="text-gr500">
-              그룹 이름은...
-            </AppText>
-
-            <View style={{ width: errorWidth, alignItems: "flex-end" }}>
-              {isError ? (
-                <AppText
-                  variant="M500"
-                  className="text-red-500"
-                  numberOfLines={2}
-                  ellipsizeMode="tail"
-                  style={{ textAlign: "right" }}
-                >
-                  {errorMessage}
-                </AppText>
-              ) : null}
-            </View>
-          </View>
+          {/* 라벨 */}
+          <AppText variant="M500" className="text-gr500">
+            그룹 이름은...
+          </AppText>
 
           {/* 입력창 - 버튼과 동일 height 48 */}
           <View
@@ -261,6 +245,13 @@ export default function GroupCreateScreen() {
               }}
             />
           </View>
+
+          {/* 에러 - 인풋 아래, S400, gap 8 (column gap 으로 자동) */}
+          {isError ? (
+            <AppText variant="S400" className="text-red-500">
+              {errorMessage}
+            </AppText>
+          ) : null}
         </View>
 
         {/* 다음으로 버튼 (오렌지) - 인풋과 20px 간격, 335x48, padding 12/0, radius 16 */}

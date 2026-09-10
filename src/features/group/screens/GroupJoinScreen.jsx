@@ -41,10 +41,18 @@ export default function GroupJoinScreen() {
   const errorMessage = useMemo(() => {
     if (codeError === "notFound") return "존재하지 않는 그룹코드예요";
     if (codeError === "already") return "이미 참여한 그룹이에요";
-    if (codeError === "full") return "그룹 멤버가 최대 인원을 도달했어요";
+    if (codeError === "full") return "그룹 멤버가 최대 인원에 도달했어요";
     if (codeError === "network") return "잠시 후 다시 시도해주세요";
     return "";
   }, [codeError]);
+
+  // Mock 코드 → 에러 케이스 매핑 (실 API 붙기 전 테스트용)
+  // FRY111 = notFound, FRY222 = already, FRY333 = full, FRY123 = 성공
+  const MOCK_ERROR_MAP = {
+    FRY111: "notFound",
+    FRY222: "already",
+    FRY333: "full",
+  };
 
   const onChangeCode = (text) => {
     // 알파벳/숫자만, 자동 대문자 변환
@@ -62,6 +70,13 @@ export default function GroupJoinScreen() {
   const onSubmit = async () => {
     if (isSubmitting) return;
     if (!isValidForButton) return;
+
+    // Mock 에러 체크 (실 API 붙기 전) - FRY111/222/333 은 에러, 그 외는 성공
+    const mockError = MOCK_ERROR_MAP[draft];
+    if (mockError) {
+      setCodeError(mockError);
+      return;
+    }
 
     try {
       setIsSubmitting(true);
@@ -198,32 +213,10 @@ export default function GroupJoinScreen() {
             marginTop: 16,
           }}
         >
-          <View
-            style={{
-              flexDirection: "row",
-              justifyContent: "space-between",
-              alignItems: "flex-start",
-              width: "100%",
-            }}
-          >
-            <AppText variant="M500" className="text-gr500">
-              그룹 코드는...
-            </AppText>
-
-            <View style={{ width: errorWidth, alignItems: "flex-end" }}>
-              {isError ? (
-                <AppText
-                  variant="M500"
-                  className="text-red-500"
-                  numberOfLines={2}
-                  ellipsizeMode="tail"
-                  style={{ textAlign: "right" }}
-                >
-                  {errorMessage}
-                </AppText>
-              ) : null}
-            </View>
-          </View>
+          {/* 라벨 */}
+          <AppText variant="M500" className="text-gr500">
+            그룹 코드는...
+          </AppText>
 
           <View
             style={{
@@ -274,6 +267,13 @@ export default function GroupJoinScreen() {
               </TouchableOpacity>
             )}
           </View>
+
+          {/* 에러 - 인풋 아래, S400, gap 8 (column gap 으로 자동) */}
+          {isError ? (
+            <AppText variant="S400" className="text-red-500">
+              {errorMessage}
+            </AppText>
+          ) : null}
         </View>
 
         {/* 다음으로 버튼 */}
