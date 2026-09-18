@@ -268,12 +268,14 @@ export default function GroupJoinScreen() {
             )}
           </View>
 
-          {/* 에러 - 인풋 아래, S400, gap 8 (column gap 으로 자동) */}
-          {isError ? (
-            <AppText variant="S400" className="text-red-500">
-              {errorMessage}
-            </AppText>
-          ) : null}
+          {/* 에러 슬롯 - 항상 렌더해서 공간 예약 (에러 안뜰 땐 투명) */}
+          <AppText
+            variant="S400"
+            className={isError ? "text-red-500" : ""}
+            style={!isError ? { opacity: 0 } : undefined}
+          >
+            {errorMessage || " "}
+          </AppText>
         </View>
 
         {/* 다음으로 버튼 */}

@@ -24,6 +24,7 @@ export default function GroupMemberCell({
   current = 0,
   max = 10,
   reactionType = "bell",
+  reactionDisabled = false,
   onPressReaction,
   onPressGraphic,
 }) {
@@ -61,7 +62,11 @@ export default function GroupMemberCell({
 
       {/* 반응 버튼 */}
       <View style={{ marginTop: 12 }}>
-        <GroupReactionButton type={reactionType} onPress={onPressReaction} />
+        <GroupReactionButton
+          type={reactionType}
+          onPress={onPressReaction}
+          disabled={reactionDisabled}
+        />
       </View>
     </View>
   );

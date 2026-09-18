@@ -77,13 +77,18 @@ export default function GroupCreateScreen() {
   });
 
   const trimmed = (draft ?? "").trim();
+  const isWhitespaceOnly = draft.length > 0 && trimmed.length === 0;
 
   const isValidForButton =
-    trimmed.length >= GROUP_NAME_MIN && trimmed.length <= GROUP_NAME_MAX;
+    trimmed.length >= GROUP_NAME_MIN &&
+    trimmed.length <= GROUP_NAME_MAX &&
+    !isWhitespaceOnly &&
+    !nameError;
   const isError = !!nameError;
 
   const errorMessage = useMemo(() => {
     if (nameError === "tooLong") return `그룹명은 ${GROUP_NAME_MAX}자 이하로 입력해주세요`;
+    if (nameError === "whitespace") return "그룹 이름에는 공백만을 입력할 수 없어요";
     if (nameError === "duplicate") return "이미 사용 중인 그룹명이에요";
     if (nameError === "network") return "잠시 후 다시 시도해주세요";
     return "";
@@ -95,9 +100,14 @@ export default function GroupCreateScreen() {
     const limited = raw.slice(0, GROUP_NAME_MAX + 1); // +1 로 초과 감지
     setDraft(limited);
 
-    if (nameError) setNameError(null);
+    // 실시간 에러 판정
+    const t = limited.trim();
     if ([...limited].length > GROUP_NAME_MAX) {
       setNameError("tooLong");
+    } else if (limited.length > 0 && t.length === 0) {
+      setNameError("whitespace");
+    } else if (nameError && nameError !== "duplicate" && nameError !== "network") {
+      setNameError(null);
     }
   };
 
@@ -246,12 +256,14 @@ export default function GroupCreateScreen() {
             />
           </View>
 
-          {/* 에러 - 인풋 아래, S400, gap 8 (column gap 으로 자동) */}
-          {isError ? (
-            <AppText variant="S400" className="text-red-500">
-              {errorMessage}
-            </AppText>
-          ) : null}
+          {/* 에러 슬롯 - 항상 렌더해서 공간 예약 (에러 안뜰 땐 투명) */}
+          <AppText
+            variant="S400"
+            className={isError ? "text-red-500" : ""}
+            style={!isError ? { opacity: 0 } : undefined}
+          >
+            {errorMessage || " "}
+          </AppText>
         </View>
 
         {/* 다음으로 버튼 (오렌지) - 인풋과 20px 간격, 335x48, padding 12/0, radius 16 */}

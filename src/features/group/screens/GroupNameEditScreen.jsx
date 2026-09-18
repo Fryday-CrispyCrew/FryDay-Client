@@ -13,8 +13,6 @@ import { useNavigation, useRoute } from "@react-navigation/native";
 
 import AppText from "../../../shared/components/AppText";
 import PageHeader from "../../../shared/components/PageHeader";
-import CheckIcon from "../../../features/mypage/assets/svg/Check.svg";
-import ErrorIcon from "../../../features/mypage/assets/svg/Error.svg";
 import colors from "../../../shared/styles/colors";
 
 // 정책
@@ -88,12 +86,6 @@ export default function GroupNameEditScreen() {
     }
   };
 
-  const onClearError = () => {
-    setDraft(initialName);
-    setNameError(null);
-    inputRef.current?.focus?.();
-  };
-
   const onSubmit = async () => {
     if (isSubmitting) return;
     if (!isValid) return;
@@ -144,66 +136,51 @@ export default function GroupNameEditScreen() {
               그룹 이름
             </AppText>
 
-            {/* 입력 카드 - bg WT / border GR100 (default) or orange (error), radius 16 */}
+            {/* 입력창 - GroupCreate 와 동일 스타일 (height 48, radius 16, border GR100/orange) */}
             <View
-              className="bg-wt px-5 py-4"
               style={{
                 width: containerWidth,
+                height: 48,
+                backgroundColor: colors.wt,
                 borderRadius: 16,
+                paddingHorizontal: 16,
+                paddingVertical: 0,
                 borderWidth: 1,
-                borderColor: isError ? "#F97316" : colors.gr100,
+                borderColor: isError ? "#F97316" : "#E5E7EB",
+                justifyContent: "center",
               }}
             >
-              <View className="flex-row justify-between items-center">
-                <TextInput
-                  ref={inputRef}
-                  value={draft}
-                  onChangeText={onChangeName}
-                  placeholder={`그룹 이름을 ${GROUP_NAME_MAX}자 이내로 입력해 주세요`}
-                  placeholderTextColor={colors.gr500}
-                  maxLength={INPUT_MAX}
-                  autoFocus
-                  returnKeyType="done"
-                  onSubmitEditing={onSubmit}
-                  className="flex-1 font-pretendard-medium text-body-xl text-bk"
-                  style={{
-                    paddingVertical: 0,
-                    paddingHorizontal: 0,
-                    textAlignVertical: "center",
-                    ...(Platform.OS === "android"
-                      ? { includeFontPadding: false }
-                      : null),
-                  }}
-                />
-
-                {isError ? (
-                  <TouchableOpacity
-                    activeOpacity={0.7}
-                    hitSlop={10}
-                    onPress={onClearError}
-                  >
-                    <ErrorIcon width={24} height={24} />
-                  </TouchableOpacity>
-                ) : null}
-
-                {isValid ? (
-                  <TouchableOpacity
-                    activeOpacity={0.5}
-                    onPress={onSubmit}
-                    style={{ marginLeft: 10 }}
-                  >
-                    <CheckIcon width={24} height={24} />
-                  </TouchableOpacity>
-                ) : null}
-              </View>
+              <TextInput
+                ref={inputRef}
+                value={draft}
+                onChangeText={onChangeName}
+                placeholder={`그룹 이름을 ${GROUP_NAME_MAX}자 이내로 입력해 주세요`}
+                placeholderTextColor={colors.gr500}
+                maxLength={INPUT_MAX}
+                autoFocus
+                returnKeyType="done"
+                onSubmitEditing={onSubmit}
+                style={{
+                  fontFamily: "Pretendard-Medium",
+                  fontSize: 14,
+                  color: colors.bk,
+                  paddingVertical: 0,
+                  paddingHorizontal: 0,
+                  ...(Platform.OS === "android"
+                    ? { includeFontPadding: false }
+                    : null),
+                }}
+              />
             </View>
 
-            {/* 에러 메시지 - 인풋 아래, S400, gap 8 (column gap 으로 자동) */}
-            {isError ? (
-              <AppText variant="S400" className="text-red-500">
-                {errorMessage}
-              </AppText>
-            ) : null}
+            {/* 에러 슬롯 - 항상 렌더해서 공간 예약 (에러 안뜰 땐 투명) */}
+            <AppText
+              variant="S400"
+              className={isError ? "text-red-500" : ""}
+              style={!isError ? { opacity: 0 } : undefined}
+            >
+              {errorMessage || " "}
+            </AppText>
           </View>
 
           {/* 하단: 수정하기 버튼 (키보드 위 or 화면 하단 safe area 위) */}

@@ -10,11 +10,13 @@ import DottedDivider from "./DottedDivider";
  * @prop {Array} members - [{ id, name, current, max, reactionType }, ...]
  * @prop {(m) => void} onPressReaction
  * @prop {(m) => void} onPressGraphic - 멤버 그래픽 tap
+ * @prop {Record<id, boolean>} disabledMap - 반응 버튼 비활성 (30초 쿨다운 등)
  */
 export default function GroupMemberGrid({
   members = [],
   onPressReaction,
   onPressGraphic,
+  disabledMap = {},
 }) {
   // 2개씩 묶어서 rows 구성
   const rows = [];
@@ -30,6 +32,7 @@ export default function GroupMemberGrid({
             row={row}
             onPressReaction={onPressReaction}
             onPressGraphic={onPressGraphic}
+            disabledMap={disabledMap}
           />
 
           {/* 마지막 행 아래는 가로 점선 안 그림 */}
@@ -40,7 +43,7 @@ export default function GroupMemberGrid({
   );
 }
 
-function MemberRow({ row, onPressReaction, onPressGraphic }) {
+function MemberRow({ row, onPressReaction, onPressGraphic, disabledMap }) {
   const [rowHeight, setRowHeight] = useState(0);
 
   return (
@@ -52,6 +55,7 @@ function MemberRow({ row, onPressReaction, onPressGraphic }) {
         {row[0] ? (
           <GroupMemberCell
             {...row[0]}
+            reactionDisabled={!!disabledMap[row[0].id]}
             onPressReaction={() =>
               onPressReaction && onPressReaction(row[0])
             }
@@ -73,6 +77,7 @@ function MemberRow({ row, onPressReaction, onPressGraphic }) {
         {row[1] ? (
           <GroupMemberCell
             {...row[1]}
+            reactionDisabled={!!disabledMap[row[1].id]}
             onPressReaction={() =>
               onPressReaction && onPressReaction(row[1])
             }

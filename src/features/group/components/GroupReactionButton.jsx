@@ -61,7 +61,11 @@ export default function GroupReactionButton({
 
   return (
     <Animated.View
-      style={[{ transform: [{ scale }], alignSelf: "flex-start" }, style]}
+      style={[
+        { transform: [{ scale }], alignSelf: "flex-start" },
+        disabled && { opacity: 0.4 }, // 30초 쿨다운 등 disabled 시 시각적 표시
+        style,
+      ]}
     >
       <Pressable
         onPress={onPress}

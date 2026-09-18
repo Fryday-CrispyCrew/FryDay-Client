@@ -80,9 +80,9 @@ export default function GroupInviteCard({
           NameRow
         )}
 
-        {/* 그룹원 카운트 or 최대 안내 */}
+        {/* 그룹원 카운트 or 최대 안내 (에러 색상) */}
         {isFull ? (
-          <AppText variant="M500" style={{ color: colors.or }}>
+          <AppText variant="M500" className="text-red-500">
             최대 그룹원 수에 도달하여 더이상 초대할 수 없어요
           </AppText>
         ) : (
