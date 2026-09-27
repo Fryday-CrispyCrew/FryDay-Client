@@ -1,3 +1,4 @@
+import { queueGroupNotification } from "./lib/groupNotificationNavigation";
 // src/notifications/notifeeEvents.js
 import notifee, {EventType} from "@notifee/react-native";
 import {logNotificationClick} from "./lib/logNotificationClick";
@@ -14,6 +15,7 @@ export function registerNotifeeForegroundEvents() {
       } catch (e) {
         // console.log("error: ", e);
       }
+      if (await queueGroupNotification(data)) return;
       if (data?.todoId && navigationRef.isReady()) {
         navigationRef.navigate("TodoDetail", {todoId: data.todoId});
       }
