@@ -1,4 +1,4 @@
-import React, { useMemo, useRef, useState } from "react";
+import React, { useMemo, useState } from "react";
 import {
   InteractionManager,
   Keyboard,
@@ -16,16 +16,16 @@ import AppText from "../../../shared/components/AppText";
 import PageHeader from "../../../shared/components/PageHeader";
 import SpeechBubble from "../components/SpeechBubble";
 import { useModalStore } from "../../../shared/stores/modal/modalStore";
+import { getGroupNameError, isValidGroupName } from "../lib/groupName";
 import colors from "../../../shared/styles/colors";
 import characterLottie from "../assets/lottie/character.json";
 
 // 입력 정책 (나중에 조정 편하게 변수로)
-const GROUP_NAME_MIN = 1;
 const GROUP_NAME_MAX = 10;
 
 export default function GroupCreateScreen() {
   const navigation = useNavigation();
-  const { width, height } = useWindowDimensions();
+  const { width } = useWindowDimensions();
   const openModal = useModalStore((s) => s.open);
 
   const [draft, setDraft] = useState("");
@@ -77,38 +77,21 @@ export default function GroupCreateScreen() {
   });
 
   const trimmed = (draft ?? "").trim();
-  const isWhitespaceOnly = draft.length > 0 && trimmed.length === 0;
 
-  const isValidForButton =
-    trimmed.length >= GROUP_NAME_MIN &&
-    trimmed.length <= GROUP_NAME_MAX &&
-    !isWhitespaceOnly &&
-    !nameError;
+  const isValidForButton = isValidGroupName(draft);
   const isError = !!nameError;
 
   const errorMessage = useMemo(() => {
     if (nameError === "tooLong") return `그룹명은 ${GROUP_NAME_MAX}자 이하로 입력해주세요`;
     if (nameError === "whitespace") return "그룹 이름에는 공백만을 입력할 수 없어요";
-    if (nameError === "duplicate") return "이미 사용 중인 그룹명이에요";
+    if (nameError === "invalid") return "그룹 이름에는 이모지를 사용할 수 없어요";
     if (nameError === "network") return "잠시 후 다시 시도해주세요";
     return "";
   }, [nameError]);
 
   const onChangeName = (text) => {
-    const raw = text ?? "";
-    // 앞뒤 공백은 유지 (조합 편의), 실제 검증은 trim 기준
-    const limited = raw.slice(0, GROUP_NAME_MAX + 1); // +1 로 초과 감지
-    setDraft(limited);
-
-    // 실시간 에러 판정
-    const t = limited.trim();
-    if ([...limited].length > GROUP_NAME_MAX) {
-      setNameError("tooLong");
-    } else if (limited.length > 0 && t.length === 0) {
-      setNameError("whitespace");
-    } else if (nameError && nameError !== "duplicate" && nameError !== "network") {
-      setNameError(null);
-    }
+    setDraft(text ?? "");
+    setNameError(getGroupNameError(text ?? ""));
   };
 
   const onSubmit = async () => {
@@ -118,7 +101,7 @@ export default function GroupCreateScreen() {
     try {
       setIsSubmitting(true);
       // 새 플로우: 그룹 이름 저장 → 공개 카테고리 선택 → 완료 페이지
-      // createGroup API 는 CategorySelect 의 저장 시점에 { name, publicCategoryIds } 로 호출.
+      // 생성 후 선택한 공개 카테고리를 별도 API로 저장한다.
       // preventRemove 훅이 state 재등록될 때까지 다음 tick 에서 navigate.
       setSkipQuitConfirm(true);
       setTimeout(() => {
@@ -135,8 +118,6 @@ export default function GroupCreateScreen() {
   };
 
   const containerWidth = Math.min(width - 40, 520);
-  const errorWidth = Math.min(Math.max(180, containerWidth * 0.55), 280);
-  const topPad = Math.max(18, height * 0.03);
 
   // 캐릭터 + 그림자가 함께 들어있는 로티. 캔버스 160x160 로 크롭됨.
   const LOTTIE_SIZE = 160;
@@ -240,7 +221,6 @@ export default function GroupCreateScreen() {
               onChangeText={onChangeName}
               placeholder={`그룹 이름을 ${GROUP_NAME_MAX}자 이내로 입력해 주세요`}
               placeholderTextColor={colors.gr500}
-              maxLength={GROUP_NAME_MAX + 1}
               returnKeyType="done"
               onSubmitEditing={onSubmit}
               style={{

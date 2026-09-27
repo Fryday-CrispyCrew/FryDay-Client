@@ -1,4 +1,6 @@
 import React from "react";
+import { useGroupsQuery } from "../queries/groupQueries";
+import GroupQueryState from "../components/GroupQueryState";
 import { ScrollView, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { useNavigation } from "@react-navigation/native";
@@ -13,14 +15,14 @@ import colors from "../../../shared/styles/colors";
 export default function GroupHomeScreen() {
   const navigation = useNavigation();
 
-  // TODO: 서버 API 연동 - useGroupsQuery 등으로 대체
-  const groups = [
-    { id: 1, name: "내가그룹장", current: 5, max: 10, isLeader: true },
-    { id: 2, name: "내가 그룹원", current: 5, max: 10, isLeader: false },
-    { id: 3, name: "그룹이름그룹이름그룹", current: 10, max: 10, isLeader: false },
-    { id: 4, name: "그룹이름그룹이름그룹", current: 5, max: 10, isLeader: false },
-    { id: 5, name: "그룹이름그룹이름그룹", current: 5, max: 10, isLeader: false },
-  ];
+  const query = useGroupsQuery();
+  const groups = (query.data?.groups ?? []).map((group) => ({
+    id: group.groupId,
+    name: group.name,
+    current: group.memberCount,
+    max: group.maxMemberCount,
+    isLeader: group.myRole === "OWNER",
+  }));
 
   const hasGroups = groups.length > 0;
 
@@ -74,7 +76,9 @@ export default function GroupHomeScreen() {
           <Dotted width="100%" height={1} preserveAspectRatio="none" />
         </View>
 
-        {hasGroups ? (
+        {query.isPending || query.isError ? (
+          <GroupQueryState query={query} />
+        ) : hasGroups ? (
           <View style={{ marginTop: 24, paddingHorizontal: 20 }}>
             <GroupHomeList groups={groups} onPressGroup={handlePressGroup} />
           </View>

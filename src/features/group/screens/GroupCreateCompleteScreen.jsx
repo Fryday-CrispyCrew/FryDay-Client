@@ -16,16 +16,12 @@ import { toast } from "../../../shared/components/toast/CenterToast";
 import colors from "../../../shared/styles/colors";
 import characterLottie from "../assets/lottie/character.json";
 
-// 최대 인원수 (본인 포함 10명 → 초대 가능 인원 9명). 나중에 서버 스펙 확정되면 변수만 조정.
-const GROUP_MAX_MEMBERS = 10;
-const MAX_INVITE_COUNT = GROUP_MAX_MEMBERS - 1;
-
 export default function GroupCreateCompleteScreen() {
   const navigation = useNavigation();
   const route = useRoute();
   const { width } = useWindowDimensions();
 
-  // route 파라미터로 그룹 코드 받음. 없으면 임시값 (API 붙기 전까지).
+  const maxInviteCount = Math.max(0, (route.params?.maxMemberCount ?? 10) - 1);
   const groupCode = route?.params?.groupCode ?? "";
 
   const containerWidth = Math.min(width - 40, 520);
@@ -101,7 +97,7 @@ export default function GroupCreateCompleteScreen() {
                 variant="M600"
                 style={{ color: colors.or, lineHeight: 18 }}
               >
-                최대 {MAX_INVITE_COUNT}명의 친구를 초대
+                최대 {maxInviteCount}명의 친구를 초대
               </AppText>
               <AppText
                 variant="M500"

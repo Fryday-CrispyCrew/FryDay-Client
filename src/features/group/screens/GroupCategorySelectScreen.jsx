@@ -1,54 +1,52 @@
 import React, { useEffect, useMemo, useRef, useState } from "react";
 import { ScrollView, TouchableOpacity, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
-import { useNavigation, useRoute } from "@react-navigation/native";
+import { useNavigation, useRoute, usePreventRemove } from "@react-navigation/native";
 
 import AppText from "../../../shared/components/AppText";
 import PageHeader from "../../../shared/components/PageHeader";
 import CategoryCheckItem from "../components/CategoryCheckItem";
+import { groupApi } from "../api/groupApi";
+import { groupKeys, useGroupCategoriesQuery } from "../queries/groupQueries";
+import { useQueryClient } from "@tanstack/react-query";
+import GroupQueryState from "../components/GroupQueryState";
+import { toast } from "../../../shared/components/toast/CenterToast";
 import colors from "../../../shared/styles/colors";
 import { useCategoriesQuery } from "../../todo/queries/category/useCategoriesQuery";
 
-/**
- * 공개 카테고리 선택 화면.
- *
- * mode:
- * - "setting" (default): 그룹 관리에서 진입. 버튼 = "변경사항 저장하기"
- *   → onChange(selectedIds) 콜백 + goBack()
- * - "create": 그룹 만들기 플로우. 버튼 = "다음으로"
- *   → replace("GroupCreateComplete", { groupCode, publicCategoryIds })
- * - "join": 그룹 참여 플로우. 버튼 = "다음으로"
- *   → replace("GroupDetail", { 참여한 그룹 정보 + publicCategoryIds })
- *
- * 정책: 최소 1개 카테고리 선택 필수. 0개면 하단 버튼 disabled.
- * 디폴트: 전체 선택 (route.params.selectedIds 없을 때)
- *
- * TODO: 서버 API - 그룹별 공개 카테고리 저장/조회, createGroup/joinGroup 실제 호출
- */
 export default function GroupCategorySelectScreen() {
   const navigation = useNavigation();
   const route = useRoute();
 
   const mode = route?.params?.mode ?? "setting"; // "setting" | "create" | "join"
 
-  const { data: categories = [] } = useCategoriesQuery();
-
-  // 초기 선택 (없으면 null → 카테고리 로드 시 전체 선택)
-  const initialSelected = route?.params?.selectedIds ?? null;
-  const [selectedIds, setSelectedIds] = useState(initialSelected ?? []);
-
+  const client = useQueryClient();
+  const personalQuery = useCategoriesQuery({ enabled: mode !== "setting" });
+  const publicQuery = useGroupCategoriesQuery(mode === "setting" ? route.params?.groupId : null);
+  const query = mode === "setting" ? publicQuery : personalQuery;
+  const categories = useMemo(() => mode === "setting"
+    ? (publicQuery.data?.categories ?? []).map((c) => ({ ...c, id: c.categoryId }))
+    : personalQuery.data ?? [], [mode, publicQuery.data, personalQuery.data]);
+  const [selectedIds, setSelectedIds] = useState([]);
+  const [isSaving, setIsSaving] = useState(false);
+  const [nextNavigation, setNextNavigation] = useState(null);
+  const savingRef = useRef(false);
+  usePreventRemove(isSaving, () => {});
+  // 저장 중에는 replace/goBack도 차단된다. 가드가 해제된 렌더 이후 이동한다.
+  useEffect(() => {
+    if (isSaving || !nextNavigation) return;
+    setNextNavigation(null);
+    if (nextNavigation.back) navigation.goBack();
+    else navigation.replace(nextNavigation.name, nextNavigation.params);
+  }, [isSaving, nextNavigation, navigation]);
+  // 생성 성공 후 공개 설정만 실패해도 재시도 시 그룹을 중복 생성하지 않는다.
+  const createdGroupRef = useRef(route.params?.createdGroup ?? null);
   const initedRef = useRef(false);
   useEffect(() => {
-    if (initedRef.current) return;
-    if (initialSelected !== null) {
-      initedRef.current = true;
-      return;
-    }
-    if (categories.length > 0) {
-      setSelectedIds(categories.map((c) => c.id));
-      initedRef.current = true;
-    }
-  }, [categories, initialSelected]);
+    if (initedRef.current || !query.isSuccess) return;
+    setSelectedIds(categories.filter((c) => mode !== "setting" || c.isPublic).map((c) => c.id));
+    initedRef.current = true;
+  }, [categories, mode, query.isSuccess]);
 
   const toggleCategory = (categoryId, next) => {
     setSelectedIds((prev) => {
@@ -59,45 +57,47 @@ export default function GroupCategorySelectScreen() {
     });
   };
 
-  const canSave = selectedIds.length >= 1;
+  const canSave = selectedIds.length >= 1 && query.isSuccess && !isSaving && !nextNavigation;
 
   const buttonLabel = useMemo(() => {
     if (mode === "setting") return "변경사항 저장하기";
     return "다음으로";
   }, [mode]);
 
-  const handleSave = () => {
-    if (!canSave) return;
-
-    if (mode === "create") {
-      // TODO: createGroup({ name: params.groupName, publicCategoryIds: selectedIds })
-      const groupCode = "FRY123"; // mock
-      navigation.replace("GroupCreateComplete", {
-        groupCode,
-        publicCategoryIds: selectedIds,
-      });
-      return;
+  const handleSave = async () => {
+    if (!canSave || savingRef.current) return;
+    savingRef.current = true;
+    setIsSaving(true);
+    try {
+      if (mode === "create") {
+        if (!createdGroupRef.current) {
+          createdGroupRef.current = await groupApi.createGroup(route.params.groupName);
+          navigation.setParams({ createdGroup: createdGroupRef.current });
+          void client.invalidateQueries({ queryKey: groupKeys.list() });
+        }
+        const group = createdGroupRef.current;
+        await groupApi.updatePublicCategories({ groupId: group.groupId, categoryIds: selectedIds });
+        setNextNavigation({ name: "GroupCreateComplete", params: { groupId: group.groupId, groupCode: group.inviteCode, maxMemberCount: group.maxMemberCount } });
+      } else if (mode === "join") {
+        const group = await groupApi.joinGroup({ inviteCode: route.params.groupCode, categoryIds: selectedIds });
+        setNextNavigation({ name: "GroupDetail", params: { groupId: group.groupId } });
+      } else {
+        await groupApi.updatePublicCategories({ groupId: route.params.groupId, categoryIds: selectedIds });
+        setNextNavigation({ back: true });
+      }
+      void client.invalidateQueries({ queryKey: groupKeys.all });
+    } catch (error) {
+      if (mode === "join") {
+        const status = error.response?.status;
+        toast.show(status === 404 ? "존재하지 않는 그룹코드예요" : status === 409
+          ? "이미 참여했거나 정원이 가득 찬 그룹이에요" : "그룹에 참여하지 못했어요. 다시 시도해주세요", { position: "center" });
+      } else if (createdGroupRef.current) {
+        toast.show("그룹은 생성됐지만 공개 설정을 저장하지 못했어요. 다시 저장해주세요", { position: "center" });
+      }
+    } finally {
+      savingRef.current = false;
+      setIsSaving(false);
     }
-
-    if (mode === "join") {
-      // TODO: joinGroup({ code: params.groupCode, publicCategoryIds: selectedIds })
-      // 참여한 그룹의 실제 정보로 GroupDetail 진입 (mock)
-      const joined = {
-        groupId: route?.params?.groupId ?? 999,
-        groupName: route?.params?.groupName ?? "참여한 그룹",
-        isLeader: false,
-        current: 5,
-        max: 10,
-        publicCategoryIds: selectedIds,
-      };
-      navigation.replace("GroupDetail", joined);
-      return;
-    }
-
-    // setting mode
-    const onChange = route?.params?.onChange;
-    onChange?.(selectedIds);
-    navigation.goBack();
   };
 
   return (
@@ -115,7 +115,14 @@ export default function GroupCategorySelectScreen() {
           contentContainerStyle={{ paddingBottom: 24 }}
         >
           <View style={{ paddingHorizontal: 20, paddingTop: 4 }}>
-            {categories.length === 0 ? (
+            {mode === "join" && route.params?.groupName ? (
+              <AppText variant="M600" style={{ marginBottom: 16 }}>
+                {route.params.groupName} 그룹에 공개할 카테고리를 선택해 주세요
+              </AppText>
+            ) : null}
+            {query.isPending || query.isError ? (
+              <GroupQueryState query={query} />
+            ) : categories.length === 0 ? (
               <AppText
                 variant="M500"
                 className="text-gr500"

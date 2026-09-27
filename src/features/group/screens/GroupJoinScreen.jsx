@@ -17,6 +17,7 @@ import PageHeader from "../../../shared/components/PageHeader";
 import SpeechBubble from "../components/SpeechBubble";
 import ClearIcon from "../../../shared/assets/svg/Clear.svg";
 import { useModalStore } from "../../../shared/stores/modal/modalStore";
+import { groupApi } from "../api/groupApi";
 import colors from "../../../shared/styles/colors";
 import characterLottie from "../assets/lottie/character.json";
 
@@ -31,6 +32,7 @@ export default function GroupJoinScreen() {
   const [draft, setDraft] = useState("");
   const [codeError, setCodeError] = useState(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const submittingRef = useRef(false);
 
   // usePreventRemove 는 첫 인자를 useEffect deps 로 씀 → state 로 관리해야 재등록됨
   const [skipQuitConfirm, setSkipQuitConfirm] = useState(false);
@@ -46,14 +48,6 @@ export default function GroupJoinScreen() {
     return "";
   }, [codeError]);
 
-  // Mock 코드 → 에러 케이스 매핑 (실 API 붙기 전 테스트용)
-  // FRY111 = notFound, FRY222 = already, FRY333 = full, FRY123 = 성공
-  const MOCK_ERROR_MAP = {
-    FRY111: "notFound",
-    FRY222: "already",
-    FRY333: "full",
-  };
-
   const onChangeCode = (text) => {
     // 알파벳/숫자만, 자동 대문자 변환
     const filtered = (text ?? "").replace(/[^a-zA-Z0-9]/g, "").toUpperCase();
@@ -68,32 +62,28 @@ export default function GroupJoinScreen() {
   };
 
   const onSubmit = async () => {
-    if (isSubmitting) return;
+    if (submittingRef.current) return;
     if (!isValidForButton) return;
 
-    // Mock 에러 체크 (실 API 붙기 전) - FRY111/222/333 은 에러, 그 외는 성공
-    const mockError = MOCK_ERROR_MAP[draft];
-    if (mockError) {
-      setCodeError(mockError);
-      return;
-    }
-
+    submittingRef.current = true;
     try {
       setIsSubmitting(true);
-      // 새 플로우: 그룹 코드 확인 → 공개 카테고리 선택 → 해당 그룹 디테일로
-      // joinGroup API 는 CategorySelect 의 저장 시점에 { code, publicCategoryIds } 로 호출.
-      // preventRemove 훅이 state 재등록될 때까지 다음 tick 에서 navigate.
+      const group = await groupApi.getInvite(draft);
+      if (group.alreadyJoined) return setCodeError("already");
+      if (group.full) return setCodeError("full");
       setSkipQuitConfirm(true);
       setTimeout(() => {
         navigation.replace("GroupCategorySelect", {
           mode: "join",
           groupCode: draft,
+          groupId: group.groupId,
+          groupName: group.name,
         });
       }, 0);
     } catch (e) {
-      // 에러 코드에 따라 setCodeError("notFound" | "full" | "already" | "network")
-      setCodeError("network");
+      setCodeError(e.response?.status === 404 ? "notFound" : "network");
     } finally {
+      submittingRef.current = false;
       setIsSubmitting(false);
     }
   };
