@@ -1,4 +1,4 @@
-import React, { useEffect, useMemo, useRef, useState } from "react";
+import React, { useMemo, useRef, useState } from "react";
 import { ScrollView, Share, TouchableOpacity, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { useNavigation, useRoute } from "@react-navigation/native";
@@ -11,7 +11,9 @@ import SettingToggle from "../components/SettingToggle";
 import GroupInviteCard from "../components/GroupInviteCard";
 import { useModalStore } from "../../../shared/stores/modal/modalStore";
 import { toast } from "../../../shared/components/toast/CenterToast";
-import { useCategoriesQuery } from "../../todo/queries/category/useCategoriesQuery";
+import { groupApi } from "../api/groupApi";
+import { useGroupQuery, useGroupNotificationQuery, useGroupMutation } from "../queries/groupQueries";
+import GroupQueryState from "../components/GroupQueryState";
 import colors from "../../../shared/styles/colors";
 
 const GROUP_MAX_MEMBERS = 10;
@@ -22,43 +24,56 @@ const GROUP_MAX_MEMBERS = 10;
  * - 그룹 설정: 알림 토글 + 공개 카테고리 설정
  * - 하단: 그룹 삭제(그룹장) / 그룹 나가기(그룹원) → 모달 확인 → 토스트 + 홈 이동
  *
- * TODO: 서버 API - 그룹 상세, 알림 on/off, 공개 카테고리 조회/저장, 삭제, 나가기
  */
 export default function GroupSettingScreen() {
   const navigation = useNavigation();
   const route = useRoute();
   const openModal = useModalStore((s) => s.open);
 
-  // 그룹장/그룹원 (mock - route.params.isLeader)
-  const isLeader = !!route?.params?.isLeader;
-  const groupName = route?.params?.groupName ?? "그룹이름그룹이름그룹";
-  const groupCode = route?.params?.groupCode ?? "FRY123";
-  const current = route?.params?.current ?? 5;
-  const max = route?.params?.max ?? GROUP_MAX_MEMBERS;
-
+  const groupId = route.params?.groupId;
+  const query = useGroupQuery(groupId);
+  const notificationQuery = useGroupNotificationQuery(groupId);
+  const updateNotification = useGroupMutation(groupApi.updateNotification);
+  const removeGroup = useGroupMutation(groupApi.deleteGroup);
+  const leaveGroup = useGroupMutation(groupApi.leaveGroup);
+  const group = query.data;
+  const isLeader = group?.myRole === "OWNER";
+  const groupName = group?.name ?? "";
+  const groupCode = group?.inviteCode ?? "";
+  const current = group?.memberCount ?? 0;
+  const max = group?.maxMemberCount ?? GROUP_MAX_MEMBERS;
   const isFull = current >= max;
-
-  // 로컬 상태 (mock; API 붙기 전까지)
-  const [alarmOn, setAlarmOn] = useState(true);
-  const [publicCategoryIds, setPublicCategoryIds] = useState(null); // null = 미초기화 → 전체 공개 default
+  const alarmOn = notificationQuery.data?.enabled ?? false;
   const [copied, setCopied] = useState(false);
+  const publicText = `${group?.myPublicCategoryCount ?? 0}개 공개`;
+  const removingRef = useRef(false);
+  const changingNotificationRef = useRef(false);
 
-  // 공개 카테고리 default = 전체 다 true (아직 유저가 만진 적 없으면)
-  const { data: categories = [] } = useCategoriesQuery();
-  const initedPublicRef = useRef(false);
-  useEffect(() => {
-    if (initedPublicRef.current) return;
-    if (categories.length > 0 && publicCategoryIds === null) {
-      setPublicCategoryIds(categories.map((c) => c.id));
-      initedPublicRef.current = true;
+  const handleToggleNotification = async (enabled) => {
+    if (changingNotificationRef.current || !notificationQuery.isSuccess) return;
+    changingNotificationRef.current = true;
+    try {
+      await updateNotification.mutateAsync({ groupId, enabled });
+      await notificationQuery.refetch();
+    } catch {
+      // 공통 API 오류 토스트 사용. 실패 시 서버 설정을 그대로 표시한다.
+    } finally {
+      changingNotificationRef.current = false;
     }
-  }, [categories, publicCategoryIds]);
+  };
 
-  const publicText = useMemo(() => {
-    if (publicCategoryIds === null) return ""; // 아직 초기화 전
-    if (publicCategoryIds.length === 0) return "비공개";
-    return `${publicCategoryIds.length}개 공개`;
-  }, [publicCategoryIds]);
+  const handleRemove = async () => {
+    if (removingRef.current) return;
+    removingRef.current = true;
+    try {
+      await (isLeader ? removeGroup : leaveGroup).mutateAsync(groupId);
+      navigateToHomeWithToast(isLeader ? `${groupName} 그룹을 삭제했어요` : `${groupName} 그룹에서 나왔어요`);
+    } catch {
+      // 실패 시 현재 화면 유지.
+    } finally {
+      removingRef.current = false;
+    }
+  };
 
   const inviteText = useMemo(
     () => `우리 같이 할 일 같이 튀겨볼래?\n그룹 코드 : ${groupCode}`,
@@ -66,7 +81,7 @@ export default function GroupSettingScreen() {
   );
 
   const handlePressName = () => {
-    navigation.navigate("GroupNameEdit", { currentName: groupName });
+    navigation.navigate("GroupNameEdit", { groupId, currentName: groupName });
   };
 
   const handleCopy = async () => {
@@ -96,9 +111,8 @@ export default function GroupSettingScreen() {
 
   const handleOpenCategorySelect = () => {
     navigation.navigate("GroupCategorySelect", {
-      // null 이면 자식에서 전체 선택 default 로 초기화됨
-      selectedIds: publicCategoryIds,
-      onChange: (nextIds) => setPublicCategoryIds(nextIds),
+      groupId,
+      mode: "setting",
     });
   };
 
@@ -114,10 +128,7 @@ export default function GroupSettingScreen() {
           {
             label: "그룹을 삭제할래요",
             variant: "outline",
-            onPress: () => {
-              // TODO: 서버 API - deleteGroup
-              navigateToHomeWithToast(`${groupName} 그룹을 삭제했어요`);
-            },
+            onPress: handleRemove,
           },
         ],
       });
@@ -132,10 +143,7 @@ export default function GroupSettingScreen() {
           {
             label: "그룹에서 나갈래요",
             variant: "outline",
-            onPress: () => {
-              // TODO: 서버 API - leaveGroup
-              navigateToHomeWithToast(`${groupName} 그룹에서 나왔어요`);
-            },
+            onPress: handleRemove,
           },
         ],
       });
@@ -149,6 +157,13 @@ export default function GroupSettingScreen() {
       toast.show(message, { position: "center", duration: 2000 });
     }, 250);
   };
+
+  if (query.isPending || query.isError) return (
+    <SafeAreaView className="bg-gr flex-1" edges={["top"]}>
+      <PageHeader title="그룹 관리" showBackButton />
+      <GroupQueryState query={query} />
+    </SafeAreaView>
+  );
 
   return (
     <SafeAreaView className="bg-gr flex-1" edges={["top"]}>
@@ -187,8 +202,9 @@ export default function GroupSettingScreen() {
           >
             <SettingRow
               title="그룹 알림"
-              trailing={<SettingToggle value={alarmOn} onToggle={setAlarmOn} />}
+              trailing={<SettingToggle value={alarmOn} onToggle={handleToggleNotification} disabled={!notificationQuery.isSuccess || updateNotification.isPending || notificationQuery.isFetching} />}
             />
+            {notificationQuery.isError && <GroupQueryState query={notificationQuery} />}
             <View style={{ height: 1, backgroundColor: colors.gr100, marginHorizontal: 12 }} />
             <SettingRow
               title="공개 카테고리 설정"
@@ -204,6 +220,7 @@ export default function GroupSettingScreen() {
           <TouchableOpacity
             activeOpacity={0.7}
             onPress={handleDangerPress}
+            disabled={removeGroup.isPending || leaveGroup.isPending}
             style={{
               backgroundColor: colors.wt,
               borderRadius: 16,
