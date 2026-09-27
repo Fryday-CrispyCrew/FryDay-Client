@@ -119,7 +119,9 @@ api.interceptors.response.use(
       return Promise.reject(error);
     }
 
-    if ([401, 403].includes(error.response?.status) && !originalRequest._retry) {
+    const shouldRefresh = error.response?.status === 401 ||
+      (error.response?.status === 403 && !originalRequest.meta?.skipForbiddenRefresh);
+    if (shouldRefresh && !originalRequest._retry) {
       originalRequest._retry = true;
 
       let newAccessToken;
