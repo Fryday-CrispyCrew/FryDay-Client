@@ -2,11 +2,12 @@ import React from "react";
 import { TouchableOpacity, View } from "react-native";
 import AppText from "../../../shared/components/AppText";
 import GroupReactionButton from "./GroupReactionButton";
+import GroupStoreImage from "./GroupStoreImage";
 import colors from "../../../shared/styles/colors";
 
 /**
  * 그룹 상세 그리드의 멤버 셀. (2열 그리드 안의 한 칸)
- * 상단: 캐릭터/집 그래픽 슬롯 (외부 주입, 없으면 비어있음)
+ * 상단: 서버 영업 상태에 맞는 가게 이미지 (외부 illustration 주입 시 우선 사용)
  *   → 탭 시 onPressGraphic 발동 (해당 멤버의 공개 투두 화면으로 이동)
  * 하단: 이름 · 카운트 · 반응 버튼
  *
@@ -20,6 +21,7 @@ import colors from "../../../shared/styles/colors";
  */
 export default function GroupMemberCell({
   illustration,
+  status,
   name,
   current = 0,
   max = 10,
@@ -42,7 +44,7 @@ export default function GroupMemberCell({
           justifyContent: "center",
         }}
       >
-        {illustration}
+        {illustration ?? <GroupStoreImage status={status} />}
       </TouchableOpacity>
 
       {/* 이름 - L600 BK */}
