@@ -1,32 +1,20 @@
 import React, { useMemo, useState } from "react";
-import { ScrollView, TouchableOpacity, View } from "react-native";
+import { RefreshControl, ScrollView, TouchableOpacity, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { useNavigation, useRoute } from "@react-navigation/native";
-import LottieView from "lottie-react-native";
 
 import AppText from "../../../shared/components/AppText";
 import ChevronIcon from "../../../shared/components/ChevronIcon";
 import DottedDivider from "../components/DottedDivider";
 import TodoRadioOffIcon from "../../todo/assets/svg/RadioOff.svg";
 import TodoRadioOnIcon from "../../todo/assets/svg/RadioOn.svg";
+import LottieView from "lottie-react-native";
 import { TodoLottie } from "../../todo/assets/lottie";
+import { getLottieKeyFromStatus } from "../../todo/lib/characterPresentation";
+import GroupQueryState from "../components/GroupQueryState";
+import { useGroupMemberTodosQuery } from "../queries/groupQueries";
+import { toPublicTodoSections } from "../lib/groupMemberTodos";
 import colors from "../../../shared/styles/colors";
-
-// 홈 화면의 status → lottie key 매핑 재사용
-function getLottieKeyFromStatus(status) {
-  switch (status) {
-    case "CASE_A": return "caseA";
-    case "CASE_B": return "caseB";
-    case "CASE_C": return "caseC";
-    case "CASE_D": return "caseD";
-    case "CASE_E1": return "caseE1";
-    case "CASE_E2": return "caseE2";
-    case "CASE_F": return "caseF";
-    case "CASE_G": return "caseG";
-    case "CASE_H": return "caseH";
-    default: return null;
-  }
-}
 
 /**
  * 그룹 멤버의 공개 투두 열람 화면 (read-only).
@@ -34,8 +22,6 @@ function getLottieKeyFromStatus(status) {
  *
  * - Header: 그룹명 (subtitle, M500 GR500) + "{name}님의 튀김 가게" (H3 BK) + back
  * - Body: 캐릭터/그래픽 슬롯 + 말풍선 + 카테고리 섹션들 (읽기 전용)
- *
- * TODO: 서버 API - 그룹 멤버 공개 투두 조회
  */
 export default function GroupMemberTodosScreen() {
   const navigation = useNavigation();
@@ -43,35 +29,15 @@ export default function GroupMemberTodosScreen() {
 
   const groupName = route?.params?.groupName ?? "";
   const memberName = route?.params?.memberName ?? "";
-  const cheerMessage =
-    route?.params?.cheerMessage ?? "얘 나 까먹었나봐...";
-
-  // 캐릭터 status: 백엔드가 시간/투두 완료율 등을 계산해서 CASE_A~H 로 내려줌.
-  // 프론트는 매핑만. mock default 는 스켈레톤 확인용이라 아무거나(A).
-  // TODO: useGroupMemberCharacterQuery(memberId) → status 리턴
-  const memberStatus = route?.params?.status ?? "CASE_A";
-  const lottieKey = useMemo(
-    () => getLottieKeyFromStatus(memberStatus),
-    [memberStatus],
-  );
-
-  // TODO: 서버 응답으로 교체
+  const { groupId, memberId } = route.params ?? {};
+  const query = useGroupMemberTodosQuery(groupId, memberId);
   const publicSections = useMemo(
-    () => [
-      {
-        categoryId: 1,
-        label: "카테고리 이름",
-        color: colors.or,
-        todos: [
-          { id: "t1", title: "연우님 기획 차력쇼 감상", done: false },
-          { id: "t2", title: "수정님의 UX 연구 발표", done: false },
-          { id: "t3", title: "영오님의 시장 조사 결과 공유", done: false },
-          { id: "t4", title: "기현님의 시장 조사 결과 공유", done: false },
-        ],
-      },
-    ],
-    [],
+    () => toPublicTodoSections(query.data?.categories),
+    [query.data],
   );
+  const characterStatus = query.data?.characterStatus;
+  const lottieKey = getLottieKeyFromStatus(characterStatus?.status);
+  const canShowData = query.isSuccess;
 
   return (
     <SafeAreaView className="flex-1 bg-wt" edges={["top"]}>
@@ -118,43 +84,52 @@ export default function GroupMemberTodosScreen() {
         showsVerticalScrollIndicator={false}
         keyboardShouldPersistTaps="handled"
         className="px-5"
+        refreshControl={
+          <RefreshControl refreshing={query.isRefetching} onRefresh={() => query.refetch()} />
+        }
       >
-        {/* 캐릭터 섹션 (247h, w-72% aspect-1, 말풍선 absolute top 3%) */}
-        <View
-          className="w-full items-center justify-center pt-[13px]"
-          style={{ height: 247 }}
-        >
-          <HomeStyleBubble text={cheerMessage} />
-
-          <View
-            className="relative w-[72%]"
-            style={{ aspectRatio: 1, maxHeight: "100%" }}
-          >
-            {lottieKey && TodoLottie[lottieKey] ? (
-              <LottieView
-                source={TodoLottie[lottieKey]}
-                autoPlay
-                loop={false}
-                style={{ position: "absolute", width: "100%", height: "100%" }}
-              />
-            ) : null}
-          </View>
-        </View>
-
+        {!canShowData ? <GroupQueryState query={query} /> : (
+          <>
+            <View className="w-full items-center justify-center pt-[13px]" style={{ height: 247 }}>
+              <HomeStyleBubble text={characterStatus?.description} />
+              <View
+                className="relative w-[72%]"
+                style={{ aspectRatio: 1, maxHeight: "100%" }}
+              >
+                {lottieKey && (
+                  <LottieView
+                    key={`${memberId}:${lottieKey}`}
+                    source={TodoLottie[lottieKey]}
+                    autoPlay
+                    loop={false}
+                    style={{ position: "absolute", width: "100%", height: "100%" }}
+                  />
+                )}
+              </View>
+            </View>
+            <AppText variant="S400" className="text-gr500">
+              {query.data?.date} 기준 공개된 할 일
+            </AppText>
         {/* 상단 가로 점선 */}
         <View className="mt-3">
           <StretchDottedH />
         </View>
 
         {/* 공개 카테고리 섹션들 (read-only) */}
-        {publicSections.map((section) => (
-          <CategorySection key={section.categoryId} section={section} />
+        {publicSections.length === 0 ? (
+          <AppText variant="M500" className="text-gr500" style={{ paddingVertical: 24 }}>
+            공개된 카테고리가 없어요
+          </AppText>
+        ) : publicSections.map((section) => (
+          <CategorySection key={`${memberId}:${section.categoryId}`} section={section} />
         ))}
 
         {/* 하단 가로 점선 */}
         <View className="mt-2 mb-10">
           <StretchDottedH />
         </View>
+          </>
+        )}
       </ScrollView>
     </SafeAreaView>
   );
@@ -233,6 +208,11 @@ function CategorySection({ section }) {
       {/* 투두 리스트 (read-only) */}
       {open ? (
         <View style={{ marginTop: 12 }}>
+          {section.todos.length === 0 && (
+            <AppText variant="M500" className="text-gr500" style={{ paddingVertical: 12 }}>
+              오늘 등록된 할 일이 없어요
+            </AppText>
+          )}
           {section.todos.map((todo) => (
             <ReadOnlyTodoRow key={todo.id} todo={todo} color={color} />
           ))}
