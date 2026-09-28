@@ -49,10 +49,14 @@ export default function GroupCategorySelectScreen() {
   }, [categories, mode, query.isSuccess]);
 
   const toggleCategory = (categoryId, next) => {
+    if (!next && selectedIds.length === 1 && selectedIds.includes(categoryId)) {
+      toast.show("공개 카테고리는 최소 1개 이상 선택해야 해요", { position: "center" });
+      return;
+    }
     setSelectedIds((prev) => {
       const isIn = prev.includes(categoryId);
       if (next && !isIn) return [...prev, categoryId];
-      if (!next && isIn) return prev.filter((id) => id !== categoryId);
+      if (!next && isIn && prev.length > 1) return prev.filter((id) => id !== categoryId);
       return prev;
     });
   };
