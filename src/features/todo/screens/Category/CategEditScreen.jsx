@@ -89,6 +89,17 @@ export default function CategEditScreen({ navigation, route }) {
 
   const { mutate: deleteCategory, isPending: isDeleting } =
     useDeleteCategoryMutation({
+      onError: (error) => {
+        if (error.code !== "LAST_GROUP_PUBLIC_CATEGORY") return;
+        openModal({
+          title: "공개 카테고리를 해제해주세요",
+          description:
+            "그룹에는 공개 카테고리가 1개 이상 필요해요.\n다른 카테고리를 먼저 공개한 뒤,\n이 카테고리는 공개 해제 후 삭제해주세요.",
+          closeOnBackdrop: true,
+          showClose: true,
+          primary: { label: "확인", variant: "primary" },
+        });
+      },
       onSuccess: async () => {
         await queryClient.refetchQueries({ queryKey: categoryKeys.list() });
         navigation.goBack();
