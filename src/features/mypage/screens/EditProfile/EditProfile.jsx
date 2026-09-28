@@ -3,7 +3,7 @@ import {
     TextInput,
     TouchableOpacity,
     View,
-    Pressable,
+    KeyboardAvoidingView,
     Keyboard,
     useWindowDimensions,
     Platform,
@@ -21,7 +21,8 @@ import ErrorIcon from "../../assets/svg/Error.svg";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import * as SecureStore from "expo-secure-store";
 
-import { useCheckNicknameQuery } from "../../../auth/queries/nickname/useCheckNicknameQuery";
+import { nicknameApi } from "../../../auth/queries/nickname/nicknameApi";
+import colors from "../../../../shared/styles/colors";
 import { updateMyNickname } from "../../api/profileApi";
 
 import ConfirmModal from "../../components/ConfirmModal";
@@ -45,6 +46,8 @@ export default function EditProfile({ navigation }) {
     const [nicknameError, setNicknameError] = useState(null);
 
     const inputRef = useRef(null);
+    const submittingRef = useRef(false);
+    const [isSubmitting, setIsSubmitting] = useState(false);
     const safeNick = (nickName ?? "").trim();
     const safeDraft = draftNickName ?? "";
     const trimmed = safeDraft.trim();
@@ -52,10 +55,8 @@ export default function EditProfile({ navigation }) {
     const isChanged = trimmed && trimmed !== safeNick;
     const isNeutral = !isChanged || trimmed.length < 2;
     const isError = !isNeutral && !!nicknameError;
-    const isValid = !isNeutral && !nicknameError;
-
-    const [debouncedCheck, setDebouncedCheck] = useState("");
-    const checkQuery = useCheckNicknameQuery(debouncedCheck, { enabled: false });
+    const isValid = !isNeutral && !nicknameError
+        && trimmed.length <= NICKNAME_MAX && FINAL_ALLOWED_REGEX.test(trimmed);
 
     const containerWidth = Math.min(width - 40, 520);
     const errorWidth = Math.min(Math.max(180, containerWidth * 0.55), 280);
@@ -121,6 +122,7 @@ export default function EditProfile({ navigation }) {
     };
 
     const finishEdit = async () => {
+        if (submittingRef.current) return;
         const v = (draftNickName ?? "").trim();
 
         if (v.length > NICKNAME_MAX) {
@@ -139,17 +141,13 @@ export default function EditProfile({ navigation }) {
         if (v.length > NICKNAME_MAX) return setNicknameError("tooLong");
         if (!FINAL_ALLOWED_REGEX.test(v)) return setNicknameError("invalid");
 
+        submittingRef.current = true;
+        setIsSubmitting(true);
         try {
-            setDebouncedCheck(v);
-            const res = await checkQuery.refetch();
-            const available = res?.data?.available ?? res?.data?.data?.available;
+            const res = await nicknameApi.checkNickname({ nickname: v });
+            const available = res?.available ?? res?.data?.available;
             if (available === false) return setNicknameError("duplicate");
             if (available == null) return setNicknameError("network");
-        } catch {
-            return setNicknameError("network");
-        }
-
-        try {
             await updateMyNickname(v, { skipErrorToast: true });
             await Promise.allSettled([
                 AsyncStorage.setItem("nickname", v),
@@ -162,6 +160,9 @@ export default function EditProfile({ navigation }) {
             Keyboard.dismiss();
         } catch {
             setNicknameError("network");
+        } finally {
+            submittingRef.current = false;
+            setIsSubmitting(false);
         }
     };
 
@@ -181,14 +182,12 @@ export default function EditProfile({ navigation }) {
         <SafeAreaView className="bg-gr flex-1" edges={["top", "bottom"]}>
             <MyPageHeader showBackButton title="계정 설정" />
 
-            <Pressable
-                className="flex-1"
-                onPress={() => {
-                    if (isEditing) finishEdit();
-                    else Keyboard.dismiss();
-                }}
+            <KeyboardAvoidingView
+                style={{ flex: 1 }}
+                behavior={Platform.OS === "ios" ? "padding" : undefined}
             >
                 <ScrollView
+                    style={{ flex: 1 }}
                     showsVerticalScrollIndicator={false}
                     keyboardShouldPersistTaps="handled"
                     contentContainerStyle={{ paddingBottom: contentPaddingBottom }}
@@ -230,8 +229,9 @@ export default function EditProfile({ navigation }) {
                                             onChangeText={onChangeNickname}
                                             maxLength={NICKNAME_MAX + 1}
                                             autoFocus
-                                            onBlur={finishEdit}
+                                            editable={!isSubmitting}
                                             returnKeyType="done"
+                                            submitBehavior="submit"
                                             onSubmitEditing={finishEdit}
                                             className="text-[16px] text-bk flex-1"
                                             style={{
@@ -264,6 +264,7 @@ export default function EditProfile({ navigation }) {
                                             <TouchableOpacity
                                                 activeOpacity={0.5}
                                                 onPress={finishEdit}
+                                                disabled={isSubmitting}
                                                 style={{ marginLeft: 10 }}
                                             >
                                                 <CheckIcon width={24} height={24} />
@@ -312,7 +313,33 @@ export default function EditProfile({ navigation }) {
                         </View>
                     </View>
                 </ScrollView>
-            </Pressable>
+                {isEditing ? (
+                    <View style={{ paddingHorizontal: 20, paddingTop: 8, paddingBottom: 16 }}>
+                        <TouchableOpacity
+                            accessibilityRole="button"
+                            activeOpacity={0.8}
+                            onPress={finishEdit}
+                            disabled={!isValid || isSubmitting}
+                            style={{
+                                width: containerWidth,
+                                alignSelf: "center",
+                                height: 48,
+                                borderRadius: 16,
+                                alignItems: "center",
+                                justifyContent: "center",
+                                backgroundColor: isValid && !isSubmitting ? colors.or : colors.gr200,
+                            }}
+                        >
+                            <AppText
+                                variant="L600"
+                                style={{ color: isValid && !isSubmitting ? colors.wt : colors.gr300 }}
+                            >
+                                수정하기
+                            </AppText>
+                        </TouchableOpacity>
+                    </View>
+                ) : null}
+            </KeyboardAvoidingView>
 
             <ConfirmModal
                 visible={modalType === "logout"}
