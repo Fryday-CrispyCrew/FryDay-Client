@@ -19,6 +19,7 @@ export default function GroupHomeScreen() {
   const groups = (query.data?.groups ?? []).map((group) => ({
     id: group.groupId,
     name: group.name,
+    imageCode: group.imageCode,
     current: group.memberCount,
     max: group.maxMemberCount,
     isLeader: group.myRole === "OWNER",

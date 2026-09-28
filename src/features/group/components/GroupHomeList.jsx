@@ -21,6 +21,7 @@ export default function GroupHomeList({ groups = [], onPressGroup }) {
           <GroupHomeCard
             key={g.id}
             name={g.name}
+            imageCode={g.imageCode}
             current={g.current}
             max={g.max}
             onPress={() => onPressGroup?.(g)}

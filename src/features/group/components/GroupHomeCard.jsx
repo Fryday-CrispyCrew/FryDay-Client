@@ -1,8 +1,14 @@
 import React from "react";
-import { TouchableOpacity, View } from "react-native";
+import { Image, TouchableOpacity, View } from "react-native";
 import AppText from "../../../shared/components/AppText";
 import ChevronRight from "../../../shared/assets/svg/chevrons/ChevronRight";
 import colors from "../../../shared/styles/colors";
+
+const GROUP_IMAGES = {
+  "01": require("../assets/png/Group_Img_01.png"),
+  "02": require("../assets/png/Group_Img_02.png"),
+  "03": require("../assets/png/Group_Img_03.png"),
+};
 
 /**
  * 그룹 리스트 아이템 (하나의 그룹 카드).
@@ -10,11 +16,13 @@ import colors from "../../../shared/styles/colors";
  * @prop {string} name - 그룹명
  * @prop {number} current - 현재 인원수
  * @prop {number} max - 최대 인원수 (기본 10)
- * @prop {ReactNode} illustration - 좌측 일러스트 슬롯 (없으면 하양 placeholder)
+ * @prop {string} imageCode - 서버가 배정한 그룹 이미지 코드
+ * @prop {ReactNode} illustration - 좌측 일러스트를 직접 지정할 때 사용
  * @prop {() => void} onPress
  */
 export default function GroupHomeCard({
   name,
+  imageCode,
   current = 0,
   max = 10,
   illustration,
@@ -32,7 +40,7 @@ export default function GroupHomeCard({
         paddingVertical: 12,
       }}
     >
-      {/* 좌측 일러스트 슬롯 (나중에 이미지 넣을 자리) */}
+      {/* 서버에서 배정한 그룹 이미지 */}
       <View
         style={{
           width: 44,
@@ -40,7 +48,13 @@ export default function GroupHomeCard({
           overflow: "hidden",
         }}
       >
-        {illustration}
+        {illustration ?? (GROUP_IMAGES[imageCode] ? (
+          <Image
+            source={GROUP_IMAGES[imageCode]}
+            style={{ width: 44, height: 44 }}
+            resizeMode="contain"
+          />
+        ) : null)}
       </View>
 
       {/* 그룹명 + 인원 */}
