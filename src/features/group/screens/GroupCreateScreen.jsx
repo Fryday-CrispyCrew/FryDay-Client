@@ -16,7 +16,7 @@ import AppText from "../../../shared/components/AppText";
 import PageHeader from "../../../shared/components/PageHeader";
 import SpeechBubble from "../components/SpeechBubble";
 import { useModalStore } from "../../../shared/stores/modal/modalStore";
-import { getGroupNameError, isValidGroupName } from "../lib/groupName";
+import { getGroupNameError, isValidGroupName, sanitizeGroupName } from "../lib/groupName";
 import colors from "../../../shared/styles/colors";
 import characterLottie from "../assets/lottie/character.json";
 
@@ -83,15 +83,16 @@ export default function GroupCreateScreen() {
 
   const errorMessage = useMemo(() => {
     if (nameError === "tooLong") return `그룹명은 ${GROUP_NAME_MAX}자 이하로 입력해주세요`;
-    if (nameError === "whitespace") return "그룹 이름에는 공백만을 입력할 수 없어요";
+    if (nameError === "whitespace") return "그룹 이름에는 공백을 입력할 수 없어요";
     if (nameError === "invalid") return "그룹 이름에는 이모지를 사용할 수 없어요";
     if (nameError === "network") return "잠시 후 다시 시도해주세요";
     return "";
   }, [nameError]);
 
   const onChangeName = (text) => {
-    setDraft(text ?? "");
-    setNameError(getGroupNameError(text ?? ""));
+    const filtered = sanitizeGroupName(text ?? "");
+    setDraft(filtered);
+    setNameError(getGroupNameError(filtered));
   };
 
   const onSubmit = async () => {
@@ -219,6 +220,7 @@ export default function GroupCreateScreen() {
             <TextInput
               value={draft}
               onChangeText={onChangeName}
+              maxLength={11}
               placeholder={`그룹 이름을 ${GROUP_NAME_MAX}자 이내로 입력해 주세요`}
               placeholderTextColor={colors.gr500}
               returnKeyType="done"

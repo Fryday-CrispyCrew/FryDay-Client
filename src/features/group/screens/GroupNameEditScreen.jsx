@@ -13,7 +13,7 @@ import { useNavigation, useRoute } from "@react-navigation/native";
 
 import AppText from "../../../shared/components/AppText";
 import PageHeader from "../../../shared/components/PageHeader";
-import { getGroupNameError, isValidGroupName } from "../lib/groupName";
+import { getGroupNameError, isValidGroupName, sanitizeGroupName } from "../lib/groupName";
 import { groupApi } from "../api/groupApi";
 import { useGroupMutation } from "../queries/groupQueries";
 import colors from "../../../shared/styles/colors";
@@ -57,14 +57,15 @@ export default function GroupNameEditScreen() {
       return `그룹 이름은 공백 제외 ${GROUP_NAME_MAX}자까지 입력 가능해요`;
     if (nameError === "invalid")
       return "그룹 이름에는 이모지를 사용할 수 없어요";
-    if (nameError === "whitespace") return "그룹 이름에는 공백만을 입력할 수 없어요";
+    if (nameError === "whitespace") return "그룹 이름에는 공백을 입력할 수 없어요";
     if (nameError === "network") return "잠시 후 다시 시도해주세요";
     return "";
   }, [nameError]);
 
   const onChangeName = (text) => {
-    setDraft(text ?? "");
-    setNameError(getGroupNameError(text ?? ""));
+    const filtered = sanitizeGroupName(text ?? "");
+    setDraft(filtered);
+    setNameError(getGroupNameError(filtered));
   };
 
   const onSubmit = async () => {
@@ -132,6 +133,7 @@ export default function GroupNameEditScreen() {
                 ref={inputRef}
                 value={draft}
                 onChangeText={onChangeName}
+                maxLength={11}
                 placeholder={`그룹 이름을 ${GROUP_NAME_MAX}자 이내로 입력해 주세요`}
                 placeholderTextColor={colors.gr500}
                 autoFocus
