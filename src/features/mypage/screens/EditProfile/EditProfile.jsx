@@ -190,15 +190,15 @@ export default function EditProfile({ navigation }) {
                     style={{ flex: 1 }}
                     showsVerticalScrollIndicator={false}
                     keyboardShouldPersistTaps="handled"
-                    contentContainerStyle={{ paddingBottom: contentPaddingBottom }}
+                    contentContainerStyle={{ paddingBottom: contentPaddingBottom, width: "100%", maxWidth: 560, alignSelf: "center" }}
                 >
                     <View className="gap-8">
                         <View className="px-5 gap-2">
-                            <View className="flex-row justify-between items-start">
+                            <View className="flex-row justify-between items-start" style={{ flexWrap: "wrap", gap: 8 }}>
                                 <AppText variant="M500" className="text-gr500">
                                     사용자 정보
                                 </AppText>
-                                <View style={{ width: errorWidth, alignItems: "flex-end" }}>
+                                <View style={{ width: errorWidth, maxWidth: "100%", flexShrink: 1, marginLeft: "auto", alignItems: "flex-end" }}>
                                     {isEditing && isError ? (
                                         <AppText
                                             variant="S400"
