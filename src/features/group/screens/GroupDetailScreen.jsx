@@ -130,6 +130,7 @@ export default function GroupDetailScreen() {
               name={self.name}
               current={self.current}
               max={self.max}
+              cheerCount={group.myReceivedInteractionCount}
               illustration={<GroupStoreImage status={self.status} />}
             />
           </View>
