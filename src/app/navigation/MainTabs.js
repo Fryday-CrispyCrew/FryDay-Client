@@ -5,6 +5,7 @@ import TodoStack from "./stacks/TodoStack";
 import CalendarStack from "./stacks/CalendarStack";
 import ReportScreen from "../../features/report/screens/ReportScreen";
 import MyPageStack from "./stacks/MyPageStack";
+import GroupStack from "./stacks/GroupStack";
 import analytics from "@react-native-firebase/analytics";
 
 import CustomTabBar from "./components/CustomTabBar";
@@ -46,7 +47,7 @@ export default function MainTabs() {
     >
       <Tab.Screen name="Todo" component={TodoStack} />
       <Tab.Screen name="Calendar" component={CalendarStack} />
-      <Tab.Screen name="Report" component={ReportScreen} />
+      <Tab.Screen name="Group" component={GroupStack} />
       <Tab.Screen name="MyPage" component={MyPageStack} />
     </Tab.Navigator>
   );

@@ -9,6 +9,7 @@ import SystemUse from "../../../features/mypage/screens/System/SystemUse";
 import SystemQna from "../../../features/mypage/screens/System/SystemQna";
 import SystemAlarm from "../../../features/mypage/screens/System/SystemAlarm";
 import OnboardingReviewScreen from "../../../features/auth/screens/Onboarding/OnboradingReviewScreen";
+import ReportScreen from "../../../features/report/screens/ReportScreen";
 
 const Stack = createNativeStackNavigator();
 
@@ -16,6 +17,7 @@ export default function MyPageStack() {
   return (
     <Stack.Navigator screenOptions={{ headerShown: false }}>
       <Stack.Screen name="MyProfile" component={MyProfileScreen} />
+      <Stack.Screen name="Report" component={ReportScreen} />
       <Stack.Screen name="EditProfile" component={EditProfile} />
         <Stack.Screen name="Notice" component={SystemNotice} />
         <Stack.Screen name="Use" component={SystemUse} />

@@ -1,3 +1,4 @@
+import { queueGroupNotification, flushGroupNotification } from "../notifications/lib/groupNotificationNavigation";
 // src/app/AppProviders.js
 import React, {useEffect} from "react";
 import {AppState} from "react-native";
@@ -34,9 +35,10 @@ export default function AppProviders({children}) {
   useEffect(() => {
     // Cold start 알림 클릭 로그: FCM 알림과 Notifee 알림 두 경로 모두 커버.
     // HomeScreen/FCMInitializer에 의존하지 않고 앱 마운트 즉시 처리.
-    getColdStartNotificationPromise()
+    Promise.resolve(getColdStartNotificationPromise())
       .then((data) => {
         if (data) {
+          void queueGroupNotification(data).catch(() => {});
           logNotificationClick(data, "cold_start");
         }
       })
@@ -52,6 +54,7 @@ export default function AppProviders({children}) {
     // 앱 포커스 상태 감지 (백그라운드 → 포그라운드)
     const subscription = AppState.addEventListener("change", (status) => {
       focusManager.setFocused(status === "active");
+      if (status === "active") void flushGroupNotification().catch(() => {});
     });
 
     return () => {
@@ -79,7 +82,7 @@ export default function AppProviders({children}) {
         <BottomSheetModalProvider>
           {/* ⭐ SafeArea 컨텍스트 */}
           <QueryClientProvider client={queryClient}>
-            <NavigationContainer ref={navigationRef}>{children}</NavigationContainer>
+            <NavigationContainer ref={navigationRef} onReady={() => { void flushGroupNotification().catch(() => {}); }} onStateChange={() => { void flushGroupNotification().catch(() => {}); }}>{children}</NavigationContainer>
             <CenterToastHost />
             <ModalHost />
           </QueryClientProvider>
