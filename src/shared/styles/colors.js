@@ -2,6 +2,7 @@
 module.exports = {
   // Primary / Secondary
   or: "#FF5B22",
+  do: "#DC582B", // Primary Dark Orange (pressed state)
   gr: "#F4F4F4",
 
   // Secondary / Calendar
@@ -25,7 +26,7 @@ module.exports = {
   bk: "#282424",
   gr900: "#4F4E4D",
   gr700: "#5D5E60",
-  gr500: "#BAB8B9",
+  gr500: "#8A8989",
   gr300: "#C4C4C3",
   gr200: "#EAEAEA",
   gr100: "#F2F2F2",

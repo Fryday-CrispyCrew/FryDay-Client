@@ -1,3 +1,4 @@
+import { queueGroupNotification } from "../lib/groupNotificationNavigation";
 import messaging from "@react-native-firebase/messaging";
 import notifee from "@notifee/react-native";
 import {fcmBackgroundHandler} from "./fcmBackgroundHandler";
@@ -22,6 +23,7 @@ export function registerBackgroundHandlers() {
 
   // FCM notification message - 백그라운드 상태에서 알림 클릭 시
   messaging().onNotificationOpenedApp(async (remoteMessage) => {
+    await queueGroupNotification(remoteMessage.data);
     await logNotificationClick(remoteMessage.data, "background");
   });
 

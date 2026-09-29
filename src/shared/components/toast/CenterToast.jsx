@@ -56,7 +56,11 @@ export function CenterToast({visible, message, position = "center", style}) {
       <Animated.View
         style={[styles.bubble, {opacity, transform: [{translateY}]}]}
       >
-        <Text style={styles.text}>{message}</Text>
+        {typeof message === "string" || typeof message === "number" ? (
+          <Text style={styles.text}>{message}</Text>
+        ) : (
+          message /* React node (e.g. 이름 truncate + 접미사 조합) */
+        )}
       </Animated.View>
     </View>
   );
@@ -119,6 +123,18 @@ export function CenterToastHost() {
 
 export default CenterToast;
 
+/**
+ * 토스트 텍스트 스타일 - AppText M500 스펙과 동일 (Pretendard-Medium 12/21/-0.2).
+ * 외부에서 커스텀 노드 구성 시 재사용.
+ */
+export const toastTextStyle = {
+  fontFamily: "Pretendard-Medium",
+  fontSize: 12,
+  lineHeight: 21,
+  letterSpacing: -0.2,
+  color: colors.wt,
+};
+
 const styles = StyleSheet.create({
   overlay: {
     ...StyleSheet.absoluteFillObject,
@@ -136,7 +152,8 @@ const styles = StyleSheet.create({
   text: {
     fontFamily: "Pretendard-Medium",
     fontSize: 12,
-    lineHeight: 12 * 1.5,
+    lineHeight: 21,
+    letterSpacing: -0.2,
     color: colors.wt,
   },
 });
