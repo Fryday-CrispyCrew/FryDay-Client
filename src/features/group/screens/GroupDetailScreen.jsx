@@ -1,7 +1,7 @@
 import React from "react";
-import { ScrollView, Text, View } from "react-native";
+import { AppState, ScrollView, Text, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
-import { useNavigation, useRoute } from "@react-navigation/native";
+import { useFocusEffect, useNavigation, useRoute } from "@react-navigation/native";
 import dayjs from "dayjs";
 
 import GroupDetailHeader from "../components/GroupDetailHeader";
@@ -14,6 +14,12 @@ import { groupApi } from "../api/groupApi";
 import { toGroupMember, interactionPresentation } from "../lib/groupPresentation";
 import GroupMemberGrid from "../components/GroupMemberGrid";
 import { toast, toastTextStyle } from "../../../shared/components/toast/CenterToast";
+
+import {
+  subscribeInteractionCooldowns, getInteractionCooldownSnapshot,
+  interactionCooldownKey, isInteractionBlocked, beginInteraction,
+  finishInteraction, refreshInteractionCooldowns,
+} from "../lib/interactionCooldowns";
 
 // 이름 최대 폭 (한글/영문 폭 차이 대응 - px 기준 truncate)
 const NAME_MAX_WIDTH = 72;
@@ -35,29 +41,33 @@ export default function GroupDetailScreen() {
   const { self: selfMember, others } = splitGroupMembers(group?.members, currentUserId);
   const self = selfMember ? toGroupMember(selfMember) : null;
   const members = others.map(toGroupMember);
-  const [cooldowns, setCooldowns] = React.useState({});
-  const pending = React.useRef(new Set());
-  const timers = React.useRef([]);
+  React.useSyncExternalStore(subscribeInteractionCooldowns, getInteractionCooldownSnapshot);
+  useFocusEffect(React.useCallback(() => {
+    refreshInteractionCooldowns();
+  }, []));
+  React.useEffect(() => {
+    const subscription = AppState.addEventListener("change", (state) => {
+      if (state === "active") refreshInteractionCooldowns();
+    });
+    return () => subscription.remove();
+  }, []);
   const mounted = React.useRef(true);
   React.useEffect(() => {
     mounted.current = true;
     return () => {
       mounted.current = false;
-      timers.current.forEach(clearTimeout);
     };
   }, []);
   const disabledMap = {};
   members.forEach((member) => {
-    disabledMap[member.id] = currentUserId == null || !member.reactionType || !!cooldowns[`${groupId}:${member.id}:${member.interaction}`];
+    disabledMap[member.id] = currentUserId == null || !member.reactionType || isInteractionBlocked(interactionCooldownKey(currentUserId, groupId, member.id, member.interaction));
   });
   const handleBack = () => navigation.goBack();
   const handleMenu = () => navigation.navigate("GroupSetting", { groupId });
   const handleReaction = async (member) => {
-    const key = `${groupId}:${member.id}:${member.interaction}`;
+    const key = interactionCooldownKey(currentUserId, groupId, member.id, member.interaction);
     if (String(member.id) === currentUserId) return;
-    if (disabledMap[member.id] || pending.current.has(key)) return;
-    pending.current.add(key);
-    setCooldowns((previous) => ({ ...previous, [key]: true }));
+    if (disabledMap[member.id] || !beginInteraction(key)) return;
     let cooldown = false;
     try {
       await groupApi.interact({ groupId, targetUserId: member.id, type: member.interaction });
@@ -71,9 +81,9 @@ export default function GroupDetailScreen() {
         { position: "center" },
       );
     } catch (error) {
-      if (!mounted.current) return;
       const status = error.response?.status;
       cooldown = status === 429;
+      if (!mounted.current) return;
       if (status === 409 || status === 404) void query.refetch();
       const message = status === 409 ? "영업 상태가 바뀌었어요. 새로고침 후 다시 보내주세요"
         : status === 429 ? "같은 응원은 30초 후에 보낼 수 있어요"
@@ -82,16 +92,7 @@ export default function GroupDetailScreen() {
         : "응원을 보내지 못했어요. 다시 시도해주세요";
       toast.show(message, { position: "center" });
     } finally {
-      pending.current.delete(key);
-      if (mounted.current) {
-        const clear = () => setCooldowns((previous) => {
-          const next = { ...previous };
-          delete next[key];
-          return next;
-        });
-        if (cooldown) timers.current.push(setTimeout(clear, 30_000));
-        else clear();
-      }
+      finishInteraction(key, cooldown);
     }
   };
   const handlePressMemberGraphic = (member) => {
