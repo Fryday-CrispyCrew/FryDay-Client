@@ -24,6 +24,7 @@
       },
       "infoPlist": {
         "ITSAppUsesNonExemptEncryption": false,
+        "NSPhotoLibraryUsageDescription": "이미지를 외부 앱으로 공유할 때 공유할 이미지를 사진 보관함에 저장하고 불러오기 위해 접근 권한이 필요합니다.",
         "NSUserTrackingUsageDescription": "사용자 관심에 맞는 광고 제공 및 서비스 운영 지원을 위해 사용됩니다.",
         "LSApplicationQueriesSchemes": [
           "naversearchapp",
