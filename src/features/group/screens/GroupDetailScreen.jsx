@@ -1,3 +1,4 @@
+import useGroupEvents from "../hooks/useGroupEvents";
 import React from "react";
 import { AppState, ScrollView, Text, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
@@ -33,6 +34,7 @@ export default function GroupDetailScreen() {
   const route = useRoute();
 
   const groupId = route.params?.groupId;
+  useGroupEvents(groupId);
   const query = useGroupQuery(groupId);
   const group = query.data;
   const groupName = group?.name ?? "";
