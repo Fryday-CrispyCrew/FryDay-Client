@@ -1,5 +1,5 @@
 import React from "react";
-import { View } from "react-native";
+import { View, useWindowDimensions } from "react-native";
 import AppText from "../../../shared/components/AppText";
 import CheerBubble from "./CheerBubble";
 import MyStoreTag from "./MyStoreTag";
@@ -25,6 +25,8 @@ export default function GroupSelfCard({
   max = 10,
   cheerCount,
 }) {
+  const { width } = useWindowDimensions();
+  const graphicSize = width < 390 ? 80 : 120;
   const hasCheer = cheerCount !== undefined && cheerCount !== null;
 
   return (
@@ -58,19 +60,21 @@ export default function GroupSelfCard({
         {/* 좌: 그래픽 슬롯 (외부 주입, 120x120) */}
         <View
           style={{
-            width: 120,
-            height: 120,
+            width: graphicSize,
+            height: graphicSize,
             alignItems: "center",
             justifyContent: "center",
           }}
         >
-          {illustration}
+          <View style={{ transform: [{ scale: graphicSize / 120 }] }}>{illustration}</View>
         </View>
 
         {/* 우: name+count (상단, 좌측정렬) / bubble (하단). column · space-between · stretch */}
         <View
           style={{
             flex: 1,
+            minWidth: 0,
+            gap: 12,
             alignSelf: "stretch",
             flexDirection: "column",
             justifyContent: "space-between",
@@ -79,8 +83,8 @@ export default function GroupSelfCard({
           }}
         >
           {/* 상단: 닉네임 (1줄) + current/max (다음줄). column, L600, 줄간격 4 */}
-          <View style={{ flexDirection: "column", gap: 4 }}>
-            <AppText variant="L600" style={{ color: colors.or }}>
+          <View style={{ width: "100%", paddingRight: 62, minHeight: 52, flexDirection: "column", gap: 4 }}>
+            <AppText variant="L600" numberOfLines={1} ellipsizeMode="tail" style={{ color: colors.or }}>
               {name}
             </AppText>
             <View style={{ flexDirection: "row", alignItems: "baseline" }}>
@@ -96,14 +100,10 @@ export default function GroupSelfCard({
           {/* 하단: 응원 말풍선 */}
           {hasCheer ? (
             <CheerBubble>
-              <View style={{ flexDirection: "row", alignItems: "baseline" }}>
-                <AppText variant="M600" style={{ color: colors.or }}>
-                  응원 {cheerCount}건
-                </AppText>
-                <AppText variant="M500" className="text-gr900">
-                  이 도착했어요!
-                </AppText>
-              </View>
+              <AppText variant="M500" style={{ color: colors.gr900, textAlign: "center" }}>
+                <AppText variant="M600" style={{ color: colors.or }}>응원 {cheerCount}건</AppText>
+                {"이 도착했어요!"}
+              </AppText>
             </CheerBubble>
           ) : null}
         </View>

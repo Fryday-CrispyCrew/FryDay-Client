@@ -7,7 +7,7 @@ const TAIL_H = 8; // 삼각형 튀어나오는 가로 길이
 const TAIL_W = 10; // 삼각형 세로 폭 (뚱뚱한 tail)
 const RADIUS = 16; // 좀 더 둥글게
 const PAD_V = 10; // 세로 padding ↓
-const PAD_H = 32; // 가로 padding ↑↑↑ (더 길게)
+const PAD_H = 10; // 가로 padding ↑↑↑ (더 길게)
 
 /**
  * 좌향 tail 미니 말풍선. bg WT (#FAFAFA) / stroke GR200 (#EAEAEA) 1px.
@@ -21,7 +21,7 @@ export default function CheerBubble({ children, style }) {
   const bubbleH = size.h + PAD_V * 2;
 
   return (
-    <View style={[{ position: "relative" }, style]}>
+    <View style={[{ position: "relative", width: "100%" }, style]}>
       {size.w > 0 && (
         <Svg
           width={bubbleW + TAIL_H}

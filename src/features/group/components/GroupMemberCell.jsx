@@ -31,7 +31,7 @@ export default function GroupMemberCell({
   onPressGraphic,
 }) {
   return (
-    <View style={{ alignItems: "center", paddingVertical: 20 }}>
+    <View style={{ alignItems: "center", paddingVertical: 20, paddingHorizontal: 6, minWidth: 0 }}>
       {/* 그래픽 슬롯 (tap 하면 해당 멤버 공개 투두 화면으로) */}
       <TouchableOpacity
         activeOpacity={0.7}
@@ -48,7 +48,7 @@ export default function GroupMemberCell({
       </TouchableOpacity>
 
       {/* 이름 - L600 BK */}
-      <AppText variant="L600" className="text-bk" style={{ marginTop: 8 }}>
+      <AppText variant="L600" className="text-bk" numberOfLines={1} ellipsizeMode="tail" style={{ marginTop: 8, maxWidth: "100%" }}>
         {name}
       </AppText>
 
@@ -63,7 +63,7 @@ export default function GroupMemberCell({
       </View>
 
       {/* 반응 버튼 */}
-      <View style={{ marginTop: 12 }}>
+      <View style={{ marginTop: 12, maxWidth: "100%" }}>
         <GroupReactionButton
           type={reactionType}
           onPress={onPressReaction}

@@ -123,7 +123,7 @@ export default function GroupDetailScreen() {
 
       <ScrollView
         showsVerticalScrollIndicator={false}
-        contentContainerStyle={{ paddingBottom: 40 }}
+        contentContainerStyle={{ paddingBottom: 40, width: "100%", maxWidth: 600, alignSelf: "center" }}
       >
         {self && (
           <View style={{ paddingHorizontal: 20, marginBottom: 20 }}>
