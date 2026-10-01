@@ -1,4 +1,5 @@
-import React, { useMemo, useState, useCallback, useEffect } from "react";
+import { createTodoDeleteGuard } from "../lib/todoDeleteGuard";
+import React, { useMemo, useState, useCallback, useEffect, useRef } from "react";
 import { View, TouchableOpacity } from "react-native";
 import DraggableFlatList from "react-native-draggable-flatlist";
 import AsyncStorage from "@react-native-async-storage/async-storage";
@@ -56,6 +57,7 @@ function TodoItem({
   isActive,
   onToggleDone,
   onDelete,
+  deleteDisabled,
   onLongPressDrag,
   onPressItem,
   onDoToday,
@@ -66,9 +68,11 @@ function TodoItem({
   const renderRightActions = () => (
     <View className="flex-row items-center pr-[2px] pl-[6px]">
       <TouchableOpacity
-        style={{ backgroundColor: categoryColor }}
+        style={{ backgroundColor: categoryColor, opacity: deleteDisabled ? 0.4 : 1 }}
         className="mr-1.5 h-[35px] w-12 items-center justify-center rounded-xl"
         activeOpacity={0.7}
+        disabled={deleteDisabled}
+        accessibilityState={{ disabled: deleteDisabled }}
         onPress={() => onDelete(item)}
       >
         <DeleteIcon width={24} height={24} />
@@ -227,6 +231,28 @@ export default function TodoBoardSection({
   }, [rawCategories]);
 
   const [todos, setTodos] = useState(Array.isArray(todosProp) ? todosProp : []);
+  const deleteGuard = useRef(createTodoDeleteGuard());
+  const [deletingIds, setDeletingIds] = useState(() => new Set());
+  const executeDelete = useCallback(async (id, request) => {
+    try {
+      await deleteGuard.current.run(id, async () => {
+        setDeletingIds((prev) => new Set(prev).add(String(id)));
+        try {
+          await request();
+          setTodos((prev) => prev.filter((todo) => String(todo.id) !== String(id)));
+        } catch (error) {
+          setDeletingIds((prev) => {
+            const next = new Set(prev);
+            next.delete(String(id));
+            return next;
+          });
+          throw error;
+        }
+      });
+    } catch {
+      // 오류 안내는 mutation의 공통 API 처리에 맡기고 재시도를 허용한다.
+    }
+  }, []);
   const [selectedTodoId, setSelectedTodoId] = useState(null);
   const [openMap, setOpenMap] = useState({});
   const [didInitOpenMap, setDidInitOpenMap] = useState(false);
@@ -305,7 +331,7 @@ export default function TodoBoardSection({
   const openRecurringEditModal = useCallback(
     ({ todo, payload, onDone, isCancelRecurrence = false }) => {
       const instanceId = Number(todo?.id);
-      if (!instanceId) return;
+      if (!instanceId || deleteGuard.current.isBlocked(instanceId)) return;
 
       const handleUpdate = async (scope) => {
         try {
@@ -545,33 +571,30 @@ export default function TodoBoardSection({
               label: "이 투두만 삭제",
               variant: "outline",
               onPress: async () => {
-                await deleteTodoInstanceMutateAsync({
+                await executeDelete(instanceId, () => deleteTodoInstanceMutateAsync({
                   instanceId,
                   body: { scope: INSTANCE_SCOPE.THIS },
-                });
-                close();
+                }));
               },
             },
             {
               label: "이 투두 포함 이후 모든 투두 삭제",
               variant: "outline",
               onPress: async () => {
-                await deleteTodoInstanceMutateAsync({
+                await executeDelete(instanceId, () => deleteTodoInstanceMutateAsync({
                   instanceId,
                   body: { scope: INSTANCE_SCOPE.THIS_AND_FUTURE },
-                });
-                close();
+                }));
               },
             },
             {
               label: "모든 투두 삭제",
               variant: "outline",
               onPress: async () => {
-                await deleteTodoInstanceMutateAsync({
+                await executeDelete(instanceId, () => deleteTodoInstanceMutateAsync({
                   instanceId,
                   body: { scope: INSTANCE_SCOPE.ALL },
-                });
-                close();
+                }));
               },
             },
           ],
@@ -580,9 +603,9 @@ export default function TodoBoardSection({
         return;
       }
 
-      await deleteTodoMutateAsync({ todoId: instanceId });
+      await executeDelete(instanceId, () => deleteTodoMutateAsync({ todoId: instanceId }));
     },
-    [open, close, deleteTodoMutateAsync, deleteTodoInstanceMutateAsync],
+    [open, deleteTodoMutateAsync, deleteTodoInstanceMutateAsync, executeDelete],
   );
 
   const handlePressTodoInput = useCallback(
@@ -854,6 +877,7 @@ export default function TodoBoardSection({
               {isOpen ? (
                 <DraggableFlatList
                   data={sectionTodos}
+                  extraData={deletingIds}
                   keyExtractor={(item) => String(item.id)}
                   renderItem={({ item, drag, isActive }) => (
                     <View className="pt-0.5">
@@ -862,6 +886,7 @@ export default function TodoBoardSection({
                         isActive={isActive}
                         onToggleDone={toggleTodoDone}
                         onDelete={handleRequestDeleteTodo}
+                        deleteDisabled={deletingIds.has(String(item.id))}
                         onDoToday={handleDoToday}
                         onDoTomorrow={handleDoTomorrow}
                         isViewingToday={isViewingToday}
