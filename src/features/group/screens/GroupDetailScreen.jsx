@@ -33,7 +33,7 @@ export default function GroupDetailScreen() {
   const route = useRoute();
 
   const groupId = route.params?.groupId;
-  const query = useGroupQuery(groupId);
+  const query = useGroupQuery(groupId, { enabled: false });
   const group = query.data;
   const groupName = group?.name ?? "";
   const date = group?.date ? dayjs(group.date).format("YYYY년 M월 D일") : "";

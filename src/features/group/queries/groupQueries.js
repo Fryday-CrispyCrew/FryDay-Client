@@ -21,8 +21,8 @@ function useFocusedQuery(options) {
 export function useGroupsQuery() {
   return useFocusedQuery({ queryKey: groupKeys.list(), queryFn: groupApi.getGroups });
 }
-export function useGroupQuery(groupId) {
-  return useFocusedQuery({ queryKey: groupKeys.detail(groupId), queryFn: () => groupApi.getGroup(groupId), enabled: !!groupId });
+export function useGroupQuery(groupId, options = {}) {
+  return useQuery({ queryKey: groupKeys.detail(groupId), queryFn: () => groupApi.getGroup(groupId), enabled: !!groupId, retry: false, staleTime: Infinity, ...options });
 }
 export function useGroupNotificationQuery(groupId) {
   return useFocusedQuery({ queryKey: groupKeys.notification(groupId), queryFn: () => groupApi.getNotification(groupId), enabled: !!groupId });
@@ -46,7 +46,9 @@ export function useGroupCurrentUserIdQuery() {
 }
 
 export function useGroupMemberTodosQuery(groupId, targetUserId) {
-  return useFocusedQuery({
+  return useQuery({
+    retry: false,
+    staleTime: Infinity,
     queryKey: groupKeys.memberTodos(groupId, targetUserId),
     queryFn: () => groupApi.getMemberTodos({ groupId, targetUserId }),
     enabled: !!groupId && !!targetUserId,
