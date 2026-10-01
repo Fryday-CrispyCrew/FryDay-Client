@@ -1,6 +1,5 @@
-import { useCallback } from "react";
+import { useEffect } from "react";
 import { AppState } from "react-native";
-import { useFocusEffect } from "@react-navigation/native";
 import { useQueryClient } from "@tanstack/react-query";
 import api from "../../../shared/lib/api";
 import { getAccessToken } from "../../../shared/lib/storage/tokenStorage";
@@ -9,7 +8,7 @@ import { getSeoulDate, openGroupEventStream } from "../lib/groupEventStream";
 
 export default function useGroupEvents(groupId) {
   const client = useQueryClient();
-  useFocusEffect(useCallback(() => {
+  useEffect(() => {
     if (!groupId) return;
     let stopStream;
     let refreshTimer;
@@ -69,5 +68,5 @@ export default function useGroupEvents(groupId) {
       clearInterval(dateTimer);
       subscription.remove();
     };
-  }, [client, groupId]));
+  }, [client, groupId]);
 }

@@ -1,4 +1,3 @@
-import useGroupEvents from "../hooks/useGroupEvents";
 import React, { useMemo, useState } from "react";
 import { RefreshControl, ScrollView, TouchableOpacity, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
@@ -31,7 +30,6 @@ export default function GroupMemberTodosScreen() {
   const groupName = route?.params?.groupName ?? "";
   const memberName = route?.params?.memberName ?? "";
   const { groupId, memberId } = route.params ?? {};
-  useGroupEvents(groupId);
   const query = useGroupMemberTodosQuery(groupId, memberId);
   const publicSections = useMemo(
     () => toPublicTodoSections(query.data?.categories),
