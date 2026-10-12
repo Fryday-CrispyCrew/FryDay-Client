@@ -107,9 +107,6 @@ export default function GroupMemberTodosScreen() {
                 )}
               </View>
             </View>
-            <AppText variant="S400" className="text-gr500">
-              {query.data?.date} 기준 공개된 할 일
-            </AppText>
         {/* 상단 가로 점선 */}
         <View className="mt-3">
           <StretchDottedH />
@@ -206,13 +203,8 @@ function CategorySection({ section }) {
       </TouchableOpacity>
 
       {/* 투두 리스트 (read-only) */}
-      {open ? (
+      {open && section.todos.length > 0 ? (
         <View style={{ marginTop: 12 }}>
-          {section.todos.length === 0 && (
-            <AppText variant="M500" className="text-gr500" style={{ paddingVertical: 12 }}>
-              오늘 등록된 할 일이 없어요
-            </AppText>
-          )}
           {section.todos.map((todo) => (
             <ReadOnlyTodoRow key={todo.id} todo={todo} color={color} />
           ))}
