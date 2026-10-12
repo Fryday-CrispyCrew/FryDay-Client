@@ -62,7 +62,7 @@ export default function GroupReactionButton({
   return (
     <Animated.View
       style={[
-        { transform: [{ scale }], alignSelf: "flex-start", maxWidth: "100%" },
+        { transform: [{ scale }], alignSelf: "center", maxWidth: "100%" },
         disabled && { opacity: 0.4 }, // 30초 쿨다운 등 disabled 시 시각적 표시
         style,
       ]}
@@ -79,13 +79,20 @@ export default function GroupReactionButton({
           style={{
             width: ICON_SIZE,
             height: ICON_SIZE,
+            flexShrink: 0,
             alignItems: "center",
             justifyContent: "center",
           }}
         >
           <Icon width={ICON_SIZE} height={ICON_SIZE} />
         </View>
-        <AppText variant="L600" style={{ color: colors.or, flexShrink: 1 }}>
+        <AppText
+          variant="L600"
+          numberOfLines={1}
+          adjustsFontSizeToFit
+          minimumFontScale={0.85}
+          style={{ color: colors.or, flexShrink: 1, textAlign: "center", includeFontPadding: false }}
+        >
           {label}
         </AppText>
       </Pressable>
@@ -100,9 +107,9 @@ const styles = StyleSheet.create({
     alignItems: "center",
     gap: 4,
     paddingTop: 4,
-    paddingRight: 8,
+    paddingRight: 16,
     paddingBottom: 4,
-    paddingLeft: 8,
+    paddingLeft: 12,
     borderRadius: 999,
     borderWidth: 1,
     borderColor: colors.gr200,
