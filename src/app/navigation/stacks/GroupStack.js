@@ -1,5 +1,6 @@
 import React, { useState } from "react";
 import { useIsFocused } from "@react-navigation/native";
+import { getGroupEventId } from "../../../features/group/lib/groupEventRoute";
 import useGroupEvents from "../../../features/group/hooks/useGroupEvents";
 import { createNativeStackNavigator } from "@react-navigation/native-stack";
 import GroupHomeScreen from "../../../features/group/screens/GroupHomeScreen";
@@ -25,7 +26,7 @@ export default function GroupStack() {
         state: ({ data }) => {
           const state = data.state;
           const route = state.routes[state.index ?? 0];
-          setGroupId(route?.params?.groupId ? String(route.params.groupId) : null);
+          setGroupId(getGroupEventId(route));
         },
       }}
     >
