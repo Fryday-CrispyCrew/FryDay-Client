@@ -43,7 +43,7 @@ export default function GroupJoinScreen() {
   const errorMessage = useMemo(() => {
     if (codeError === "notFound") return "존재하지 않는 그룹코드예요";
     if (codeError === "already") return "이미 참여한 그룹이에요";
-    if (codeError === "full") return "그룹 멤버가 최대 인원에 도달했어요";
+    if (codeError === "full") return "인원이 꽉 찬 그룹이에요";
     if (codeError === "network") return "잠시 후 다시 시도해주세요";
     return "";
   }, [codeError]);
