@@ -117,8 +117,8 @@ export default function GroupMemberTodosScreen() {
           <AppText variant="M500" className="text-gr500" style={{ paddingVertical: 24 }}>
             공개된 카테고리가 없어요
           </AppText>
-        ) : publicSections.map((section) => (
-          <CategorySection key={`${memberId}:${section.categoryId}`} section={section} />
+        ) : publicSections.map((section, index) => (
+          <CategorySection key={`${memberId}:${section.categoryId}`} section={section} isFirst={index === 0} />
         ))}
 
         {/* 하단 가로 점선 */}
@@ -170,12 +170,12 @@ function HomeStyleBubble({ text }) {
  * 카테고리 헤더 (컬러 pill) + 투두 리스트.
  * 남의 투두라 disabled 체크박스만 (탭 불가).
  */
-function CategorySection({ section }) {
+function CategorySection({ section, isFirst }) {
   const [open, setOpen] = useState(true);
   const color = section?.color ?? colors.or;
 
   return (
-    <View style={{ paddingVertical: 16 }}>
+    <View style={{ paddingTop: isFirst ? 18 : 24 }}>
       {/* 헤더 pill */}
       <TouchableOpacity
         activeOpacity={0.8}
@@ -184,10 +184,12 @@ function CategorySection({ section }) {
           alignSelf: "flex-start",
           flexDirection: "row",
           alignItems: "center",
-          gap: 6,
-          paddingHorizontal: 14,
+          gap: 4,
+          paddingHorizontal: 10,
           paddingVertical: 6,
-          borderRadius: 999,
+          borderRadius: 24,
+          borderWidth: 1,
+          borderColor: color,
           backgroundColor: color,
         }}
       >
@@ -204,7 +206,7 @@ function CategorySection({ section }) {
 
       {/* 투두 리스트 (read-only) */}
       {open && section.todos.length > 0 ? (
-        <View style={{ marginTop: 12 }}>
+        <View style={{ marginTop: 8 }}>
           {section.todos.map((todo) => (
             <ReadOnlyTodoRow key={todo.id} todo={todo} color={color} />
           ))}
