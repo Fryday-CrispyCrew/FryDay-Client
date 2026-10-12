@@ -40,8 +40,11 @@ function setup() {
     setInterval() {}, clearInterval() {},
   });
   vm.runInContext(source, context);
+  vm.runInContext(fs.readFileSync("src/features/group/lib/groupEventRoute.js", "utf8")
+    .replace("export function", "function"), context);
   return {
     render: id => context.useGroupEvents(id),
+    route: route => context.useGroupEvents(context.getGroupEventId(route)),
     event: type => stream.onEvent({ type }),
     app: state => appListener(state),
     flush() { const list = [...timers.values()]; timers.clear(); list.forEach(fn => fn()); },
@@ -77,4 +80,35 @@ test("changing groups closes previous stream and cancels scheduled refresh", () 
   h.render("6"); h.event("connected");
   h.render("7"); h.event("connected"); h.flush();
   assert.deepEqual(h.counts(), { opens: 2, closes: 1, details: 1, todos: 0 });
+});
+
+
+test("joining sends no SSE/detail requests before success; same group ID connects after join", () => {
+  const h = setup();
+  h.route({ name: "GroupJoin" });
+  h.route({ name: "GroupCategorySelect", params: { groupId: 6, mode: "join" } });
+  h.flush();
+  assert.deepEqual(h.counts(), { opens: 0, closes: 0, details: 0, todos: 0 });
+  // 가입 실패 후 같은 화면에 머무르는 동안에도 연결하지 않는다.
+  h.route({ name: "GroupCategorySelect", params: { groupId: 6, mode: "join" } });
+  h.route({ name: "GroupDetail", params: { groupId: 6 } });
+  h.event("connected"); h.flush();
+  assert.deepEqual(h.counts(), { opens: 1, closes: 0, details: 1, todos: 0 });
+  for (const name of ["GroupMemberTodos", "GroupSetting", "GroupNameEdit", "GroupCategorySelect", "GroupDetail"]) {
+    h.route({ name, params: { groupId: 6, mode: "setting" } });
+  }
+  assert.deepEqual(h.counts(), { opens: 1, closes: 0, details: 1, todos: 0 });
+  h.route({ name: "GroupHome" });
+  assert.equal(h.counts().closes, 1);
+});
+
+test("creation and unrelated routes do not connect even with a group ID", () => {
+  const h = setup();
+  for (const name of ["GroupHome", "GroupJoin", "GroupCreate", "GroupCreateComplete", "Unknown"]) {
+    h.route({ name, params: { groupId: 6 } });
+  }
+  h.route({ name: "GroupCategorySelect", params: { groupId: 6, mode: "create" } });
+  h.route({ name: "GroupDetail" });
+  h.flush();
+  assert.deepEqual(h.counts(), { opens: 0, closes: 0, details: 0, todos: 0 });
 });
