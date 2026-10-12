@@ -94,7 +94,7 @@ export default function CategEditScreen({ navigation, route }) {
         openModal({
           title: "공개 카테고리를 해제해주세요",
           description:
-            "그룹에는 공개 카테고리가 1개 이상 필요해요.\n다른 카테고리를 먼저 공개한 뒤,\n이 카테고리는 공개 해제 후 삭제해주세요.",
+            "그룹에는 공개 카테고리가 1개 이상 필요해요.\n이 카테고리는 그룹에서 공개 설정이 되어있어요.\n카테고리 공개 해제 후 삭제해주세요.",
           closeOnBackdrop: true,
           showClose: true,
           primary: { label: "확인", variant: "primary" },
