@@ -23,7 +23,7 @@ const ICON_SIZE = 24;
  * type 만 지정하면 아이콘+라벨 세팅됨.
  *
  * Figma 스펙:
- * - padding: vertical 4 / horizontal 8, gap 4
+ * - padding: 4/16/4/12 (T/R/B/L), gap 4
  * - radius 999 (pill), border 1px GR200, bg GR100
  * - text L600, OR
  * - 기본 115×34, pressed 시 scale 0.98 (Animated spring)
@@ -79,6 +79,7 @@ export default function GroupReactionButton({
           style={{
             width: ICON_SIZE,
             height: ICON_SIZE,
+            flexShrink: 0,
             alignItems: "center",
             justifyContent: "center",
           }}
@@ -87,6 +88,9 @@ export default function GroupReactionButton({
         </View>
         <AppText
           variant="L600"
+          numberOfLines={1}
+          adjustsFontSizeToFit
+          minimumFontScale={0.85}
           style={{ color: colors.or, flexShrink: 1, textAlign: "center", includeFontPadding: false }}
         >
           {label}
@@ -103,9 +107,9 @@ const styles = StyleSheet.create({
     alignItems: "center",
     gap: 4,
     paddingTop: 4,
-    paddingRight: 8,
+    paddingRight: 16,
     paddingBottom: 4,
-    paddingLeft: 8,
+    paddingLeft: 12,
     borderRadius: 999,
     borderWidth: 1,
     borderColor: colors.gr200,
