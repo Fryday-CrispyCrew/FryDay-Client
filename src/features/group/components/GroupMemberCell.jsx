@@ -63,7 +63,7 @@ export default function GroupMemberCell({
       </View>
 
       {/* 반응 버튼 */}
-      <View style={{ marginTop: 12, maxWidth: "100%" }}>
+      <View style={{ marginTop: 12, width: "100%", alignItems: "center" }}>
         <GroupReactionButton
           type={reactionType}
           onPress={onPressReaction}
