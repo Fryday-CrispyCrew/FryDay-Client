@@ -1,7 +1,7 @@
 import React, {useMemo, useState, useEffect, useCallback, useRef} from "react";
-import {ScrollView} from "react-native";
+import {ScrollView, View, PanResponder} from "react-native";
 import {SafeAreaView} from "react-native-safe-area-context";
-import {useFocusEffect} from "@react-navigation/native";
+import {useFocusEffect, useNavigation} from "@react-navigation/native";
 import dayjs from "dayjs";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import * as SecureStore from "expo-secure-store";
@@ -33,6 +33,8 @@ function normalizeYM(input) {
 }
 
 export default function ReportScreen() {
+    const navigation = useNavigation();
+    const horizontalContentTouch = useRef(false);
 
     // const TEMP_DATA = [
     //     { name: '운동', success: 100, fail: 10, total: 110 },
@@ -41,8 +43,7 @@ export default function ReportScreen() {
     //     { name: '휴식', success: 0, fail: 30, total: 30 },
     // ];
 
-    const nowMonth = useMemo(() => dayjs().startOf("month"), []);
-    const prevMonth = useMemo(() => dayjs().subtract(1, "month").startOf("month"), []);
+    const [nowMonth, setNowMonth] = useState(() => dayjs().startOf("month"));
 
     const [currentDate, setCurrentDate] = useState(nowMonth);
     const [reportData, setReportData] = useState(null);
@@ -96,6 +97,32 @@ export default function ReportScreen() {
         },
         [allowedMonthKeys]
     );
+
+    const handleToday = useCallback(() => {
+        const today = dayjs().startOf("month");
+        setNowMonth(today);
+        setCurrentDate(today);
+    }, []);
+
+    useFocusEffect(useCallback(() => {
+        setNowMonth((previous) => {
+            const today = dayjs().startOf("month");
+            return previous.isSame(today, "month") ? previous : today;
+        });
+    }, []));
+
+    const monthPan = useMemo(() => PanResponder.create({
+        onStartShouldSetPanResponderCapture: () => {
+            horizontalContentTouch.current = false;
+            return false;
+        },
+        onMoveShouldSetPanResponderCapture: (_, { dx, dy }) =>
+            !horizontalContentTouch.current && Math.abs(dx) > 24 && Math.abs(dx) > Math.abs(dy) * 2,
+        onPanResponderRelease: (_, { dx }) => {
+            if (Math.abs(dx) < 50) return;
+            handleChangeMonth(currentDate.add(dx < 0 ? 1 : -1, "month"));
+        },
+    }), [currentDate, handleChangeMonth]);
 
     const handleConfirmYM = useCallback(
         (y, m) => {
@@ -207,25 +234,29 @@ export default function ReportScreen() {
         <SafeAreaView className="flex-1 bg-wt" edges={["top"]}>
             <ReportHeader
                 currentDate={currentDate}
-                onChangeMonth={handleChangeMonth}
-                joinedAt={joinedMonth ?? ""}
+                onBack={() => navigation.goBack()}
+                onToday={handleToday}
                 onPressYearMonth={openYMModal}
             />
 
+            <View style={{ flex: 1 }} {...monthPan.panHandlers}>
             <ScrollView
                 className="flex-1"
                 contentContainerStyle={{paddingTop: 0, paddingBottom: 32}}
                 showsVerticalScrollIndicator={false}
             >
                 <ReportHeroCard caseType={report.caseType} nickname={nickname} />
-                <ReportTotalSection total={totals.total} completed={totals.completed} failed={totals.failed} />
+                <View onTouchStart={() => { horizontalContentTouch.current = true; }}>
+                    <ReportTotalSection total={totals.total} completed={totals.completed} failed={totals.failed} />
+                </View>
                 <ReportCategoryCard data={report.categories} />
             </ScrollView>
+            </View>
 
             <YearMonthWheelModal
                 visible={isYMModalOpen}
-                initialYear={allowedMonths[allowedMonths.length - 1].year()}
-                initialMonth={allowedMonths[allowedMonths.length - 1].month() + 1}
+                initialYear={currentDate.year()}
+                initialMonth={currentDate.month() + 1}
                 onCancel={closeYMModal}
                 onConfirm={handleConfirmYM}
                 availableYMs={availableYMs}
