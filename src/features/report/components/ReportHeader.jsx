@@ -1,102 +1,49 @@
-import {View, TouchableOpacity} from "react-native";
+import React from "react";
+import { View, TouchableOpacity } from "react-native";
 import dayjs from "dayjs";
 import AppText from "../../../shared/components/AppText";
-import ArrowLeft from "../assets/svg/ArrowLeft.svg";
-import ArrowRight from "../assets/svg/ArrowRight.svg";
-import colors from "../../../shared/styles/colors";
+import BorderButton from "../../../shared/components/BorderButton";
+import BackIcon from "../../../shared/assets/svg/Back.svg";
 import ChevronIcon from "../../../shared/components/ChevronIcon";
-import React from "react";
+import colors from "../../../shared/styles/colors";
 
 export default function ReportHeader({
   currentDate,
-  onChangeMonth,
-  joinedAt,
+  onBack,
+  onToday,
   onPressYearMonth,
 }) {
-  const date = dayjs(currentDate).startOf("month");
-
-  const yearText = date.format("YYYY년");
-  const monthText = date.format("M월 리포트");
-
-  const joinedMonth = joinedAt
-    ? dayjs(joinedAt, "YYYY-MM").startOf("month")
-    : null;
-
-  const maxMonth = dayjs().startOf("month");
-
-  const isPrevHidden = joinedMonth ? date.isSame(joinedMonth, "month") : true;
-
-  const isNextHidden = date.isSame(maxMonth, "month");
-
-  const handlePrev = () => {
-    if (isPrevHidden) return;
-
-    const prev = date.subtract(1, "month");
-    if (joinedMonth && prev.isBefore(joinedMonth, "month")) return;
-
-    onChangeMonth(prev);
-  };
-
-  const handleNext = () => {
-    if (isNextHidden) return;
-
-    const next = date.add(1, "month");
-    if (next.isAfter(maxMonth, "month")) return;
-
-    onChangeMonth(next);
-  };
-
+  const date = dayjs(currentDate);
   return (
     <View
       className="flex-row justify-between items-center"
-      style={{paddingVertical: 16, paddingHorizontal: 20}}
+      style={{ paddingVertical: 16, paddingHorizontal: 20, gap: 12 }}
     >
-      <TouchableOpacity onPress={onPressYearMonth}>
-        <View>
-          <AppText variant="M500" className="text-gr500">
-            {yearText}
-          </AppText>
-          <AppText variant="H3" className="text-bk">
-            {monthText}
-          </AppText>
-        </View>
-      </TouchableOpacity>
-
-      <View className="flex-row items-center gap-4">
-        <TouchableOpacity onPress={handlePrev}>
-          <View
-            className={`w-6 h-6 rounded-full items-center justify-center ${
-              isPrevHidden ? "opacity-30" : ""
-            }`}
-          >
-            {!isPrevHidden ? (
-              <ChevronIcon
-                direction="left"
-                size={24}
-                color={colors.gr900}
-                strokeWidth={2}
-              />
-            ) : null}
-          </View>
+      <View style={{ flexDirection: "row", alignItems: "center", flex: 1, minWidth: 0 }}>
+        <TouchableOpacity
+          onPress={onBack}
+          accessibilityRole="button"
+          accessibilityLabel="뒤로가기"
+          hitSlop={8}
+          style={{ paddingVertical: 10, paddingRight: 8 }}
+        >
+          <ChevronIcon direction="left" size={18} color={colors.bk} strokeWidth={2} />
         </TouchableOpacity>
-
-        <TouchableOpacity onPress={handleNext}>
-          <View
-            className={`w-6 h-6 rounded-full items-center justify-center ${
-              isNextHidden ? "opacity-30" : ""
-            }`}
-          >
-            {!isNextHidden ? (
-              <ChevronIcon
-                direction="right"
-                size={24}
-                color={colors.gr900}
-                strokeWidth={2}
-              />
-            ) : null}
-          </View>
+        <TouchableOpacity
+          onPress={onPressYearMonth}
+          accessibilityRole="button"
+          accessibilityLabel="리포트 연월 선택"
+          style={{ flexShrink: 1 }}
+        >
+          <AppText variant="M500" className="text-gr500">{date.format("YYYY년")}</AppText>
+          <AppText variant="H3" className="text-bk" numberOfLines={1}>{date.format("M월 리포트")}</AppText>
         </TouchableOpacity>
       </View>
+      <BorderButton
+        text="오늘로"
+        icon={<BackIcon width={14} height={14} />}
+        onPress={onToday}
+      />
     </View>
   );
 }
