@@ -39,11 +39,13 @@ export default function ReportHeader({
           <AppText variant="H3" className="text-bk" numberOfLines={1}>{date.format("M월 리포트")}</AppText>
         </TouchableOpacity>
       </View>
-      <BorderButton
-        text="오늘로"
-        icon={<BackIcon width={14} height={14} />}
-        onPress={onToday}
-      />
+      {!date.isSame(dayjs(), "month") && (
+        <BorderButton
+          text="오늘로"
+          icon={<BackIcon width={14} height={14} />}
+          onPress={onToday}
+        />
+      )}
     </View>
   );
 }
