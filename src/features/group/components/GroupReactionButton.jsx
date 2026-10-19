@@ -40,6 +40,7 @@ export default function GroupReactionButton({
   style,
 }) {
   const { Icon, label } = REACTION_MAP[type] ?? REACTION_MAP.bell;
+  const contentColor = disabled ? colors.gr300 : colors.or;
   const scale = useRef(new Animated.Value(1)).current;
 
   const onPressIn = () => {
@@ -63,7 +64,6 @@ export default function GroupReactionButton({
     <Animated.View
       style={[
         { transform: [{ scale }], alignSelf: "center", maxWidth: "100%" },
-        disabled && { opacity: 0.4 }, // 30초 쿨다운 등 disabled 시 시각적 표시
         style,
       ]}
     >
@@ -73,7 +73,9 @@ export default function GroupReactionButton({
         onPressOut={onPressOut}
         disabled={disabled}
         hitSlop={4}
-        style={styles.button}
+        accessibilityRole="button"
+        accessibilityState={{ disabled }}
+        style={[styles.button, disabled && styles.disabledButton]}
       >
         <View
           style={{
@@ -84,14 +86,14 @@ export default function GroupReactionButton({
             justifyContent: "center",
           }}
         >
-          <Icon width={ICON_SIZE} height={ICON_SIZE} />
+          <Icon width={ICON_SIZE} height={ICON_SIZE} color={contentColor} />
         </View>
         <AppText
           variant="L600"
           numberOfLines={1}
           adjustsFontSizeToFit
           minimumFontScale={0.85}
-          style={{ color: colors.or, flexShrink: 1, textAlign: "center", includeFontPadding: false }}
+          style={{ color: contentColor, flexShrink: 1, textAlign: "center", includeFontPadding: false }}
         >
           {label}
         </AppText>
@@ -101,6 +103,10 @@ export default function GroupReactionButton({
 }
 
 const styles = StyleSheet.create({
+  disabledButton: {
+    backgroundColor: colors.gr200,
+    borderColor: colors.gr200,
+  },
   button: {
     flexDirection: "row",
     justifyContent: "center",
