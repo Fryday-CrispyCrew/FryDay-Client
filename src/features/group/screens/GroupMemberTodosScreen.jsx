@@ -1,5 +1,5 @@
-import React, { useMemo, useState } from "react";
-import { RefreshControl, ScrollView, TouchableOpacity, View } from "react-native";
+import React, { useEffect, useMemo, useState } from "react";
+import { Pressable, RefreshControl, ScrollView, TouchableOpacity, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { useNavigation, useRoute } from "@react-navigation/native";
 
@@ -14,6 +14,7 @@ import { getLottieKeyFromStatus } from "../../todo/lib/characterPresentation";
 import GroupQueryState from "../components/GroupQueryState";
 import { useGroupMemberTodosQuery } from "../queries/groupQueries";
 import { toPublicTodoSections } from "../lib/groupMemberTodos";
+import { pickGroupCharacterMessage } from "../lib/groupCharacterMessages";
 import colors from "../../../shared/styles/colors";
 
 /**
@@ -38,6 +39,11 @@ export default function GroupMemberTodosScreen() {
   const characterStatus = query.data?.characterStatus;
   const lottieKey = getLottieKeyFromStatus(characterStatus?.status);
   const canShowData = query.isSuccess;
+  const [bubbleText, setBubbleText] = useState("");
+
+  useEffect(() => {
+    setBubbleText(pickGroupCharacterMessage(characterStatus?.status));
+  }, [groupId, memberId, characterStatus?.status, query.dataUpdatedAt]);
 
   return (
     <SafeAreaView className="flex-1 bg-wt" edges={["top"]}>
@@ -91,8 +97,13 @@ export default function GroupMemberTodosScreen() {
         {!canShowData ? <GroupQueryState query={query} /> : (
           <>
             <View className="w-full items-center justify-center pt-[13px]" style={{ height: 247 }}>
-              <HomeStyleBubble text={characterStatus?.description} />
-              <View
+              <HomeStyleBubble text={bubbleText} />
+              <Pressable
+                onPress={() => setBubbleText((previous) =>
+                  pickGroupCharacterMessage(characterStatus?.status, previous)
+                )}
+                accessibilityRole="button"
+                accessibilityLabel="튀김 말풍선 바꾸기"
                 className="relative w-[72%]"
                 style={{ aspectRatio: 1, maxHeight: "100%" }}
               >
@@ -105,7 +116,7 @@ export default function GroupMemberTodosScreen() {
                     style={{ position: "absolute", width: "100%", height: "100%" }}
                   />
                 )}
-              </View>
+              </Pressable>
             </View>
         {/* 상단 가로 점선 */}
         <View className="mt-3">

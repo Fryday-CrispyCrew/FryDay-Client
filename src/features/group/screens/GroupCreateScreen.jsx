@@ -83,7 +83,7 @@ export default function GroupCreateScreen() {
 
   const errorMessage = useMemo(() => {
     if (nameError === "tooLong") return `그룹명은 ${GROUP_NAME_MAX}자 이하로 입력해주세요`;
-    if (nameError === "whitespace") return "그룹 이름에는 공백을 입력할 수 없어요";
+    if (nameError === "whitespace") return "그룹 이름은 공백만으로 저장할 수 없어요";
     if (nameError === "invalid") return "그룹 이름에는 이모지를 사용할 수 없어요";
     if (nameError === "network") return "잠시 후 다시 시도해주세요";
     return "";

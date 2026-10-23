@@ -1,5 +1,6 @@
 // src/app/navigation/stacks/components/CustomTabBar.jsx
 import React from "react";
+import {StackActions} from "@react-navigation/native";
 import {View, TouchableOpacity, Text, StyleSheet, Platform} from "react-native";
 import {useSafeAreaInsets} from "react-native-safe-area-context";
 import {TAB_CONFIG, HIDDEN_ROUTES} from "./tabConfig";
@@ -45,6 +46,12 @@ export default function CustomTabBar({state, navigation}) {
             canPreventDefault: true,
           });
           if (!focused && !event.defaultPrevented) {
+            if (route.name === "Group" && route.state?.key) {
+              navigation.dispatch({
+                ...StackActions.popToTop(),
+                target: route.state.key,
+              });
+            }
             navigation.navigate(route.name);
           }
         };

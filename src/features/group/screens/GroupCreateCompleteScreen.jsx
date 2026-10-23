@@ -59,6 +59,16 @@ export default function GroupCreateCompleteScreen() {
     navigation.popToTop?.();
   };
 
+  const handleGoToGroup = () => {
+    navigation.reset({
+      index: 1,
+      routes: [
+        { name: "GroupHome" },
+        { name: "GroupDetail", params: { groupId: route.params.groupId } },
+      ],
+    });
+  };
+
   return (
     <SafeAreaView className="flex-1 bg-wt" edges={["top", "bottom"]}>
       <PageHeader
@@ -214,10 +224,10 @@ export default function GroupCreateCompleteScreen() {
           </AppText>
         </TouchableOpacity>
 
-        {/* 그룹 목록으로 돌아가기 링크 - 버튼과 8px 간격 */}
+        {/* 그룹으로 이동하기 링크 - 버튼과 8px 간격 */}
         <TouchableOpacity
           activeOpacity={0.6}
-          onPress={handleGoBackToList}
+          onPress={handleGoToGroup}
           style={{
             alignSelf: "center",
             marginTop: 8,
@@ -232,7 +242,7 @@ export default function GroupCreateCompleteScreen() {
             className="text-gr500"
             style={{ textDecorationLine: "underline" }}
           >
-            그룹 목록으로 돌아가기
+            그룹으로 이동하기
           </AppText>
         </TouchableOpacity>
       </View>

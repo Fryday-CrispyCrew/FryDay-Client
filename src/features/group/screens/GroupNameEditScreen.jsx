@@ -28,7 +28,7 @@ const GROUP_NAME_MAX = 10;
  * - 인풋: bg WT / border GR100 (default) → 에러면 orange
  *   글꼴 XL500 BK, Check/Error 아이콘 인라인
  * - 버튼: 키보드 위에 붙어서 함께 올라옴 (KeyboardAvoidingView)
- * - 공백 제외 10자 초과 및 이모지 입력 시 에러
+ * - 10자 초과 및 이모지 입력 시 에러
  * - 공백만 입력 케이스 에러 (S500)
  */
 export default function GroupNameEditScreen() {
@@ -54,10 +54,10 @@ export default function GroupNameEditScreen() {
 
   const errorMessage = useMemo(() => {
     if (nameError === "tooLong")
-      return `그룹 이름은 공백 제외 ${GROUP_NAME_MAX}자까지 입력 가능해요`;
+      return `그룹 이름은 ${GROUP_NAME_MAX}자까지 입력 가능해요`;
     if (nameError === "invalid")
       return "그룹 이름에는 이모지를 사용할 수 없어요";
-    if (nameError === "whitespace") return "그룹 이름에는 공백을 입력할 수 없어요";
+    if (nameError === "whitespace") return "그룹 이름은 공백만으로 저장할 수 없어요";
     if (nameError === "network") return "잠시 후 다시 시도해주세요";
     return "";
   }, [nameError]);
