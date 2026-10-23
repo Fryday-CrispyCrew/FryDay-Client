@@ -1,4 +1,4 @@
-import React, { useMemo, useRef, useState } from "react";
+import React, { useEffect, useMemo, useRef, useState } from "react";
 import {
   InteractionManager,
   Keyboard,
@@ -9,7 +9,7 @@ import {
   View,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
-import { useNavigation, usePreventRemove } from "@react-navigation/native";
+import { useNavigation, usePreventRemove, useRoute } from "@react-navigation/native";
 import LottieView from "lottie-react-native";
 
 import AppText from "../../../shared/components/AppText";
@@ -20,19 +20,30 @@ import { useModalStore } from "../../../shared/stores/modal/modalStore";
 import { groupApi } from "../api/groupApi";
 import colors from "../../../shared/styles/colors";
 import characterLottie from "../assets/lottie/character.json";
-
-// 입력 정책
-const GROUP_CODE_LENGTH = 6;
+import { GROUP_CODE_LENGTH, normalizeGroupCode } from "../lib/groupInviteLink";
 
 export default function GroupJoinScreen() {
   const navigation = useNavigation();
+  const route = useRoute();
   const { width } = useWindowDimensions();
   const openModal = useModalStore((s) => s.open);
 
-  const [draft, setDraft] = useState("");
+  // 초대 링크로 들어오면 코드가 채워진 채로 열린다.
+  const linkedCode = route.params?.code;
+  // 같은 링크를 다시 눌러도 코드를 다시 채우도록, 링크를 받을 때마다 바뀌는 값.
+  const linkReceivedAt = route.params?.linkReceivedAt;
+
+  const [draft, setDraft] = useState(() => normalizeGroupCode(linkedCode));
   const [codeError, setCodeError] = useState(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const submittingRef = useRef(false);
+
+  // 이 화면이 이미 열려 있을 때 초대 링크를 누르면 params 만 바뀐다.
+  useEffect(() => {
+    if (!linkedCode) return;
+    setDraft(normalizeGroupCode(linkedCode));
+    setCodeError(null);
+  }, [linkedCode, linkReceivedAt]);
 
   // usePreventRemove 는 첫 인자를 useEffect deps 로 씀 → state 로 관리해야 재등록됨
   const [skipQuitConfirm, setSkipQuitConfirm] = useState(false);
@@ -49,10 +60,7 @@ export default function GroupJoinScreen() {
   }, [codeError]);
 
   const onChangeCode = (text) => {
-    // 알파벳/숫자만, 자동 대문자 변환
-    const filtered = (text ?? "").replace(/[^a-zA-Z0-9]/g, "").toUpperCase();
-    const limited = filtered.slice(0, GROUP_CODE_LENGTH);
-    setDraft(limited);
+    setDraft(normalizeGroupCode(text));
     if (codeError) setCodeError(null);
   };
 

@@ -21,9 +21,14 @@ export function getGroupNotificationTarget(data) {
 export async function queueGroupNotification(data) {
   const target = getGroupNotificationTarget(data);
   if (!target) return false;
+  await queueGroupTarget(target);
+  return true;
+}
+
+/** 초대 링크처럼 알림이 아닌 진입도 같은 대기열을 써서 로그인/온보딩이 끝난 뒤 이동한다. */
+export async function queueGroupTarget(target) {
   await AsyncStorage.setItem(STORAGE_KEY, JSON.stringify(target));
   await flushGroupNotification();
-  return true;
 }
 
 export async function flushGroupNotification() {
