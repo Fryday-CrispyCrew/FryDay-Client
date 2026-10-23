@@ -12,6 +12,7 @@ import GroupInviteCard from "../components/GroupInviteCard";
 import { useModalStore } from "../../../shared/stores/modal/modalStore";
 import { toast } from "../../../shared/components/toast/CenterToast";
 import { groupApi } from "../api/groupApi";
+import { buildInviteMessage } from "../lib/groupInviteLink";
 import { useGroupQuery, useGroupNotificationQuery, useGroupMutation } from "../queries/groupQueries";
 import GroupQueryState from "../components/GroupQueryState";
 import colors from "../../../shared/styles/colors";
@@ -76,7 +77,7 @@ export default function GroupSettingScreen() {
   };
 
   const inviteText = useMemo(
-    () => `우리 같이 할 일 같이 튀겨볼래?\n그룹 코드 : ${groupCode}`,
+    () => buildInviteMessage(groupCode),
     [groupCode],
   );
 

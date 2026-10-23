@@ -1,7 +1,8 @@
-import { queueGroupNotification, flushGroupNotification } from "../notifications/lib/groupNotificationNavigation";
+import { queueGroupNotification, flushGroupNotification, queueGroupTarget } from "../notifications/lib/groupNotificationNavigation";
 // src/app/AppProviders.js
 import React, {useEffect} from "react";
-import {AppState} from "react-native";
+import {AppState, Linking} from "react-native";
+import {parseInviteCode} from "../features/group/lib/groupInviteLink";
 import NetInfo from "@react-native-community/netinfo";
 import {NavigationContainer} from "@react-navigation/native";
 import {
@@ -43,6 +44,20 @@ export default function AppProviders({children}) {
         }
       })
       .catch(() => {});
+  }, []);
+
+  useEffect(() => {
+    // 그룹 초대 링크: 꺼진 앱이 링크로 켜진 경우(getInitialURL)와 켜져 있던 앱이 받은 경우(url 이벤트) 모두 처리.
+    const queueInvite = (url) => {
+      const code = parseInviteCode(url);
+      if (!code) return;
+      void queueGroupTarget({ screen: "GroupJoin", params: { code, linkReceivedAt: Date.now() } }).catch(() => {});
+    };
+
+    Linking.getInitialURL().then(queueInvite).catch(() => {});
+    const subscription = Linking.addEventListener("url", ({ url }) => queueInvite(url));
+
+    return () => subscription.remove();
   }, []);
 
   useEffect(() => {

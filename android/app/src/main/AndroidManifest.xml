@@ -34,6 +34,12 @@
         <data android:scheme="fryday"/>
         <data android:scheme="exp+fryday"/>
       </intent-filter>
+      <intent-filter android:autoVerify="true">
+        <action android:name="android.intent.action.VIEW"/>
+        <category android:name="android.intent.category.DEFAULT"/>
+        <category android:name="android.intent.category.BROWSABLE"/>
+        <data android:scheme="https" android:host="app.fryday.co.kr" android:pathPrefix="/invite"/>
+      </intent-filter>
     </activity>
     <activity android:name="com.kakao.sdk.auth.AuthCodeHandlerActivity" android:exported="true">
       <intent-filter>
