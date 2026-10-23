@@ -14,6 +14,7 @@ import PageHeader from "../../../shared/components/PageHeader";
 import SpeechBubble from "../components/SpeechBubble";
 import { toast } from "../../../shared/components/toast/CenterToast";
 import colors from "../../../shared/styles/colors";
+import { buildInviteMessage } from "../lib/groupInviteLink";
 import characterLottie from "../assets/lottie/character.json";
 
 export default function GroupCreateCompleteScreen() {
@@ -28,7 +29,7 @@ export default function GroupCreateCompleteScreen() {
   const LOTTIE_SIZE = 160;
 
   const inviteText = useMemo(
-    () => `우리 같이 할 일 같이 튀겨볼래?\n그룹 코드 : ${groupCode}`,
+    () => buildInviteMessage(groupCode),
     [groupCode],
   );
 
