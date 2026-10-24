@@ -17,6 +17,30 @@ test("builds a share link that the invite landing page understands", () => {
   assert.equal(buildInviteLink("FRY123"), "https://app.fryday.co.kr/invite/?code=FRY123");
 });
 
+test("adds the group name to the link so the landing page can show it", () => {
+  const { buildInviteLink } = load();
+  assert.equal(
+    buildInviteLink("FRY123", "바삭한 사람들"),
+    "https://app.fryday.co.kr/invite/?name=%EB%B0%94%EC%82%AD%ED%95%9C%20%EC%82%AC%EB%9E%8C%EB%93%A4&code=FRY123",
+  );
+});
+
+test("keeps the code at the end so a group name ending in punctuation does not break the link", () => {
+  const { buildInviteLink } = load();
+  assert.match(buildInviteLink("FRY123", "(주)튀김."), /&code=FRY123$/);
+});
+
+test("leaves the name out when the group name is unknown", () => {
+  const { buildInviteLink } = load();
+  assert.equal(buildInviteLink("FRY123", ""), "https://app.fryday.co.kr/invite/?code=FRY123");
+  assert.equal(buildInviteLink("FRY123", "   "), "https://app.fryday.co.kr/invite/?code=FRY123");
+});
+
+test("a link carrying a group name still opens the join screen with the code", () => {
+  const { buildInviteLink, parseInviteCode } = load();
+  assert.equal(parseInviteCode(buildInviteLink("FRY123", "바삭한 사람들")), "FRY123");
+});
+
 test("share message carries both the readable code and the link", () => {
   const { buildInviteMessage } = load();
   const message = buildInviteMessage("FRY123");

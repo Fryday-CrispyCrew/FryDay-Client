@@ -81,7 +81,7 @@ export default function GroupCategorySelectScreen() {
         }
         const group = createdGroupRef.current;
         await groupApi.updatePublicCategories({ groupId: group.groupId, categoryIds: selectedIds });
-        setNextNavigation({ name: "GroupCreateComplete", params: { groupId: group.groupId, groupCode: group.inviteCode, maxMemberCount: group.maxMemberCount } });
+        setNextNavigation({ name: "GroupCreateComplete", params: { groupId: group.groupId, groupCode: group.inviteCode, groupName: group.name, maxMemberCount: group.maxMemberCount } });
       } else if (mode === "join") {
         const group = await groupApi.joinGroup({ inviteCode: route.params.groupCode, categoryIds: selectedIds });
         setNextNavigation({ name: "GroupDetail", params: { groupId: group.groupId } });

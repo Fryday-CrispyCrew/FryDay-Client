@@ -24,13 +24,14 @@ export default function GroupCreateCompleteScreen() {
 
   const maxInviteCount = Math.max(0, (route.params?.maxMemberCount ?? 10) - 1);
   const groupCode = route?.params?.groupCode ?? "";
+  const groupName = route?.params?.groupName ?? "";
 
   const containerWidth = Math.min(width - 40, 520);
   const LOTTIE_SIZE = 160;
 
   const inviteText = useMemo(
-    () => buildInviteMessage(groupCode),
-    [groupCode],
+    () => buildInviteMessage(groupCode, groupName),
+    [groupCode, groupName],
   );
 
   const handleCopyCode = async () => {
