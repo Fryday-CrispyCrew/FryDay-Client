@@ -119,11 +119,6 @@ export default function GroupCategorySelectScreen() {
           contentContainerStyle={{ paddingBottom: 24 }}
         >
           <View style={{ paddingHorizontal: 20, paddingTop: 4 }}>
-            {mode === "join" && route.params?.groupName ? (
-              <AppText variant="M600" style={{ marginBottom: 16 }}>
-                {route.params.groupName} 그룹에 공개할 카테고리를 선택해 주세요
-              </AppText>
-            ) : null}
             {query.isPending || query.isError ? (
               <GroupQueryState query={query} />
             ) : categories.length === 0 ? (
