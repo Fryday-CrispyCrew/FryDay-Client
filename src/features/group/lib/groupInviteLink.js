@@ -16,12 +16,20 @@ export function normalizeGroupCode(text) {
   return toCodeCharacters(text).slice(0, GROUP_CODE_LENGTH);
 }
 
-export function buildInviteLink(code) {
-  return `${INVITE_LINK_BASE}?code=${encodeURIComponent(code)}`;
+/** 그룹명은 랜딩 페이지 제목("FryDay [그룹명] 그룹에 초대받았어요!")에만 쓰인다. */
+export function buildInviteLink(code, groupName) {
+  const codeParam = `code=${encodeURIComponent(code)}`;
+  const name = (groupName ?? "").trim();
+
+  // 메신저는 링크 끝의 . ) 같은 문장부호를 링크에서 떼어낸다.
+  // 그룹명은 그런 문자로 끝날 수 있으므로 앞에 두고, 영숫자뿐인 코드를 맨 끝에 둔다.
+  return name
+    ? `${INVITE_LINK_BASE}?name=${encodeURIComponent(name)}&${codeParam}`
+    : `${INVITE_LINK_BASE}?${codeParam}`;
 }
 
-export function buildInviteMessage(code) {
-  return `우리 같이 할 일 같이 튀겨볼래?\n그룹 코드 : ${code}\n${buildInviteLink(code)}`;
+export function buildInviteMessage(code, groupName) {
+  return `우리 같이 할 일 같이 튀겨볼래?\n그룹 코드 : ${code}\n${buildInviteLink(code, groupName)}`;
 }
 
 /** 초대 링크가 아니거나 코드가 정확히 6자리가 아니면 null. 링크의 코드는 자르지 않고 거부한다. */

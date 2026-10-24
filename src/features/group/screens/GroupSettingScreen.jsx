@@ -77,8 +77,8 @@ export default function GroupSettingScreen() {
   };
 
   const inviteText = useMemo(
-    () => buildInviteMessage(groupCode),
-    [groupCode],
+    () => buildInviteMessage(groupCode, groupName),
+    [groupCode, groupName],
   );
 
   const handlePressName = () => {
