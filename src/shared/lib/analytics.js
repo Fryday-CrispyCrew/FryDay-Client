@@ -9,3 +9,13 @@ export function initAnalyticsCollection() {
     .setAnalyticsCollectionEnabled(!IS_DEV_BUILD)
     .catch(() => {});
 }
+
+export function setAnalyticsUserId(userId) {
+  analytics()
+    .setUserId(userId == null ? null : String(userId))
+    .catch(() => {});
+}
+
+export function clearAnalyticsUserId() {
+  setAnalyticsUserId(null);
+}

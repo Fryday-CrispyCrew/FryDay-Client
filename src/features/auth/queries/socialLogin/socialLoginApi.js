@@ -10,6 +10,7 @@ import * as SecureStore from "expo-secure-store";
 import {STEP_KEY} from "../../../../shared/constants/onboardingStep";
 import dayjs from "dayjs";
 import {syncLoginToWidget} from "../../../../shared/widget/syncWidget";
+import {setAnalyticsUserId} from "../../../../shared/lib/analytics";
 
 async function persistLoginResult(data, deviceId) {
   await Promise.all([
@@ -18,6 +19,8 @@ async function persistLoginResult(data, deviceId) {
   ]);
 
   syncLoginToWidget(true);
+
+  if (data?.user?.id != null) setAnalyticsUserId(data.user.id);
 
   await Promise.allSettled([
     AsyncStorage.setItem("deviceId", deviceId),

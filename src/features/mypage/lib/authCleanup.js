@@ -2,8 +2,10 @@ import * as SecureStore from "expo-secure-store";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { STEP_KEY } from "../../../shared/constants/onboardingStep";
 import { clearWidgetForLogout } from "../../../shared/widget/syncWidget";
+import { clearAnalyticsUserId } from "../../../shared/lib/analytics";
 
 export async function clearForLogout() {
+  clearAnalyticsUserId();
   try {
     await AsyncStorage.clear();
   } catch {}
