@@ -1,7 +1,8 @@
 import analytics from "@react-native-firebase/analytics";
+import * as Updates from "expo-updates";
 
-// api.js 와 같은 기준: dev 서버에 붙는 빌드는 dev 빌드로 본다
-export const IS_DEV_BUILD = Boolean(process.env.EXPO_PUBLIC_BACKEND_URL_DEV);
+// Metro 로 띄운 실행, development 채널 업데이트를 dev 로 본다. 서버 URL 환경변수와는 무관하게 판단한다
+export const IS_DEV_BUILD = __DEV__ || Updates.channel === "development";
 
 // 수집 설정은 기기에 저장되므로, dev 빌드 위에 prod 를 설치한 경우를 위해 prod 에서도 매번 명시적으로 켠다
 export function initAnalyticsCollection() {
