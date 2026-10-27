@@ -2,8 +2,10 @@ import * as SecureStore from "expo-secure-store";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { STEP_KEY } from "../../../shared/constants/onboardingStep";
 import { clearWidgetForLogout } from "../../../shared/widget/syncWidget";
+import { clearAnalyticsUserId, resetAnalyticsData } from "../../../shared/lib/analytics";
 
 export async function clearForLogout() {
+  clearAnalyticsUserId();
   try {
     await AsyncStorage.clear();
   } catch {}
@@ -21,6 +23,7 @@ export async function clearForLogout() {
 }
 export async function clearForDeleteAccount() {
   await clearForLogout();
+  resetAnalyticsData();
 
   await Promise.allSettled([
     SecureStore.deleteItemAsync("hasTrackedAuthView"),
