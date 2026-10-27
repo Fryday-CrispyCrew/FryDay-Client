@@ -19,3 +19,14 @@ export function setAnalyticsUserId(userId) {
 export function clearAnalyticsUserId() {
   setAnalyticsUserId(null);
 }
+
+// iOS 는 공유 시트를 닫으면 dismissedAction 이 와서 제외된다. Android 는 항상 sharedAction 이라 취소도 포함된다
+export function logInviteShare(shareResult, { groupId, source }) {
+  if (shareResult?.action !== "sharedAction") return;
+  analytics()
+    .logEvent("invite_share", {
+      group_id: groupId == null ? null : String(groupId),
+      source,
+    })
+    .catch(() => {});
+}
