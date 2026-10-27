@@ -11,7 +11,6 @@ import {
 } from "./storage/tokenStorage";
 import { resetToAuth } from "./navigationRef";
 import { useServerStatusStore } from "../stores/serverStatusStore";
-import { clearAnalyticsUserId } from "./analytics";
 
 
 const baseURL =
@@ -74,7 +73,6 @@ function executeRefresh() {
   const p = (async () => {
     const refreshToken = await getRefreshToken();
     if (!refreshToken) {
-      clearAnalyticsUserId();
       await deleteTokens();
       resetToAuth();
       throw new Error("No refresh token");
@@ -102,7 +100,6 @@ api.interceptors.response.use(
     if (!originalRequest) return Promise.reject(error);
 
     if (originalRequest?.url?.includes("/api/users/token/refresh")) {
-      clearAnalyticsUserId();
       await deleteTokens();
       resetToAuth();
       error.isSessionExpired = true;
@@ -135,7 +132,6 @@ api.interceptors.response.use(
           newAccessToken = await executeRefresh();
         }
       } catch (e) {
-        clearAnalyticsUserId();
         await deleteTokens();
         resetToAuth();
         e.isSessionExpired = true;

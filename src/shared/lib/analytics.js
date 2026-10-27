@@ -13,12 +13,21 @@ export function initAnalyticsCollection() {
 
 export function setAnalyticsUserId(userId) {
   analytics()
-    .setUserId(userId == null ? null : String(userId))
+    .setUserId(String(userId))
     .catch(() => {});
 }
 
 export function clearAnalyticsUserId() {
-  setAnalyticsUserId(null);
+  analytics()
+    .setUserId(null)
+    .catch(() => {});
+}
+
+// 탈퇴 시 기기에 남은 Analytics 식별 정보를 지워 다음 계정과 연결되지 않게 한다
+export function resetAnalyticsData() {
+  analytics()
+    .resetAnalyticsData()
+    .catch(() => {});
 }
 
 // iOS 는 공유 시트를 닫으면 dismissedAction 이 와서 제외된다. Android 는 항상 sharedAction 이라 취소도 포함된다

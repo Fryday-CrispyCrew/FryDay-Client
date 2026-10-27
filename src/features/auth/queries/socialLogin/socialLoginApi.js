@@ -11,6 +11,7 @@ import {STEP_KEY} from "../../../../shared/constants/onboardingStep";
 import dayjs from "dayjs";
 import {syncLoginToWidget} from "../../../../shared/widget/syncWidget";
 import {setAnalyticsUserId} from "../../../../shared/lib/analytics";
+import {getUserIdFromAccessToken} from "../../../group/lib/groupIdentity";
 
 async function persistLoginResult(data, deviceId) {
   await Promise.all([
@@ -20,7 +21,9 @@ async function persistLoginResult(data, deviceId) {
 
   syncLoginToWidget(true);
 
-  if (data?.user?.id != null) setAnalyticsUserId(data.user.id);
+  // 앱 재실행 때와 같은 출처(토큰 sub)로 맞춘다
+  const userId = getUserIdFromAccessToken(data?.accessToken);
+  if (userId) setAnalyticsUserId(userId);
 
   await Promise.allSettled([
     AsyncStorage.setItem("deviceId", deviceId),
