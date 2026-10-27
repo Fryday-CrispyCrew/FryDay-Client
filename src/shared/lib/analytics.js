@@ -1,3 +1,4 @@
+import { Platform } from "react-native";
 import analytics from "@react-native-firebase/analytics";
 import * as Updates from "expo-updates";
 
@@ -30,13 +31,17 @@ export function resetAnalyticsData() {
     .catch(() => {});
 }
 
-// iOS 는 공유 시트를 닫으면 dismissedAction 이 와서 제외된다. Android 는 항상 sharedAction 이라 취소도 포함된다
+// 공유 창을 열 때마다 기록한다. Android 는 항상 sharedAction 이 와서 결과를 구분할 수 없으므로 unknown 으로 둔다
 export function logInviteShare(shareResult, { groupId, source }) {
-  if (shareResult?.action !== "sharedAction") return;
+  let result = "unknown";
+  if (Platform.OS === "ios") {
+    result = shareResult?.action === "sharedAction" ? "shared" : "dismissed";
+  }
   analytics()
     .logEvent("invite_share", {
       group_id: groupId == null ? null : String(groupId),
       source,
+      result,
     })
     .catch(() => {});
 }
