@@ -1,5 +1,6 @@
 // src/shared/lib/storage/tokenStorage.js
 import * as SecureStore from "expo-secure-store";
+import { clearAnalyticsUserId } from "../analytics";
 
 const ACCESS_TOKEN_KEY = "accessToken";
 const REFRESH_TOKEN_KEY = "refreshToken";
@@ -45,6 +46,7 @@ export const getRefreshToken = async () => {
 };
 
 export const deleteTokens = async () => {
+  clearAnalyticsUserId();
   try {
     await SecureStore.deleteItemAsync(ACCESS_TOKEN_KEY);
     await SecureStore.deleteItemAsync(REFRESH_TOKEN_KEY);

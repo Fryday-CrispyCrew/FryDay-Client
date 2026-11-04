@@ -2,6 +2,8 @@ import React, {useEffect, useState} from "react";
 import {createNativeStackNavigator} from "@react-navigation/native-stack";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import {getAccessToken} from "../../shared/lib/storage/tokenStorage";
+import {setAnalyticsUserId} from "../../shared/lib/analytics";
+import {getUserIdFromAccessToken} from "../../features/group/lib/groupIdentity";
 
 import AuthStack from "./stacks/AuthStack";
 import OnboardingStack from "./stacks/OnboardingStack";
@@ -42,6 +44,9 @@ export default function RootNavigator() {
         setReady(true);
         return;
       }
+
+      const userId = getUserIdFromAccessToken(token);
+      if (userId) setAnalyticsUserId(userId);
 
       const step = await AsyncStorage.getItem(STEP_KEY);
       setInitialRoute(stepToRoute(step));

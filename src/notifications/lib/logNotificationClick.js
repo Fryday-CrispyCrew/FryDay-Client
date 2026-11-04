@@ -11,6 +11,8 @@ export async function logNotificationClick(data, trigger) {
       trigger,
       todo_id: data?.todoId ?? null,
       notification_id: data?.notificationId ?? null,
+      type: data?.type ?? null,
+      group_id: data?.groupId ?? null,
     });
   } catch (e) {
     // console.error("[Analytics] notification_click 실패:", e);

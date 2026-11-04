@@ -15,6 +15,7 @@ import SpeechBubble from "../components/SpeechBubble";
 import { toast } from "../../../shared/components/toast/CenterToast";
 import colors from "../../../shared/styles/colors";
 import { buildInviteMessage } from "../lib/groupInviteLink";
+import { logInviteShare } from "../../../shared/lib/analytics";
 import characterLottie from "../assets/lottie/character.json";
 
 export default function GroupCreateCompleteScreen() {
@@ -50,7 +51,8 @@ export default function GroupCreateCompleteScreen() {
   const handleShare = async () => {
     if (!groupCode) return;
     try {
-      await Share.share({ message: inviteText });
+      const result = await Share.share({ message: inviteText });
+      logInviteShare(result, { groupId: route.params?.groupId, source: "create_complete" });
     } catch {
       // 유저가 공유 다이얼로그 취소한 경우도 여기로 옴 - 무시
     }
